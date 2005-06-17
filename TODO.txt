@@ -1,0 +1,9 @@
+TODO LIST (in order of importance)
+-----------
+
+- Code cleaning
+- Intensive testing
+- Support for more types of videos
+  (not only quicktime)
+- Support for Customizable node field
+- Your suggestions here...
