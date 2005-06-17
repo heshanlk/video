@@ -1,0 +1,906 @@
+<?php
+/* $Id$ */
+
+/**
+
+Created by Fabio Varesano on June 2005.
+Please, send bug reports, feature requests, or other comments to me:
+Fabio Varesano   fvaresano at yahoo dot it
+
+Database definition:
+@code
+  CREATE TABLE video (
+    nid int(10) unsigned NOT NULL default '0',
+    vidfile text NOT NULL default '',
+    videox int(4) NOT NULL default '',
+    videoy int(4) NOT NULL default '',
+    size varchar(30) NOT NULL default '',
+    clicks int(10) unsigned NOT NULL default '0',
+    PRIMARY KEY  (nid)
+  )
+@endcode
+
+
+*/
+
+/********************************************************************
+ * General Hooks
+ ********************************************************************/
+
+function video_help($section = "admin/help#video") {
+  switch ($section) {
+    case "admin/help#video":
+      return t("<p>The videos module is used to insert into drupal Quick Time videos as nodes.</p>");
+    case "admin/modules#description":
+      return t("Allows QuickTime videos nodes.");
+    case 'node/add#video':
+      return t("Video allow you to insert QuickTime videos as nodes");
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function video_menu() {
+  global $user;
+  //if ($may_cache) {
+    $items[] = array(
+      'path' => 'node/add/video',
+      'title' => t('video'),
+      'access' => user_access('create videos'));
+    $items[] = array(
+      'path' => 'video/goto',
+      'callback' => '_video_page_goto',
+      'type' => MENU_CALLBACK,
+      'callback arguments' => arg(3),
+      'access' => user_access('access content'));
+    //}
+
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    $node = node_load(array('nid' => arg(1)));
+
+    if ($node->type == 'video') {
+      $items[] = array('path' => 'node/'. arg(1) .'/play',
+        'title' => t('play'),
+        'callback' => 'video_play',
+        'access' => user_access('access content'),
+        'weight' => 3,
+        'type' => MENU_LOCAL_TASK);
+      $items[] = array('path' => 'node/'.arg(1).'/download',
+        'title' => t('download'),
+        'callback' => 'video_download',
+        'access' => user_access('access content'),
+        'weight' => 5,
+        'type' => MENU_LOCAL_TASK);
+    }
+  }
+  return $items;
+}
+// function video_menu() {
+//   global $user;
+// 
+//   $items = array();
+// 
+//   $items[] = array('path' => 'video', 'title' => t('links'),
+//     'callback' => 'video_page',
+//     'access' => user_access('access content'),
+//     'type' => MENU_CALLBACK);
+//   $items[] = array('path' => 'node/add/video', 'title' => t('video'),
+//     'access' => user_access('create videos'));
+// 		
+// 	if (arg(0) == 'node' && is_numeric(arg(1))) {
+// 		$node = node_load(array('nid' => arg(1)));
+// 	
+// 		if ($node->type == 'video') {
+// 			$items[] = array('path' => 'node/'. arg(1) .'/play',
+// 				'title' => t('play'),
+// 				'callback' => 'video_play',
+// 				'access' => user_access('access content'),
+// 				'weight' => 3,
+// 				'type' => MENU_LOCAL_TASK);
+// 			$items[] = array('path' => 'node/'.arg(1).'/download',
+// 				'title' => t('download'),
+// 				'callback' => 'video_download',
+// 				'access' => user_access('access content'),
+// 				'weight' => 5,
+// 				'type' => MENU_LOCAL_TASK);
+// 		}
+// 		//print_r($items);
+// 	}
+	
+//  return $items;
+//}
+
+function video_link($type, $node = 0, $main = 0) {
+  $links = array();
+  // Node links for a video
+  if ($type == 'node' && $node->type == 'video' && $node->vidfile) {
+    $links[] = l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))))." ". t("or"). " ".
+               l(t('download'), "video/goto/$node->nid", array('class' => 'outgoing', 'title' => t('visit %link', array('%link' => $node->title)))) ." ".$node->title. (user_access("access statistics") ? " ({$node->clicks})" : "");
+  }
+  return $links;
+}
+// function video_link($type, $node = 0) {
+//   $links = array();
+//   
+//   if ($type == 'page' && user_access('access content')) {
+//     $links[] = l(t('video'), 'video');
+//   }
+// 
+//   // Node links for a video
+//   if ($type == "node" && $node->type == "video") {
+//     
+//     if (module_exist('bookmarks')) {
+//       $links[] = l(t('add to bookmarks'), "user/bookmarks/add/video/$node->nid", array('title' => t('Adds the destination to your bookmarks.')));
+//     }
+//     
+//     switch(variable_get("video_link_display", 0)) {
+//       case 0:
+//         $linktext = t('download %link', array("%link" => $node->title));
+//         break;
+//       case 1:
+//         $linktext = t('download %link', array("%link" => $node->video));
+//         break;
+//       default:
+//         $linktext = t('download');
+//         break;
+//     }
+//     $links[] = l($linktext, "video/goto/$node->nid", _video_attributes($node)) ." ({$node->clicks})";
+//   }
+// 
+//   return $links;
+// }
+
+function video_perm() {
+  return array('create videos');
+}
+
+function video_settings() {
+// put something good here
+}
+
+// function video_settings() {
+//   $vocs = array();
+//   foreach (taxonomy_get_vocabularies("video") as $vid => $voc) {
+//     $vocs[$vid] = $voc->name;
+//   }
+//   if (count($vocs)) {
+//     $group = form_select(t("Navigation vocabulary"), "video_nav_vocabulary", variable_get("video_nav_vocabulary", ""), $vocs, t("The dedicated video vocabulary, which will be used by this module."));
+//   }
+//   else {
+//     $group = form_item(t("Navigation vocabulary"), t("At least one <a href=\"%url\">vocabulary</a> should be able to hold video nodes, being the navigation vocabulary for this module.", array("%url" => url("admin/taxonomy"))));
+//   }
+//   
+//   $output = form_group(t('Vocabulary association'), $group);
+//   
+//   $group = form_radios(t("Visit link display mode"), "video_link_display", variable_get("video_link_display", 0), array(t("display as title"), t("display as url"), t("only display the 'visit' text")), t("Users are able to visit videos via the node links list. This setting toggles how the visit link is displayed, either containing the node title or the node target URL or just the word 'visit'"));
+//   
+//   $group .= form_select(t("Number of links per block"), "video_block_count", variable_get("video_block_count", 10), drupal_map_assoc(array(5, 10, 15, 20)), t("Number of links showed per block. Every block displayed by the video module will adhere to this setting."));
+//   $group .= form_textfield(t("Links per page"), "video_pager_term", variable_get("video_pager_term", 0), 3, 5, t('Number of links to show per page. Set to zero to show all links in a category on one page.'));
+//   
+//   $output .= form_group(t('Display settings'), $group);
+//   
+//   $group = form_radios(t('Default link target'), "video_target_default", variable_get("video_target_default", 0), array(t("open in same window"), t("open in new window")), t("Open links in a new window or in the same window by default."));
+//   
+//   $group .= form_radios(t('User setting for target'), "video_target_user", variable_get("video_target_user", 0), array(t("deny"), t("allow")), t("Allow users to specify their own preference via the user settings page."));
+//   
+//   $output .= form_group(t('Link targets'), $group);
+//   
+//   $group = form_radios(t('Weblink monitoring'), "video_monitoring", variable_get("video_monitoring", 0), array(t("disabled"), t("enabled")), t("Allow users with appropriate rights to add/edit video nodes to specify monitoring parameters, and allow the monitoring block to be shown."));
+//   
+//   $output .= form_group(t('Weblink monitoring'), $group);
+// 	
+//   
+//   // If we have a vocabulary set, we can set a blogmark term
+//   if ($vocab = variable_get("video_nav_vocabulary", "")) {
+//     $result = db_query("SELECT tid, name FROM {term_data} WHERE vid = %d ORDER BY weight", $vocab);
+//     $terms = array(t("disable blogmarks"));
+//     while ($term = db_fetch_object($result)) {
+//       $terms[$term->tid] = $term->name; 
+//     }
+//     if (count($terms)) {
+//       $group = form_select(t("Blogmarks term"), "video_blogmarks_term", variable_get("video_blogmarks_term", ""), $terms, t("The term used to store the blogmarks sent in by users."));
+//     }
+//     else {
+//       $group = t('No terms to select blogmarks term from.');
+//     }
+//     $output .= form_group(t('Blogmarks settings'), $group);
+//   }
+//   
+//   return $output;
+// }
+
+// function video_user($type, &$edit, &$user) {
+//   if (variable_get('video_target_user', 0)) {
+//     switch ($type) {
+//       case "register_form":
+//         return form_hidden("video_new", variable_get('video_target_default'));
+//       case "edit_form":
+//         return array(t("Weblink settings") => form_select(t("Open new window for videos"), "video_new", $user->video_new, array(t("Disabled"), t("Enabled")), t("Create a new window when you click on a video.")));
+//     }
+//   }
+// }
+
+// function video_page() {
+//   $id = $tid = arg(2);
+//   $vid = arg(3);
+// 
+//   switch (arg(1)) {
+//     case "view":
+//       print theme("video_page_view", $tid, $vid, taxonomy_get_parents($tid), _video_get_structure($tid), taxonomy_get_related($tid), _video_get_links($tid));
+//       return;
+//     case "goto":
+//       _video_page_goto($id);
+//       return;
+//     case "goto2":
+//       _video_page_goto($id, "feed");
+//       return;
+// 		/* case "play":
+// 			print theme("video_play"); */
+//     case "monitor":
+//       if (variable_get('video_monitoring', 0)) {
+//         print theme("video_page_monitored", video_monitor_list(100));
+//         return;
+//       }
+//       break;
+//     default:
+//       print theme("video_page_default", _video_get_structure());
+//       return;  
+// 	}
+// 
+// }
+
+
+/********************************************************************
+ * Node Hooks
+ ********************************************************************/
+
+function video_node_name($node) {
+  return t("video");
+}
+
+function video_access($op, $node) {
+  switch($op) {
+    case 'view': 
+      return $node->status;   // see book.module for reference
+
+    case 'create':
+      return user_access("create videos");
+  }
+}
+
+function video_form(&$node, &$param) {
+  $output .= form_textfield(t("Video File"), "vidfile", $node->vidfile, 60, 65535, t("Put here the video file path. You can use both relative path (something/video.mov) or absolute (http://www.myvideo.com/videos/videos.mov).") . ($error['vidfile'] ? $error['vidfile'] : ''), NULL, TRUE);
+
+  $output .= form_textfield(t('Video Size x'), 'videox', $node->videox, 4, 4, t("Horizontal video pixel size."), null, true);
+  $output .= form_textfield(t('Video Size y'), 'videoy', $node->videoy, 4, 4, t("Horizontal video pixel size."), null, true);
+  $output .= form_textfield(t('Size'), 'size', $node->size, 10, 30, t("Dimension of your video. Also provide size unit (KB or MB)."), null, true);
+
+  if (function_exists('taxonomy_node_form')) {
+     $output .= implode('', taxonomy_node_form('video', $node));
+  }
+
+  $output .= form_textarea(t("Body"), "body", $node->body, 60, 20, t("Textual description of the video.") . ($error['body'] ? $error['body'] : ''));
+  $output .= filter_form('format', $node->format);
+
+  return $output;
+}
+// function video_form(&$node, &$param) {
+// 
+//   $output .= implode("", taxonomy_node_form("video", $node));
+// 
+//   $output .= form_textarea(t("Body"), "body", $node->body, 60, 20, t("Textual description of the video") . ($error['body'] ? $error['body'] : ''));
+// 
+// 	$output .= form_textfield(t('Rider'), 'rider', $node->rider, 60, 255, null, null, true);
+// 	$output .= form_textfield(t('Spot'), 'spot', $node->spot, 60, 255, null, null, true);
+// 	$output .= form_textfield(t('Image'), 'image', $node->image, 60, 700, null, null, true);
+// 	$output .= form_textfield(t('File URL'), 'vidfile', $node->vidfile, 60, 700, null, null, true);
+// 	//Aggiunto per upload dei file
+// 	//$output .= form_file('Video File','vidfile', 60, "This file will be uploaded from your web browser to this site", true);
+// 	$output .= form_textfield(t('Video Size x'), 'videox', $node->videox, 4, 4, null, null, true);
+// 	$output .= form_textfield(t('Video Size y'), 'videoy', $node->videoy, 4, 4, null, null, true);
+// 	$output .= form_textfield(t('Move'), 'move', $node->move, 10, 255, null, null, true);
+// 	//$output .= form_textfield(t('Data'), 'data', $node->data, 10, 30, null, null, true);
+// 	$output .= form_textfield(t('Size'), 'size', $node->size, 10, 30, null, null, true);
+// 	$output .= form_textfield(t('Dln'), 'clicks', $node->clicks, 10, 30, null, null, true);
+// 	
+//   return $output;
+// }
+
+function video_insert($node) {
+	
+	//print_r($_FILES);
+	//print("FUCK");
+	//file_save_upload($_FILES['edit']['tmp_name'], '/home/fabio/public_html/adrenalinteam.it/videos/'. $_FILES['userfile']['name'], true);
+	//move_uploaded_file ($_FILES['edit']['tmp_name'], );
+	//print_r(file_check_upload($node));
+	//die();
+   db_query("INSERT INTO {video} (nid, vidfile, size, videox, videoy) VALUES ('%d', '%s', '%s', '%d', '%d')",
+	$node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy);
+}
+
+function video_update($node) {
+//print_r($node);// die();
+	//printf("UPDATE {video} (nid, rider, image, vidfile, spot, move, size, videox, videoy) VALUES (%d, '%s', '%s','%s','%s','%s','%s', %d, %d)",
+	//$node->nid, $node->rider, $node->image, $node->vidfile, $node->spot, $node->move,  $node->size, $node->videox, $node->videoy); die();
+	//printf("UPDATE {video} SET rider = '%s', image = '%s', vidfile = '%s', spot = '%s', move = '%s', size = '%d', videox = '%d', videoy = '%d' WHERE nid = '%d'", $node->rider, $node->image, $node->vidfile, $node->spot, $node->move, $node->size, $node->videox, $node->videoy, $node->nid); die();
+	db_query("UPDATE {video} SET vidfile = '%s', size = '%s', videox = '%d', videoy = '%d' WHERE nid = '%d'", $node->vidfile, $node->size, $node->videox, $node->videoy, $node->nid);
+}
+
+function video_delete(&$node) {
+  db_query("DELETE FROM {video} WHERE nid = '%s'", $node->nid);
+  cache_clear_all("video:blogmarks:block");
+}
+
+function video_validate(&$node) {
+  $result = db_query("SELECT * from {video} WHERE vidfile = '%s' and nid <> '%d'", $node->vidfile, $node->nid);
+  if (db_num_rows($result) > 0) {
+    $video = db_fetch_object($result);
+    $othernode = node_load(array("nid" => $video->nid));
+    form_set_error('video', t('A video %link-to-existing using that link already exists', array("%link-to-existing" => l($othernode->title, 'node/' . $othernode->nid . '/edit'))));
+  }
+}
+
+function video_load($node) {
+  return db_fetch_object(db_query("SELECT * FROM {video} WHERE nid = '%d'", $node->nid));
+}
+
+// function video_filter_tips($delta, $format, $long = false) {
+//   if ($long) {
+//     return t("<p>You may create links to items stored in our video registry using a special syntax. The video codes will be replaced by a links to visit the real websites. Syntax: <code>[video:link_id]</code> or <code>[video:http://a.video.example.com/]</code>.</p>");
+//   }
+//   else {
+//     return t("You may link to webpages <a href=\"%long-tip\">through the videos registry</a>", array("%long-tip" => url("filter/tips", NULL, 'video')));
+//   }
+// }
+/********************************************************************
+ * Block display functions
+ ********************************************************************/
+
+function video_block($op = "list", $delta = 0) {
+  if ($op == "list") {
+    return array(
+      0 => array('info' => t("Top videos")),
+      1 => array('info' => t("Latest videos")),
+    );
+  }
+  elseif ($op == 'view') {
+    switch ($delta) {
+      case 0:
+        return array(
+          'subject' => t("Top videos"),
+          'content' => video_block_list('top')
+        );
+      case 1:
+        return array(
+          'subject' => t("Latest videos"),
+          'content' => video_block_list('new')
+        );
+    }
+  }
+}
+
+// function video_block($op = "list", $delta = 0) {
+//   if ($op == "list") {
+//     return array(
+//       0 => array('info' => t("Top videos")),
+//       1 => array('info' => t("Latest videos")),
+//       2 => array('info' => t("Monitored videos")),
+//       3 => array('info' => t("Latest blogmarks"))
+//     );
+//   }
+//   else {
+//     $count = variable_get("video_block_count",10);
+//     switch ($delta) {
+//       case 0:
+//         return array(
+//           'subject' => t("Top videos"),
+//           'content' => video_block_list('top', $count)
+//         );
+//       case 1:
+//         return array(
+//           'subject' => t("Latest videos"),
+//           'content' => video_block_list('new', $count)
+//         );
+//       case 2:
+//         if (variable_get('video_monitoring', 0)) {
+//           return array(
+//             'subject' => t("Monitored videos"),
+//             'content' => video_monitor_list($count) ."<div style=\"text-align: right;\">". l(t("more"), "video/monitor", array("title" => t("Monitor external videos."))) ."</div>"
+//           );
+//         }
+//       case 3:
+//         if (($tid = variable_get("video_blogmarks_term", ""))) {
+//           return array(
+//             'subject' => t("Latest blogmarks"),
+//             'content' => video_block_blogmarks($tid, $count)
+//           );
+//         }
+//     }
+//   }
+// }  
+
+function video_block_list($type = 'top') {
+  $orderby = ($type == 'new') ?  'n.created' : 'v.clicks';
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER by $orderby DESC"),0, 10));
+}
+
+/*
+function video_block_list($type = 'top', $limit = 10) {
+  $orderby = ($type == 'new') ?  'n.created' : 'w.click';
+
+  $result = db_query_range("SELECT n.nid, n.title, n.status, n.moderate, w.video, w.click FROM {node} n LEFT JOIN {video} w on n.nid = w.nid ". node_access_join_sql() ." WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0  AND ". node_access_where_sql() ."ORDER by $orderby DESC", 0, $limit);
+  
+  $links = array();
+  while ($node = db_fetch_object($result)) {
+    $links[] = $node;
+  }
+  return theme("video_list", $links);
+}*/
+
+
+/********************************************************************
+ * Weblink monitoring functions
+ ********************************************************************/
+/*
+function video_cron() {
+  if (variable_get('video_monitoring', 0)) {
+    $result = db_query("SELECT * FROM {video} WHERE monitor = 1 AND (checked = 0 OR checked + refresh < %d) ORDER by change_stamp ASC", time());
+
+    while ($site = db_fetch_object($result)) {
+      video_monitor($site);
+    }
+  }
+}*/
+
+/*
+function video_monitor($site) {
+
+  // Load the associated node record
+  $node = node_load(array("nid" => $site->nid));
+
+  /*
+  ** Check whether the site is properly configured:
+  *
+
+  $url = "";
+  if (!ereg("^http://|https://|ftp://", $node->video)) {
+    watchdog("warning", t("video") . ": " . t("invalid or missing URL for '%node'", array("%node" => $node->title)), l(t('edit site'), 'node/' . $node->nid . '/edit'));
+  } else {
+    $url = $node->video;
+  }
+
+  if (!ereg("^http://|https://|ftp://", $node->feed) && !$url) {
+    watchdog("warning", t("video") . ": " . t("invalid or missing URL to monitor for '%node'", array("%node" => $node->title)), l(t('edit site'), 'node/' . $node->nid . '/edit'));
+  } else {
+    // Overwrite previously set link
+    $url = $node->video;
+  }
+
+  /*
+  ** Grab the page and update the database if required:
+  *
+
+  $success = true;
+
+  // Use curl if we can - take from neighbour module
+  if (function_exists("curl_version")) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HEADER, 1);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $data = curl_exec($ch);
+    if (!$data) {
+      $success = false;
+    }
+  } else {
+    if ($fp = @fopen($node->video, "r")) {
+      while (!feof($fp)) {
+	$data .= fgets($fp, 128);
+      }      
+      fclose($fp);
+    } else {
+      $success = false;
+    }
+  }
+
+  if ($success) {
+    if (abs($node->size - strlen($data)) >= $node->threshold) {
+      db_query("UPDATE {video} SET size = %d, change_stamp = %d, checked = %d WHERE nid = '%d'", strlen($data), time(), time(), $node->nid);
+      // module_invoke_all("website_change", $data);
+    }
+    else {
+      db_query("UPDATE {video} SET checked = %d WHERE nid = '%d'", time(), $node->nid);
+    }
+  }
+  else {
+    watchdog("warning", t("video") . ": " . t("failed to syndicate from '%node'", array("%node" => $node->title)) . ($errstr ? ": $errstr" : ""));
+  }
+}*/
+/*
+function video_monitor_list($limit = 10) {
+  global $user;
+
+  $result = db_query_range("SELECT * FROM {video} n ". node_access_join_sql() ." WHERE change_stamp > ". (time() - 604800) ." AND ". node_access_where_sql()." ORDER BY change_stamp DESC", 0, $limit);
+
+  $hour = -1;
+  $list = -1;
+  $inlist = FALSE;
+  $output .= "<div class=\"item-list\">";
+  while ($video = db_fetch_object($result)) {
+    $node = node_load(array("nid" => $video->nid));
+    if ($hour != floor((time() - $node->change_stamp) / 3600)) {
+      $hour = floor((time() - $node->change_stamp) / 3600);
+      if ($hour < 12) {
+        if ($inlist) {
+          $output .= "</ul>";
+          $inlist = FALSE;
+        }
+        if ($hour == 0) {
+          $output .= t("Updated less than one hour ago") . ":";
+        }
+        else {
+          $output .= format_plural($hour, "Updated an hour ago", "Updated %count hours ago") . ":";
+        }
+      }
+      else if ($list) {
+        if ($inlist) {
+          $output .= "</ul>";
+          $inlist = FALSE;
+        }
+        $output .= format_plural($hour, "Updated more than an hour ago", "Updated more than %count hours ago") . ":";
+        $list = 0;
+      }
+    }
+    if (!$inlist) {
+      $output .= "<ul>";
+      $inlist = TRUE;
+    }
+    $output .= "<li>" . l($node->title, "video/goto/$node->nid", _video_attributes($node)) . "</li>";
+  }
+  if ($inlist) {
+    $output .= "</ul>";
+  }
+  $output .= "</div>";
+  return $output;
+}*/
+
+/********************************************************************
+ * Theme subsystem functions
+ ********************************************************************/
+
+/**
+  @addtogroup themeable
+  @{
+**/
+
+/**
+ Prints the video index page
+
+ @param categories
+**/
+/*
+function theme_video_page_default($categories) {
+	//print_r($categories); die();
+  $output = "<table width=\"100%\" cellspacing=\"10\">";
+  foreach ($categories as $term_id => $category) {
+    if ($count % 3 == 0) {
+      $output .= "<tr>";
+    }
+		if($category->link_count != 0){
+    $output .= "<td width=\"33%\" valign=\"top\">";
+		
+		
+			$output .= "<div class=\"video-term\">". l($category->name, "video/view/$term_id") . "</div>";
+			$output .= " (". $category->link_count .")";
+		
+		
+    if ($category->subterms) {
+      foreach ($category->subterms as $subtid => $subterm) {
+        $t[] = l($subterm, "video/view/$subtid");
+        unset($subterm);
+      }
+      $output .= "<div class=\"video-subterm\">" . implode(", ", $t) . "</div>";
+      unset($t);
+    }
+    $output .= "</td>";
+
+    if ($count % 3 == 2) {
+      $output .= "</tr>";
+    }
+		}
+    $count++;
+  }
+  $output .= "</table>";
+  $output .= "<br />";
+  if (user_access("create videos")) {
+    $output .= "<div class=\"links\">" . l(t("create video"), "node/add/video", array("title" => t("add a new video"))) . "</div>";
+  }
+
+  print theme("page", $output, t("Moves directory"));
+}*/
+
+/**
+ Prints the video monitored links page
+
+ @param content
+**/
+/*
+function theme_video_page_monitored($content) {
+  print theme("page", $content, t("Monitored Weblinks"));
+}*/
+
+/**
+ Prints a video category page
+
+ @param tid
+ @param vid
+ @param parents
+ @param children
+ @param related
+ @param links
+**/
+/*
+function theme_video_page_view($tid, $vid, $parents, $children, $related, $links) {
+
+  $page_term = taxonomy_get_term($tid);
+ 
+  $vocab = taxonomy_get_vocabulary($page_term->vid);
+  
+  $title = t("Browsing %term", array("%term" => $page_term->name));
+//   $output = t("Return to %vocabulary", array("%vocabulary" => l($vocab->name, "video", array("title" => t("Return to the links directory")))));
+  //$output = "<br />";
+  $output = "";
+
+  // Now see if we have any parents
+  foreach ($parents as $parent) {
+    $output .= t("Go to parent category %name", array("%name" => l(drupal_specialchars($parent->name), "video/view/$parent->tid/$parent->vid", array("title" => t("Go to parent category %description", array("%description" => $parent->description))))));
+    $output .= "<br />";
+  }
+
+  // Now see if we have any children
+  if ($children) {
+    $output .= t("Subcategories") .":<br />";
+    foreach ($children as $child) {
+      $output .= "&nbsp;&nbsp;&nbsp;&nbsp;";    // hey, even Google users blanks to format!
+      $output .= l(drupal_specialchars($child->name), "video/view/$child->tid/$parent->vid", array("title" => t("Go to category %description", array("%description" => $child->description))));
+      $output .= " (". $child->link_count .")<br />";
+    }
+  }
+
+  // Now see if we have any relations
+  foreach ($related as $related) {
+    $output .= t("Go to related category %name", array("%name" => l(drupal_specialchars($related->name), "video/view/$related->tid/$related->vid", array("title" => t("Go to related category %description", array("%description" => $related->description))))));
+    $output .= "<br />";
+  }
+  
+  $output .= "<hr />";  //<dl>"; 
+	$output .= "<div id=\"tablezone\">";
+  foreach ($links as $node) {
+    $output .= theme("video_node_short" , $node);
+  }
+
+	// $output .= "</dl>"; 
+  $output .= "</div>";
+
+  if (user_access("create videos")) {
+    $output .= "<div class=\"links\">" . l(t("create video"), "node/add/video", array("title" => t("add a new video"))) . "</div>";
+  }
+
+  if ($video_pager_term = variable_get("video_pager_term", 0)) {
+    $output .= theme("pager", NULL, $video_pager_term);
+  }
+  print theme("page", $output, $title);
+}*/
+
+/**
+ Returns a short video item display
+
+ @param node
+**/
+/*
+function theme_video_node_short($node) {
+  global $user;
+	$output .= "<table width=\"100%\" border=\"1\" cellpadding=\"5\" cellspacing=\"0\" summary=\"Table For Representing VideoClip Informations\" class=\"video\">\n";
+//   $output .= "	<caption>".l($node->title, "video/goto/$node->nid", _video_attributes($node));
+// 	if (user_access("administer nodes")) {
+//     $output .=  " (" . l(t("administer"), 'node/' . $node->nid . '/edit', array("title" => t("Administer this node."))). ")";  
+//   }
+// 	$output .= "</caption>\n";
+  $output .= "		<tr>\n";
+  $output .= "			<td colspan=\"2\" rowspan=\"3\">\n";
+	$img = theme_image($node->image, $node->title, $node->title, "name=\"image\" width=\"111\" height=\"84\" border=\"0\"", false);
+	$output .= l($img, "node/$node->nid/play", _video_attributes($node), NULL, NULL, FALSE, TRUE);
+	//With out theme_image function:
+	//$output .= l("<img src=\"".$node->image."\" alt=\"".$node->title."\" name=\"image\" width=\"111\" height=\"84\" border=\"0\">", "video/goto/$node->nid", _video_attributes($node));
+	$output .= "\n</td>
+          <td width=\"8%\"><b>".t("Rider").":</b></td>
+          <td width=\"36%\">".$node->rider."</td>
+          <td width=\"8%\"><b>".t("Spot").":</b></td>
+          <td width=\"33%\">".$node->spot."</td>
+        </tr>
+        <tr>
+          <td><b>".t("Trick").":</b></td>
+          <td>".$node->move."</td>
+          <td><b>".t("Downloads").":</b></td>
+          <td>".$node->clicks."</td>
+        </tr>
+        <tr>
+          <td height=\"27\"><b>".t("Size").":</b></td>
+          <td height=\"27\">".$node->size." (".$node->videox."x".$node->videoy.")</td>
+          <td colspan=\"2\">".l(t("Play"), "node/$node->nid/play", array("title" => t("Play")." ".$node->title." ".t("move.")));
+  //print download link
+	$output .= " - " . l(t("Download"), "video/goto/$node->nid", array("title" => t("Download")." ".$node->title." ".t("move.")));
+	//print details link
+	$output .= " - " . l(t("Details"), "node/$node->nid", array("title" => t("View").$node->title." ".t("move.")));
+	
+	$output .= "</td>
+        </tr>
+      </table>";
+  
+	return $output;
+}*/
+
+/**
+ Returns a list of videos
+
+ @param links
+**//*
+function theme_video_list($links) {
+  if (is_array($links) && (count($links) > 0)) {
+    foreach ($links as $node) {
+      $items[] = l($node->title, "video/goto/$node->nid", _video_attributes($node));
+    }
+    return theme("item_list", $items);
+  }
+}*/
+
+/** @} End of addtogroup themeable */
+
+/********************************************************************
+ * Internal functions
+ ********************************************************************/
+/*
+function _video_attributes($node, $titleattrib = 'title') {
+  global $user;
+  if (!$user->uid || !variable_get('video_target_user', 0)) {
+    $blank = variable_get('video_target_default', 0);
+  }
+  else {
+    $blank = $user->video_new;
+  }
+  return ($blank ? array("title" => $node->$titleattrib, "target" => "_blank") : array("title" => $node->$titleattrib));
+}*/
+/*
+function _video_get_structure($tid = 0) {
+  // this structure is a good candidate for caching
+  $categories = taxonomy_get_children($tid, variable_get("video_nav_vocabulary", ""));
+  $tree = taxonomy_get_tree(variable_get("video_nav_vocabulary", ""));
+  
+  foreach (array_keys($categories) as $term_id) {
+    $terms = array();
+    $children = taxonomy_get_tree(variable_get("video_nav_vocabulary", ""), $term_id, 1);
+    $terms[] = $term_id;
+    foreach ($children as $term) {
+      $terms[] = $term->tid;
+      $categories[$term_id]->subterms[$term->tid] = $term->name;
+    }
+    $result = db_query("SELECT COUNT(*) AS c FROM {term_node} t, {node} n ". node_access_join_sql() ." WHERE t.nid = n.nid AND tid IN (". implode(",", $terms) .") AND n.type = 'video' AND n.status = 1 AND n.moderate = 0 AND ". node_access_where_sql());
+    while ($term = db_fetch_object($result)) {
+      $categories[$term_id]->link_count = $term->c;
+    }
+  }
+  
+  return $categories ? $categories : array();
+}*/
+/*
+function _video_get_links($tid) {
+  $SQL = "SELECT n.nid, n.title, n.teaser, n.status, n.moderate, w.* FROM {node} n, {term_node} t, {video} w ". node_access_join_sql() ." WHERE t.nid = n.nid AND n.nid = w.nid AND tid = %d AND n.type='video' AND n.status = 1 AND n.moderate = 0 AND ". node_access_where_sql()." ORDER BY n.created DESC";
+  if ($video_pager_term = variable_get("video_pager_term", 0)) {
+    $result = pager_query(sprintf($SQL, $tid), $video_pager_term);
+  }
+  else {
+    $result = db_query($SQL, $tid);
+  }
+
+  $links = array();
+  while ($node = db_fetch_object($result)) {
+    $links[] = $node;
+  }
+  
+  return $links;
+}*/
+
+function _video_page_goto($id, $type = 'video') {
+	global $base_url;
+	if (in_array($type, array("video", "feed"))) {
+		// DRUPAL 4.5 --> $result = db_query("SELECT n.nid, n.vidfile FROM {video} n ". node_access_join_sql() ." WHERE n.nid = '%d' AND  ". node_access_where_sql(), $id);
+		$result = db_query(db_rewrite_sql("SELECT n.nid, n.vidfile FROM {video} n WHERE n.nid = '%d'"), $id);
+//printf("SELECT n.nid, n.vidfile FROM {video} n ". node_access_join_sql() ." WHERE n.nid = '%d' AND  ". node_access_where_sql(), $id);
+		//print("SELECT n.nid, n.vidfile FROM {video} n ". node_access_join_sql() ." WHERE n.nid = '%d' AND  ". node_access_where_sql());
+		$wl = db_fetch_object($result);
+//print_r($wl);
+$type = "vidfile";
+		if ($wl->$type!='')   {
+       db_query("UPDATE {video} SET clicks = clicks + 1 where nid = '%d'", $id);
+       //printf("UPDATE {video} SET clicks = clicks + 1 where nid = '%d'", $id);
+       // Didn't this use to work?
+       header("HTTP/1.0 301 Moved Permanently");
+    }
+    //print($base_url."/".$wl->$type);
+		header("Location: " . $base_url."/".$wl->$type);
+    //drupal_goto($wl->$type);
+		print("ciao");
+  }
+}
+
+/*
+function video_view(&$node, $main = 0, $page = 0) {
+  $node = theme("video_content", $node, $main);
+  return theme('node', $node, $main, $page);
+}*/
+
+function video_download() {
+	 if ($node = node_load(array('nid' => arg(1)))) {
+    _video_page_goto($node->nid);
+  }
+  else {
+    drupal_not_found();
+  }
+}
+
+/**
+Implements play callback function from node menu
+*/
+function video_play() {
+	 if ($node = node_load(array('nid' => arg(1)))) {
+    print theme('video_play', $node, $node->title);
+		//theme('page', $node, $node->title);
+  }
+  else {
+    drupal_not_found();
+  }
+}
+
+/**
+Themeable functions for playing videos.
+It prints a page with a quicktime player inside
+linked to the file record of the node.
+*/
+function theme_video_play($node, $main = 0)
+{
+	//print_r($node);
+	//print(url("video/goto/$node->nid")); die();
+	$output = "\n<div id=\"video-player\">\n";
+	$output .= '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="330" height="250" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">          
+                <param name="SRC" value="'.url("video/goto/$node->nid").'" />
+                <param name="AUTOPLAY" value="true" />
+                <param name="KIOSKMODE" value="false" />
+                  <embed src="'.url("video/goto/$node->nid").'" width="'.$node->videox.'" height="'.$node->videoy.'" scale="tofit" autoplay="true" kioskmode="false" pluginspage="http://www.apple.com/quicktime/download/">
+                  </embed>
+             </object>
+						 <p> ';
+	$output .= t("Problems viewing videos?")."<br />";
+	$output .= t("Download latest Quicktime Player")." ";
+	$output .= '<a href="http://www.apple.com/quicktime/download" title="Link to QuickTime Downoad Page">'.t("here").'</a>';
+	//l($text, $path, $attributes = array(), $query = NULL, $fragment = NULL, $absolute = FALSE)
+	$output .= "</p> \n </div>\n";
+	//node_prepare($node, $main);
+	//$node->body = $output;
+	//return node_prepare($node, $main);
+	//print $output;
+	return theme("page", $output, t("Playing")." ".$node->title);
+}
+
+function theme_video_content($node, $main = 0) {
+  $output = "<div id=\"tablezone\">\n";
+	$output .= theme_video_node_short($node);
+  $output .= "</div>\n";
+  $node->body = $output;
+	return $node;
+}
+
+?>
