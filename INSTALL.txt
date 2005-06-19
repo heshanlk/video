@@ -1,0 +1,10 @@
+INSTALL INSTRUCTIONS FOR VIDEO.MODULE
+----
+
+1-Create database table using video.mysql file
+2-Login as site administrator
+3-Activate video.module as usual (administer->modules)
+4-(optional) Activate video.module blocks (administer->blocks)
+
+
+
