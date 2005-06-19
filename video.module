@@ -136,21 +136,11 @@ function video_form(&$node, &$param) {
 
 function video_insert($node) {
 	
-	//print_r($_FILES);
-	//print("FUCK");
-	//file_save_upload($_FILES['edit']['tmp_name'], '/home/fabio/public_html/adrenalinteam.it/videos/'. $_FILES['userfile']['name'], true);
-	//move_uploaded_file ($_FILES['edit']['tmp_name'], );
-	//print_r(file_check_upload($node));
-	//die();
    db_query("INSERT INTO {video} (nid, vidfile, size, videox, videoy) VALUES ('%d', '%s', '%s', '%d', '%d')",
 	$node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy);
 }
 
 function video_update($node) {
-//print_r($node);// die();
-	//printf("UPDATE {video} (nid, rider, image, vidfile, spot, move, size, videox, videoy) VALUES (%d, '%s', '%s','%s','%s','%s','%s', %d, %d)",
-	//$node->nid, $node->rider, $node->image, $node->vidfile, $node->spot, $node->move,  $node->size, $node->videox, $node->videoy); die();
-	//printf("UPDATE {video} SET rider = '%s', image = '%s', vidfile = '%s', spot = '%s', move = '%s', size = '%d', videox = '%d', videoy = '%d' WHERE nid = '%d'", $node->rider, $node->image, $node->vidfile, $node->spot, $node->move, $node->size, $node->videox, $node->videoy, $node->nid); die();
 	db_query("UPDATE {video} SET vidfile = '%s', size = '%s', videox = '%d', videoy = '%d' WHERE nid = '%d'", $node->vidfile, $node->size, $node->videox, $node->videoy, $node->nid);
 }
 
@@ -210,22 +200,15 @@ function video_block_list($type = 'top') {
 function _video_page_goto($id, $type = 'video') {
 	global $base_url;
 	if (in_array($type, array("video", "feed"))) {
-		// DRUPAL 4.5 --> $result = db_query("SELECT n.nid, n.vidfile FROM {video} n ". node_access_join_sql() ." WHERE n.nid = '%d' AND  ". node_access_where_sql(), $id);
 		$result = db_query(db_rewrite_sql("SELECT n.nid, n.vidfile FROM {video} n WHERE n.nid = '%d'"), $id);
-//printf("SELECT n.nid, n.vidfile FROM {video} n ". node_access_join_sql() ." WHERE n.nid = '%d' AND  ". node_access_where_sql(), $id);
-		//print("SELECT n.nid, n.vidfile FROM {video} n ". node_access_join_sql() ." WHERE n.nid = '%d' AND  ". node_access_where_sql());
 		$wl = db_fetch_object($result);
-//print_r($wl);
 $type = "vidfile";
 		if ($wl->$type!='')   {
        db_query("UPDATE {video} SET clicks = clicks + 1 where nid = '%d'", $id);
-       //printf("UPDATE {video} SET clicks = clicks + 1 where nid = '%d'", $id);
        // Didn't this use to work?
        header("HTTP/1.0 301 Moved Permanently");
     }
-    //print($base_url."/".$wl->$type);
 		header("Location: " . $base_url."/".$wl->$type);
-    //drupal_goto($wl->$type);
 		print("ciao");
   }
 }
@@ -246,7 +229,6 @@ Implements play callback function from node menu
 function video_play() {
 	 if ($node = node_load(array('nid' => arg(1)))) {
     print theme('video_play', $node, $node->title);
-		//theme('page', $node, $node->title);
   }
   else {
     drupal_not_found();
@@ -260,8 +242,6 @@ linked to the file record of the node.
 */
 function theme_video_play($node, $main = 0)
 {
-	//print_r($node);
-	//print(url("video/goto/$node->nid")); die();
 	$output = "\n<div id=\"video-player\">\n";
 	$output .= '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="330" height="250" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">          
                 <param name="SRC" value="'.url("video/goto/$node->nid").'" />
@@ -274,12 +254,7 @@ function theme_video_play($node, $main = 0)
 	$output .= t("Problems viewing videos?")."<br />";
 	$output .= t("Download latest Quicktime Player")." ";
 	$output .= '<a href="http://www.apple.com/quicktime/download" title="Link to QuickTime Downoad Page">'.t("here").'</a>';
-	//l($text, $path, $attributes = array(), $query = NULL, $fragment = NULL, $absolute = FALSE)
 	$output .= "</p> \n </div>\n";
-	//node_prepare($node, $main);
-	//$node->body = $output;
-	//return node_prepare($node, $main);
-	//print $output;
 	return theme("page", $output, t("Playing")." ".$node->title);
 }
 
