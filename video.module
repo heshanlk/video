@@ -208,8 +208,7 @@ $type = "vidfile";
        // Didn't this use to work?
        header("HTTP/1.0 301 Moved Permanently");
     }
-		header("Location: " . $base_url."/".$wl->$type);
-		print("ciao");
+		header("Location: ".$wl->$type);
   }
 }
 
