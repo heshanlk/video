@@ -192,7 +192,7 @@ function video_block($op = "list", $delta = 0) {
 
 function video_block_list($type = 'top') {
   $orderby = ($type == 'new') ?  'n.created' : 'v.clicks';
-  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER by $orderby DESC"),0, 10));
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT DISTINCT (n.nid) , n.title FROM {node} n INNER JOIN  {video} v WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER by $orderby DESC"),0, 10));
 }
 
 
@@ -257,12 +257,5 @@ function theme_video_play($node, $main = 0)
 	return theme("page", $output, t("Playing")." ".$node->title);
 }
 
-function theme_video_content($node, $main = 0) {
-  $output = "<div id=\"tablezone\">\n";
-	$output .= theme_video_node_short($node);
-  $output .= "</div>\n";
-  $node->body = $output;
-	return $node;
-}
 
 ?>
