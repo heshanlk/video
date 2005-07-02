@@ -125,7 +125,7 @@ function video_menu($may_cache) {
 function video_link($type, $node = NULL) {
   $links = array();
   // Node links for a video
-  if ($type == 'node' && $node->type == 'video' && $node->vidfile) {
+  if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
     $display_play_link     = variable_get('video_displayplaylink', 1);
     $display_download_link = variable_get('video_displaydownloadlink', 1);
     $display_playtime      = variable_get('video_displayplaytime', 1);
@@ -549,18 +549,19 @@ function video_download() {
  */
 function video_play() {
   if ($node = node_load(array('nid' => arg(1)))) {
+    drupal_set_title(t('playing').' '.$node->title);
     switch (_video_get_filetype($node->nid)) {
       case 'mov':
-        print theme('video_play_quicktime', $node, $node->title);
+        print theme('video_play_quicktime', $node);
         break;
       case 'rm':
-        print theme('video_play_realmedia', $node, $node->title);
+        print theme('video_play_realmedia', $node);
         break;
       case 'flv':
-        print theme('video_play_flash', $node, $node->title);
+        print theme('video_play_flash', $node);
         break;
       case 'wmv':
-        print theme('video_play_windowsmedia', $node, $node->title);
+        print theme('video_play_windowsmedia', $node);
         break;
       default:
         drupal_set_message('Video type not supported', 'error');
@@ -603,7 +604,7 @@ function theme_video_play_flash(&$node) {
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'),
                                       t('Link to Macromedia Flash Player Download Page'),
                                       t('Download latest Flash Player'));
-  return theme('page', $output, t('Playing').' '.$node->title);
+   return theme('page', $output);
 }
 
 /**
@@ -626,7 +627,7 @@ function theme_video_play_quicktime(&$node) {
   $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
                                       t('Link to QuickTime Download Page'),
                                       t('Download latest Quicktime Player'));
-  return theme('page', $output, t('Playing').' '.$node->title);
+  return theme('page', $output);
 }
 
 /**
@@ -662,7 +663,7 @@ function theme_video_play_realmedia(&$node) {
   $output = _theme_video_format_play($output, t('http://www.real.com/'),
                                       t('Link to Real'),
                                       t('Download latest Realmedia Player'));
-  return theme('page', $output, t('Playing').' '.$node->title);
+  return theme('page', $output);
 }
 
 /**
@@ -699,7 +700,7 @@ function theme_video_play_windowsmedia($node) {
   $output = _theme_video_format_play($output, t('http://windowsupdate.microsoft.com/'),
                                       t('Link to Windows Update'),
                                       t('Download latest Windows Media Player'));
-  return theme('page', $output, t('Playing').' '.$node->title);
+  return theme('page', $output);
 }
 
 /**
