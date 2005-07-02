@@ -2,219 +2,541 @@
 /* $Id$ */
 
 /**
+ * @file
+ * Display video in Quicktime MOV, Realmedia RM, Flash FLV,
+ * or Windows Media WMV formats.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * @author David Norman <deekayen at: deekayen (dot) net>
+ *
+ * Database definition:
+ * @code
 
-Created by Fabio Varesano on June 2005.
-Please, send bug reports, feature requests, or other comments to me:
-Fabio Varesano   fvaresano at yahoo dot it
-
-Database definition:
-@code
-  CREATE TABLE video (
-    nid int(10) unsigned NOT NULL default '0',
-    vidfile text NOT NULL default '',
-    videox int(4) NOT NULL default '',
-    videoy int(4) NOT NULL default '',
-    size varchar(30) NOT NULL default '',
-    clicks int(10) unsigned NOT NULL default '0',
-    PRIMARY KEY  (nid)
-  )
-@endcode
-
-
-*/
+CREATE TABLE video (
+  nid int(10) unsigned NOT NULL default '0',
+  vidfile text NOT NULL,
+  videox smallint(4) NOT NULL default '0',
+  videoy smallint(4) NOT NULL default '0',
+  size bigint(13) default NULL,
+  clicks int(10) unsigned NOT NULL default '0',
+  video_bitrate int(11) default NULL,
+  audio_bitrate int(11) default NULL,
+  audio_sampling_rate int(11) default NULL,
+  audio_channels enum('','stereo','mono') default NULL,  
+  playtime_seconds int(11) default NULL,
+  PRIMARY KEY  (nid)
+) TYPE=MyISAM COMMENT='size is in bytes';
+ 
+ * @endcode 
+ */
 
 /********************************************************************
  * General Hooks
  ********************************************************************/
 
-function video_help($section = "admin/help#video") {
+/**
+ * Help hook
+ *
+ * @param $section
+ *   string of the area of Drupal where help was requested
+ *
+ * @return
+ *   string of help information
+ */
+function video_help($section = 'admin/help#video') {
   switch ($section) {
-    case "admin/help#video":
-      return t("<p>The videos module is used to insert into drupal Quick Time videos as nodes.</p>");
-    case "admin/modules#description":
-      return t("Allows QuickTime videos nodes.");
+    case 'admin/help#video':
+      return t('<p>The video module is used to insert videos as nodes.</p>');
+    case 'admin/modules#description':
+      return t('Allows video nodes.');
     case 'node/add#video':
-      return t("Video allow you to insert QuickTime videos as nodes");
+      return t('Video allow you to insert videos as nodes');
       break;
   }
 }
 
-
 /**
  * Implementation of hook_menu().
+ *
+ * @param $may_cache
+ *   boolean indicating whether cacheable menu items should be returned
+ *
+ * @return
+ *   array of menu information
  */
-function video_menu() {
+function video_menu($may_cache) {
   global $user;
-  //if ($may_cache) {
+
+  if ($may_cache) {
+    $items[] = array('path' => 'video', 'title' => t('videos'),
+      'callback' => 'video_page',
+      'access' => user_access('access video'),
+      'type' => MENU_SUGGESTED_ITEM);    
     $items[] = array(
       'path' => 'node/add/video',
       'title' => t('video'),
-      'access' => user_access('create videos'));
+      'access' => user_access('create video'));
+    // I don't get this whole goto thing - deekayen
     $items[] = array(
       'path' => 'video/goto',
       'callback' => '_video_page_goto',
       'type' => MENU_CALLBACK,
       'callback arguments' => arg(3),
-      'access' => user_access('access content'));
-    //}
+      'access' => user_access('access video'));
+  }
 
   if (arg(0) == 'node' && is_numeric(arg(1))) {
     $node = node_load(array('nid' => arg(1)));
 
     if ($node->type == 'video') {
-      $items[] = array('path' => 'node/'. arg(1) .'/play',
-        'title' => t('play'),
-        'callback' => 'video_play',
-        'access' => user_access('access content'),
-        'weight' => 3,
-        'type' => MENU_LOCAL_TASK);
-      $items[] = array('path' => 'node/'.arg(1).'/download',
-        'title' => t('download'),
-        'callback' => 'video_download',
-        'access' => user_access('access content'),
-        'weight' => 5,
-        'type' => MENU_LOCAL_TASK);
+      if (variable_get('video_displayplaymenutab', 1) == 1) {
+        $items[] = array('path' => 'node/'. arg(1) .'/play',
+          'title' => t('play'),
+          'callback' => 'video_play',
+          'access' => user_access('access video'),
+          'weight' => 3,
+          'type' => MENU_LOCAL_TASK);
+      }
+      if (variable_get('video_displaydownloadmenutab', 1) == 1) {
+        $items[] = array('path' => 'node/'.arg(1).'/download',
+          'title' => t('download'),
+          'callback' => 'video_download',
+          'access' => user_access('access video'),
+          'weight' => 5,
+          'type' => MENU_LOCAL_TASK);
+      }
     }
   }
   return $items;
 }
 
-function video_link($type, $node = 0, $main = 0) {
+/**
+ * Internal Drupal links hook
+ *
+ * @param $type
+ *   string type of link to show
+ *
+ * @param $node
+ *   object of node information
+ *
+ * @return
+ *   array of link information
+ */
+function video_link($type, $node = NULL) {
   $links = array();
   // Node links for a video
   if ($type == 'node' && $node->type == 'video' && $node->vidfile) {
-    $links[] = l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))))." ". t("or"). " ".
-               l(t('download'), "video/goto/$node->nid", array('class' => 'outgoing', 'title' => t('visit %link', array('%link' => $node->title)))) ." ".$node->title. (user_access("access statistics") ? " ({$node->clicks})" : "");
+    $display_play_link     = variable_get('video_displayplaylink', 1);
+    $display_download_link = variable_get('video_displaydownloadlink', 1);
+    $display_playtime      = variable_get('video_displayplaytime', 1);
+    $display_filesize      = variable_get('video_displayfilesize', 1);
+
+    $link = '';
+    if ($display_play_link == 1) {
+      $link .= l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))))  .' ';
+      $link .= ($display_download_link == 1 || $display_filesize == 1 || $display_playtime == 1) ? ' ' : '';
+      $link .= ($display_download_link == 1) ? t('or'). ' ' : '';
+    }
+    if ($display_download_link == 1) {
+      $link .= l(t('download'), "node/$node->nid/download", array('class' => 'outgoing', 'title' => t('visit %link', array('%link' => $node->title))));
+      $link .= ($display_filesize == 1 || $display_playtime == 1) ? ' ' : '';
+    }
+    if ($display_playtime == 1) {
+      $link .= format_interval($node->playtime_seconds);
+      $link .= ($display_filesize == 1) ? ' | ' : '';
+    }
+    if ($display_filesize) {
+      $link .= format_size($node->size);
+    }
+    if ($link !== '') {
+      $links[] = $link . (user_access('access statistics') ? " ({$node->clicks})" : '');
+    }
+    else {
+      $links[] = (user_access('access statistics') ? " ({$node->clicks})" : '');
+    }
   }
   return $links;
 }
 
+/**
+ * Displays a Drupal page containing recently added videos
+ *
+ * @return
+ *   string HTML output
+ */
+function video_page() {
+  global $user;
+
+  $output = '';
+
+  $result = pager_query(db_rewrite_sql("SELECT n.nid, n.created FROM {node} n WHERE n.type = 'video' AND n.status = 1 ORDER BY n.created DESC"), variable_get('default_nodes_main', 10));
+
+  while ($node = db_fetch_object($result)) {
+    $output .= node_view(node_load(array('nid' => $node->nid)), 1);
+  }
+  $output .= theme('pager', NULL, variable_get('default_nodes_main', 10));
+  print theme('page', $output);
+}
+
+/**
+ * Permissions hook
+ *
+ * @return
+ *   array of permissions
+ */
 function video_perm() {
-  return array('create videos');
+  return array('create video', 'access video', 'administer video');
 }
 
+/**
+ * Settings Hook
+ *
+ * @return
+ *   string of form content or error message
+ */
 function video_settings() {
-// put something good here
+  // only administrators can access this module
+  if (!user_access('administer video')) {
+    return message_access();
+  }
+  $output .= form_textfield(t('Location of Flash player skin'), 'video_flvplayerskin',
+             variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf'), 40, 200,
+             t('The location of the Shockwave skin for player controls on the Flash video. It should be a path relative to the Drupal root directory'));
+  $output .= form_textfield(t('Filename of Flash loader'), 'video_flvplayerloader',
+             variable_get('video_flvplayerloader', 'FLVPlayer_ProgressiveLoader.swf'), 40, 200,
+             t('The name of the Shockwave file that manages loading the FLV movie'));
+  $output .= form_radios(t('Display play menu tab'), 'video_displayplaymenutab',
+             variable_get('video_displayplaymenutab', 1), array(0 => 'No', 1 => 'Yes'),
+             t('Toggle display of menu link to play video from the node page'));
+  $output .= form_radios(t('Display download menu tab'), 'video_displaydownloadmenutab',
+             variable_get('video_displaydownloadmenutab', 1), array(0 => 'No', 1 => 'Yes'),
+             t('Toggle display of menu link to download video from the node page'));
+  $output .= form_radios(t('Display play link'), 'video_displayplaylink',
+             variable_get('video_displayplaylink', 1), array(0 => 'No', 1 => 'Yes'),
+             t('Toggle display of "play" link (below the node content in most themes)'));
+  $output .= form_radios(t('Display download link'), 'video_displaydownloadlink',
+             variable_get('video_displaydownloadlink', 1), array(0 => 'No', 1 => 'Yes'),
+             t('Toggle display of "download" link (below the node content in most themes)'));
+  $output .= form_radios(t('Display playtime'), 'video_displayplaytime',
+             variable_get('video_displayplaytime', 1), array(0 => 'No', 1 => 'Yes'),
+             t('Toggle the display of the playtime for a video'));
+  $output .= form_radios(t('Display filesize'), 'video_displayfilesize',
+             variable_get('video_displayfilesize', 1), array(0 => 'No', 1 => 'Yes'),
+             t('Toggle the display of the filesize for a video'));
+  return $output;
 }
-
 
 
 /********************************************************************
  * Node Hooks
  ********************************************************************/
 
-function video_node_name($node) {
-  return t("video");
+/**
+ * hook
+ *
+ * @return
+ *   string "video"
+ */
+function video_node_name() {
+  return t('video');
 }
 
+/**
+ * access hook
+ */
 function video_access($op, $node) {
   switch($op) {
     case 'view': 
       return $node->status;   // see book.module for reference
 
     case 'create':
-      return user_access("create videos");
+      return user_access('create video');
   }
 }
 
-function video_form(&$node, &$param) {
-  $output .= form_textfield(t("Video File"), "vidfile", $node->vidfile, 60, 65535, t("Put here the video file path. You can use both relative path (something/video.mov) or absolute (http://www.myvideo.com/videos/videos.mov).") . ($error['vidfile'] ? $error['vidfile'] : ''), NULL, TRUE);
+/**
+ * Hook
+ *
+ * @param $node
+ *   object
+ *
+ * @return
+ *   string value of form content
+ */
+function video_form(&$node) {
+  $output = '';
+  $output .= form_textfield(t('Video File'), 'vidfile', $node->vidfile, 60, 65535, t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.myvideo.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename.') . ($error['vidfile'] ? $error['vidfile'] : ''), NULL, TRUE);
+  $output .= form_textfield(t('Video Size x'), 'videox', $node->videox, 4, 4, t('Horizontal video pixel size.'), null, true);
+  $output .= form_textfield(t('Video Size y'), 'videoy', $node->videoy, 4, 4, t('Vertical video pixel size.'), null, true);
 
-  $output .= form_textfield(t('Video Size x'), 'videox', $node->videox, 4, 4, t("Horizontal video pixel size."), null, true);
-  $output .= form_textfield(t('Video Size y'), 'videoy', $node->videoy, 4, 4, t("Horizontal video pixel size."), null, true);
-  $output .= form_textfield(t('Size'), 'size', $node->size, 10, 30, t("Dimension of your video. Also provide size unit (KB or MB)."), null, true);
+  $group = form_textfield(t('Size'), 'size', $node->size, 12, 12, t('Integer size'), null, true);
+  $group .= form_select(NULL, 'size_format', 'B', array('B' => t('bytes'), 'Kb' => t('Kilobits'), 'KB' => t('KiloBytes'), 'Mb' => t('Megabits'), 'MB' => t('MegaBytes'), 'Gb' => t('Gigabits'), 'GB' => t('GigaBytes')), 'size units', null, null, true);
+  $output .= form_group(t('Filesize'), $group);
+
+  $playtime = _video_sec2hms($node->playtime_seconds);
+  
+  $group = form_textfield(t('Hours'), 'playtime_hours', $playtime['hours'], 11, 11, t('Integer of hours'), null, true);
+  $group .= form_textfield(t('Minutes'), 'playtime_minutes', $playtime['minutes'], 11, 11, t('Integer of minutes'), null, true);
+  $group .= form_textfield(t('Seconds'), 'playtime_seconds', $playtime['seconds'], 11, 11, t('Integer of seconds'), null, true);
+  $output .= form_group(t('Playtime'), $group, t('Values may be entered in excess of their normal "clock maximum" (the seconds field may be 3600 to represent 1 hour), however each value will be summed for a total of all three.'));
+
+  $group = form_textfield(t('Video Bitrate'), 'video_bitrate', ($node->video_bitrate == 0) ? '' : $node->video_bitrate, 11, 11, t('Integer value of video bitrate'));
+  $group .= form_textfield(t('Audio Bitrate'), 'audio_bitrate', ($node->audio_bitrate == 0) ? '' : $node->audio_bitrate, 11, 11, t('Integer value of audio bitrate'));
+  $group .= form_textfield(t('Audio Sampling Rate'), 'audio_sampling_rate', ($node->audio_sampling_rate == 0) ? '' : $node->audio_sampling_rate, 11, 11, t('Integer value of audio sampling rate in Hz'));
+  $group .= form_select(t('Audio Channels'), 'audio_channels', $node->audio_channels, array('' => '', 'stereo' => t('Stereo'), 'mono' => t('Mono')));
+  $output .= form_group(t('Optional Metadata'), $group, t('Metadata entered here will not be displayed. It is currently for administrative reference only.'));
 
   if (function_exists('taxonomy_node_form')) {
-     $output .= implode('', taxonomy_node_form('video', $node));
+    $output .= implode('', taxonomy_node_form('video', $node));
   }
 
-  $output .= form_textarea(t("Body"), "body", $node->body, 60, 20, t("Textual description of the video.") . ($error['body'] ? $error['body'] : ''));
+  $output .= form_textarea(t('Body'), 'body', $node->body, 60, 20, t('Textual description of the video.') . ($error['body'] ? $error['body'] : ''));
   $output .= filter_form('format', $node->format);
 
   return $output;
 }
 
-function video_insert($node) {
-	
-   db_query("INSERT INTO {video} (nid, vidfile, size, videox, videoy) VALUES ('%d', '%s', '%s', '%d', '%d')",
-	$node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy);
+/**
+ * Hook: Create video record in video table
+ *
+ * @return
+ *   TRUE on success, FALSE on error
+ */
+function video_insert(&$node) {
+  $node->size = _video_size2bytes($node);
+  $node->playtime_seconds += intval($node->playtime_hours * 3600) + intval($node->playtime_minutes * 60);
+  return db_query("INSERT INTO {video} (nid, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds) VALUES ('%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d')",
+	$node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds);
 }
 
-function video_update($node) {
-	db_query("UPDATE {video} SET vidfile = '%s', size = '%s', videox = '%d', videoy = '%d' WHERE nid = '%d'", $node->vidfile, $node->size, $node->videox, $node->videoy, $node->nid);
+/**
+ * Hook
+ *
+ * @return
+ *   TRUE on success, FALSE on error
+ */
+function video_update(&$node) {
+  $node->size = _video_size2bytes($node);
+  $node->playtime_seconds += intval($node->playtime_hours * 3600) + intval($node->playtime_minutes * 60);
+  return db_query("UPDATE {video} SET vidfile='%s', size='%d', videox='%d', videoy='%d', video_bitrate='%d', audio_bitrate='%d', audio_sampling_rate='%d', audio_channels='%s', playtime_seconds='%d' WHERE nid = '%d'",
+         $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->nid);
 }
 
+/**
+ * Hook
+ *
+ * @param $node
+ *   object
+ */
 function video_delete(&$node) {
   db_query("DELETE FROM {video} WHERE nid = '%s'", $node->nid);
   cache_clear_all("video:blogmarks:block");
 }
 
+/**
+ * Hook to see if a video exists already or not
+ *
+ * @param $node
+ *   object
+ */
 function video_validate(&$node) {
   $result = db_query("SELECT * from {video} WHERE vidfile = '%s' and nid <> '%d'", $node->vidfile, $node->nid);
   if (db_num_rows($result) > 0) {
     $video = db_fetch_object($result);
-    $othernode = node_load(array("nid" => $video->nid));
+    $othernode = node_load(array('nid' => $video->nid));
     form_set_error('video', t('A video %link-to-existing using that link already exists', array("%link-to-existing" => l($othernode->title, 'node/' . $othernode->nid . '/edit'))));
   }
 }
 
+/**
+ * Hook
+ *
+ * @param $node
+ *   object or boolean FALSE on error
+ */
 function video_load($node) {
-  return db_fetch_object(db_query("SELECT * FROM {video} WHERE nid = '%d'", $node->nid));
+  if (is_numeric($node->nid)) {
+    return db_fetch_object(db_query("SELECT * FROM {video} WHERE nid = '%d'", $node->nid));
+  }
+  else {
+    return false;
+  }
 }
 
 /********************************************************************
  * Block display functions
  ********************************************************************/
 
-function video_block($op = "list", $delta = 0) {
-  if ($op == "list") {
+/**
+ * Hook
+ *
+ * @param $op
+ *   string type of block
+ *
+ * @param $delta
+ *   integer 0 for most popular, 1 for most recently added
+ *
+ * @return 
+ *   array
+ */
+function video_block($op = 'list', $delta = 0) {
+  if ($op == 'list') {
     return array(
-      0 => array('info' => t("Top videos")),
-      1 => array('info' => t("Latest videos")),
+      0 => array('info' => t('Top videos')),
+      1 => array('info' => t('Latest videos')),
     );
   }
   elseif ($op == 'view') {
     switch ($delta) {
       case 0:
         return array(
-          'subject' => t("Top videos"),
+          'subject' => t('Top videos'),
           'content' => video_block_list('top')
         );
       case 1:
         return array(
-          'subject' => t("Latest videos"),
+          'subject' => t('Latest videos'),
           'content' => video_block_list('new')
         );
     }
   }
 }
 
-
+/**
+ * Query DB for block content
+ *
+ * @param $type
+ *   string 'top' for most popular, 'new' for most recently added
+ *
+ * @return
+ *   string HTML content for a block
+ */
 function video_block_list($type = 'top') {
-  $orderby = ($type == 'new') ?  'n.created' : 'v.clicks';
-  return node_title_list(db_query_range(db_rewrite_sql("SELECT DISTINCT (n.nid) , n.title FROM {node} n INNER JOIN  {video} v WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER by $orderby DESC"),0, 10));
+  $orderby = ($type == 'new') ? 'n.created' : 'v.clicks';
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT DISTINCT(n.nid), n.title FROM {node} n, {video} v WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER by $orderby DESC"),0, 10));
 }
 
-
-
-function _video_page_goto($id, $type = 'video') {
-	global $base_url;
-	if (in_array($type, array("video", "feed"))) {
-		$result = db_query(db_rewrite_sql("SELECT n.nid, n.vidfile FROM {video} n WHERE n.nid = '%d'"), $id);
-		$wl = db_fetch_object($result);
-$type = "vidfile";
-		if ($wl->$type!='')   {
-       db_query("UPDATE {video} SET clicks = clicks + 1 where nid = '%d'", $id);
-       // Didn't this use to work?
-       header("HTTP/1.0 301 Moved Permanently");
-    }
-		header("Location: ".$wl->$type);
+/**
+ * Pull the file extension from a filename
+ *
+ * @return
+ *   string value of file type or boolean FALSE on error
+ */
+function _video_get_filetype($nid) {
+  if (is_numeric($nid)) {
+    $vidfile = db_result(db_query("SELECT v.vidfile FROM {video} v WHERE v.nid = '%d'", $nid));
+    return substr($vidfile, strrpos($vidfile, '.') + 1);
+  }
+  else {
+    return false;
   }
 }
 
+/**
+ * Forward user directly to the file for downloading
+ *
+ * @param $id
+ *   integer node id
+ *
+ * @param $type
+ *   string type of file to go to. defaults to video.
+ *
+ * @return
+ *   boolean FALSE on error
+ */
+function _video_page_goto($id, $type = 'video') {
+  global $base_url;
+
+  if (in_array($type, array('video', 'feed')) && is_numeric($id)) {
+    $result = db_query(db_rewrite_sql("SELECT n.nid, n.vidfile FROM {video} n WHERE n.nid = '%d'"), $id);
+    $wl     = db_fetch_object($result);
+    $type   = 'vidfile';
+    if ($wl->$type != '')   {
+      db_query("UPDATE {video} SET clicks = clicks + 1 where nid = '%d'", $id);
+      // Didn't this use to work?
+      header("HTTP/1.0 301 Moved Permanently");
+    }
+    if (preg_match("/^(ht|f)tp(s?):\/\//", $wl->$type)) {
+      header('Location: ' . $wl->$type);
+    }
+    else {
+      header("Location: $base_url/" . $wl->$type);
+    }
+  }
+  return false;
+}
+
+/**
+ * Convert filesize to bytes
+ *
+ * @return 
+ *   integer bytes
+ */
+function _video_size2bytes(&$node) {
+  if (!empty($node->size)) {
+    switch ($node->size_format) {
+      case 'Kb': // KiloBits
+        return intval($node->size * 128);      
+        break;
+      case 'KB': // KiloBytes
+        return intval($node->size * 1024);
+        break;
+      case 'Mb': // MegaBits
+        return intval($node->size * 131072);
+        break;
+      case 'MB': // MegaBytes
+        return intval($node->size * 1048576);
+        break;
+      case 'Gb': // GigaBits
+        return intval($node->size * 134217728);
+        break;
+      case 'GB': // GigaBytes
+        return intval($node->size * 1073741824);
+        break;
+      // if needed someday, the following could also apply:
+      // TB: * 1099511627776
+      // PB: * 1125899906842620
+      default:
+        return (int)$node->size;
+        break;
+    }
+  }
+  else {
+    return 0;
+  }
+}
+
+/**
+ * Convert seconds to hours, minutes, and seconds
+ *
+ * Derived from h:m:s example by Jon Haworth
+ *
+ * @link
+ *   http://www.laughing-buddha.net/jon/php/sec2hms/
+ *
+ * @return
+ *   array of hours, minutes, and seconds, or boolean FALSE on error
+ */
+function _video_sec2hms($sec = 0) {
+  $hms = array();
+  
+  // 3600 seconds in an hour and trash remainder
+  $hms['hours'] = intval(intval($sec) / 3600); 
+
+  // dividing the total seconds by 60 will give us
+  // the number of minutes, but we're interested in 
+  // minutes past the hour: to get that, we need to 
+  // divide by 60 again and keep the remainder
+  $hms['minutes'] = intval(($sec / 60) % 60); 
+
+  // keep the remainder
+  $hms['seconds'] = intval($sec % 60); 
+
+  return $hms;
+}
 
 function video_download() {
-	 if ($node = node_load(array('nid' => arg(1)))) {
+  if ($node = node_load(array('nid' => arg(1)))) {
     _video_page_goto($node->nid);
   }
   else {
@@ -223,11 +545,27 @@ function video_download() {
 }
 
 /**
-Implements play callback function from node menu
-*/
+ * Implements play callback function from node menu
+ */
 function video_play() {
-	 if ($node = node_load(array('nid' => arg(1)))) {
-    print theme('video_play', $node, $node->title);
+  if ($node = node_load(array('nid' => arg(1)))) {
+    switch (_video_get_filetype($node->nid)) {
+      case 'mov':
+        print theme('video_play_quicktime', $node, $node->title);
+        break;
+      case 'rm':
+        print theme('video_play_realmedia', $node, $node->title);
+        break;
+      case 'flv':
+        print theme('video_play_flash', $node, $node->title);
+        break;
+      case 'wmv':
+        print theme('video_play_windowsmedia', $node, $node->title);
+        break;
+      default:
+        drupal_set_message('Video type not supported', 'error');
+        break;
+    }
   }
   else {
     drupal_not_found();
@@ -235,27 +573,155 @@ function video_play() {
 }
 
 /**
-Themeable functions for playing videos.
-It prints a page with a quicktime player inside
-linked to the file record of the node.
-*/
-function theme_video_play($node, $main = 0)
-{
-	$output = "\n<div id=\"video-player\">\n";
-	$output .= '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="330" height="250" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">          
-                <param name="SRC" value="'.url("video/goto/$node->nid").'" />
-                <param name="AUTOPLAY" value="true" />
-                <param name="KIOSKMODE" value="false" />
-                  <embed src="'.url("video/goto/$node->nid").'" width="'.$node->videox.'" height="'.$node->videoy.'" scale="tofit" autoplay="true" kioskmode="false" pluginspage="http://www.apple.com/quicktime/download/">
-                  </embed>
-             </object>
-						 <p> ';
-	$output .= t("Problems viewing videos?")."<br />";
-	$output .= t("Download latest Quicktime Player")." ";
-	$output .= '<a href="http://www.apple.com/quicktime/download" title="Link to QuickTime Downoad Page">'.t("here").'</a>';
-	$output .= "</p> \n </div>\n";
-	return theme("page", $output, t("Playing")." ".$node->title);
+ * Themeable functions for playing videos.
+ * It prints a page with a quicktime player inside
+ * linked to the file record of the node.
+ */
+
+/**
+ * Play videos from in Flash video format
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_flash(&$node) {
+  $loader_location = variable_get('video_flvplayerloader', 'FLVPlayer_ProgressiveLoader.swf');
+  $skin_location = variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf');
+  $skin_location = substr($skin_location, 0, strlen($skin_location) - 4);
+
+  $output = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" id="FLVPlayer">
+              <param name="movie" value="'.$loader_location.'" />
+              <param name="salign" value="lt" />
+                <param name="quality" value="high" />
+                <param name="scale" value="noscale" />
+                <param name="FlashVars" value="&skinName='.$skin_location.'&streamName='. $node->vidfile .'&autoPlay=true&autoRewind=true" />
+                <embed src="'.$loader_location.'" flashvars="&skinName='.$skin_location.'&streamName='. $node->vidfile .'&autoPlay=true&autoRewind=true" quality="high" scale="noscale" width="'.$node->videox.'" height="'.$node->videoy.'" name="FLVPlayer" salign="LT" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+            </object>';
+  $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'),
+                                      t('Link to Macromedia Flash Player Download Page'),
+                                      t('Download latest Flash Player'));
+  return theme('page', $output, t('Playing').' '.$node->title);
 }
 
+/**
+ * Play videos from in Quicktime format
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_quicktime(&$node) {
+  $output = '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="'.$node->videox.'" height="'.$node->videoy.'" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">          
+                <param name="SRC" value="'.$node->vidfile.'" />
+                <param name="AUTOPLAY" value="true" />
+                <param name="KIOSKMODE" value="false" />
+                <embed src="'.$node->vidfile.'" width="'.$node->videox.'" height="'.$node->videoy.'" scale="tofit" autoplay="true" kioskmode="false" pluginspage="http://www.apple.com/quicktime/download/">
+                </embed>
+             </object>';
+  $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
+                                      t('Link to QuickTime Download Page'),
+                                      t('Download latest Quicktime Player'));
+  return theme('page', $output, t('Playing').' '.$node->title);
+}
+
+/**
+ * Play videos from in Realmedia format
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_realmedia(&$node) {
+  // Real's embeded player includes the controls
+  // in the height
+  $node->videoy += 40;
+  $output = '<object id="video1" CLASSID="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" height="'.$node->videoy.'" width="'.$node->videox.'">
+              <param name="_ExtentX" value="7276">
+              <param name="_ExtentY" value="3307">
+              <param name="AUTOSTART" value="1">
+              <param name="SHUFFLE" value="0">
+              <param name="PREFETCH" value="0">
+              <param name="NOLABELS" value="0">
+              <param name="SRC" value="'.$node->vidfile.'" ref>
+              <param name="CONTROLS" value="All">
+              <param name="CONSOLE" value="Clip1">
+              <param name="LOOP" value="0">
+              <param name="NUMLOOP" value="0">
+              <param name="CENTER" value="0">
+              <param name="MAINTAINASPECT" value="0">
+              <param name="BACKGROUNDCOLOR" value="#000000">
+              <embed src="'.$node->vidfile.'" type="audio/x-pn-realaudio-plugin" console="Clip1" controls="All" height="'.$node->videoy.'" width="'.$node->videox.'" autostart="true">
+            </object>';
+  $output = _theme_video_format_play($output, t('http://www.real.com/'),
+                                      t('Link to Real'),
+                                      t('Download latest Realmedia Player'));
+  return theme('page', $output, t('Playing').' '.$node->title);
+}
+
+/**
+ * Play videos from in WindowsMediaVideo format
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_windowsmedia($node) {
+  // Windows Media's embeded player includes the controls in the height
+  $node->videoy += 68;
+  $output = '<OBJECT id="video1" width="'.$node->videox.'" height="'.$node->videoy.'"
+              classid="CLSID:22d6f312-b0f6-11d0-94ab-0080c74c7e95" 
+              codebase="http://activex.microsoft.com/activex/controls/mplayer/en/nsmp2inf.cab#Version=5,1,52,701"
+              standby="Loading Microsoft Windows Media Player components..." type="application/x-oleobject">
+              <param name="fileName" value="'.$node->vidfile.'">
+              <param name="animationatStart" value="true">
+              <param name="transparentatStart" value="true">
+              <param name="autoStart" value="true">
+              <param name="showControls" value="true">
+              <param name="loop" value="true">
+              <EMBED type="application/x-mplayer2"
+                pluginspage="http://microsoft.com/windows/mediaplayer/en/download/"
+                id="mediaPlayer" name="mediaPlayer" displaysize="4" autosize="-1" 
+                showcontrols="true" showtracker="-1" 
+                showdisplay="0" showstatusbar="-1" videoborder3d="-1" width="'.$node->videox.'" height="'.$node->videoy.'"
+                src="'.$node->vidfile.'" autostart="true" loop="true">
+              </EMBED>
+             </OBJECT>';
+
+  $output = _theme_video_format_play($output, t('http://windowsupdate.microsoft.com/'),
+                                      t('Link to Windows Update'),
+                                      t('Download latest Windows Media Player'));
+  return theme('page', $output, t('Playing').' '.$node->title);
+}
+
+/**
+ * Cut down on redundant link text
+ *
+ * @param $url
+ *   string URL to link to
+ *
+ * @param $title
+ *   string title of link to show on mouseover
+ *
+ * @param $link_text
+ *   string text of the link
+ *
+ * @return
+ *   string HTML link
+ */
+function _theme_video_format_play(&$output, $url, $title, $link_text) {
+  $output = "\n<div id=\"video-player\">\n" . $output;
+  $output .= "<p>\n". t('Problems viewing videos?');
+  $output .= "<br />\n<a href=\"$url\" title=\"$title\">$link_text</a>";
+  return $output ."\n</p> \n </div>\n";
+}
 
 ?>

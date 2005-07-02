@@ -1,10 +1,31 @@
 INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 ----
 
-1-Create database table using video.mysql file
-2-Login as site administrator
-3-Activate video.module as usual (administer->modules)
-4-(optional) Activate video.module blocks (administer->blocks)
+1-Copy video folder to modules/
+2-Create database table using video.mysql file
+3-Login as site administrator
+4-Activate video.module as usual (administer->modules)
+5-(optional) Activate video.module blocks (administer->blocks)
 
-
-
+FLASH VIDEO (FLV) SUPPORT (OPTIONAL)
+----
+1-Copy FLVPlayer_ProgressiveLoader.swf to the drupal root
+  directry (where index.php is)
+  For whatever reason, FLV files only play when the loader
+  is in the root directory.
+  You may rename the loader if you set the new filename in
+  the Drupal administrator settings for the video module
+2-You may leave FLVPlayer_Skin.swf in the modules/video
+  directory, move it elsewhere in the web tree, and/or
+  rename it. Only locations relative to the Drupal root
+  web directory are currently supported. If it is moved
+  from the modules directory, change the location in
+  the video administration settings.
+3-Make any necessary SWF file settings changes in
+  administer->settings->video
+4-The included SWF files may be swapped out with others
+  if you prefer.
+  
+VIDEO FOR DRUPAL 4.6.(0/1/2)
+----
+Take note of MySQL table changes of this version.

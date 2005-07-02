@@ -7,5 +7,7 @@ videos into drupal pages.
 
 For installation instructions see INSTALL.txt
 
-Please, send bug reports, feature requests, or other comments to me:
-Fabio Varesano   fvaresano at yahoo dot it
+Please send comments to:
+Fabio Varesano: fvaresano at yahoo dot it
+or
+David Norman: deekayen (at) deekayen [dot-} net

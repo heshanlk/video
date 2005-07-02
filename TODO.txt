@@ -1,9 +1,13 @@
 TODO LIST (in order of importance)
 -----------
 
-- Code cleaning
+- Figure out how to make Windows Media
+  files play with relative URL in addition
+  to a fully qualified one
+- The included FLV shockwave play files should be
+  changed to support more video sizes or just
+  look different than they are now
 - Intensive testing
 - Support for more types of videos
-  (not only quicktime)
 - Support for Customizable node field
 - Your suggestions here...

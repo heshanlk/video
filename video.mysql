@@ -1,10 +1,14 @@
 CREATE TABLE video (
-nid int(10) unsigned NOT NULL default '0',
-vidfile text NOT NULL default '',
-videox int(4) NOT NULL default '',
-videoy int(4) NOT NULL default '',
-size varchar(30) NOT NULL default '',
-clicks int(10) unsigned NOT NULL default '0',
-PRIMARY KEY  (nid)
-);
-
+  nid int(10) unsigned NOT NULL default '0',
+  vidfile text NOT NULL,
+  videox smallint(4) NOT NULL default '0',
+  videoy smallint(4) NOT NULL default '0',
+  size bigint(13) default NULL,
+  clicks int(10) unsigned NOT NULL default '0',
+  video_bitrate int(11) default NULL,
+  audio_bitrate int(11) default NULL,
+  audio_sampling_rate int(11) default NULL,
+  audio_channels enum('','stereo','mono') default NULL,  
+  playtime_seconds int(11) default NULL,
+  PRIMARY KEY  (nid)
+) TYPE=MyISAM COMMENT='size is in bytes';
