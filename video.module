@@ -334,18 +334,44 @@ function video_delete(&$node) {
 }
 
 /**
- * Hook to see if a video exists already or not
+ * Hook to see if every video field has been submitted
+ * and contains a valid value.
  *
  * @param $node
  *   object
  */
 function video_validate(&$node) {
-  $result = db_query("SELECT * from {video} WHERE vidfile = '%s' and nid <> '%d'", $node->vidfile, $node->nid);
-  if (db_num_rows($result) > 0) {
-    $video = db_fetch_object($result);
-    $othernode = node_load(array('nid' => $video->nid));
-    form_set_error('video', t('A video %link-to-existing using that link already exists', array("%link-to-existing" => l($othernode->title, 'node/' . $othernode->nid . '/edit'))));
+  //control needed fields
+  if(isset($node->vidfile)) {
+    if($node->vidfile == '') {
+      form_set_error('vidfile', t('You have to insert a valid file path for this video'));
+    }
+    else {
+      //let's see if we have it yet
+      $result = db_query("SELECT * from {video} WHERE vidfile = '%s' and nid <> '%d'", $node->vidfile, $node->nid);
+      if (db_num_rows($result) > 0) {
+        $video = db_fetch_object($result);
+        $othernode = node_load(array('nid' => $video->nid));
+        form_set_error('vidfile', t('A video %link-to-existing using that link already exists', array("%link-to-existing" => l($othernode->title, 'node/' . $othernode->nid . '/edit'))));
+      }
+    }
   }
+
+  if(isset($node->videox) && $node->videox <= 0) {
+    form_set_error('videox', t('You have to insert a valid horizontal pixel size for this video'));
+  }
+  if(isset($node->videoy) && $node->videoy <= 0) {
+    form_set_error('videoy', t('You have to insert a valid vertical pixel size for this video'));
+  }
+  if(isset($node->size) && $node->size <= 0) {
+    form_set_error('videoy', t('You have to insert a valid file size for this video'));
+  }
+/* this doesn't work.. maybe someone can get it work..
+  if((isset($node->playtime_minutes) && $node->playtime_minutes <= 0) || (isset($node->playtime_hours) && $node->playtime_hours <= 0) || (isset($node->playtime_seconds) && $node->playtime_seconds <= 0)) {
+    form_set_error('playtime_seconds', t('You have to insert valid playtime informations for this video'));
+  }
+*/
+
 }
 
 /**
@@ -575,7 +601,7 @@ function video_play() {
 
 /**
  * Themeable functions for playing videos.
- * It prints a page with a quicktime player inside
+ * It prints a page with a player embedded
  * linked to the file record of the node.
  */
 

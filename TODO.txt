@@ -1,8 +1,6 @@
 TODO LIST (in order of importance)
 -----------
 
-- Write more documentation (help)
-  for this module
 - Figure out how to make Windows Media
   files play with relative URL in addition
   to a fully qualified one
