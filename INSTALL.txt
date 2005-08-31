@@ -5,32 +5,8 @@ INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 2-Create database table using video.mysql file
 3-Login as site administrator
 4-Activate video.module as usual (administer->modules)
-5-(optional) Activate video.module blocks (administer->blocks)
+5-Set access control as you like (administer->access control)
+6-(optional) Activate video.module blocks (administer->blocks)
 
-FLASH VIDEO (FLV) SUPPORT (OPTIONAL)
-----
-1-Playing FLV videos requires server-side shockwave files
-  to manage loading the videos. The Macromedia Flash Video
-  kit provides a loader and skin for for managing the play.
-  Others FLV loader providers might be found with Riva
-  Producer from http://rivavx.de/, Google, or you could
-  make your own.
-2-Copy a FLV loader shockwave file to the drupal root
-  directry (where index.php is)
-  For whatever reason, FLV files only play when the loader
-  is in the root directory.
-  You may rename the loader if you set the new filename in
-  the Drupal administrator settings for the video module
-3-You may put the FLV player skin shockwave file in the
-  modules/video directory, move it elsewhere in the web
-  tree, and/or rename it.
-  Only locations relative to the Drupal root
-  web directory are currently supported. If it is moved
-  from the modules directory, change the location in
-  the video administration settings.
-4-Make any necessary SWF file settings changes in
-  administer->settings->video
-  
-VIDEO FOR DRUPAL 4.6.(0/1/2)
-----
-Take note of MySQL table changes of this version.
+
+
