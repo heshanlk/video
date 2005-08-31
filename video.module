@@ -8,6 +8,7 @@
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  * @author David Norman <deekayen at: deekayen (dot) net>
+ * @author Luke Last <luke [at] lukelast dot com>
  *
  * Database definition:
  * @code
@@ -18,17 +19,44 @@ CREATE TABLE video (
   videox smallint(4) NOT NULL default '0',
   videoy smallint(4) NOT NULL default '0',
   size bigint(13) default NULL,
-  clicks int(10) unsigned NOT NULL default '0',
+  download_counter int(10) unsigned NOT NULL default '0',
+  play_counter int(10) unsigned NOT NULL default '0',
   video_bitrate int(11) default NULL,
   audio_bitrate int(11) default NULL,
   audio_sampling_rate int(11) default NULL,
-  audio_channels enum('','stereo','mono') default NULL,  
+  audio_channels enum('','5.1','stereo','mono') default NULL,  
   playtime_seconds int(11) default NULL,
+  download_folder varchar(255) NULL default NULL,
+  disable_multidownload tinyint(1) NOT NULL default '0',
+  use_play_folder tinyint(1) NOT NULL default '0',
+  custom_field_1 varchar(255) NULL default NULL,
+  custom_field_2 varchar(255) NULL default NULL,
+  custom_field_3 varchar(255) NULL default NULL,
+  custom_field_4 varchar(255) NULL default NULL,
+  custom_field_5 text NULL default NULL,
+  custom_field_6 text NULL default NULL,
   PRIMARY KEY  (nid)
 ) TYPE=MyISAM COMMENT='size is in bytes';
  
  * @endcode 
  */
+
+/* Database Update from v1.8 schema.
+
+ALTER TABLE `video` CHANGE `clicks` `download_counter` INT( 10 ) UNSIGNED NOT NULL DEFAULT '0';
+ALTER TABLE `video` CHANGE `audio_channels` `audio_channels` ENUM( '', '5.1', 'stereo', 'mono' ) NULL DEFAULT NULL;
+ALTER TABLE video ADD play_counter int(10) unsigned NOT NULL default '0';
+ALTER TABLE video ADD download_folder varchar(255) NULL default NULL;
+ALTER TABLE video ADD disable_multidownload tinyint(1) NOT NULL default '0';
+ALTER TABLE video ADD use_play_folder tinyint(1) NOT NULL default '0';
+ALTER TABLE video ADD custom_field_1 varchar(255) NULL default NULL;
+ALTER TABLE video ADD custom_field_2 varchar(255) NULL default NULL;
+ALTER TABLE video ADD custom_field_3 varchar(255) NULL default NULL;
+ALTER TABLE video ADD custom_field_4 varchar(255) NULL default NULL;
+ALTER TABLE video ADD custom_field_5 text NULL default NULL;
+ALTER TABLE video ADD custom_field_6 text NULL default NULL;
+
+*/
 
 /********************************************************************
  * General Hooks
@@ -50,7 +78,19 @@ function video_help($section = 'admin/help#video') {
     case 'admin/modules#description':
       return t('Allows video nodes.');
     case 'node/add#video':
-      return t('Video allow you to insert videos as nodes');
+      return t('Allows you to insert videos as nodes');
+    case 'video/help':
+      $help = '';
+      $help .= '<a name="videofile"></a><h3>' . t('Video File Field') . '</h3>';
+      $help .= '<p>' . t('This is the field where you enter the video file information. The Video module currently supports these file types:') . '</p>';
+      $help .= '<ul><li><b>' . t('.mov, .wmv, .rm, .flv') . '</b><ul><li>' . t('To play these file types you need to enter in the path to the file. If your video is on the same webserver as drupal, you can use a path relative to the drupal directory, like "downloads/video.mov". If your video is on another server you can enter the URI to the video like "http://www.example.com/videos/my-video.mov".') . '</li></ul><br /></li>';
+      $help .= '<li><b><a href="http://www.youtube.com">' . t('YouTube.com support') . '</a></b><ul><li>' . t('You can host videos on youtube.com and put them on your site. To do this, after you upload the video on youtube.com enter the video ID into the "Video File" field. If the URI youtube.com gives you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8" you would enter "XM4QYXPf-s8".') . '</li></ul></li></ul>';
+      $help .= '<a name="multi-download"></a><h3>' . t('Multi-file Dowload Help') . '</h3>';
+      $help .= '<p>' . t('If enabled, this group holds all the settings for multi-file downloads. Multi-file downloads allows you to have a list of any number of files on the download page. These files are usually scanned from a folder. This allows the listing of multiple sizes and video types for visitors to choose from, you can even zip the files up.') . '</p>';
+      $help .= '<ul><li><b>' . t('Disable multi-file downloads') . '</b><ul><li>' . t('This checkbox will disable multi-file downloads for this video. This means the download tab and link will send visitors straight to download the same video as is set to play. Use this option if you only have one version of your video.') . '</li></ul><br /></li>';
+      $help .= '<li><b>' . t('Multi-file download folder') . '</b><ul><li>' . t('Allows you to specify a folder on the local server containing the files you wish to show up on the download tab. This folder should be relative to the drupal root directory, so if the absolute path is "C:\inetpub\drupal\videos\projectfolder\" or "/usr/htdocs/drupal/videos/projectfolder/" then you would enter "videos/projectfolder/".') . '</li></ul><br /></li>';
+      $help .= '<li><b>' . t('Show files in "play" folder') . '</b><ul><li>' . t('This option will list all the files in the same folder is the "play" file listed in the "Video File" field above. You can use this option in addition to the download folder to list the videos in both folders.') . '</li></ul></li></ul>';
+      return $help;
       break;
   }
 }
@@ -97,7 +137,8 @@ function video_menu($may_cache) {
           'weight' => 3,
           'type' => MENU_LOCAL_TASK);
       }
-      if (variable_get('video_displaydownloadmenutab', 1) == 1) {
+      //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
+      if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->nid) != 'youtube' or $node->disable_multidownload == 0)) {
         $items[] = array('path' => 'node/'.arg(1).'/download',
           'title' => t('download'),
           'callback' => 'video_download',
@@ -130,32 +171,37 @@ function video_link($type, $node = NULL) {
     $display_download_link = variable_get('video_displaydownloadlink', 1);
     $display_playtime      = variable_get('video_displayplaytime', 1);
     $display_filesize      = variable_get('video_displayfilesize', 1);
-
+    //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
+    if (_video_get_filetype($node->nid) == 'youtube' and $node->disable_multidownload == 1) {
+      $display_download_link = 0;
+    }
     $link = '';
     if ($display_play_link == 1) {
-      $link .= l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))))  .' ';
-      $link .= ($display_download_link == 1 || $display_filesize == 1 || $display_playtime == 1) ? ' ' : '';
-      $link .= ($display_download_link == 1) ? t('or'). ' ' : '';
+      $link .= l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))));
+      $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
     }
     if ($display_download_link == 1) {
       $link .= l(t('download'), "node/$node->nid/download", array('class' => 'outgoing', 'title' => t('visit %link', array('%link' => $node->title))));
-      $link .= ($display_filesize == 1 || $display_playtime == 1) ? ' ' : '';
+      $link .= ' | ';
     }
     if ($display_playtime == 1) {
       $link .= format_interval($node->playtime_seconds);
-      $link .= ($display_filesize == 1) ? ' | ' : '';
+      $link .= ' | ';
     }
-    if ($display_filesize) {
+    if ($display_filesize == 1 and $node->size != 0) {
       $link .= format_size($node->size);
+      $link .= ' | ';
     }
-    if ($link !== '') {
-      $links[] = $link . (user_access('access statistics') ? " ({$node->clicks})" : '');
+    if (variable_get('video_playcounter', 1) and user_access('view play counter')) {
+      $link .= $node->play_counter . ' plays | ';
     }
-    else {
-      $links[] = (user_access('access statistics') ? " ({$node->clicks})" : '');
+    if (variable_get('video_downloadcounter', 1) and user_access('view download counter')) {
+      $link .= $node->download_counter . ' downloads | ';
     }
+
+    $link = substr($link, 0, -3); //Trim the last " | " off.
   }
-  return $links;
+  return $links[] = $link;
 }
 
 /**
@@ -166,15 +212,14 @@ function video_link($type, $node = NULL) {
  */
 function video_page() {
   global $user;
-
   $output = '';
-
-  $result = pager_query(db_rewrite_sql("SELECT n.nid, n.created FROM {node} n WHERE n.type = 'video' AND n.status = 1 ORDER BY n.created DESC"), variable_get('default_nodes_main', 10));
-
-  while ($node = db_fetch_object($result)) {
-    $output .= node_view(node_load(array('nid' => $node->nid)), 1);
+  if (arg(1) != 'help') { //We are not reading help so output a list of recent video nodes.
+    $result = pager_query(db_rewrite_sql("SELECT n.nid, n.created FROM {node} n WHERE n.type = 'video' AND n.status = 1 ORDER BY n.created DESC"), variable_get('default_nodes_main', 10));
+    while ($node = db_fetch_object($result)) {
+      $output .= node_view(node_load(array('nid' => $node->nid)), 1);
+    }
+    $output .= theme('pager', NULL, variable_get('default_nodes_main', 10));
   }
-  $output .= theme('pager', NULL, variable_get('default_nodes_main', 10));
   print theme('page', $output);
 }
 
@@ -185,7 +230,11 @@ function video_page() {
  *   array of permissions
  */
 function video_perm() {
-  return array('create video', 'access video', 'administer video');
+  $array = array('create video', 'access video', 'administer video', 'view play counter', 'view download counter');
+  if (variable_get('video_multidownload', '0')) { //Only display permission if turned on in settings.
+    $array[] = 'create multi-file downloads';
+  }
+  return $array;
 }
 
 /**
@@ -203,8 +252,13 @@ function video_settings() {
              variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf'), 40, 200,
              t('The location of the Shockwave skin for player controls on the Flash video. It should be a path relative to the Drupal root directory'));
   $output .= form_textfield(t('Filename of Flash loader'), 'video_flvplayerloader',
-             variable_get('video_flvplayerloader', 'FLVPlayer_ProgressiveLoader.swf'), 40, 200,
+             variable_get('video_flvplayerloader', 'Player.swf'), 40, 200,
              t('The name of the Shockwave file that manages loading the FLV movie'));
+/* This will only be required to get video comments and other info using xml requests. So until that feature is added this is not needed.
+  $output .= form_textfield(t('YouTube Developer ID'), 'video_utdevid',
+             variable_get('video_utdevid', ''), 11, 12,
+             t('Used for getting information about youtube videos from the youtube.com site. Get an ID from <a target="_blank" href="http://www.youtube.com/developers_intro.php">youtube.com</a>. If left blank the additional information will not be gathered.'));
+*/
   $output .= form_radios(t('Display play menu tab'), 'video_displayplaymenutab',
              variable_get('video_displayplaymenutab', 1), array(0 => 'No', 1 => 'Yes'),
              t('Toggle display of menu link to play video from the node page'));
@@ -223,6 +277,29 @@ function video_settings() {
   $output .= form_radios(t('Display filesize'), 'video_displayfilesize',
              variable_get('video_displayfilesize', 1), array(0 => 'No', 1 => 'Yes'),
              t('Toggle the display of the filesize for a video'));
+  $output .= form_radios(t('Count play hits'), 'video_playcounter',
+             variable_get('video_playcounter', 1), array(1 => 'On', 0 => 'Off'),
+             t('Counts a hit everytime someone views the play page. To allow users to view counter visit: ') . l(t('access control'), 'admin/access'));
+  $output .= form_radios(t('Count downloads'), 'video_downloadcounter',
+             variable_get('video_downloadcounter', 1), array(1 => 'On', 0 => 'Off'),
+             t('Counts a hit everytime someone downloads a video. To allow users to view counter visit: ') . l(t('access control'), 'admin/access'));
+  $output .= form_radios(t('Allow Multi-file Downloads'), 'video_multidownload',
+             variable_get('video_multidownload', 0), array(0 => 'No', 1 => 'Yes'),
+             t('Allows a list of files to be shown on the download page. The list is usually gotten from a specified folder. This ability is useful for providing different sizes and video types for download. This can be disabled separately for each node. If turned on make sure you set the permissions so users can use it.') . ' ' . l(t('access control'), 'admin/access'));
+  $output .= form_textfield(t('File extensions to show'), 'video_download_ext',
+             variable_get('video_download_ext', 'mov,wmv,rm,flv,avi,divx,mpg,mpeg,mp4,zip'), 60, 250,
+             t('The extensions of files to list from the multi-file download folder on the download page. Extensions should be comma seperated with no spaces, for example (mov,wmv,rm).'));
+  $group = form_textfield(t('Custom field group title'), 'video_customfieldtitle', variable_get('video_customfieldtitle', ''), 40, 200, t('Title of the group of all custom fields.'));
+  $group .= form_radios(t('Start group initially collapsed'), 'video_customgroupcollapsed',
+             variable_get('video_customgroupcollapsed', 1), array(0 => 'No', 1 => 'Yes'),
+             t('Should the custom fields group be initially collapsed when creating and editing video pages?'));
+  $group .= form_textfield(t('Custom field 1 title'), 'video_customfield1', variable_get('video_customfield1', ''), 50, 200);
+  $group .= form_textfield(t('Custom field 2 title'), 'video_customfield2', variable_get('video_customfield2', ''), 50, 200);
+  $group .= form_textfield(t('Custom field 3 title'), 'video_customfield3', variable_get('video_customfield3', ''), 50, 200);
+  $group .= form_textfield(t('Custom field 4 title'), 'video_customfield4', variable_get('video_customfield4', ''), 50, 200);
+  $group .= form_textfield(t('Custom field 5 title'), 'video_customfield5', variable_get('video_customfield5', ''), 50, 200);
+  $group .= form_textfield(t('Custom field 6 title'), 'video_customfield6', variable_get('video_customfield6', ''), 50, 200);
+  $output .= form_group_collapsible(t('Custom Fields'), $group, TRUE, t('Creates custom fields. Fields only show up if you give them a name.'));
   return $output;
 }
 
@@ -232,13 +309,13 @@ function video_settings() {
  ********************************************************************/
 
 /**
- * hook
+ * Implementation of hook_node().
  *
  * @return
- *   string "video"
+ *   array
  */
-function video_node_name() {
-  return t('video');
+function video_node_info() {
+  return array('video' => array('name' => t('video'), 'base' => 'video'));
 }
 
 /**
@@ -265,26 +342,55 @@ function video_access($op, $node) {
  */
 function video_form(&$node) {
   $output = '';
-  $output .= form_textfield(t('Video File'), 'vidfile', $node->vidfile, 60, 65535, t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.myvideo.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename.') . ($error['vidfile'] ? $error['vidfile'] : ''), NULL, TRUE);
+  $output .= form_textfield(t('Video File'), 'vidfile', $node->vidfile, 60, 65535, t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). ') . l(t('More information.'), 'video/help#videofile') . ($error['vidfile'] ? $error['vidfile'] : ''), NULL, TRUE);
   $output .= form_textfield(t('Video Size x'), 'videox', $node->videox, 4, 4, t('Horizontal video pixel size.'), null, true);
   $output .= form_textfield(t('Video Size y'), 'videoy', $node->videoy, 4, 4, t('Vertical video pixel size.'), null, true);
+  
+  if (variable_get('video_multidownload', 0) and user_access('create multi-file downloads')) { //If multi-file downloading is turned on display settings group.
+    $group = form_checkbox(t('Disable multi-file downloads'), 'disable_multidownload', 1, $node->disable_multidownload, t('Disables multi-file downloads for this video only.'));
+    $group .= form_textfield(t('Multi-file download folder'), 'download_folder', $node->download_folder, 25, 255, t('Enter the folder containing your videos. It must be relative from the drupal directory. If the absolute path is "C:\inetpub\drupal\videos\projectfolder\" or "/usr/htdocs/drupal/videos/projectfolder/" then enter something like "videos/projectfolder/".'));
+    $group .= form_checkbox(t('Show files in "play" folder'), 'use_play_folder', 1, $node->use_play_folder, t('Display videos in the same directory as the "play" video. If folder above is entered this will be in addition.'));
+    $output .= form_group_collapsible(t('Multiple files in download tab'), $group, TRUE, t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help#multi-download'));
+  }
 
-  $group = form_textfield(t('Size'), 'size', $node->size, 12, 12, t('Integer size'), null, true);
+  $group = form_textfield(t('Size'), 'size', $node->size, 12, 12, t('If the video is on the local server the size will be set automatically. Otherwise enter a value, 0 will turn the display off. Must be less than 2GB.'), null, true);
   $group .= form_select(NULL, 'size_format', 'B', array('B' => t('bytes'), 'Kb' => t('Kilobits'), 'KB' => t('KiloBytes'), 'Mb' => t('Megabits'), 'MB' => t('MegaBytes'), 'Gb' => t('Gigabits'), 'GB' => t('GigaBytes')), 'size units', null, null, true);
   $output .= form_group(t('Filesize'), $group);
 
   $playtime = _video_sec2hms($node->playtime_seconds);
-  
   $group = form_textfield(t('Hours'), 'playtime_hours', $playtime['hours'], 11, 11, t('Integer of hours'), null, true);
   $group .= form_textfield(t('Minutes'), 'playtime_minutes', $playtime['minutes'], 11, 11, t('Integer of minutes'), null, true);
   $group .= form_textfield(t('Seconds'), 'playtime_seconds', $playtime['seconds'], 11, 11, t('Integer of seconds'), null, true);
   $output .= form_group(t('Playtime'), $group, t('Values may be entered in excess of their normal "clock maximum" (the seconds field may be 3600 to represent 1 hour), however each value will be summed for a total of all three.'));
 
+  $group = ''; //If the custom field title is not blank, then display it.
+  if (variable_get('video_customfield1', '') != '') {
+    $group .= form_textfield(variable_get('video_customfield1', 'Field 1'), 'custom_field_1', $node->custom_field_1, 40, 255, t(''));
+  }
+  if (variable_get('video_customfield2', '') != '') {
+    $group .= form_textfield(variable_get('video_customfield2', 'Field 2'), 'custom_field_2', $node->custom_field_2, 40, 255, t(''));
+  }
+  if (variable_get('video_customfield3', '') != '') {
+    $group .= form_textfield(variable_get('video_customfield3', 'Field 3'), 'custom_field_3', $node->custom_field_3, 40, 255, t(''));
+  }
+  if (variable_get('video_customfield4', '') != '') {
+    $group .= form_textfield(variable_get('video_customfield4', 'Field 4'), 'custom_field_4', $node->custom_field_4, 40, 255, t(''));
+  }
+  if (variable_get('video_customfield5', '') != '') {
+    $group .= form_textarea(variable_get('video_customfield5', 'Field 5'), 'custom_field_5', $node->custom_field_5, 60, 4, t(''));
+  }
+  if (variable_get('video_customfield6', '') != '') {
+    $group .= form_textarea(variable_get('video_customfield6', 'Field 6'), 'custom_field_6', $node->custom_field_6, 60, 4, t(''));
+  }
+  if ($group != '') { //Only display the group if it has fields.
+    $output .= form_group_collapsible(variable_get('video_customfieldtitle', 'Custom Fields'), $group, variable_get('video_customgroupcollapsed', '0'), t(''));
+  }
+
   $group = form_textfield(t('Video Bitrate'), 'video_bitrate', ($node->video_bitrate == 0) ? '' : $node->video_bitrate, 11, 11, t('Integer value of video bitrate'));
   $group .= form_textfield(t('Audio Bitrate'), 'audio_bitrate', ($node->audio_bitrate == 0) ? '' : $node->audio_bitrate, 11, 11, t('Integer value of audio bitrate'));
   $group .= form_textfield(t('Audio Sampling Rate'), 'audio_sampling_rate', ($node->audio_sampling_rate == 0) ? '' : $node->audio_sampling_rate, 11, 11, t('Integer value of audio sampling rate in Hz'));
   $group .= form_select(t('Audio Channels'), 'audio_channels', $node->audio_channels, array('' => '', 'stereo' => t('Stereo'), 'mono' => t('Mono')));
-  $output .= form_group(t('Optional Metadata'), $group, t('Metadata entered here will not be displayed. It is currently for administrative reference only.'));
+  $output .= form_group_collapsible(t('Optional Metadata'), $group, TRUE, t('Metadata entered here will not be displayed. It is currently for administrative reference only.'));
 
   if (function_exists('taxonomy_node_form')) {
     $output .= implode('', taxonomy_node_form('video', $node));
@@ -304,9 +410,8 @@ function video_form(&$node) {
  */
 function video_insert(&$node) {
   $node->size = _video_size2bytes($node);
-  $node->playtime_seconds += intval($node->playtime_hours * 3600) + intval($node->playtime_minutes * 60);
-  return db_query("INSERT INTO {video} (nid, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds) VALUES ('%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d')",
-	$node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds);
+  return db_query("INSERT INTO {video} (nid, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5, custom_field_6) VALUES ('%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s')",
+    $node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6);
 }
 
 /**
@@ -317,9 +422,8 @@ function video_insert(&$node) {
  */
 function video_update(&$node) {
   $node->size = _video_size2bytes($node);
-  $node->playtime_seconds += intval($node->playtime_hours * 3600) + intval($node->playtime_minutes * 60);
-  return db_query("UPDATE {video} SET vidfile='%s', size='%d', videox='%d', videoy='%d', video_bitrate='%d', audio_bitrate='%d', audio_sampling_rate='%d', audio_channels='%s', playtime_seconds='%d' WHERE nid = '%d'",
-         $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->nid);
+  return db_query("UPDATE {video} SET vidfile='%s', size='%d', videox='%d', videoy='%d', video_bitrate='%d', audio_bitrate='%d', audio_sampling_rate='%d', audio_channels='%s', playtime_seconds='%d', disable_multidownload='%d', download_folder='%s', use_play_folder='%d', custom_field_1='%s', custom_field_2='%s', custom_field_3='%s', custom_field_4='%s', custom_field_5='%s', custom_field_6='%s' WHERE nid = '%d'",
+         $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->nid);
 }
 
 /**
@@ -334,16 +438,15 @@ function video_delete(&$node) {
 }
 
 /**
- * Hook to see if every video field has been submitted
+ * Hook to see if every video field has been filled
  * and contains a valid value.
  *
  * @param $node
  *   object
  */
 function video_validate(&$node) {
-  //control needed fields
-  if(isset($node->vidfile)) {
-    if($node->vidfile == '') {
+  if (isset($node->vidfile)) {
+    if ($node->vidfile == '') {
       form_set_error('vidfile', t('You have to insert a valid file path for this video'));
     }
     else {
@@ -356,22 +459,38 @@ function video_validate(&$node) {
       }
     }
   }
-
-  if(isset($node->videox) && $node->videox <= 0) {
+  if (isset($node->videox) && $node->videox <= 0) {
     form_set_error('videox', t('You have to insert a valid horizontal pixel size for this video'));
   }
-  if(isset($node->videoy) && $node->videoy <= 0) {
+  if (isset($node->videoy) && $node->videoy <= 0) {
     form_set_error('videoy', t('You have to insert a valid vertical pixel size for this video'));
   }
-  if(isset($node->size) && $node->size <= 0) {
-    form_set_error('videoy', t('You have to insert a valid file size for this video'));
+  //If file is on the local server get size, otherwise make sure a number is entered.
+  $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
+  if (isset($node->size) and is_file($path)) { //If file exists locally set size.
+    $node->size = filesize($path);
+  } elseif (isset($node->size) && !is_numeric($node->size)) { //If size field is not a number.
+    form_set_error('size', t('You have to insert a valid file size for this video'));
   }
-/* this doesn't work.. maybe someone can get it work..
-  if((isset($node->playtime_minutes) && $node->playtime_minutes <= 0) || (isset($node->playtime_hours) && $node->playtime_hours <= 0) || (isset($node->playtime_seconds) && $node->playtime_seconds <= 0)) {
-    form_set_error('playtime_seconds', t('You have to insert valid playtime informations for this video'));
+  if (user_access('create multi-file downloads')) { //Make sure the user has permission.
+    //Checks to make sure either multi-downloads are disabled, or a valid folder is given, or use_play_folder is checked.
+    if (isset($node->disable_multidownload) and $node->disable_multidownload == 0) {
+      if (isset($node->download_folder) and !is_dir(getcwd() . '/' . $node->download_folder) and $node->use_play_folder == 0) {
+        form_set_error('disable_multidownload', t("If you don't select a multi-file download option you must disable the feature."));
+        form_set_error('download_folder', t('Download directory does not exist. Make sure it has a trailing forward slash "/".'));
+        form_set_error('use_play_folder', t('You must either use the folder of the "play" video or enter a folder.'));
+      }
+    }
+  } else { //If the user doesn't have permission to use multi-download then disable it for the node.
+    $node->disable_multidownload = 1;
   }
-*/
-
+  
+  //Calculate the time in seconds.
+  $node->playtime_seconds += intval($node->playtime_hours * 3600) + intval($node->playtime_minutes * 60);
+  //Makes sure the total time is greater than 0.
+  if ((isset($node->playtime_minutes) and isset($node->playtime_hours) and isset($node->playtime_seconds)) and $node->playtime_seconds == 0) {
+    form_set_error('playtime_seconds', t('You have to insert valid playtime informations for this video.'));
+  }
 }
 
 /**
@@ -438,7 +557,7 @@ function video_block($op = 'list', $delta = 0) {
  *   string HTML content for a block
  */
 function video_block_list($type = 'top') {
-  $orderby = ($type == 'new') ? 'n.created' : 'v.clicks';
+  $orderby = ($type == 'new') ? 'n.created' : 'v.download_counter';
   return node_title_list(db_query_range(db_rewrite_sql("SELECT DISTINCT(n.nid), n.title FROM {node} n, {video} v WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER by $orderby DESC"),0, 10));
 }
 
@@ -451,7 +570,13 @@ function video_block_list($type = 'top') {
 function _video_get_filetype($nid) {
   if (is_numeric($nid)) {
     $vidfile = db_result(db_query("SELECT v.vidfile FROM {video} v WHERE v.nid = '%d'", $nid));
-    return substr($vidfile, strrpos($vidfile, '.') + 1);
+    //If the filename doesn't contain a ".", "/", or "\" then consider it a youtube video ID.
+    if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) <= 12 and strlen($vidfile) >= 10) {
+      $file_type = 'youtube';
+    } else { //Else get the file extension after the "."
+      $file_type = substr($vidfile, strrpos($vidfile, '.') + 1);   
+    }
+    return $file_type;
   }
   else {
     return false;
@@ -472,13 +597,14 @@ function _video_get_filetype($nid) {
  */
 function _video_page_goto($id, $type = 'video') {
   global $base_url;
-
   if (in_array($type, array('video', 'feed')) && is_numeric($id)) {
     $result = db_query(db_rewrite_sql("SELECT n.nid, n.vidfile FROM {video} n WHERE n.nid = '%d'"), $id);
     $wl     = db_fetch_object($result);
     $type   = 'vidfile';
     if ($wl->$type != '')   {
-      db_query("UPDATE {video} SET clicks = clicks + 1 where nid = '%d'", $id);
+      if (variable_get('video_downloadcounter', 1)) {
+        db_query("UPDATE {video} SET download_counter = download_counter + 1 where nid = '%d'", $id);
+      }
       // Didn't this use to work?
       header("HTTP/1.0 301 Moved Permanently");
     }
@@ -490,6 +616,27 @@ function _video_page_goto($id, $type = 'video') {
     }
   }
   return false;
+}
+
+/**
+ * Forward user directly to the file for downloading
+ *
+ * @param $encoded_url
+ *   base64 encoded URL
+ *
+ * @param $nid
+ *   Node ID of the node to have it's download counter updated.
+ *
+ * @return
+ *   Nothing.
+ */
+function _video_download_goto($encoded_url, $nid) {
+  $encoded_url = str_replace('-', '/', $encoded_url); //Replace "-" to "/" for MIME base64.
+  $url = base64_decode($encoded_url);
+  if (variable_get('video_downloadcounter', 1)) {
+    db_query("UPDATE {video} SET download_counter = download_counter + 1 where nid = '%d'", $nid); //Add a download click to the database.
+  }
+  header("Location: $url");
 }
 
 /**
@@ -561,11 +708,91 @@ function _video_sec2hms($sec = 0) {
   return $hms;
 }
 
+/**
+ * Either redirects to download the video file.
+ * Or displays a list of files to download.
+ */
 function video_download() {
   if ($node = node_load(array('nid' => arg(1)))) {
-    _video_page_goto($node->nid);
-  }
-  else {
+    if (variable_get("video_multidownload", 0) == 0 or $node->disable_multidownload == 1) {
+      if (_video_get_filetype($node->nid) != 'youtube') { //Make sure the video type is not youtube before downloading.
+        _video_page_goto ($node->nid);
+      } else { //If video is type youtube then it can't be downloaded.
+        drupal_set_message(t('There are no files to download for this video.'), 'error');
+        print theme('page', '');
+      }
+    } elseif (arg(3) != '') { //If we are passed an encoded URL redirect to the downloader.
+      _video_download_goto(arg(3), $node->nid);
+    } else { //Multiple file downloads is turned on.
+      $node->download_error = FALSE;
+      $node->file_array = array(); //Initialize the final file array.
+      global $base_url;
+      $full_download_folder = getcwd() . '/' . $node->download_folder; //Get absolute path to folder.
+      //If the download folder is set and valid scan it for files.
+      if ($node->download_folder != '' and file_exists($full_download_folder)) {
+        $scan_download_folder = _video_scandir($full_download_folder); //Get array of file names in the directory.
+        $scan_download_folder['local_dir'] = $full_download_folder; //For getting filesize.
+        $scan_download_folder['dir_stub'] = $node->download_folder; //To put in the URL.
+        $folder_array[] = $scan_download_folder;
+      }
+      //If option is set to use "play" folder and it exists, scan it for files.
+      $play_dir_stub = str_replace(basename($node->vidfile), "", $node->vidfile); //Remove the filename from the play file to get directory.
+      $play_dir = getcwd() . '/' . $play_dir_stub; //Get the local directory path where the file is kept.
+      if ($node->use_play_folder == 1 and file_exists($play_dir) and $play_dir_stub != '/') { //Make sure play stub won't allow scanning base drupal directory.
+        $scan_play_folder = _video_scandir($play_dir);
+        $scan_play_folder['local_dir'] = $play_dir; //For getting filesize.
+        $scan_play_folder['dir_stub'] = $play_dir_stub; //To put in the URL.
+        $folder_array[] = $scan_play_folder;
+      }
+      $node->play_dir_stub = $play_dir_stub; //Allows view value in dev info. Not required.
+
+      if (count($folder_array) > 0) { //Make sure we have a folder to scan.
+        foreach ($folder_array as $dir_scan) { //Scan through one or both folders results.
+          foreach ($dir_scan as $file) { //Go through each file in the directory.
+            if (is_file($dir_scan['local_dir'] . "/" . $file)) { //Make sure it's a valid file.
+              //Checks the new file with the files already in the array to eliminate dupes.
+              $match = false;
+              foreach ($node->file_array as $file_array_file) {
+                if ($file_array_file['file'] == $file) { //If the file is already in the array.
+                  $match = TRUE;
+                }
+              } //If we get here with $match still set FALSE we don't have a dupe.
+              
+              $file_ext = substr($file, strrpos($file, '.') + 1); //Get the file extension.
+              $ext_array = explode(',', variable_get('video_download_ext', 'mov,wmv,avi'));
+              
+              if (!$match and in_array($file_ext, $ext_array)) { //Only add file if it's not already in the array and it's extension shouldn't be hidden.
+                $file_array_size[] = filesize($dir_scan['local_dir'] . $file); //Create an array of the file sizes for sorting.
+                
+                global $base_url;
+                $file_url = $base_url . '/' . $dir_scan['dir_stub'] . $file; //Generate absolute URL to video.
+                $file_url = str_replace(' ', '%20', $file_url); //Replace any spaces in filename.
+                $encoded_url = base64_encode($file_url); //Encode URL to base64 MIME value so it can be passed in URL.
+                $encoded_url = str_replace('/', '-', $encoded_url); //Replace "/" with "-" so it doesn't mess up the URL.
+                
+                $node->file_array[] = array( 'file' => $file
+                  , 'type' => $file_ext
+                  , 'size' => filesize($dir_scan['local_dir'] . $file)
+                  , 'encoded_url' => $encoded_url
+                  );
+              }
+            } //Close the valid file check.
+          } //Close the directory scan.
+        } //Close scan location array.
+        
+        if (count($node->file_array) > 0) { //Make sure atleast 1 file was found.
+          array_multisort($file_array_size, SORT_ASC, $node->file_array); //Sort based of file size.
+          
+        } else { //Else if no files were found in the directory.
+          $node->download_error = TRUE;
+        }
+      } else { //Else if we have no valid folders to scan.
+        $node->download_error = TRUE;
+      }
+
+      print theme('video_download', $node); //Print to the screen from the theme_video_download function.
+    } //Close multi-file downloads is turned on.
+  } else {
     drupal_not_found();
   }
 }
@@ -575,7 +802,7 @@ function video_download() {
  */
 function video_play() {
   if ($node = node_load(array('nid' => arg(1)))) {
-    drupal_set_title(t('playing').' '.$node->title);
+    drupal_set_title(t('Playing').' '.$node->title);
     switch (_video_get_filetype($node->nid)) {
       case 'mov':
         print theme('video_play_quicktime', $node);
@@ -589,9 +816,17 @@ function video_play() {
       case 'wmv':
         print theme('video_play_windowsmedia', $node);
         break;
+      case 'youtube':
+        print theme('video_play_youtube', $node);
+        break;
       default:
         drupal_set_message('Video type not supported', 'error');
+        global $base_url;
+        drupal_goto("node/$node->nid");
         break;
+    }
+    if (variable_get('video_playcounter', 1)) {
+      db_query("UPDATE {video} SET play_counter = play_counter + 1 where nid = '%d'", $node->nid); //Increment play counter.
     }
   }
   else {
@@ -615,18 +850,19 @@ function video_play() {
  *   string of content to display
  */
 function theme_video_play_flash(&$node) {
-  $loader_location = variable_get('video_flvplayerloader', 'FLVPlayer_ProgressiveLoader.swf');
+  $loader_location = variable_get('video_flvplayerloader', 'Player.swf');
   $skin_location = variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf');
   $skin_location = substr($skin_location, 0, strlen($skin_location) - 4);
-
-  $output = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" id="FLVPlayer">
-              <param name="movie" value="'.$loader_location.'" />
-              <param name="salign" value="lt" />
-                <param name="quality" value="high" />
-                <param name="scale" value="noscale" />
-                <param name="FlashVars" value="&skinName='.$skin_location.'&streamName='. $node->vidfile .'&autoPlay=true&autoRewind=true" />
-                <embed src="'.$loader_location.'" flashvars="&skinName='.$skin_location.'&streamName='. $node->vidfile .'&autoPlay=true&autoRewind=true" quality="high" scale="noscale" width="'.$node->videox.'" height="'.$node->videoy.'" name="FLVPlayer" salign="LT" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
-            </object>';
+  $file = _video_get_filename($node);
+  $url = _video_get_fileurl($node);
+//print($file.'<br>'.$url); //Remove once fully tested.
+  $output = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" id="Player">
+               <param name="allowScriptAccess" value="sameDomain" />
+               <param name="movie" value="'.$loader_location.'" />
+               <param name="quality" value="high" />
+               <param name="FlashVars" value="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5" />
+               <embed src="'.$loader_location.'" flashvars="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5"  width="'.$node->videox.'" height="'.$node->videoy.'" name="Player" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+             </object>';
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'),
                                       t('Link to Macromedia Flash Player Download Page'),
                                       t('Download latest Flash Player'));
@@ -704,11 +940,12 @@ function theme_video_play_realmedia(&$node) {
 function theme_video_play_windowsmedia($node) {
   // Windows Media's embeded player includes the controls in the height
   $node->videoy += 68;
+  $vidfile = _video_get_fileurl($node) . _video_get_filename($node);
   $output = '<OBJECT id="video1" width="'.$node->videox.'" height="'.$node->videoy.'"
               classid="CLSID:22d6f312-b0f6-11d0-94ab-0080c74c7e95" 
               codebase="http://activex.microsoft.com/activex/controls/mplayer/en/nsmp2inf.cab#Version=5,1,52,701"
               standby="Loading Microsoft Windows Media Player components..." type="application/x-oleobject">
-              <param name="fileName" value="'.$node->vidfile.'">
+              <param name="fileName" value="'.$vidfile.'">
               <param name="animationatStart" value="true">
               <param name="transparentatStart" value="true">
               <param name="autoStart" value="true">
@@ -719,13 +956,33 @@ function theme_video_play_windowsmedia($node) {
                 id="mediaPlayer" name="mediaPlayer" displaysize="4" autosize="-1" 
                 showcontrols="true" showtracker="-1" 
                 showdisplay="0" showstatusbar="-1" videoborder3d="-1" width="'.$node->videox.'" height="'.$node->videoy.'"
-                src="'.$node->vidfile.'" autostart="true" loop="true">
+                src="'.$vidfile.'" autostart="true" loop="true">
               </EMBED>
              </OBJECT>';
 
   $output = _theme_video_format_play($output, t('http://windowsupdate.microsoft.com/'),
                                       t('Link to Windows Update'),
                                       t('Download latest Windows Media Player'));
+  return theme('page', $output);
+}
+
+/**
+ * Play videos hosted on youtube.com
+ * Allows users to host videos on youtube.com and then use the video ID to post it in the module.
+ * In the future it could also use the youtube developer API to get info and comments of the video.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_youtube($node) {
+  $output = '<object width="425" height="350">
+               <param name="movie" value="http://www.youtube.com/v/' . $node->vidfile . '"></param>
+               <embed src="http://www.youtube.com/v/' . $node->vidfile . '" type="application/x-shockwave-flash" width="425" height="350"></embed>
+             </object>';
+  $output = _theme_video_format_play($output, t('http://www.youtube.com/help.php'), t('Link to youtube.com'), t('youtube.com'));
   return theme('page', $output);
 }
 
@@ -751,4 +1008,202 @@ function _theme_video_format_play(&$output, $url, $title, $link_text) {
   return $output ."\n</p> \n </div>\n";
 }
 
-?>
+/**
+ * Returns a string containing
+ * the video file name
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string containing url
+ */
+function _video_get_filename(&$node) {
+  $vidfile = $node->vidfile;
+  return basename($vidfile);
+}
+
+/**
+ * Returns an absolute url which references
+ * to the folder containing the video file
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string containing url
+ */
+function _video_get_fileurl(&$node) {
+  global $base_url;
+  //removing filename from path
+  $vidpath = $node->vidfile;
+  $vidpath = rtrim($vidpath, _video_get_filename($node));
+  //creation of absolute url
+  if (! preg_match("/^(ht|f)tp(s?):\/\//", $vidpath)) {
+    return $base_url .'/'. $vidpath;
+  }
+  return $vidpath;
+}
+
+/**
+ * Implementation of hook_view().
+ * In addition to standard uses, it adds the 6 custom fields to the body of the node.
+ *
+ * @return
+ *   Nothing, modifies $node which is passed by reference.
+ */
+function video_view(&$node, $teaser = FALSE, $page = FALSE) {
+  //Run the body through the standard filters.
+  $node = node_prepare($node, $teaser);
+  
+  //Add the HTML formatted output of the custom fields to the bottom.
+  $node->body .= theme('video_view', $node);
+}
+
+/**
+ * Display custom fields on the view page.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_view(&$node) {
+  //Adds the custom fields.
+  $group_title = variable_get('video_customfieldtitle', ''); //Title of the custom fields.
+  $title1 = variable_get('video_customfield1', '');
+  $title2 = variable_get('video_customfield2', '');
+  $title3 = variable_get('video_customfield3', '');
+  $title4 = variable_get('video_customfield4', '');
+  $title5 = variable_get('video_customfield5', '');
+  $title6 = variable_get('video_customfield6', '');
+  //Run the fields through the input filter set for the node, then remove paragraphs.
+  //Removes the <p> and </p> tags from the filter pass return. This allows each field to be on one line.
+  //A better system might be to remove only the first and last <p></P> tags.
+  $field1 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_1, $node->format, FALSE));
+  $field2 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_2, $node->format, FALSE));
+  $field3 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_3, $node->format, FALSE));
+  $field4 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_4, $node->format, FALSE));
+  $field5 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_5, $node->format, FALSE));
+  $field6 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_6, $node->format, FALSE));
+
+  //Make sure all the titles and fields are not blank, if not then display them.
+  if (($title1 . $title2 . $title3 . $title4 . $title5 . $title6) != '' and ($field1 . $field2 . $field3 . $field4 . $field5 . $field6) != '') {
+    $output .= '<div class="videofields">'; //Enclose all output in "videofields" div class.
+    if ($group_title != '') {
+      $output .= '<div class="title"><h2>' . $group_title . '</h2></div>';
+    }
+    if ($title1 != '' and $node->custom_field_1 != '') {
+      $output .= '<div class="odd"><b>' . $title1 . '</b> ';
+      $output .= $field1 . '</div>';
+    }
+    if ($title2 != '' and $node->custom_field_2 != '') {
+      $output .= '<div class="even"><b>' . $title2 . '</b> ';
+      $output .= $field2 . '</div>';
+    }
+    if ($title3 != '' and $node->custom_field_3 != '') {
+      $output .= '<div class="odd"><b>' . $title3 . '</b> ';
+      $output .= $field3 . '</div>';
+    }
+    if ($title4 != '' and $node->custom_field_4 != '') {
+      $output .= '<div class="even"><b>' . $title4 . '</b> ';
+      $output .= $field4 . '</div>';
+    }
+    if ($title5 != '' and $node->custom_field_5 != '') {
+      $output .= '<div class="odd"><b>' . $title5 . '</b> ';
+      $output .= $field5 . '</div>';
+    }
+    if ($title6 != '' and $node->custom_field_6 != '') {
+      $output .= '<div class="even"><b>' . $title6 . '</b> ';
+      $output .= $field6 . '</div>';
+    }
+    $output .= '</div><br />'; //Close the "videofields" class div.
+  }
+  return $output;
+}
+
+/**
+ * Outputs the HTML for the download page when multi-file download are turned on.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_download(&$node) {
+  $output = '';
+  if (!$node->download_error) {
+    //Replace some comman file types with full name and links.
+    $find = array('mov', 'wmv', 'rm', 'avi', 'zip', 'divx', 'flv');
+    $replace = array('<a href="http://www.apple.com/quicktime" title="'. t('QuickTime Homepage') . '">' . t('Quicktime') . '</a>'
+               , '<a href="http://www.microsoft.com/windowsmedia" title="'. t('Windows Media Homepage') . '">' . t('Windows Media') . '</a>'
+               , '<a href="http://www.real.com" title="'. t('Real Media Homepage') . '">' . t('Real Media') . '</a>'
+               , '<a href="http://en.wikipedia.org/wiki/AVI" title="'. t('AVI Information at wikipedia.org') . '">' . t('AVI') . '</a>'
+               , '<a href="http://en.wikipedia.org/wiki/ZIP_file_format" title="'. t('ZIP Information at wikipedia.org') . '">' . t('ZIP') . '</a>'
+               , '<a href="http://www.divx.com" title="'. t('Divx Homepage') . '">' . t('DIVX') . '</a>'
+               , '<a href="http://www.macromedia.com/go/getflashplayer" title="'. t('Macromedia Flash Homepage') . '">' .t('Flash FLV') . '</a>'
+               );
+    $output .= '<br /><div class="videodownload">'; //Enclose all HTML in "videodownload" class.
+    foreach($node->file_array as $file) { //Goes through the array of video files and gets them ready for display.
+      $file_type = str_replace($find, $replace, $file['type']); //Match and replace common file types.
+      $link = l($file['file'], "node/$node->nid/download/" . $file['encoded_url']); //Create link to download file.
+      $file_array_table[] = array($link, format_size($file['size']), $file_type); //Create table row.
+    }
+    $headers = array(t('File Link'), t('File Size'), t('File Type'));
+    $output .= theme_table($headers, $file_array_table); //Create the table of files.
+    $output .= '</div>'; //Close the "videodownload" class.
+  } else { //If there is an error.
+    drupal_set_message(t('There are no files to download for this video.'), 'error');
+    drupal_goto("node/$node->nid"); //Redirect back to view page.
+  }
+    /*
+  $dev .= "<font color=\"white\"><br/><br/><b>Temporary Developement stuff.</b>";
+  $dev .= "<br/>Video File = " . $node->vidfile;
+  $dev .= "<br/>CWD= " . getcwd();
+  $dev .= "<br/>Download Folder: " . $node->download_folder;
+  $dev .= "<br/>Play Directory Stub: " . $node->play_dir_stub;
+  $dev .= "<br/> Base URL: " . $base_url . "</font>";
+  $output .= $dev;
+  */
+
+  //Adds a breadcrumb back to view on the download page. This may not be needed but some better breadcrumbs are.
+  $breadcrumb = drupal_get_breadcrumb();
+  $breadcrumb[] = l(t('View'), "node/$node->nid");
+  drupal_set_breadcrumb($breadcrumb);
+  
+  drupal_set_title(t('Downloading').' '.$node->title);  
+  return theme("page", $output);
+}
+
+/**
+ * Scans a directory and returns an array of all the filenames in the directory.
+ * This function is only necessary to maintain PHP 4 support.
+ *
+ * @param $dir
+ *   The directory. Can be an absolute path or relative from the current working directory.
+ *
+ * @return
+ *   array of filenames.
+ */
+function _video_scandir($dir) {
+  //Try a few different ways to open the directory.
+  if (is_dir($dir)) {
+    $dir_open = opendir($dir);
+  } else
+  if (is_dir($new_dir = getcwd() . $dir)) {
+    $dir_open = opendir($new_dir);
+  } else
+  if (is_dir($new_dir = getcwd() . '/' . $dir)) {
+    $dir_open = opendir($new_dir);
+  }
+  if (!$dir_open) { //If opendir returned false then return false.
+    return false;
+  }
+  //If it makes it this far $dir_open should be valid.
+  while (($dir_content = readdir($dir_open)) !== false) {
+    $files[] = $dir_content;
+  }
+  return $files;
+}
