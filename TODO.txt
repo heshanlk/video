@@ -1,11 +1,7 @@
 TODO LIST (in order of importance)
 -----------
 
-- Figure out how to make Windows Media
-  files play with relative URL in addition
-  to a fully qualified one
-- Include GPL'ed FLV loader files
 - Intensive testing
-- Support for more types of videos
-- Support for Customizable node field
+- Upload feature - http://drupal.org/node/26978
+- Add mp4 support - http://drupal.org/node/26505
 - Your suggestions here...
