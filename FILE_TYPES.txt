@@ -1,0 +1,26 @@
+FILE TYPE INFORMATIONS
+--------------------------
+
+Video.module for Drupal 4.7 support multiple video formats.
+
+.mov, .wmv, .rm
+  This files type are supported out the box. 
+  To play these file types you need to enter in the path to the file.
+  If your video is on the same webserver as drupal, you can use a path relative
+  to the drupal directory, like "downloads/video.mov". 
+  If your video is on another server you can enter the URI to the video
+  like "http://www.example.com/videos/my-video.mov".
+
+YouTube.com support
+  You can host videos on youtube.com and put them on your site. 
+  To do this, after you upload the video on youtube.com enter 
+  the video ID into the "Video File" field. If the URI youtube.com gives 
+  you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8" 
+  you would enter "XM4QYXPf-s8".
+
+.flv
+  Video.module for drupal 4.7 now support Macromedia Flash FLV Videos
+  using FlowPlayer ( http://flowplayer.sourceforge.net/ ).
+  To use .flv files simply download Flowplayer and put the file 
+  called "Player.swf" into your Drupal folder.
+  
