@@ -116,7 +116,7 @@ function video_menu($may_cache) {
       'path' => 'node/add/video',
       'title' => t('video'),
       'access' => user_access('create video'));
-    // I don't get this whole goto thing - deekayen
+    // I don't get this whole goto thing - deekayen 
     $items[] = array(
       'path' => 'video/goto',
       'callback' => '_video_page_goto',
@@ -138,7 +138,7 @@ function video_menu($may_cache) {
           'type' => MENU_LOCAL_TASK);
       }
       //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
-      if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->nid) != 'youtube' or $node->disable_multidownload == 0)) {
+      if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->vidfile) != 'youtube' or $node->disable_multidownload == 0)) {
         $items[] = array('path' => 'node/'.arg(1).'/download',
           'title' => t('download'),
           'callback' => 'video_download',
@@ -172,7 +172,7 @@ function video_link($type, $node = NULL) {
     $display_playtime      = variable_get('video_displayplaytime', 1);
     $display_filesize      = variable_get('video_displayfilesize', 1);
     //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
-    if (_video_get_filetype($node->nid) == 'youtube' and $node->disable_multidownload == 1) {
+    if (_video_get_filetype($node->vidfile) == 'youtube' and $node->disable_multidownload == 1) {
       $display_download_link = 0;
     }
     $link = '';
@@ -304,12 +304,12 @@ function video_settings() {
 }
 
 
-/********************************************************************
+/******************************************************************************
  * Node Hooks
- ********************************************************************/
+ ******************************************************************************/
 
 /**
- * Implementation of hook_node().
+ * Implementation of _node_info().
  *
  * @return
  *   array
@@ -332,7 +332,7 @@ function video_access($op, $node) {
 }
 
 /**
- * Hook
+ * Hook, displays the contents of the node form page for creating and editing nodes.
  *
  * @param $node
  *   object
@@ -353,7 +353,7 @@ function video_form(&$node) {
     $output .= form_group_collapsible(t('Multiple files in download tab'), $group, TRUE, t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help#multi-download'));
   }
 
-  $group = form_textfield(t('Size'), 'size', $node->size, 12, 12, t('If the video is on the local server the size will be set automatically. Otherwise enter a value, 0 will turn the display off. Must be less than 2GB.'), null, true);
+  $group = form_textfield(t('Size'), 'size', $node->size, 12, 12, t('If the video is on the local server the size will be set automatically. Otherwise enter a value. Entering 0 will turn the display off. Must be less than 2GB.'), null, true);
   $group .= form_select(NULL, 'size_format', 'B', array('B' => t('bytes'), 'Kb' => t('Kilobits'), 'KB' => t('KiloBytes'), 'Mb' => t('Megabits'), 'MB' => t('MegaBytes'), 'Gb' => t('Gigabits'), 'GB' => t('GigaBytes')), 'size units', null, null, true);
   $output .= form_group(t('Filesize'), $group);
 
@@ -389,7 +389,7 @@ function video_form(&$node) {
   $group = form_textfield(t('Video Bitrate'), 'video_bitrate', ($node->video_bitrate == 0) ? '' : $node->video_bitrate, 11, 11, t('Integer value of video bitrate'));
   $group .= form_textfield(t('Audio Bitrate'), 'audio_bitrate', ($node->audio_bitrate == 0) ? '' : $node->audio_bitrate, 11, 11, t('Integer value of audio bitrate'));
   $group .= form_textfield(t('Audio Sampling Rate'), 'audio_sampling_rate', ($node->audio_sampling_rate == 0) ? '' : $node->audio_sampling_rate, 11, 11, t('Integer value of audio sampling rate in Hz'));
-  $group .= form_select(t('Audio Channels'), 'audio_channels', $node->audio_channels, array('' => '', 'stereo' => t('Stereo'), 'mono' => t('Mono')));
+  $group .= form_select(t('Audio Channels'), 'audio_channels', $node->audio_channels, array('' => '', '5.1' => t('5.1'), 'stereo' => t('Stereo'), 'mono' => t('Mono')));
   $output .= form_group_collapsible(t('Optional Metadata'), $group, TRUE, t('Metadata entered here will not be displayed. It is currently for administrative reference only.'));
 
   if (function_exists('taxonomy_node_form')) {
@@ -562,167 +562,20 @@ function video_block_list($type = 'top') {
 }
 
 /**
- * Pull the file extension from a filename
- *
- * @return
- *   string value of file type or boolean FALSE on error
- */
-function _video_get_filetype($nid) {
-  if (is_numeric($nid)) {
-    $vidfile = db_result(db_query("SELECT v.vidfile FROM {video} v WHERE v.nid = '%d'", $nid));
-    //If the filename doesn't contain a ".", "/", or "\" then consider it a youtube video ID.
-    if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) <= 12 and strlen($vidfile) >= 10) {
-      $file_type = 'youtube';
-    } else { //Else get the file extension after the "."
-      $file_type = substr($vidfile, strrpos($vidfile, '.') + 1);   
-    }
-    return $file_type;
-  }
-  else {
-    return false;
-  }
-}
-
-/**
- * Forward user directly to the file for downloading
- *
- * @param $id
- *   integer node id
- *
- * @param $type
- *   string type of file to go to. defaults to video.
- *
- * @return
- *   boolean FALSE on error
- */
-function _video_page_goto($id, $type = 'video') {
-  global $base_url;
-  if (in_array($type, array('video', 'feed')) && is_numeric($id)) {
-    $result = db_query(db_rewrite_sql("SELECT n.nid, n.vidfile FROM {video} n WHERE n.nid = '%d'"), $id);
-    $wl     = db_fetch_object($result);
-    $type   = 'vidfile';
-    if ($wl->$type != '')   {
-      if (variable_get('video_downloadcounter', 1)) {
-        db_query("UPDATE {video} SET download_counter = download_counter + 1 where nid = '%d'", $id);
-      }
-      // Didn't this use to work?
-      header("HTTP/1.0 301 Moved Permanently");
-    }
-    if (preg_match("/^(ht|f)tp(s?):\/\//", $wl->$type)) {
-      header('Location: ' . $wl->$type);
-    }
-    else {
-      header("Location: $base_url/" . $wl->$type);
-    }
-  }
-  return false;
-}
-
-/**
- * Forward user directly to the file for downloading
- *
- * @param $encoded_url
- *   base64 encoded URL
- *
- * @param $nid
- *   Node ID of the node to have it's download counter updated.
- *
- * @return
- *   Nothing.
- */
-function _video_download_goto($encoded_url, $nid) {
-  $encoded_url = str_replace('-', '/', $encoded_url); //Replace "-" to "/" for MIME base64.
-  $url = base64_decode($encoded_url);
-  if (variable_get('video_downloadcounter', 1)) {
-    db_query("UPDATE {video} SET download_counter = download_counter + 1 where nid = '%d'", $nid); //Add a download click to the database.
-  }
-  header("Location: $url");
-}
-
-/**
- * Convert filesize to bytes
- *
- * @return 
- *   integer bytes
- */
-function _video_size2bytes(&$node) {
-  if (!empty($node->size)) {
-    switch ($node->size_format) {
-      case 'Kb': // KiloBits
-        return intval($node->size * 128);      
-        break;
-      case 'KB': // KiloBytes
-        return intval($node->size * 1024);
-        break;
-      case 'Mb': // MegaBits
-        return intval($node->size * 131072);
-        break;
-      case 'MB': // MegaBytes
-        return intval($node->size * 1048576);
-        break;
-      case 'Gb': // GigaBits
-        return intval($node->size * 134217728);
-        break;
-      case 'GB': // GigaBytes
-        return intval($node->size * 1073741824);
-        break;
-      // if needed someday, the following could also apply:
-      // TB: * 1099511627776
-      // PB: * 1125899906842620
-      default:
-        return (int)$node->size;
-        break;
-    }
-  }
-  else {
-    return 0;
-  }
-}
-
-/**
- * Convert seconds to hours, minutes, and seconds
- *
- * Derived from h:m:s example by Jon Haworth
- *
- * @link
- *   http://www.laughing-buddha.net/jon/php/sec2hms/
- *
- * @return
- *   array of hours, minutes, and seconds, or boolean FALSE on error
- */
-function _video_sec2hms($sec = 0) {
-  $hms = array();
-  
-  // 3600 seconds in an hour and trash remainder
-  $hms['hours'] = intval(intval($sec) / 3600); 
-
-  // dividing the total seconds by 60 will give us
-  // the number of minutes, but we're interested in 
-  // minutes past the hour: to get that, we need to 
-  // divide by 60 again and keep the remainder
-  $hms['minutes'] = intval(($sec / 60) % 60); 
-
-  // keep the remainder
-  $hms['seconds'] = intval($sec % 60); 
-
-  return $hms;
-}
-
-/**
  * Either redirects to download the video file.
  * Or displays a list of files to download.
  */
 function video_download() {
   if ($node = node_load(array('nid' => arg(1)))) {
     if (variable_get("video_multidownload", 0) == 0 or $node->disable_multidownload == 1) {
-      if (_video_get_filetype($node->nid) != 'youtube') { //Make sure the video type is not youtube before downloading.
-        _video_page_goto ($node->nid);
+      if (_video_get_filetype($node->vidfile) != 'youtube') { //Make sure the video type is not youtube before downloading.
+        _video_download_goto($node->vidfile, $node->nid);
       } else { //If video is type youtube then it can't be downloaded.
         drupal_set_message(t('There are no files to download for this video.'), 'error');
         print theme('page', '');
       }
     } elseif (arg(3) != '') { //If we are passed an encoded URL redirect to the downloader.
-      _video_download_goto(arg(3), $node->nid);
+      _video_download_goto(arg(3), $node->nid, TRUE);
     } else { //Multiple file downloads is turned on.
       $node->download_error = FALSE;
       $node->file_array = array(); //Initialize the final file array.
@@ -803,7 +656,7 @@ function video_download() {
 function video_play() {
   if ($node = node_load(array('nid' => arg(1)))) {
     drupal_set_title(t('Playing').' '.$node->title);
-    switch (_video_get_filetype($node->nid)) {
+    switch (_video_get_filetype($node->vidfile)) {
       case 'mov':
         print theme('video_play_quicktime', $node);
         break;
@@ -835,10 +688,24 @@ function video_play() {
 }
 
 /**
+ * Implementation of hook_view().
+ * In addition to standard uses, it adds the 6 custom fields to the body of the node.
+ *
+ * @return
+ *   Nothing, modifies $node which is passed by reference.
+ */
+function video_view(&$node, $teaser = FALSE, $page = FALSE) {
+  //Run the body through the standard filters.
+  $node = node_prepare($node, $teaser);
+  //Add the HTML formatted output of the custom fields to the bottom.
+  $node->body .= theme('video_view', $node);
+}
+
+/*********************************************************************
  * Themeable functions for playing videos.
  * It prints a page with a player embedded
  * linked to the file record of the node.
- */
+ *********************************************************************/
 
 /**
  * Play videos from in Flash video format
@@ -853,8 +720,8 @@ function theme_video_play_flash(&$node) {
   $loader_location = variable_get('video_flvplayerloader', 'Player.swf');
   $skin_location = variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf');
   $skin_location = substr($skin_location, 0, strlen($skin_location) - 4);
-  $file = _video_get_filename($node);
-  $url = _video_get_fileurl($node);
+  $file = basename($node->vidfile);
+  $url = _video_get_fileurl($node->vidfile);
 //print($file.'<br>'.$url); //Remove once fully tested.
   $output = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" id="Player">
                <param name="allowScriptAccess" value="sameDomain" />
@@ -940,7 +807,7 @@ function theme_video_play_realmedia(&$node) {
 function theme_video_play_windowsmedia($node) {
   // Windows Media's embeded player includes the controls in the height
   $node->videoy += 68;
-  $vidfile = _video_get_fileurl($node) . _video_get_filename($node);
+  $vidfile = _video_get_fileurl($node->vidfile) . basename($node->vidfile);
   $output = '<OBJECT id="video1" width="'.$node->videox.'" height="'.$node->videoy.'"
               classid="CLSID:22d6f312-b0f6-11d0-94ab-0080c74c7e95" 
               codebase="http://activex.microsoft.com/activex/controls/mplayer/en/nsmp2inf.cab#Version=5,1,52,701"
@@ -1006,58 +873,6 @@ function _theme_video_format_play(&$output, $url, $title, $link_text) {
   $output .= "<p>\n". t('Problems viewing videos?');
   $output .= "<br />\n<a href=\"$url\" title=\"$title\">$link_text</a>";
   return $output ."\n</p> \n </div>\n";
-}
-
-/**
- * Returns a string containing
- * the video file name
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string containing url
- */
-function _video_get_filename(&$node) {
-  $vidfile = $node->vidfile;
-  return basename($vidfile);
-}
-
-/**
- * Returns an absolute url which references
- * to the folder containing the video file
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string containing url
- */
-function _video_get_fileurl(&$node) {
-  global $base_url;
-  //removing filename from path
-  $vidpath = $node->vidfile;
-  $vidpath = rtrim($vidpath, _video_get_filename($node));
-  //creation of absolute url
-  if (! preg_match("/^(ht|f)tp(s?):\/\//", $vidpath)) {
-    return $base_url .'/'. $vidpath;
-  }
-  return $vidpath;
-}
-
-/**
- * Implementation of hook_view().
- * In addition to standard uses, it adds the 6 custom fields to the body of the node.
- *
- * @return
- *   Nothing, modifies $node which is passed by reference.
- */
-function video_view(&$node, $teaser = FALSE, $page = FALSE) {
-  //Run the body through the standard filters.
-  $node = node_prepare($node, $teaser);
-  
-  //Add the HTML formatted output of the custom fields to the bottom.
-  $node->body .= theme('video_view', $node);
 }
 
 /**
@@ -1135,7 +950,7 @@ function theme_video_view(&$node) {
 function theme_video_download(&$node) {
   $output = '';
   if (!$node->download_error) {
-    //Replace some comman file types with full name and links.
+    //Replace some common file types with full name and links.
     $find = array('mov', 'wmv', 'rm', 'avi', 'zip', 'divx', 'flv');
     $replace = array('<a href="http://www.apple.com/quicktime" title="'. t('QuickTime Homepage') . '">' . t('Quicktime') . '</a>'
                , '<a href="http://www.microsoft.com/windowsmedia" title="'. t('Windows Media Homepage') . '">' . t('Windows Media') . '</a>'
@@ -1177,6 +992,61 @@ function theme_video_download(&$node) {
   return theme("page", $output);
 }
 
+/******************************************************************************
+ * End theme functions
+ ******************************************************************************
+ * Start private functions created for this module.
+ ******************************************************************************/
+
+/**
+ * Pull the file extension from a filename
+ *
+ * @param $vidfile
+ *   string filename to get the filetype from.
+ *
+ * @return
+ *   string value of file type or boolean FALSE on error
+ */
+function _video_get_filetype($vidfile) {
+    //If the filename doesn't contain a ".", "/", or "\" then consider it a youtube video ID.
+    if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) <= 12 and strlen($vidfile) >= 10) {
+      $file_type = 'youtube';
+    } elseif (strstr($vidfile, '.')) { //If file contains a "." then get the file extension after the "."
+      $file_type = substr($vidfile, strrpos($vidfile, '.') + 1);   
+    } else {
+      $file_type = FALSE;
+    }
+    return $file_type;
+}
+
+/**
+ * Forward user directly to the file for downloading
+ *
+ * @param $input_url
+ *   string should be either a base64 encoded absolute URL, relative URL, or absolute URL.
+ *
+ * @param $nid
+ *   string node ID of the node to have it's download counter updated.
+ *
+ * @param $base64_encoded
+ *   boolean value determines whether the $input is base64 encoded.
+ *
+ * @return
+ *   Nothing
+ */
+function _video_download_goto($input_url, $nid, $base64_encoded = FALSE) {
+  if ($base64_encoded) {
+    $encoded_url = str_replace('-', '/', $input_url); //Replace "-" to "/" for MIME base64.
+    $location = base64_decode($encoded_url);
+  } else { //$input URL is not base64 encoded.
+    $location = _video_get_fileurl($input_url) . basename($input_url);
+  }
+  if (variable_get('video_downloadcounter', 1)) {
+    db_query("UPDATE {video} SET download_counter = download_counter + 1 where nid = '%d'", $nid); //Increment download counter.
+  }
+  header("Location: $location"); //Redirect to the video files URL.
+}
+
 /**
  * Scans a directory and returns an array of all the filenames in the directory.
  * This function is only necessary to maintain PHP 4 support.
@@ -1197,13 +1067,137 @@ function _video_scandir($dir) {
   } else
   if (is_dir($new_dir = getcwd() . '/' . $dir)) {
     $dir_open = opendir($new_dir);
+  } else { //If directory does not exist.
+    return FALSE;
   }
   if (!$dir_open) { //If opendir returned false then return false.
-    return false;
+    return FALSE;
   }
   //If it makes it this far $dir_open should be valid.
-  while (($dir_content = readdir($dir_open)) !== false) {
+  while (($dir_content = readdir($dir_open)) !== FALSE) {
     $files[] = $dir_content;
   }
   return $files;
+}
+
+/**
+ * Convert filesize to bytes
+ *
+ * @return 
+ *   integer bytes
+ */
+function _video_size2bytes(&$node) {
+  if (!empty($node->size)) {
+    switch ($node->size_format) {
+      case 'Kb': // KiloBits
+        return intval($node->size * 128);      
+        break;
+      case 'KB': // KiloBytes
+        return intval($node->size * 1024);
+        break;
+      case 'Mb': // MegaBits
+        return intval($node->size * 131072);
+        break;
+      case 'MB': // MegaBytes
+        return intval($node->size * 1048576);
+        break;
+      case 'Gb': // GigaBits
+        return intval($node->size * 134217728);
+        break;
+      case 'GB': // GigaBytes
+        return intval($node->size * 1073741824);
+        break;
+      default:
+        return (int)$node->size;
+        break;
+    }
+  }
+  else {
+    return 0;
+  }
+}
+
+/**
+ * Convert seconds to hours, minutes, and seconds.
+ * Derived from h:m:s example by Jon Haworth
+ *
+ * @link
+ *   http://www.laughing-buddha.net/jon/php/sec2hms/
+ *
+ * @return
+ *   array of hours, minutes, and seconds, or boolean FALSE on error
+ */
+function _video_sec2hms($sec = 0) {
+  $hms = array();
+  
+  // 3600 seconds in an hour and trash remainder
+  $hms['hours'] = intval(intval($sec) / 3600); 
+
+  // dividing the total seconds by 60 will give us
+  // the number of minutes, but we're interested in 
+  // minutes past the hour: to get that, we need to 
+  // divide by 60 again and keep the remainder
+  $hms['minutes'] = intval(($sec / 60) % 60); 
+
+  // keep the remainder
+  $hms['seconds'] = intval($sec % 60); 
+
+  return $hms;
+}
+
+/**
+ * Returns an absolute url which references
+ * to the folder containing the video file
+ *
+ * @param $video_file
+ *   string containing absolute or relative URL to video.
+ *
+ * @return
+ *   string containing absolute URL path to video without the filename.
+ */
+function _video_get_fileurl($video_file) {
+  global $base_url;
+  //removing filename from path
+  $video_path = rtrim($video_file, basename($video_file));
+  //creation of absolute url
+  if (! preg_match("/^(ht|f)tp(s?):\/\//", $video_path)) { //If path is not absolute.
+    $video_path = $base_url . '/' . $video_path;
+  }
+  return $video_path;
+}
+
+/**
+ * Forward user directly to the file for downloading.
+ * This function has been replaced with _video_download_goto and should be deleted.
+ *
+ * @param $id
+ *   integer node id
+ *
+ * @param $type
+ *   string type of file to go to. defaults to video.
+ *
+ * @return
+ *   boolean FALSE on error
+ */
+function _video_page_goto($id, $type = 'video') {
+  global $base_url;
+  if (in_array($type, array('video', 'feed')) && is_numeric($id)) {
+    $result = db_query(db_rewrite_sql("SELECT n.nid, n.vidfile FROM {video} n WHERE n.nid = '%d'"), $id);
+    $wl     = db_fetch_object($result);
+    $type   = 'vidfile';
+    if ($wl->$type != '')   {
+      if (variable_get('video_downloadcounter', 1)) {
+        db_query("UPDATE {video} SET download_counter = download_counter + 1 where nid = '%d'", $id);
+      }
+      // Didn't this use to work?
+      header("HTTP/1.0 301 Moved Permanently");
+    }
+    if (preg_match("/^(ht|f)tp(s?):\/\//", $wl->$type)) {
+      header('Location: ' . $wl->$type);
+    }
+    else {
+      header("Location: $base_url/" . $wl->$type);
+    }
+  }
+  return false;
 }
