@@ -557,8 +557,8 @@ function video_block($op = 'list', $delta = 0) {
  *   string HTML content for a block
  */
 function video_block_list($type = 'top') {
-  $orderby = ($type == 'new') ? 'n.created' : 'v.download_counter';
-  return node_title_list(db_query_range(db_rewrite_sql("SELECT DISTINCT(n.nid), n.title FROM {node} n, {video} v WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER by $orderby DESC"),0, 10));
+  $orderby = ($type == 'new') ? 'n.created' : 'v.download_counter + v.play_counter';
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.nid = v.nid AND n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, 10));
 }
 
 /**
