@@ -1008,8 +1008,8 @@ function theme_video_download(&$node) {
  *   string value of file type or boolean FALSE on error
  */
 function _video_get_filetype($vidfile) {
-    //If the filename doesn't contain a ".", "/", or "\" then consider it a youtube video ID.
-    if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) <= 12 and strlen($vidfile) >= 10) {
+    //If the filename doesn't contain a ".", "/", or "\" and is exactly 11 characters then consider it a youtube video ID.
+    if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) == 11) {
       $file_type = 'youtube';
     } elseif (strstr($vidfile, '.')) { //If file contains a "." then get the file extension after the "."
       $file_type = substr($vidfile, strrpos($vidfile, '.') + 1);   
