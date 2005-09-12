@@ -746,11 +746,12 @@ function theme_video_play_flash(&$node) {
  *   string of content to display
  */
 function theme_video_play_quicktime(&$node) {
-  $output = '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="'.$node->videox.'" height="'.$node->videoy.'" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">          
+  $height = $node->videoy + 16; //Increase the height to accommodate the player controls on the bottom.
+  $output = '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="'.$node->videox.'" height="'.$height.'" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">          
                 <param name="SRC" value="'.$node->vidfile.'" />
                 <param name="AUTOPLAY" value="true" />
                 <param name="KIOSKMODE" value="false" />
-                <embed src="'.$node->vidfile.'" width="'.$node->videox.'" height="'.$node->videoy.'" scale="tofit" autoplay="true" kioskmode="false" pluginspage="http://www.apple.com/quicktime/download/">
+                <embed src="'.$node->vidfile.'" width="'.$node->videox.'" height="'.$height.'" scale="tofit" autoplay="true" kioskmode="false" pluginspage="http://www.apple.com/quicktime/download/">
                 </embed>
              </object>';
   $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
