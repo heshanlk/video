@@ -724,7 +724,6 @@ function video_play() {
         break;
       default:
         drupal_set_message('Video type not supported', 'error');
-        global $base_url;
         drupal_goto("node/$node->nid");
         break;
     }
@@ -1026,15 +1025,6 @@ function theme_video_download(&$node) {
     drupal_set_message(t('There are no files to download for this video.'), 'error');
     drupal_goto("node/$node->nid"); //Redirect back to view page.
   }
-    /*
-  $dev .= "<font color=\"white\"><br/><br/><b>Temporary Developement stuff.</b>";
-  $dev .= "<br/>Video File = " . $node->vidfile;
-  $dev .= "<br/>CWD= " . getcwd();
-  $dev .= "<br/>Download Folder: " . $node->download_folder;
-  $dev .= "<br/>Play Directory Stub: " . $node->play_dir_stub;
-  $dev .= "<br/> Base URL: " . $base_url . "</font>";
-  $output .= $dev;
-  */
 
   //Adds a breadcrumb back to view on the download page. This may not be needed but some better breadcrumbs are.
   $breadcrumb = drupal_get_breadcrumb();
@@ -1177,24 +1167,22 @@ function _video_size2bytes(&$node) {
  * @link
  *   http://www.laughing-buddha.net/jon/php/sec2hms/
  *
+ * @param $sec
+ *   integer value of seconds.
+ *
  * @return
- *   array of hours, minutes, and seconds, or boolean FALSE on error
+ *   array associative with key values of hours, minutes, and seconds.
  */
 function _video_sec2hms($sec = 0) {
   $hms = array();
-  
   // 3600 seconds in an hour and trash remainder
   $hms['hours'] = intval(intval($sec) / 3600); 
-
   // dividing the total seconds by 60 will give us
   // the number of minutes, but we're interested in 
   // minutes past the hour: to get that, we need to 
   // divide by 60 again and keep the remainder
   $hms['minutes'] = intval(($sec / 60) % 60); 
-
-  // keep the remainder
-  $hms['seconds'] = intval($sec % 60); 
-
+  $hms['seconds'] = intval($sec % 60); //keep the remainder.
   return $hms;
 }
 
