@@ -459,11 +459,13 @@ function video_validate(&$node) {
       }
     }
   }
-  if (isset($node->videox) && $node->videox <= 0) {
-    form_set_error('videox', t('You have to insert a valid horizontal pixel size for this video'));
-  }
-  if (isset($node->videoy) && $node->videoy <= 0) {
-    form_set_error('videoy', t('You have to insert a valid vertical pixel size for this video'));
+  if (_video_get_filetype($node->vidfile) != 'youtube') { //If video is of type youtube don't check size.
+    if (isset($node->videox) && $node->videox <= 0) {
+      form_set_error('videox', t('You have to insert a valid horizontal pixel size for this video'));
+    }
+    if (isset($node->videoy) && $node->videoy <= 0) {
+      form_set_error('videoy', t('You have to insert a valid vertical pixel size for this video'));
+    }
   }
   //If file is on the local server get size, otherwise make sure a number is entered.
   $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
@@ -513,52 +515,100 @@ function video_load($node) {
  ********************************************************************/
 
 /**
- * Hook
+ * Hook block. Does all the interaction with the drupal block system. Uses video_block_list() for DB queries.
  *
  * @param $op
  *   string type of block
  *
  * @param $delta
- *   integer 0 for most popular, 1 for most recently added
+ *   integer 0 for latest, 1 for played+downloaded, 2 for most played, 3 for most downloaded.
  *
- * @return 
+ * @param $edit
+ *   array holds the data submitted by the configure forms.
+ *
+ * @return
  *   array
  */
-function video_block($op = 'list', $delta = 0) {
+function video_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
-    return array(
-      0 => array('info' => t('Top videos')),
-      1 => array('info' => t('Latest videos')),
-    );
+    $blocks[0]['info'] = t('Latest videos');
+    $blocks[1]['info'] = t('Top videos');
+    $blocks[2]['info'] = t('Most played videos');
+    $blocks[3]['info'] = t('Most downloaded');
+    return $blocks;
   }
   elseif ($op == 'view') {
     switch ($delta) {
       case 0:
         return array(
-          'subject' => t('Top videos'),
-          'content' => video_block_list('top')
+          'subject' => variable_get('video_block_title_0', t('Latest videos')),
+          'content' => video_block_list($delta)
         );
       case 1:
         return array(
-          'subject' => t('Latest videos'),
-          'content' => video_block_list('new')
+          'subject' => variable_get('video_block_title_1', t('Top videos')),
+          'content' => video_block_list($delta)
+        );
+      case 2:
+        return array(
+          'subject' => variable_get('video_block_title_2', t('Most played videos')),
+          'content' => video_block_list($delta)
+        );
+      case 3:
+        return array(
+          'subject' => variable_get('video_block_title_3', t('Most downloaded')),
+          'content' => video_block_list($delta)
         );
     }
+  }
+  elseif ($op == 'configure') {
+    switch ($delta) { //Get the default title of the block incase the variable is not set yet.
+      case 0:
+        $default_title = t('Latest videos');
+        break;
+      case 1:
+        $default_title = t('Top videos');
+        break;
+      case 2:
+        $default_title = t('Most played videos');
+        break;
+      case 3:
+        $default_title = t('Most downloaded');
+    }
+    $output = form_textfield(t('Block display title'), 'video_block_title', variable_get("video_block_title_$delta", $default_title), 20, 40);
+    $output .= form_select(t('Number of videos to list in block'), 'video_block_limit', variable_get("video_block_limit_$delta", 10), drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)));
+    return $output;
+  }
+  elseif ($op == 'save') {
+    variable_set("video_block_title_$delta", $edit['video_block_title']);
+    variable_set("video_block_limit_$delta", $edit['video_block_limit']);
   }
 }
 
 /**
  * Query DB for block content
  *
- * @param $type
- *   string 'top' for most popular, 'new' for most recently added
+ * @param $delta
+ *   int 0, 1, 2, or 3. Determines which type of block is being accessed.
  *
  * @return
  *   string HTML content for a block
  */
-function video_block_list($type = 'top') {
-  $orderby = ($type == 'new') ? 'n.created' : 'v.download_counter + v.play_counter';
-  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.nid = v.nid AND n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, 10));
+function video_block_list($delta = 0) {
+  switch ($delta) {
+    case 0:
+      $orderby = 'n.created';
+      break;
+    case 1:
+      $orderby = 'v.download_counter + v.play_counter';
+      break;
+    case 2:
+      $orderby = 'v.play_counter';
+      break;
+    case 3:
+      $orderby = 'v.download_counter';
+  }
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.nid = v.nid AND n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, variable_get("video_block_limit_$delta", 10)));
 }
 
 /**
@@ -698,7 +748,9 @@ function video_view(&$node, $teaser = FALSE, $page = FALSE) {
   //Run the body through the standard filters.
   $node = node_prepare($node, $teaser);
   //Add the HTML formatted output of the custom fields to the bottom.
-  $node->body .= theme('video_view', $node);
+  if ($teaser == FALSE) {
+    $node->body .= theme('video_view', $node);
+  }
 }
 
 /*********************************************************************
