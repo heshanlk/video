@@ -74,7 +74,17 @@ ALTER TABLE video ADD custom_field_6 text NULL default NULL;
 function video_help($section = 'admin/help#video') {
   switch ($section) {
     case 'admin/help#video':
-      return t('<p>The video module is used to insert videos as nodes.</p>');
+      $output = '<p>'. t('The video module(4.7 or with backport patch to 4.6) allows users to post video content to their site.  The emergence of portable phones with video capture capabilities has made video capture ubiquitos.  Video logging, or <a href="%elink-en-wikipedia-org">vlogging</a> as medium for personal video broadcasting has proven to be popular and is following the blogging, and podcasting phenomenas.  Videos are useful for creative collaboration among community members.  If community members can not meet in person videos of meetings are valuable for enhancing the interaction between community members.', array('%elink-en-wikipedia-org' => 'http://en.wikipedia.org/wiki/Vlog')) .'</p>';
+      $output .= '<p>'. t('The video module can be administered to flash player settings.  There are a number of page and menu links which can be added to  play and download video content on the site.  Other configurable options include counts of plays and downloads.  Multi-file downloads can also be configured to play.   You can add file extensions that the flash video player should handle.  There are also up to six custom fields and a group name which can be added.') .'</p>';
+      $output .= t('<p>You can:</p>
+<ul>
+<li>enable <em>most played videos</em>, <em>latest videos</em>, and <em>top videos</em> blocks at <a href="%admin-block">administer &gt;&gt; block</a>.</li>
+<li>create video posts at <a href="%node-add-video">create content &gt;&gt; video</a>.</li>
+<li>administer video module settings at <a href="%admin-settings-video">administer &gt;&gt; settings &gt;&gt; video</a>.</li>
+</ul>
+', array('%admin-block' => url('admin/block'), '%node-add-video' => url('node/add/video'), '%admin-settings-video' => url('admin/settings/video')));
+      $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="%video">Video page</a>.', array('%video' => 'http://www.drupal.org/handbook/modules/video/')) .'</p>';
+      return $output;
     case 'admin/modules#description':
       return t('Allows video nodes.');
     case 'node/add#video':
