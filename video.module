@@ -115,7 +115,9 @@ function video_help($section = 'admin/help#video') {
  */
 function video_menu($may_cache) {
   if ($may_cache) {
-    $items[] = array('path' => 'video', 'title' => t('videos'),
+    $items[] = array(
+      'path' => 'video',
+      'title' => t('videos'),
       'callback' => 'video_page',
       'access' => user_access('access video'),
       'type' => MENU_SUGGESTED_ITEM);    
@@ -123,35 +125,34 @@ function video_menu($may_cache) {
       'path' => 'node/add/video',
       'title' => t('video'),
       'access' => user_access('create video'));
-    // I don't get this whole goto thing - deekayen 
-    $items[] = array(
+    $items[] = array( //This is not currently used.
       'path' => 'video/goto',
       'callback' => '_video_page_goto',
       'type' => MENU_CALLBACK,
       'callback arguments' => arg(3),
       'access' => user_access('access video'));
   }
-
-  if (arg(0) == 'node' && is_numeric(arg(1))) {
-    $node = node_load(array('nid' => arg(1)));
-
-    if ($node->type == 'video') {
-      if (variable_get('video_displayplaymenutab', 1) == 1) {
-        $items[] = array('path' => 'node/'. arg(1) .'/play',
-          'title' => t('play'),
-          'callback' => 'video_play',
-          'access' => user_access('access video'),
-          'weight' => 3,
-          'type' => MENU_LOCAL_TASK);
-      }
-      //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
-      if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->vidfile) != 'youtube' or $node->disable_multidownload == 0)) {
-        $items[] = array('path' => 'node/'.arg(1).'/download',
-          'title' => t('download'),
-          'callback' => 'video_download',
-          'access' => user_access('access video'),
-          'weight' => 5,
-          'type' => MENU_LOCAL_TASK);
+  else { //If $may_cache is false.
+    if (arg(0) == 'node' && is_numeric(arg(1))) {
+      $node = node_load(array('nid' => arg(1)));
+      if ($node->type == 'video') {
+        if (variable_get('video_displayplaymenutab', 1) == 1) {
+          $items[] = array('path' => 'node/'. arg(1) .'/play',
+            'title' => t('play'),
+            'callback' => 'video_play',
+            'access' => user_access('access video'),
+            'weight' => 3,
+            'type' => MENU_LOCAL_TASK);
+        }
+        //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
+        if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->vidfile) != 'youtube' or $node->disable_multidownload == 0)) {
+          $items[] = array('path' => 'node/'.arg(1).'/download',
+            'title' => t('download'),
+            'callback' => 'video_download',
+            'access' => user_access('access video'),
+            'weight' => 5,
+            'type' => MENU_LOCAL_TASK);
+        }
       }
     }
   }
