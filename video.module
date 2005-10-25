@@ -74,13 +74,13 @@ ALTER TABLE video ADD custom_field_6 text NULL default NULL;
 function video_help($section = 'admin/help#video') {
   switch ($section) {
     case 'admin/help#video':
-      $output = '<p>'. t('The video module(4.7 or with backport patch to 4.6) allows users to post video content to their site.  The emergence of portable phones with video capture capabilities has made video capture ubiquitos.  Video logging, or <a href="%elink-en-wikipedia-org">vlogging</a> as medium for personal video broadcasting has proven to be popular and is following the blogging, and podcasting phenomenas.  Videos are useful for creative collaboration among community members.  If community members can not meet in person videos of meetings are valuable for enhancing the interaction between community members.', array('%elink-en-wikipedia-org' => 'http://en.wikipedia.org/wiki/Vlog')) .'</p>';
-      $output .= '<p>'. t('The video module can be administered to flash player settings.  There are a number of page and menu links which can be added to  play and download video content on the site.  Other configurable options include counts of plays and downloads.  Multi-file downloads can also be configured to play.   You can add file extensions that the flash video player should handle.  There are also up to six custom fields and a group name which can be added.') .'</p>';
+      $output = '<p>' . t('The video module (4.7 or with backport patch to 4.6) allows users to post video content to their site. The emergence of portable phones with video capture capabilities has made video capture ubiquitous. Video logging, or <a href="%elink-en-wikipedia-org">vlogging</a> as a medium for personal video broadcasting has proven to be popular and is following the blogging, and podcasting phenomena\'s. Videos are useful for creative collaboration among community members. If community members can not meet in person videos of meetings are valuable for enhancing the interaction between community members.', array('%elink-en-wikipedia-org' => 'http://en.wikipedia.org/wiki/Vlog')) . '</p>';
+      $output .= '<p>' . t('The video module can be administered to flash player settings. There are a number of page and menu links which can be added to play and download video content on the site. Other configurable options include play and download counters. Multi-file downloads can also be configured under settings. There are also up to six custom fields and a group name which can be added.') . '</p>';
       $output .= t('<p>You can:</p>
 <ul>
-<li>enable <em>most played videos</em>, <em>latest videos</em>, and <em>top videos</em> blocks at <a href="%admin-block">administer &gt;&gt; block</a>.</li>
-<li>create video posts at <a href="%node-add-video">create content &gt;&gt; video</a>.</li>
-<li>administer video module settings at <a href="%admin-settings-video">administer &gt;&gt; settings &gt;&gt; video</a>.</li>
+<li>Enable <em>most played videos</em>, <em>latest videos</em>, and <em>top videos</em> blocks at <a href="%admin-block">administer &gt;&gt; block</a>.</li>
+<li>Create video posts at <a href="%node-add-video">create content &gt;&gt; video</a>.</li>
+<li>Administer video module settings at <a href="%admin-settings-video">administer &gt;&gt; settings &gt;&gt; video</a>.</li>
 </ul>
 ', array('%admin-block' => url('admin/block'), '%node-add-video' => url('node/add/video'), '%admin-settings-video' => url('admin/settings/video')));
       $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="%video">Video page</a>.', array('%video' => 'http://www.drupal.org/handbook/modules/video/')) .'</p>';
@@ -101,7 +101,6 @@ function video_help($section = 'admin/help#video') {
       $help .= '<li><b>' . t('Multi-file download folder') . '</b><ul><li>' . t('Allows you to specify a folder on the local server containing the files you wish to show up on the download tab. This folder should be relative to the drupal root directory, so if the absolute path is "C:\inetpub\drupal\videos\projectfolder\" or "/usr/htdocs/drupal/videos/projectfolder/" then you would enter "videos/projectfolder/".') . '</li></ul><br /></li>';
       $help .= '<li><b>' . t('Show files in "play" folder') . '</b><ul><li>' . t('This option will list all the files in the same folder is the "play" file listed in the "Video File" field above. You can use this option in addition to the download folder to list the videos in both folders.') . '</li></ul></li></ul>';
       return $help;
-      break;
   }
 }
 
@@ -115,8 +114,6 @@ function video_help($section = 'admin/help#video') {
  *   array of menu information
  */
 function video_menu($may_cache) {
-  global $user;
-
   if ($may_cache) {
     $items[] = array('path' => 'video', 'title' => t('videos'),
       'callback' => 'video_page',
@@ -191,7 +188,7 @@ function video_link($type, $node = NULL) {
       $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
     }
     if ($display_download_link == 1) {
-      $link .= l(t('download'), "node/$node->nid/download", array('class' => 'outgoing', 'title' => t('visit %link', array('%link' => $node->title))));
+      $link .= l(t('download'), "node/$node->nid/download", array('class' => 'outgoing', 'title' => t('download %link', array('%link' => $node->title))));
       $link .= ' | ';
     }
     if ($display_playtime == 1) {
@@ -221,7 +218,6 @@ function video_link($type, $node = NULL) {
  *   string HTML output
  */
 function video_page() {
-  global $user;
   $output = '';
   if (arg(1) != 'help') { //We are not reading help so output a list of recent video nodes.
     $result = pager_query(db_rewrite_sql("SELECT n.nid, n.created FROM {node} n WHERE n.type = 'video' AND n.status = 1 ORDER BY n.created DESC"), variable_get('default_nodes_main', 10));
@@ -335,9 +331,27 @@ function video_access($op, $node) {
   switch($op) {
     case 'view': 
       return $node->status;   // see book.module for reference
-
     case 'create':
       return user_access('create video');
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ * We use this to append <enclosure> tags to the RSS feeds Drupal generates.
+ */
+function video_nodeapi($node, $op, $arg) {
+  switch ($op) {
+    case 'rss item': 
+      if ($node->type == 'video') {
+        $attributes['url'] = _video_get_fileurl($node->vidfile) . basename($node->vidfile);
+        $attributes['length'] = $node->size;
+        $mime_type = _video_get_mime_type($node);
+        if ($mime_type) {
+          $attributes['type'] = $mime_type;
+        }
+        return array(array('key' => 'enclosure', 'attributes' => $attributes));
+      }
   }
 }
 
@@ -350,7 +364,7 @@ function video_access($op, $node) {
  * @return
  *   string value of form content
  */
-function video_form(&$node) {
+function video_form($node) {
   $output = '';
   $output .= form_textfield(t('Video File'), 'vidfile', $node->vidfile, 60, 65535, t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). ') . l(t('More information.'), 'video/help#videofile') . ($error['vidfile'] ? $error['vidfile'] : ''), NULL, TRUE);
   $output .= form_textfield(t('Video Size x'), 'videox', $node->videox, 4, 4, t('Horizontal video pixel size.'), null, true);
@@ -442,7 +456,7 @@ function video_update(&$node) {
  * @param $node
  *   object
  */
-function video_delete(&$node) {
+function video_delete($node) {
   db_query("DELETE FROM {video} WHERE nid = '%s'", $node->nid);
   cache_clear_all("video:blogmarks:block");
 }
@@ -777,7 +791,7 @@ function video_view(&$node, $teaser = FALSE, $page = FALSE) {
  * @return
  *   string of content to display
  */
-function theme_video_play_flash(&$node) {
+function theme_video_play_flash($node) {
   $loader_location = variable_get('video_flvplayerloader', 'Player.swf');
   $skin_location = variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf');
   $skin_location = substr($skin_location, 0, strlen($skin_location) - 4);
@@ -806,7 +820,7 @@ function theme_video_play_flash(&$node) {
  * @return
  *   string of content to display
  */
-function theme_video_play_quicktime(&$node) {
+function theme_video_play_quicktime($node) {
   $height = $node->videoy + 16; //Increase the height to accommodate the player controls on the bottom.
   $output = '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="'.$node->videox.'" height="'.$height.'" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">          
                 <param name="SRC" value="'.$node->vidfile.'" />
@@ -946,7 +960,7 @@ function _theme_video_format_play(&$output, $url, $title, $link_text) {
  * @return
  *   string of content to display
  */
-function theme_video_view(&$node) {
+function theme_video_view($node) {
   //Adds the custom fields.
   $group_title = variable_get('video_customfieldtitle', ''); //Title of the custom fields.
   $title1 = variable_get('video_customfield1', '');
@@ -1139,7 +1153,7 @@ function _video_scandir($dir) {
  * @return 
  *   integer bytes
  */
-function _video_size2bytes(&$node) {
+function _video_size2bytes($node) {
   if (!empty($node->size)) {
     switch ($node->size_format) {
       case 'Kb': // KiloBits
@@ -1251,4 +1265,33 @@ function _video_page_goto($id, $type = 'video') {
     }
   }
   return false;
+}
+
+/**
+ * Returns the correct mime-type for the video. Returns false if the
+ * mime-type cannot be detected.
+ */
+function _video_get_mime_type($node) {
+  switch (_video_get_filetype($node->vidfile)) {
+    case 'mov':
+      return 'video/quicktime';
+      break;
+    case 'rm':
+      return 'application/vnd.rn-realmedia';
+      break;
+    case 'flv':
+      return 'flv-application/octet-stream';
+      break;
+    case 'wmv':
+      return 'video/x-ms-wmv';
+      break;
+    case 'youtube':
+      // We can't support this properly, so return false.
+      return false;
+      break;
+    default:
+      // We couldn't detect the mime-type, so return false.
+      return false;
+      break;
+  }
 }
