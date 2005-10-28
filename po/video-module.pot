@@ -1,3 +1,4 @@
+# $Id$
 # LANGUAGE translation of Drupal (video.module)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from file: video.module,v 1.9 2005/08/31 09:12:59 fax8
