@@ -1,13 +1,12 @@
-# $Id$
 # LANGUAGE translation of Drupal (video.module)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
-# Generated from file: video.module,v 1.9 2005/08/31 09:12:59 fax8
+# Generated from file: video.module,v 1.19 2005/10/25 15:30:23 lukelast
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2005-08-31 21:59+0000\n"
+"POT-Creation-Date: 2005-10-28 21:04+0200\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -17,614 +16,646 @@ msgstr ""
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #: video.module:77
-msgid "<p>The video module is used to insert videos as nodes.</p>"
+msgid "The video module (4.7 or with backport patch to 4.6) allows users to post video content to their site. The emergence of portable phones with video capture capabilities has made video capture ubiquitous. Video logging, or <a href=\"%elink-en-wikipedia-org\">vlogging</a> as a medium for personal video broadcasting has proven to be popular and is following the blogging, and podcasting phenomena's. Videos are useful for creative collaboration among community members. If community members can not meet in person videos of meetings are valuable for enhancing the interaction between community members."
+msgstr ""
+
+#: video.module:78
+msgid "The video module can be administered to flash player settings. There are a number of page and menu links which can be added to play and download video content on the site. Other configurable options include play and download counters. Multi-file downloads can also be configured under settings. There are also up to six custom fields and a group name which can be added."
 msgstr ""
 
 #: video.module:79
-msgid "Allows video nodes."
-msgstr ""
-
-#: video.module:81
-msgid "Allows you to insert videos as nodes"
-msgstr ""
-
-#: video.module:84
-msgid "Video File Field"
-msgstr ""
-
-#: video.module:85
-msgid "This is the field where you enter the video file information. The Video module currently supports these file types:"
+msgid "<p>You can:</p>\n<ul>\n<li>Enable <em>most played videos</em>, <em>latest videos</em>, and <em>top videos</em> blocks at <a href=\"%admin-block\">administer &gt;&gt; block</a>.</li>\n<li>Create video posts at <a href=\"%node-add-video\">create content &gt;&gt; video</a>.</li>\n<li>Administer video module settings at <a href=\"%admin-settings-video\">administer &gt;&gt; settings &gt;&gt; video</a>.</li>\n</ul>\n"
 msgstr ""
 
 #: video.module:86
-msgid ".mov, .wmv, .rm, .flv"
-msgstr ""
-
-#: video.module:86
-msgid "To play these file types you need to enter in the path to the file. If your video is on the same webserver as drupal, you can use a path relative to the drupal directory, like \"downloads/video.mov\". If your video is on another server you can enter the URI to the video like \"http://www.example.com/videos/my-video.mov\"."
-msgstr ""
-
-#: video.module:87
-msgid "YouTube.com support"
-msgstr ""
-
-#: video.module:87
-msgid "You can host videos on youtube.com and put them on your site. To do this, after you upload the video on youtube.com enter the video ID into the \"Video File\" field. If the URI youtube.com gives you for the video is \"http://www.youtube.com/watch.php?v=XM4QYXPf-s8\" you would enter \"XM4QYXPf-s8\"."
-msgstr ""
-
-#: video.module:88
-msgid "Multi-file Dowload Help"
+msgid "For more information please read the configuration and customization handbook <a href=\"%video\">Video page</a>."
 msgstr ""
 
 #: video.module:89
-msgid "If enabled, this group holds all the settings for multi-file downloads. Multi-file downloads allows you to have a list of any number of files on the download page. These files are usually scanned from a folder. This allows the listing of multiple sizes and video types for visitors to choose from, you can even zip the files up."
-msgstr ""
-
-#: video.module:90;350
-msgid "Disable multi-file downloads"
-msgstr ""
-
-#: video.module:90
-msgid "This checkbox will disable multi-file downloads for this video. This means the download tab and link will send visitors straight to download the same video as is set to play. Use this option if you only have one version of your video."
-msgstr ""
-
-#: video.module:91;351
-msgid "Multi-file download folder"
+msgid "Allows video nodes."
 msgstr ""
 
 #: video.module:91
+msgid "Allows you to insert videos as nodes"
+msgstr ""
+
+#: video.module:94
+msgid "Video File Field"
+msgstr ""
+
+#: video.module:95
+msgid "This is the field where you enter the video file information. The Video module currently supports these file types:"
+msgstr ""
+
+#: video.module:96
+msgid ".mov, .wmv, .rm, .flv"
+msgstr ""
+
+#: video.module:96
+msgid "To play these file types you need to enter in the path to the file. If your video is on the same webserver as drupal, you can use a path relative to the drupal directory, like \"downloads/video.mov\". If your video is on another server you can enter the URI to the video like \"http://www.example.com/videos/my-video.mov\"."
+msgstr ""
+
+#: video.module:97
+msgid "YouTube.com support"
+msgstr ""
+
+#: video.module:97
+msgid "You can host videos on youtube.com and put them on your site. To do this, after you upload the video on youtube.com enter the video ID into the \"Video File\" field. If the URI youtube.com gives you for the video is \"http://www.youtube.com/watch.php?v=XM4QYXPf-s8\" you would enter \"XM4QYXPf-s8\"."
+msgstr ""
+
+#: video.module:98
+msgid "Multi-file Dowload Help"
+msgstr ""
+
+#: video.module:99
+msgid "If enabled, this group holds all the settings for multi-file downloads. Multi-file downloads allows you to have a list of any number of files on the download page. These files are usually scanned from a folder. This allows the listing of multiple sizes and video types for visitors to choose from, you can even zip the files up."
+msgstr ""
+
+#: video.module:100;375
+msgid "Disable multi-file downloads"
+msgstr ""
+
+#: video.module:100
+msgid "This checkbox will disable multi-file downloads for this video. This means the download tab and link will send visitors straight to download the same video as is set to play. Use this option if you only have one version of your video."
+msgstr ""
+
+#: video.module:101;376
+msgid "Multi-file download folder"
+msgstr ""
+
+#: video.module:101
 msgid "Allows you to specify a folder on the local server containing the files you wish to show up on the download tab. This folder should be relative to the drupal root directory, so if the absolute path is \"C:\\inetpub\\drupal\\videos\\projectfolder\\\" or \"/usr/htdocs/drupal/videos/projectfolder/\" then you would enter \"videos/projectfolder/\"."
 msgstr ""
 
-#: video.module:92;352
+#: video.module:102;377
 msgid "Show files in \"play\" folder"
 msgstr ""
 
-#: video.module:92
+#: video.module:102
 msgid "This option will list all the files in the same folder is the \"play\" file listed in the \"Video File\" field above. You can use this option in addition to the download folder to list the videos in both folders."
 msgstr ""
 
-#: video.module:111
+#: video.module:120
 msgid "videos"
 msgstr ""
 
-#: video.module:117;318;0
+#: video.module:126;325;0
 msgid "video"
 msgstr ""
 
-#: video.module:134;180
+#: video.module:141;188
 msgid "play"
 msgstr ""
 
-#: video.module:143;184
+#: video.module:150;192
 msgid "download"
 msgstr ""
 
-#: video.module:180
+#: video.module:188
 msgid "play %link"
 msgstr ""
 
-#: video.module:181
+#: video.module:189
 msgid "or"
 msgstr ""
 
-#: video.module:184
-msgid "visit %link"
+#: video.module:192
+msgid "download %link"
 msgstr ""
 
-#: video.module:251
+#: video.module:258
 msgid "Location of Flash player skin"
 msgstr ""
 
-#: video.module:253
+#: video.module:260
 msgid "The location of the Shockwave skin for player controls on the Flash video. It should be a path relative to the Drupal root directory"
 msgstr ""
 
-#: video.module:254
+#: video.module:261
 msgid "Filename of Flash loader"
 msgstr ""
 
-#: video.module:256
+#: video.module:263
 msgid "The name of the Shockwave file that manages loading the FLV movie"
 msgstr ""
 
-#: video.module:262
+#: video.module:269
 msgid "Display play menu tab"
 msgstr ""
 
-#: video.module:264
+#: video.module:271
 msgid "Toggle display of menu link to play video from the node page"
 msgstr ""
 
-#: video.module:265
+#: video.module:272
 msgid "Display download menu tab"
 msgstr ""
 
-#: video.module:267
+#: video.module:274
 msgid "Toggle display of menu link to download video from the node page"
 msgstr ""
 
-#: video.module:268
+#: video.module:275
 msgid "Display play link"
 msgstr ""
 
-#: video.module:270
+#: video.module:277
 msgid "Toggle display of \"play\" link (below the node content in most themes)"
 msgstr ""
 
-#: video.module:271
+#: video.module:278
 msgid "Display download link"
 msgstr ""
 
-#: video.module:273
+#: video.module:280
 msgid "Toggle display of \"download\" link (below the node content in most themes)"
 msgstr ""
 
-#: video.module:274
+#: video.module:281
 msgid "Display playtime"
 msgstr ""
 
-#: video.module:276
+#: video.module:283
 msgid "Toggle the display of the playtime for a video"
 msgstr ""
 
-#: video.module:277
+#: video.module:284
 msgid "Display filesize"
 msgstr ""
 
-#: video.module:279
+#: video.module:286
 msgid "Toggle the display of the filesize for a video"
 msgstr ""
 
-#: video.module:280
+#: video.module:287
 msgid "Count play hits"
 msgstr ""
 
-#: video.module:282
+#: video.module:289
 msgid "Counts a hit everytime someone views the play page. To allow users to view counter visit: "
 msgstr ""
 
-#: video.module:282;285;288
+#: video.module:289;292;295
 msgid "access control"
 msgstr ""
 
-#: video.module:283
+#: video.module:290
 msgid "Count downloads"
 msgstr ""
 
-#: video.module:285
+#: video.module:292
 msgid "Counts a hit everytime someone downloads a video. To allow users to view counter visit: "
 msgstr ""
 
-#: video.module:286
+#: video.module:293
 msgid "Allow Multi-file Downloads"
 msgstr ""
 
-#: video.module:288
+#: video.module:295
 msgid "Allows a list of files to be shown on the download page. The list is usually gotten from a specified folder. This ability is useful for providing different sizes and video types for download. This can be disabled separately for each node. If turned on make sure you set the permissions so users can use it."
 msgstr ""
 
-#: video.module:289
+#: video.module:296
 msgid "File extensions to show"
 msgstr ""
 
-#: video.module:291
+#: video.module:298
 msgid "The extensions of files to list from the multi-file download folder on the download page. Extensions should be comma seperated with no spaces, for example (mov,wmv,rm)."
 msgstr ""
 
-#: video.module:292
+#: video.module:299
 msgid "Custom field group title"
 msgstr ""
 
-#: video.module:292
+#: video.module:299
 msgid "Title of the group of all custom fields."
 msgstr ""
 
-#: video.module:293
+#: video.module:300
 msgid "Start group initially collapsed"
 msgstr ""
 
-#: video.module:295
+#: video.module:302
 msgid "Should the custom fields group be initially collapsed when creating and editing video pages?"
 msgstr ""
 
-#: video.module:296
+#: video.module:303
 msgid "Custom field 1 title"
 msgstr ""
 
-#: video.module:297
+#: video.module:304
 msgid "Custom field 2 title"
 msgstr ""
 
-#: video.module:298
+#: video.module:305
 msgid "Custom field 3 title"
 msgstr ""
 
-#: video.module:299
+#: video.module:306
 msgid "Custom field 4 title"
 msgstr ""
 
-#: video.module:300
+#: video.module:307
 msgid "Custom field 5 title"
 msgstr ""
 
-#: video.module:301
+#: video.module:308
 msgid "Custom field 6 title"
 msgstr ""
 
-#: video.module:302
+#: video.module:309
 msgid "Custom Fields"
 msgstr ""
 
-#: video.module:302
+#: video.module:309
 msgid "Creates custom fields. Fields only show up if you give them a name."
 msgstr ""
 
-#: video.module:345
+#: video.module:370
 msgid "Video File"
 msgstr ""
 
-#: video.module:345
+#: video.module:370
 msgid "Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). "
 msgstr ""
 
-#: video.module:345;353
+#: video.module:370;378
 msgid "More information."
 msgstr ""
 
-#: video.module:346
+#: video.module:371
 msgid "Video Size x"
 msgstr ""
 
-#: video.module:346
+#: video.module:371
 msgid "Horizontal video pixel size."
 msgstr ""
 
-#: video.module:347
+#: video.module:372
 msgid "Video Size y"
 msgstr ""
 
-#: video.module:347
+#: video.module:372
 msgid "Vertical video pixel size."
 msgstr ""
 
-#: video.module:350
+#: video.module:375
 msgid "Disables multi-file downloads for this video only."
 msgstr ""
 
-#: video.module:351
+#: video.module:376
 msgid "Enter the folder containing your videos. It must be relative from the drupal directory. If the absolute path is \"C:\\inetpub\\drupal\\videos\\projectfolder\\\" or \"/usr/htdocs/drupal/videos/projectfolder/\" then enter something like \"videos/projectfolder/\"."
 msgstr ""
 
-#: video.module:352
+#: video.module:377
 msgid "Display videos in the same directory as the \"play\" video. If folder above is entered this will be in addition."
 msgstr ""
 
-#: video.module:353
+#: video.module:378
 msgid "Multiple files in download tab"
 msgstr ""
 
-#: video.module:353
+#: video.module:378
 msgid "These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. "
 msgstr ""
 
-#: video.module:356
+#: video.module:381
 msgid "Size"
 msgstr ""
 
-#: video.module:356
-msgid "If the video is on the local server the size will be set automatically. Otherwise enter a value, 0 will turn the display off. Must be less than 2GB."
+#: video.module:381
+msgid "If the video is on the local server the size will be set automatically. Otherwise enter a value. Entering 0 will turn the display off. Must be less than 2GB."
 msgstr ""
 
-#: video.module:357
+#: video.module:382
 msgid "bytes"
 msgstr ""
 
-#: video.module:357
+#: video.module:382
 msgid "Kilobits"
 msgstr ""
 
-#: video.module:357
+#: video.module:382
 msgid "KiloBytes"
 msgstr ""
 
-#: video.module:357
+#: video.module:382
 msgid "Megabits"
 msgstr ""
 
-#: video.module:357
+#: video.module:382
 msgid "MegaBytes"
 msgstr ""
 
-#: video.module:357
+#: video.module:382
 msgid "Gigabits"
 msgstr ""
 
-#: video.module:357
+#: video.module:382
 msgid "GigaBytes"
 msgstr ""
 
-#: video.module:358
+#: video.module:383
 msgid "Filesize"
 msgstr ""
 
-#: video.module:361
+#: video.module:386
 msgid "Hours"
 msgstr ""
 
-#: video.module:361
+#: video.module:386
 msgid "Integer of hours"
 msgstr ""
 
-#: video.module:362
+#: video.module:387
 msgid "Minutes"
 msgstr ""
 
-#: video.module:362
+#: video.module:387
 msgid "Integer of minutes"
 msgstr ""
 
-#: video.module:363
+#: video.module:388
 msgid "Seconds"
 msgstr ""
 
-#: video.module:363
+#: video.module:388
 msgid "Integer of seconds"
 msgstr ""
 
-#: video.module:364
+#: video.module:389
 msgid "Playtime"
 msgstr ""
 
-#: video.module:364
+#: video.module:389
 msgid "Values may be entered in excess of their normal \"clock maximum\" (the seconds field may be 3600 to represent 1 hour), however each value will be summed for a total of all three."
 msgstr ""
 
-#: video.module:368;371;374;377;380;383;386
+#: video.module:393;396;399;402;405;408;411
 msgid ""
 msgstr ""
 
-#: video.module:389
+#: video.module:414
 msgid "Video Bitrate"
 msgstr ""
 
-#: video.module:389
+#: video.module:414
 msgid "Integer value of video bitrate"
 msgstr ""
 
-#: video.module:390
+#: video.module:415
 msgid "Audio Bitrate"
 msgstr ""
 
-#: video.module:390
+#: video.module:415
 msgid "Integer value of audio bitrate"
 msgstr ""
 
-#: video.module:391
+#: video.module:416
 msgid "Audio Sampling Rate"
 msgstr ""
 
-#: video.module:391
+#: video.module:416
 msgid "Integer value of audio sampling rate in Hz"
 msgstr ""
 
-#: video.module:392
+#: video.module:417
 msgid "Audio Channels"
 msgstr ""
 
-#: video.module:392
+#: video.module:417
+msgid "5.1"
+msgstr ""
+
+#: video.module:417
 msgid "Stereo"
 msgstr ""
 
-#: video.module:392
+#: video.module:417
 msgid "Mono"
 msgstr ""
 
-#: video.module:393
+#: video.module:418
 msgid "Optional Metadata"
 msgstr ""
 
-#: video.module:393
+#: video.module:418
 msgid "Metadata entered here will not be displayed. It is currently for administrative reference only."
 msgstr ""
 
-#: video.module:399
+#: video.module:424
 msgid "Body"
 msgstr ""
 
-#: video.module:399
+#: video.module:424
 msgid "Textual description of the video."
 msgstr ""
 
-#: video.module:450
+#: video.module:475
 msgid "You have to insert a valid file path for this video"
 msgstr ""
 
-#: video.module:458
+#: video.module:483
 msgid "A video %link-to-existing using that link already exists"
 msgstr ""
 
-#: video.module:463
+#: video.module:489
 msgid "You have to insert a valid horizontal pixel size for this video"
 msgstr ""
 
-#: video.module:466
+#: video.module:492
 msgid "You have to insert a valid vertical pixel size for this video"
 msgstr ""
 
-#: video.module:473
+#: video.module:500
 msgid "You have to insert a valid file size for this video"
 msgstr ""
 
-#: video.module:479
+#: video.module:506
 msgid "If you don't select a multi-file download option you must disable the feature."
 msgstr ""
 
-#: video.module:480
+#: video.module:507
 msgid "Download directory does not exist. Make sure it has a trailing forward slash \"/\"."
 msgstr ""
 
-#: video.module:481
+#: video.module:508
 msgid "You must either use the folder of the \"play\" video or enter a folder."
 msgstr ""
 
-#: video.module:492
+#: video.module:519
 msgid "You have to insert valid playtime informations for this video."
 msgstr ""
 
-#: video.module:530;538
-msgid "Top videos"
-msgstr ""
-
-#: video.module:531;543
+#: video.module:559;569;592
 msgid "Latest videos"
 msgstr ""
 
-#: video.module:721;1158
+#: video.module:560;574;595
+msgid "Top videos"
+msgstr ""
+
+#: video.module:561;579;598
+msgid "Most played videos"
+msgstr ""
+
+#: video.module:562;584;601
+msgid "Most downloaded"
+msgstr ""
+
+#: video.module:603
+msgid "Block display title"
+msgstr ""
+
+#: video.module:604
+msgid "Number of videos to list in block"
+msgstr ""
+
+#: video.module:649;1050
 msgid "There are no files to download for this video."
 msgstr ""
 
-#: video.module:805
+#: video.module:733
 msgid "Playing"
 msgstr ""
 
-#: video.module:866
+#: video.module:809
 msgid "http://www.macromedia.com/go/getflashplayer"
 msgstr ""
 
-#: video.module:867
+#: video.module:810
 msgid "Link to Macromedia Flash Player Download Page"
 msgstr ""
 
-#: video.module:868
+#: video.module:811
 msgid "Download latest Flash Player"
 msgstr ""
 
-#: video.module:889
+#: video.module:833
 msgid "http://www.apple.com/quicktime/download"
 msgstr ""
 
-#: video.module:890
+#: video.module:834
 msgid "Link to QuickTime Download Page"
 msgstr ""
 
-#: video.module:891
+#: video.module:835
 msgid "Download latest Quicktime Player"
 msgstr ""
 
-#: video.module:925
+#: video.module:869
 msgid "http://www.real.com/"
 msgstr ""
 
-#: video.module:926
+#: video.module:870
 msgid "Link to Real"
 msgstr ""
 
-#: video.module:927
+#: video.module:871
 msgid "Download latest Realmedia Player"
 msgstr ""
 
-#: video.module:963
+#: video.module:907
 msgid "http://windowsupdate.microsoft.com/"
 msgstr ""
 
-#: video.module:964
+#: video.module:908
 msgid "Link to Windows Update"
 msgstr ""
 
-#: video.module:965
+#: video.module:909
 msgid "Download latest Windows Media Player"
 msgstr ""
 
-#: video.module:985
+#: video.module:929
 msgid "http://www.youtube.com/help.php"
 msgstr ""
 
-#: video.module:985
+#: video.module:929
 msgid "Link to youtube.com"
 msgstr ""
 
-#: video.module:985
+#: video.module:929
 msgid "youtube.com"
 msgstr ""
 
-#: video.module:1006
+#: video.module:950
 msgid "Problems viewing videos?"
 msgstr ""
 
-#: video.module:1140
+#: video.module:1032
 msgid "QuickTime Homepage"
 msgstr ""
 
-#: video.module:1140
+#: video.module:1032
 msgid "Quicktime"
 msgstr ""
 
-#: video.module:1141
+#: video.module:1033
 msgid "Windows Media Homepage"
 msgstr ""
 
-#: video.module:1141
+#: video.module:1033
 msgid "Windows Media"
 msgstr ""
 
-#: video.module:1142
+#: video.module:1034
 msgid "Real Media Homepage"
 msgstr ""
 
-#: video.module:1142
+#: video.module:1034
 msgid "Real Media"
 msgstr ""
 
-#: video.module:1143
+#: video.module:1035
 msgid "AVI Information at wikipedia.org"
 msgstr ""
 
-#: video.module:1143
+#: video.module:1035
 msgid "AVI"
 msgstr ""
 
-#: video.module:1144
+#: video.module:1036
 msgid "ZIP Information at wikipedia.org"
 msgstr ""
 
-#: video.module:1144
+#: video.module:1036
 msgid "ZIP"
 msgstr ""
 
-#: video.module:1145
+#: video.module:1037
 msgid "Divx Homepage"
 msgstr ""
 
-#: video.module:1145
+#: video.module:1037
 msgid "DIVX"
 msgstr ""
 
-#: video.module:1146
+#: video.module:1038
 msgid "Macromedia Flash Homepage"
 msgstr ""
 
-#: video.module:1146
+#: video.module:1038
 msgid "Flash FLV"
 msgstr ""
 
-#: video.module:1154
+#: video.module:1046
 msgid "File Link"
 msgstr ""
 
-#: video.module:1154
+#: video.module:1046
 msgid "File Size"
 msgstr ""
 
-#: video.module:1154
+#: video.module:1046
 msgid "File Type"
 msgstr ""
 
-#: video.module:1173
+#: video.module:1056
 msgid "View"
 msgstr ""
 
-#: video.module:1176
+#: video.module:1059
 msgid "Downloading"
 msgstr ""
 
