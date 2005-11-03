@@ -5,13 +5,14 @@ FILE TYPE INFORMATIONS
 
 Video.module for Drupal 4.7 supports multiple video formats.
 
-.mov, .wmv, .rm
+.mov, .wmv, .rm, .3gp, .mp4
   These files type are supported out the box. 
   To play these file types you need to enter in the path to the file.
   If your video is on the same webserver as drupal, you can use a path relative
   to the drupal directory, like "downloads/video.mov". 
   If your video is on another server you can enter the URI to the video
   like "http://www.example.com/videos/my-video.mov".
+  The .mp4 and .3gp extentions use the Quicktime player.
 
 YouTube.com support
   You can host videos on youtube.com and put them on your site. 

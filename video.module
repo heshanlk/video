@@ -737,7 +737,7 @@ function video_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks[3]['info'] = t('Most downloaded');
     return $blocks;
   }
-  elseif ($op == 'view') {
+  else if ($op == 'view') {
     switch ($delta) {
       case 0:
         return array(
@@ -761,7 +761,7 @@ function video_block($op = 'list', $delta = 0, $edit = array()) {
         );
     }
   }
-  elseif ($op == 'configure') {
+  else if ($op == 'configure') {
     switch ($delta) { //Get the default title of the block incase the variable is not set yet.
       case 0:
         $default_title = t('Latest videos');
@@ -779,7 +779,7 @@ function video_block($op = 'list', $delta = 0, $edit = array()) {
     $output .= form_select(t('Number of videos to list in block'), 'video_block_limit', variable_get("video_block_limit_$delta", 10), drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)));
     return $output;
   }
-  elseif ($op == 'save') {
+  else if ($op == 'save') {
     variable_set("video_block_title_$delta", $edit['video_block_title']);
     variable_set("video_block_limit_$delta", $edit['video_block_limit']);
   }
@@ -820,13 +820,16 @@ function video_download() {
     if (variable_get("video_multidownload", 0) == 0 or $node->disable_multidownload == 1) {
       if (_video_get_filetype($node->vidfile) != 'youtube') { //Make sure the video type is not youtube before downloading.
         _video_download_goto($node->vidfile, $node->nid);
-      } else { //If video is type youtube then it can't be downloaded.
+      }
+      else { //If video is type youtube then it can't be downloaded.
         drupal_set_message(t('There are no files to download for this video.'), 'error');
         print theme('page', '');
       }
-    } elseif (arg(3) != '') { //If we are passed an encoded URL redirect to the downloader.
+    }
+    else if (arg(3) != '') { //If we are passed an encoded URL redirect to the downloader.
       _video_download_goto(arg(3), $node->nid, TRUE);
-    } else { //Multiple file downloads is turned on.
+    }
+    else { //Multiple file downloads is turned on.
       $node->download_error = FALSE;
       $node->file_array = array(); //Initialize the final file array.
       global $base_url;
@@ -847,7 +850,6 @@ function video_download() {
         $scan_play_folder['dir_stub'] = $play_dir_stub; //To put in the URL.
         $folder_array[] = $scan_play_folder;
       }
-      $node->play_dir_stub = $play_dir_stub; //Allows view value in dev info. Not required.
 
       if (count($folder_array) > 0) { //Make sure we have a folder to scan.
         foreach ($folder_array as $dir_scan) { //Scan through one or both folders results.
@@ -886,16 +888,19 @@ function video_download() {
         if (count($node->file_array) > 0) { //Make sure atleast 1 file was found.
           array_multisort($file_array_size, SORT_ASC, $node->file_array); //Sort based of file size.
           
-        } else { //Else if no files were found in the directory.
+        }
+        else { //Else if no files were found in the directory.
           $node->download_error = TRUE;
         }
-      } else { //Else if we have no valid folders to scan.
+      }
+      else { //Else if we have no valid folders to scan.
         $node->download_error = TRUE;
       }
 
       print theme('video_download', $node); //Print to the screen from the theme_video_download function.
     } //Close multi-file downloads is turned on.
-  } else {
+  }
+  else {
     drupal_not_found();
   }
 }
@@ -908,6 +913,8 @@ function video_play() {
     drupal_set_title(t('Playing').' '.$node->title);
     switch (_video_get_filetype($node->vidfile)) {
       case 'mov':
+      case 'mp4':
+      case '3gp':
         print theme('video_play_quicktime', $node);
         break;
       case 'rm':
@@ -1257,7 +1264,8 @@ function theme_video_download(&$node) {
     $headers = array(t('File Link'), t('File Size'), t('File Type'));
     $output .= theme_table($headers, $file_array_table); //Create the table of files.
     $output .= '</div>'; //Close the "videodownload" class.
-  } else { //If there is an error lets download the play file.
+  }
+  else { //If there is an error lets download the play file.
     _video_download_goto($node->vidfile, $node->nid);
   }
 
@@ -1289,9 +1297,11 @@ function _video_get_filetype($vidfile) {
     //If the filename doesn't contain a ".", "/", or "\" and is exactly 11 characters then consider it a youtube video ID.
     if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) == 11) {
       $file_type = 'youtube';
-    } elseif (strstr($vidfile, '.')) { //If file contains a "." then get the file extension after the "."
+    }
+    else if (strstr($vidfile, '.')) { //If file contains a "." then get the file extension after the "."
       $file_type = substr($vidfile, strrpos($vidfile, '.') + 1);   
-    } else {
+    }
+    else {
       $file_type = FALSE;
     }
     return $file_type;
@@ -1316,7 +1326,8 @@ function _video_download_goto($input_url, $nid, $base64_encoded = FALSE) {
   if ($base64_encoded) {
     $encoded_url = str_replace('-', '/', $input_url); //Replace "-" to "/" for MIME base64.
     $location = base64_decode($encoded_url);
-  } else { //$input URL is not base64 encoded.
+  }
+  else { //$input URL is not base64 encoded.
     $location = _video_get_fileurl($input_url) . basename($input_url);
   }
   if (variable_get('video_downloadcounter', 1)) {
@@ -1339,13 +1350,14 @@ function _video_scandir($dir) {
   //Try a few different ways to open the directory.
   if (is_dir($dir)) {
     $dir_open = opendir($dir);
-  } else
-  if (is_dir($new_dir = getcwd() . $dir)) {
+  }
+  else if (is_dir($new_dir = getcwd() . $dir)) {
     $dir_open = opendir($new_dir);
-  } else
-  if (is_dir($new_dir = getcwd() . '/' . $dir)) {
+  }
+  else if (is_dir($new_dir = getcwd() . '/' . $dir)) {
     $dir_open = opendir($new_dir);
-  } else { //If directory does not exist.
+  }
+  else { //If directory does not exist.
     return FALSE;
   }
   if (!$dir_open) { //If opendir returned false then return false.
@@ -1486,23 +1498,21 @@ function _video_get_mime_type($node) {
   switch (_video_get_filetype($node->vidfile)) {
     case 'mov':
       return 'video/quicktime';
-      break;
     case 'rm':
       return 'application/vnd.rn-realmedia';
-      break;
     case 'flv':
       return 'flv-application/octet-stream';
-      break;
     case 'wmv':
       return 'video/x-ms-wmv';
-      break;
+    case '3gp':
+      return 'video/3gpp';
+    case 'mp4':
+      return 'video/mp4';
     case 'youtube':
       // We can't support this properly, so return false.
       return false;
-      break;
     default:
       // We couldn't detect the mime-type, so return false.
       return false;
-      break;
   }
 }
