@@ -576,14 +576,14 @@ function video_form($node) {
     '#length' => 11,
     '#maxlength' => 11,
     '#default_value' => $node->video_bitrate,
-    '#description' => t('Integer value of video bitrate in Bytes/second.'));
+    '#description' => t('Video bitrate in kbits/sec.'));
   $form['metadata']['audio_bitrate'] = array(
     '#type' => 'textfield',
     '#title' => t('Audio Bitrate'),
     '#length' => 11,
     '#maxlength' => 11,
     '#default_value' => $node->audio_bitrate,
-    '#description' => t('Integer value of audio bitrate in Bytes/second.'));
+    '#description' => t('Audio bitrate in kbits/sec.'));
   $form['metadata']['audio_sampling_rate'] = array(
     '#type' => 'select',
     '#title' => t('Audio Sampling Rate'),
@@ -1211,23 +1211,23 @@ function theme_video_view($node) {
  *   string of content to display
  $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, 
  */
-function theme_video_display_metadata(&$node) {
+function theme_video_display_metadata($node) {
   // Do not do anything if all fields are empty
   if($node->video_bitrate == 0 && $node->audio_bitrate == 0 && $node->audio_sampling_rate == 0 && $node->audio_channels == 0)
     return '';
   $output = "\n\n<div class=\"video_metadata\">\n";
   $output .= '  <div class="title"><h2>'.t('Video Metadata')."</h2></div>\n";
   if($node->video_bitrate != 0) {
-    $output .= '  <div class="odd"><b>' . t('Video Bitrate') . '</b> '.format_size($node->video_bitrate) . '/seconds</div>';
+    $output .= '  <div class="odd"><b>' . t('Video Bitrate') . ':</b> ' . $node->video_bitrate . ' ' . t('kbits/sec') . '</div>';
   }
   if($node->audio_bitrate != 0) {
-    $output .= '  <div class="even"><b>' . t('Audio Bitrate') . '</b> '.format_size($node->audio_bitrate) . '/seconds</div>';
+    $output .= '  <div class="even"><b>' . t('Audio Bitrate') . ':</b> ' . $node->audio_bitrate . ' ' . t('kbits/sec') . '</div>';
   }
   if($node->audio_sampling_rate != 0) {
-    $output .= '  <div class="odd"><b>' . t('Audio Sampling Rate') . '</b> '. $node->audio_sampling_rate . ' ' . t('Hz') . '</div>';
+    $output .= '  <div class="odd"><b>' . t('Audio Sampling Rate') . ':</b> '. $node->audio_sampling_rate . ' ' . t('Hz') . '</div>';
   }
   if($node->audio_channels != '') {
-    $output .= '  <div class="even"><b>' . t('Audio Channels') . '</b> '. $node->audio_channels . '</div>';
+    $output .= '  <div class="even"><b>' . t('Audio Channels') . ':</b> '. $node->audio_channels . '</div>';
   }
   $output .= '</div>'; //Closing div video_metadata
   return $output;
