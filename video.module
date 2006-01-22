@@ -862,6 +862,7 @@ function video_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks[1]['info'] = t('Top videos');
     $blocks[2]['info'] = t('Most played videos');
     $blocks[3]['info'] = t('Most downloaded');
+    $blocks[4]['info'] = t('Random video');
     return $blocks;
   }
   else if ($op == 'view') {
@@ -886,6 +887,11 @@ function video_block($op = 'list', $delta = 0, $edit = array()) {
           'subject' => variable_get('video_block_title_3', t('Most downloaded')),
           'content' => video_block_list($delta)
         );
+      case 4:
+        return array(
+          'subject' => variable_get('video_block_title_4', t('Random video')),
+          'content' => video_block_list($delta)
+        );
     }
   }
   else if ($op == 'configure') {
@@ -901,6 +907,9 @@ function video_block($op = 'list', $delta = 0, $edit = array()) {
         break;
       case 3:
         $default_title = t('Most downloaded');
+        break;
+      case 4:
+        $default_title = t('Random video');
     }
     $form['video_block_title'] = array(
       '#type' => 'textfield',
@@ -929,6 +938,7 @@ function video_block($op = 'list', $delta = 0, $edit = array()) {
  *   string HTML content for a block
  */
 function video_block_list($delta = 0) {
+  $count = variable_get("video_block_limit_$delta", 10);
   switch ($delta) {
     case 0:
       $orderby = 'n.created';
@@ -941,8 +951,13 @@ function video_block_list($delta = 0) {
       break;
     case 3:
       $orderby = 'v.download_counter';
+      break;
+    case 4:
+      $count = 1;
+      $orderby = 'RAND()';
+      break;
   }
-  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.vid = v.vid AND n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, variable_get("video_block_limit_$delta", 10)));
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.vid = v.vid AND n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, $count));
 }
 
 /****************************************************
