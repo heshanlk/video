@@ -24,4 +24,4 @@ CREATE TABLE video (
   custom_field_6 text NULL default NULL,
   serialized_data text NULL default NULL,
   PRIMARY KEY  (vid)
-) TYPE=MyISAM COMMENT='size is in bytes';
+) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
