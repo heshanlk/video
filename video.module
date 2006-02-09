@@ -351,7 +351,7 @@ function video_settings() {
     '#type' => 'radios',
     '#title' => t('Allow adding of parameters to object HTML'),
     '#options' => $options,
-    '#default_value' => variable_get('video_object_parameters', 1),
+    '#default_value' => variable_get('video_object_parameters', 0),
     '#description' => t('Turns on a text box that takes parameter=value pairs and puts them into parameter tags in the embedded object tag for each video.'));
     
   $form['video_image'] = array(
@@ -559,13 +559,15 @@ function video_form($node) {
       '#description' => t('Display videos in the same directory as the "play" video. If folder above is entered this will be in addition.'));
   }
   
-  if (variable_get('video_object_parameters', 1)) { //Only display the option if it is turned on in settings.
+  if (variable_get('video_object_parameters', 0)) { //Only display the option if it is turned on in settings.
     //We must convert the array data back to something that can go in the textarea.
     $textarea = '';
-    foreach ($node->serial_data['object_parameters'] as $param => $value) {
-      $textarea .= $param . '=' . $value . "\n";
+    if(is_array($node->serial_data['object_parameters'])) {
+      foreach ($node->serial_data['object_parameters'] as $param => $value) {
+        $textarea .= $param . '=' . $value . "\n";
+      }
+      $textarea = substr($textarea, 0, -1); //Remove the last newline "\n" from the end.
     }
-    $textarea = substr($textarea, 0, -1); //Remove the last newline "\n" from the end.
     $form['parameters'] = array('#type' => 'fieldset', '#title' => t('HTML object parameters'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17);
     $form['parameters']['object_parameters'] = array(
       '#title' => t('Embedded object parameters'),
@@ -580,13 +582,13 @@ function video_form($node) {
     $form['image']['image_teaser'] = array(
       '#title' => t('Image thumbnail for node teaser'),
       '#type' => 'textfield',
-      '#maxlength' => 50,
+      '#maxlength' => 255,
       '#default_value' => $node->serial_data['image_teaser'],
       '#description' => t('This image will be displayed in the node teaser.'));
     $form['image']['image_view'] = array(
       '#title' => t('Image for node view'),
       '#type' => 'textfield',
-      '#maxlength' => 50,
+      '#maxlength' => 255,
       '#default_value' => $node->serial_data['image_view'],
       '#description' => t('This image will be displayed on the full node view.'));
   }
@@ -1706,9 +1708,11 @@ function _video_get_mime_type($node) {
  */
 function _video_get_parameters($serialized_data) {
   $serial_data = unserialize($serialized_data);
-  $output = '';
-  foreach ($serial_data['object_parameters'] as $param => $value) {
-    $output .= "<param name=\"$param\" value=\"$value\" />\n";
+  if(is_array($serial_data)) {
+    $output = '';
+    foreach ($serial_data['object_parameters'] as $param => $value) {
+      $output .= "<param name=\"$param\" value=\"$value\" />\n";
+    }
   }
   return $output;
 }
