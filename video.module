@@ -447,8 +447,8 @@ function video_nodeapi($node, $op, $arg) {
         return array(array('key' => 'enclosure', 'attributes' => $attributes), array('key' => 'media', 'value' => '', 'attributes' => $media));
       }
     case 'revision delete':
-    	db_query('DELETE FROM {video} WHERE vid = %d', $node->vid);
-    	break;
+      db_query('DELETE FROM {video} WHERE vid = %d', $node->vid);
+      break;
   }
 }
 
@@ -1270,9 +1270,11 @@ function theme_video_play_windowsmedia($node) {
  *   string of content to display
  */
 function theme_video_play_youtube($node) {
-  $output = '<object width="425" height="350">
+  $width = ($node->videox ? $node->videox : '425');
+  $height = ($node->videoy ? $node->videoy : '350');
+  $output = '<object width="'.$width.'" height="'.$height.'">
                <param name="movie" value="http://www.youtube.com/v/' . $node->vidfile . '"></param>
-               <embed src="http://www.youtube.com/v/' . $node->vidfile . '" type="application/x-shockwave-flash" width="425" height="350"></embed>
+               <embed src="http://www.youtube.com/v/' . $node->vidfile . '" type="application/x-shockwave-flash" width="'.$width.'" height="'.$height.'"></embed>
              </object>';
   $output = _theme_video_format_play($output, t('http://www.youtube.com/help.php'), t('Link to youtube.com'), t('youtube.com'));
   return theme('page', $output);
@@ -1708,7 +1710,7 @@ function _video_get_mime_type($node) {
  */
 function _video_get_parameters($serialized_data) {
   $serial_data = unserialize($serialized_data);
-  if(is_array($serial_data)) {
+  if(is_array($serial_data)  && array_key_exists($serial_data['object_parameters']) && !empty($serial_data['object_parameters'])) {
     $output = '';
     foreach ($serial_data['object_parameters'] as $param => $value) {
       $output .= "<param name=\"$param\" value=\"$value\" />\n";
