@@ -7,16 +7,17 @@ This module add the possibility to create
 video nodes wich are containers to embed
 videos into drupal pages.
 
-For installation instructions see INSTALL.txt
+For installation and upgrade instructions see INSTALL.txt
 
-For informations about supported files see FILE_TYPES.txt
+For information about supported file types see FILE_TYPES.txt
 
 For general instructions read video.module handbook:
-http://drupal.org/handbook/modules/video
+  http://drupal.org/handbook/modules/video
 
-Please send comments to:
-Fabio Varesano: fvaresano at yahoo dot it
-or
-David Norman: deekayen (at) deekayen [dot-} net
-or
-Luke Last - luke [at] lukelast dot com
+Please submit bugs/features/support requests at:
+  http://drupal.org/node/add/project_issue/video
+  
+Maintainers:
+  Fabio Varesano: fvaresano at yahoo dot it
+  David Norman:   deekayen (at) deekayen [dot-} net
+  Luke Last:      luke [at] lukelast dot com
