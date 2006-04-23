@@ -136,6 +136,12 @@ function video_menu($may_cache) {
       'access' => user_access('access video'),
       'type' => MENU_SUGGESTED_ITEM);
     $items[] = array(
+      'path' => 'video/feed',
+      'title' => t('videos feed'),
+      'callback' => 'video_feed',
+      'access' => user_access('access video'),
+      'type' => MENU_CALLBACK);
+    $items[] = array(
       'path' => 'node/add/video',
       'title' => t('video'),
       'access' => user_access('create video'));
@@ -230,8 +236,32 @@ function video_page() {
       $output .= node_view(node_load($node->nid), 1);
     }
     $output .= theme('pager', NULL, variable_get('default_nodes_main', 10));
+    // adds feed icon and link
+    drupal_add_link(array('rel' => 'alternate',
+      'type' => 'application/rss+xml',
+      'title' => variable_get('site_name', 'drupal') . ' ' . t('videos'),
+      'href' => url('video/feed/')));
+
+    $output .= '<br \>' . theme('feed_icon', url('video/feed'));
   }
   return $output;
+}
+
+/**
+ * Generate an RSS feed for videos
+ *
+ * @return
+ *   feed
+ */
+function video_feed() {
+  $channel = array(
+    'title' => variable_get('site_name', 'drupal') . ' ' . t('videos'),
+    'description' => t('Latest videos on') . ' ' . variable_get('site_name', 'drupal'),
+    'link' => url('video', NULL, NULL, TRUE)
+  );
+
+  $result = db_query('SELECT n.nid FROM {node} n WHERE n.type = "video" AND n.status = 1 ORDER BY n.created DESC');
+  node_feed($result, $channel);
 }
 
 /**
