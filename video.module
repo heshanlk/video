@@ -242,7 +242,7 @@ function video_page() {
       'title' => variable_get('site_name', 'drupal') . ' ' . t('videos'),
       'href' => url('video/feed/')));
 
-    $output .= '<br \>' . theme('feed_icon', url('video/feed'));
+    $output .= '<br />' . theme('feed_icon', url('video/feed'));
   }
   return $output;
 }
