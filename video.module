@@ -1169,7 +1169,7 @@ function theme_video_play_flash($node) {
                <param name="movie" value="'.$loader_location.'" />
                <param name="quality" value="high" />
                <param name="FlashVars" value="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5" />
-               <embed src="'.$loader_location.'" flashvars="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5"  width="'.$node->videox.'" height="'.$node->videoy.'" name="Player" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+               <embed src="'.$loader_location.'" flashvars="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5"  width="'.$node->videox.'" height="'.$node->videoy.'" name="Player" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
              </object>';
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'),
                                       t('Link to Macromedia Flash Player Download Page'),
@@ -1190,7 +1190,7 @@ function theme_video_play_swf($node) {
   $output = "<object width=\"$node->videox\" height=\"$node->videoy\">
                <param name=\"movie\" value=\"$node->vidfile\" />"
                . _video_get_parameters($node->serialized_data) .
-               "<embed src=\"$node->vidfile\" width=\"$node->videox\" height=\"$node->videoy\"></embed>
+               "<embed src=\"$node->vidfile\" width=\"$node->videox\" height=\"$node->videoy\" />
              </object>";
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'), t('Link to Flash player download'), t('Download the latest Flash player'));
   return theme('page', $output);
@@ -1199,6 +1199,7 @@ function theme_video_play_swf($node) {
 /**
  * Play videos from in Quicktime format
  *
+ * @see http://developer.apple.com/internet/ieembedprep.html
  * @param $node
  *   object with node information
  *
@@ -1206,14 +1207,11 @@ function theme_video_play_swf($node) {
  *   string of content to display
  */
 function theme_video_play_quicktime($node) {
+  drupal_set_html_head('<script src="'. drupal_get_path('module', 'video') .'/AC_QuickTime.js" language="JavaScript" type="text/javascript"></script>');
   $height = $node->videoy + 16; //Increase the height to accommodate the player controls on the bottom.
-  $output = '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="'.$node->videox.'" height="'.$height.'" scale="tofit" codebase="http://www.apple.com/qtactivex/qtplugin.cab">
-                <param name="SRC" value="'.$node->vidfile.'" />
-                <param name="AUTOPLAY" value="true" />
-                <param name="KIOSKMODE" value="false" />
-                <embed src="'.$node->vidfile.'" width="'.$node->videox.'" height="'.$height.'" scale="tofit" autoplay="true" kioskmode="false" pluginspage="http://www.apple.com/quicktime/download/">
-                </embed>
-             </object>';
+  $output = '<script language="JavaScript" type="text/javascript">';
+  $output .= "QT_WriteOBJECT_XHTML('$node->vidfile','{$node->videox}','$height','','autoplay','true','kioskmode','false');";
+  $output .= '</script>';
   $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
                                       t('Link to QuickTime Download Page'),
                                       t('Download latest Quicktime Player'));
@@ -1233,22 +1231,22 @@ function theme_video_play_realmedia($node) {
   // Real's embeded player includes the controls
   // in the height
   $node->videoy += 40;
-  $output = '<object id="video1" CLASSID="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" height="'.$node->videoy.'" width="'.$node->videox.'">
-              <param name="_ExtentX" value="7276">
-              <param name="_ExtentY" value="3307">
-              <param name="AUTOSTART" value="1">
-              <param name="SHUFFLE" value="0">
-              <param name="PREFETCH" value="0">
-              <param name="NOLABELS" value="0">
-              <param name="SRC" value="'.$node->vidfile.'" ref>
-              <param name="CONTROLS" value="All">
-              <param name="CONSOLE" value="Clip1">
-              <param name="LOOP" value="0">
-              <param name="NUMLOOP" value="0">
-              <param name="CENTER" value="0">
-              <param name="MAINTAINASPECT" value="0">
-              <param name="BACKGROUNDCOLOR" value="#000000">
-              <embed src="'.$node->vidfile.'" type="audio/x-pn-realaudio-plugin" console="Clip1" controls="All" height="'.$node->videoy.'" width="'.$node->videox.'" autostart="true">
+  $output = '<object id="video1" classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" height="'.$node->videoy.'" width="'.$node->videox.'">
+              <param name="_ExtentX" value="7276" />
+              <param name="_ExtentY" value="3307" />
+              <param name="AUTOSTART" value="1" />
+              <param name="SHUFFLE" value="0" />
+              <param name="PREFETCH" value="0" />
+              <param name="NOLABELS" value="0" />
+              <param name="SRC" value="'.$node->vidfile.'" ref />
+              <param name="CONTROLS" value="All" />
+              <param name="CONSOLE" value="Clip1" />
+              <param name="LOOP" value="0" />
+              <param name="NUMLOOP" value="0" />
+              <param name="CENTER" value="0" />
+              <param name="MAINTAINASPECT" value="0" />
+              <param name="BACKGROUNDCOLOR" value="#000000" />
+              <embed src="'.$node->vidfile.'" type="audio/x-pn-realaudio-plugin" console="Clip1" controls="All" height="'.$node->videoy.'" width="'.$node->videox.'" autostart="true"></embed>
             </object>';
   $output = _theme_video_format_play($output, t('http://www.real.com/'),
                                       t('Link to Real'),
@@ -1269,24 +1267,23 @@ function theme_video_play_windowsmedia($node) {
   // Windows Media's embeded player includes the controls in the height
   $node->videoy += 68;
   $vidfile = _video_get_fileurl($node->vidfile) . basename($node->vidfile);
-  $output = '<OBJECT id="video1" width="'.$node->videox.'" height="'.$node->videoy.'"
+  $output = '<object id="video1" width="'.$node->videox.'" height="'.$node->videoy.'"
               classid="CLSID:22d6f312-b0f6-11d0-94ab-0080c74c7e95"
               codebase="http://activex.microsoft.com/activex/controls/mplayer/en/nsmp2inf.cab#Version=5,1,52,701"
               standby="Loading Microsoft Windows Media Player components..." type="application/x-oleobject">
-              <param name="fileName" value="'.$vidfile.'">
-              <param name="animationatStart" value="true">
-              <param name="transparentatStart" value="true">
-              <param name="autoStart" value="true">
-              <param name="showControls" value="true">
-              <param name="loop" value="true">
-              <EMBED type="application/x-mplayer2"
+              <param name="fileName" value="'.$vidfile.'" />
+              <param name="animationatStart" value="true" />
+              <param name="transparentatStart" value="true" />
+              <param name="autoStart" value="true" />
+              <param name="showControls" value="true" />
+              <param name="loop" value="true" />
+              <embed type="application/x-mplayer2"
                 pluginspage="http://microsoft.com/windows/mediaplayer/en/download/"
                 id="mediaPlayer" name="mediaPlayer" displaysize="4" autosize="-1"
                 showcontrols="true" showtracker="-1"
                 showdisplay="0" showstatusbar="-1" videoborder3d="-1" width="'.$node->videox.'" height="'.$node->videoy.'"
-                src="'.$vidfile.'" autostart="true" loop="true">
-              </EMBED>
-             </OBJECT>';
+                src="'.$vidfile.'" autostart="true" loop="true"></embed>
+             </object>';
 
   $output = _theme_video_format_play($output, t('http://windowsupdate.microsoft.com/'),
                                       t('Link to Windows Update'),
@@ -1309,7 +1306,7 @@ function theme_video_play_youtube($node) {
   $width = ($node->videox ? $node->videox : '425');
   $height = ($node->videoy ? $node->videoy : '350');
   $output = '<object width="'.$width.'" height="'.$height.'">
-               <param name="movie" value="http://www.youtube.com/v/' . $node->vidfile . '"></param>
+               <param name="movie" value="http://www.youtube.com/v/' . $node->vidfile . '" />
                <embed src="http://www.youtube.com/v/' . $node->vidfile . '" type="application/x-shockwave-flash" width="'.$width.'" height="'.$height.'"></embed>
              </object>';
   $output = _theme_video_format_play($output, t('http://www.youtube.com/help.php'), t('Link to youtube.com'), t('youtube.com'));
