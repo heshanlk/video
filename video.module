@@ -1147,10 +1147,10 @@ function theme_video_play_swf($node) {
  *   string of content to display
  */
 function theme_video_play_quicktime($node) {
-  drupal_set_html_head('<script src="'. drupal_get_path('module', 'video') .'/AC_QuickTime.js" language="JavaScript" type="text/javascript"></script>');
+  drupal_set_html_head('<script src="'. drupal_get_path('module', 'video') .'/video_insert.js" language="JavaScript" type="text/javascript"></script>');
   $height = $node->videoy + 16; //Increase the height to accommodate the player controls on the bottom.
   $output = '<script language="JavaScript" type="text/javascript">';
-  $output .= "QT_WriteOBJECT_XHTML('$node->vidfile','{$node->videox}','$height','','autoplay','true','kioskmode','false');";
+  $output .= "InsertQuicktimeVideo('{$node->vidfile}','$height','{$node->videox}');";
   $output .= '</script>';
   $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
                                       t('Link to QuickTime Download Page'),
