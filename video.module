@@ -1683,7 +1683,7 @@ function _video_get_mime_type($node) {
  */
 function _video_get_parameters($serialized_data) {
   $serial_data = unserialize($serialized_data);
-  if(is_array($serial_data)  && array_key_exists($serial_data['object_parameters']) && !empty($serial_data['object_parameters'])) {
+  if(is_array($serial_data)  && array_key_exists('object_parameters', $serial_data) && !empty($serial_data['object_parameters'])) {
     $output = '';
     foreach ($serial_data['object_parameters'] as $param => $value) {
       $output .= "<param name=\"$param\" value=\"$value\" />\n";
