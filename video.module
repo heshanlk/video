@@ -458,7 +458,7 @@ function video_form($node) {
     '#default_value' => $node->vidfile,
     '#maxlength' => 250,
     '#required' => TRUE,
-    '#description' => t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). ') . l(t('More information.'), 'video/help#videofile'));
+    '#description' => t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). ') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
   $form['video']['videox'] = array(
     '#type' => 'textfield',
     '#title' => t('Video Size Width (x)'),
