@@ -46,8 +46,14 @@ function video_help($section = 'admin/help#video') {
       $help = '';
       $help .= '<a name="videofile"></a><h3>' . t('Video File Field') . '</h3>';
       $help .= '<p>' . t('This is the field where you enter the video file information. The Video module currently supports these file types:') . '</p>';
-      $help .= '<ul><li><b>' . t('.mov, .wmv, .rm, .flv') . '</b><ul><li>' . t('To play these file types you need to enter in the path to the file. If your video is on the same webserver as drupal, you can use a path relative to the drupal directory, like "downloads/video.mov". If your video is on another server you can enter the URI to the video like "http://www.example.com/videos/my-video.mov".') . '</li></ul><br /></li>';
-      $help .= '<li><b><a href="http://www.youtube.com">' . t('YouTube.com support') . '</a></b><ul><li>' . t('You can host videos on youtube.com and put them on your site. To do this, after you upload the video on youtube.com enter the video ID into the "Video File" field. If the URI youtube.com gives you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8" you would enter "XM4QYXPf-s8".') . '</li></ul></li></ul>';
+      $help .= '<ul><li><b>' . t('.mov, .wmv, .rm, .flv, .swf, .dir, .dcr') . '</b><ul><li>' . t('To play these file types you need to enter in the path to the file. If your video is on the same webserver as drupal, you can use a path relative to the drupal directory, like "downloads/video.mov". If your video is on another server you can enter the URI to the video like "http://www.example.com/videos/my-video.mov".') . '</li></ul><br /></li>';
+      $help .= '<li><b><a href="http://www.youtube.com">' . t('YouTube.com support') . '</a></b><ul><li>' . t('You can host videos on youtube.com and put them on your site. To do this, after you upload the video on youtube.com enter the video ID into the "Video File" field. If the URI youtube.com gives you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8" you would enter "XM4QYXPf-s8".') . '</li></ul><br /></li>';
+      $help .= '<li><b><a href="http://video.google.com">' . t('Google Video support') . '</a></b><ul><li>' . t('You can host videos on video.google.com and put them on your site. 
+  To do this, after you upload the video on Google video enter get the
+  the embed code. In this code you will find an attribute like
+  src="http://video.google.com/googleplayer.swf?docId=-1591729516923874694" .
+  You will need the -1591729516923874694 like number just after docId= .
+  Then use "google:-1591729516923874694" as video file value.') . '</li></ul></li></ul>';
       $help .= '<a name="multi-download"></a><h3>' . t('Multi-file Dowload Help') . '</h3>';
       $help .= '<p>' . t('If enabled, this group holds all the settings for multi-file downloads. Multi-file downloads allows you to have a list of any number of files on the download page. These files are usually scanned from a folder. This allows the listing of multiple sizes and video types for visitors to choose from, you can even zip the files up.') . '</p>';
       $help .= '<ul><li><b>' . t('Disable multi-file downloads') . '</b><ul><li>' . t('This checkbox will disable multi-file downloads for this video. This means the download tab and link will send visitors straight to download the same video as is set to play. Use this option if you only have one version of your video.') . '</li></ul><br /></li>';
@@ -98,7 +104,7 @@ function video_menu($may_cache) {
             'type' => MENU_LOCAL_TASK);
         }
         //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
-        if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->vidfile) != 'youtube' or $node->disable_multidownload == 0)) {
+        if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype(($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') or $node->disable_multidownload == 0)) {
           $items[] = array('path' => 'node/'.arg(1).'/download',
             'title' => t('download'),
             'callback' => 'video_download',
@@ -129,7 +135,7 @@ function video_link($type, $node = NULL) {
   // Node links for a video
   if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
     //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
-    if (_video_get_filetype($node->vidfile) == 'youtube' and $node->disable_multidownload == 1) {
+    if ((_video_get_filetype($node->vidfile) == 'youtube' or _video_get_filetype($node->vidfile) == 'googlevideo') and $node->disable_multidownload == 1) {
       $display_download_link = 0;
     }
     else {
@@ -247,11 +253,6 @@ function video_settings() {
     '#description' => t('Toggle display of menu link to download video from the node page.'));
 
   $form['flash'] = array('#type' => 'fieldset', '#title' => t('Flash settings'));
-  $form['flash']['video_flvplayerskin'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Location of Flash player skin'),
-    '#default_value' => variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf'),
-    '#description' => t('The location of the Shockwave skin for player controls on the Flash video. It should be a path relative to the Drupal root directory.'));
   $form['flash']['video_flvplayerloader'] = array(
     '#type' => 'textfield',
     '#title' => t('Filename of Flash loader'),
@@ -456,9 +457,9 @@ function video_form($node) {
     '#type' => 'textfield',
     '#title' => t('Video File'),
     '#default_value' => $node->vidfile,
-    '#maxlength' => 250,
+    '#maxlength' => 700,
     '#required' => TRUE,
-    '#description' => t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). ') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
+    '#description' => t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). To add Google videos you will need the docId values available on the embed code google provide with "google:" as heading. ') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
   $form['video']['videox'] = array(
     '#type' => 'textfield',
     '#title' => t('Video Size Width (x)'),
@@ -517,7 +518,7 @@ function video_form($node) {
     '#description' => t('Integer of seconds.'));
 
   if (variable_get('video_multidownload', 0) and user_access('create multi-file downloads')) { //If multi-file downloading is turned on display settings group.
-    $form['multi-file'] = array('#type' => 'fieldset', '#title' => t('Multiple files in download tab'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -18, '#description' => t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help#multi-download'));
+    $form['multi-file'] = array('#type' => 'fieldset', '#title' => t('Multiple files in download tab'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -18, '#description' => t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help', NULL, NULL, 'multi-download'));
     $form['multi-file']['disable_multidownload'] = array(
       '#type' => 'checkbox',
       '#title' => t('Disable multi-file downloads'),
@@ -681,13 +682,16 @@ function _video_db_preprocess(&$node) {
   //Calculate the time in seconds.
   $node->playtime_seconds += ($node->playtime_hours * 3600) + ($node->playtime_minutes * 60);
 
-  //If file is on the local server get size, otherwise get size from function.
-  $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
-  if (is_file($path)) { //If file exists locally set size.
-    $node->size = filesize($path);
-  }
-  else {
-    $node->size = _video_size2bytes($node); //Change the size to be correctly shown in bytes.
+  //If video type is youtube or googlevideo, don't attempt to get filesize (googlevideo filenames are too long to stat)
+  if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') {
+    //If file is on the local server get size, otherwise get size from function.
+    $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
+    if (is_file($path)) { //If file exists locally set size.
+      $node->size = filesize($path);
+    }
+    else {
+      $node->size = _video_size2bytes($node); //Change the size to be correctly shown in bytes.
+    }
   }
 
   //If the user doesn't have permission to use multi-download then disable it for the node.
@@ -743,7 +747,7 @@ function video_validate($node) {
       }
     }
   }
-  if (_video_get_filetype($node->vidfile) != 'youtube') { //If video is of type youtube don't check size.
+  if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') { //If video is of type youtube don't check size.
     if (isset($node->videox) && $node->videox <= 0) {
       form_set_error('videox', t('You have to insert a valid horizontal pixel size for this video'));
     }
@@ -949,7 +953,7 @@ function video_block_list($delta = 0) {
 function video_download() {
   if ($node = node_load(arg(1))) {
     if (variable_get("video_multidownload", 0) == 0 or $node->disable_multidownload == 1) {
-      if (_video_get_filetype($node->vidfile) != 'youtube') { //Make sure the video type is not youtube before downloading.
+      if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') { //Make sure the video type is not youtube before downloading.
         _video_download_goto($node->vidfile, $node->vid);
       }
       else { //If video is type youtube then it can't be downloaded.
@@ -1064,11 +1068,18 @@ function video_play() {
       case 'swf':
         print theme('video_play_swf', $node);
         break;
+      case 'dir':
+      case 'dcr':
+        print theme('video_play_dcr', $node);
+        break;
       case 'wmv':
         print theme('video_play_windowsmedia', $node);
         break;
       case 'youtube':
         print theme('video_play_youtube', $node);
+        break;
+      case 'googlevideo':
+        print theme('video_play_googlevideo', $node);
         break;
       default:
         drupal_set_message('Video type not supported', 'error');
@@ -1099,11 +1110,8 @@ function video_play() {
  */
 function theme_video_play_flash($node) {
   $loader_location = variable_get('video_flvplayerloader', 'Player.swf');
-  $skin_location = variable_get('video_flvplayerskin', 'modules/video/FLVPlayer_Skin.swf');
-  $skin_location = substr($skin_location, 0, strlen($skin_location) - 4);
   $file = basename($node->vidfile);
   $url = _video_get_fileurl($node->vidfile);
-//print($file.'<br>'.$url); //Remove once fully tested.
   $output = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" id="Player">
                <param name="allowScriptAccess" value="sameDomain" />
                <param name="movie" value="'.$loader_location.'" />
@@ -1134,6 +1142,30 @@ function theme_video_play_swf($node) {
              </object>";
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'), t('Link to Flash player download'), t('Download the latest Flash player'));
   return theme('page', $output);
+}
+
+/**
+ * Play Director .dcr/.dir files.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+
+function theme_video_play_dcr($node) {
+  $file = basename($node->vidfile);
+  $url = _video_get_fileurl($node->vidfile);
+  $output = '<object classid="clsid:166B1BCA-3F9C-11CF-8075-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#version=10,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" ID="player" />
+  			 <param name="src" value="'.$node->vidfile.'" />
+  			 '. _video_get_parameters($node->serialized_data) .'
+  			 <embed src="'.$node->vidfile.'" width="'.$node->videox.'" height="'.$node->videoy.'" type="application/x-director" pluginspace="http://www.macromedia.com/shockwave/download/" />
+  			 </object>';
+  $output = _theme_video_format_play($output, t('http://www.macromedia.com/shockwave/download/'),
+                                      t('Link to Macromedia Shockwave Player Download Page'),
+                                      t('Download latest Shockwave Player'));
+   return theme('page', $output);
 }
 
 /**
@@ -1250,6 +1282,30 @@ function theme_video_play_youtube($node) {
                <embed src="http://www.youtube.com/v/' . $node->vidfile . '" type="application/x-shockwave-flash" width="'.$width.'" height="'.$height.'"></embed>
              </object>';
   $output = _theme_video_format_play($output, t('http://www.youtube.com/help.php'), t('Link to youtube.com'), t('youtube.com'));
+  return theme('page', $output);
+}
+
+/**
+ * Play videos hosted on video.google.com
+ * Allows users to host videos on video.google.com and then use the video ID to post it in the module.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_googlevideo($node) {
+  $width = ($node->videox ? $node->videox : '425');
+  $height = ($node->videoy ? $node->videoy : '350');
+  // Strip heading "google:"
+  $videoid = substr($node->vidfile, 7);
+  $output = '<object width="'.$width.'" height="'.$height.'">
+               <param name="movie" value="http://video.google.com/googleplayer.swf?docId=' . $videoid . '"></param>
+               <embed style="width:' . $width . 'px; height=' . $height . 'px;"  src="http://video.google.com/googleplayer.swf?docId=' . $videoid . '" type="application/x-shockwave-flash" width="'.$width.'" height="'.$height.'" allowScriptAccess="sameDomain" quality="best" bgcolor="#ffffff" scale="noScale" wmode="window" salign="TL"  FlashVars="playerMode=embedded"></embed>
+             </object>';
+
+  $output = _theme_video_format_play($output, t('http://video.google.com/support'), t('Link to video.google.com'), t('video.google.com'));
   return theme('page', $output);
 }
 
@@ -1482,6 +1538,9 @@ function _video_get_filetype($vidfile) {
     if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) == 11) {
       $file_type = 'youtube';
     }
+    else if (strpos($vidfile, 'google:') === 0) {
+      $file_type = 'googlevideo';
+    }
     else if (strstr($vidfile, '.')) { //If file contains a "." then get the file extension after the "."
       $file_type = substr($vidfile, strrpos($vidfile, '.') + 1);
     }
@@ -1663,8 +1722,12 @@ function _video_get_mime_type($node) {
       return 'video/3gpp';
     case 'mp4':
       return 'video/mp4';
+    case 'dir':
+    case 'dcr':
+      return 'application/x-director';
+    // We can't support this sources properly, so return false.
     case 'youtube':
-      // We can't support this properly, so return false.
+    case 'googlevideo':
       return false;
     default:
       // We couldn't detect the mime-type, so return false.
