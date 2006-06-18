@@ -1,0 +1,304 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Enable Video files uploading in video module
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+
+/**
+ * Implementation of hook_help().
+ */
+function video_upload_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Enable video files uploading in video module.');
+  }
+}
+
+
+/**
+ * Settings Hook
+ *
+ * @return
+ *   string of form content or error message
+ */
+function video_upload_settings() {
+  //Must have "administer site configuration" and "administer video" privilages.
+  if (!user_access('administer video')) {
+    drupal_access_denied();
+  }
+
+  $form = array();
+  $form['video_upload_override_vidfile'] =  array(
+    '#type' => 'checkbox',
+    '#title' => t('override video file'),
+    '#description' => t('Check this if your users must only submit videos throught uploading. This disable path insertion.'),
+    '#default_value' => variable_get('video_upload_override_vidfile', false),
+  );
+  $form['video_upload_uploadable_extensions'] =  array(
+    '#type' => 'textfield',
+    '#title' => t('uploadable extensions'),
+    '#description' => t('Insert here a comma separated list of extensions you want to enable for upload.'),
+    '#default_value' => variable_get('video_upload_uploadable_extensions', ''),
+  );
+
+
+  return $form;
+}
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function video_upload_perm() {
+  return array('upload video files');
+}
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_upload_nodeapi(&$node, $op, $teaser) {
+  switch ($op) {
+
+    case 'load':
+      $output['video_upload_file'] = _video_upload_load($node);
+      $output['vidfile'] = file_create_url($output['video_upload_file']->filepath);
+      return $output;
+    case 'prepare':
+      _video_upload_prepare($node);
+      break;
+
+    case 'validate':
+       _video_upload_validate($node);
+      break;
+
+
+    case 'submit':
+      _video_upload_submit($node);
+      break;
+
+    case 'insert':
+    case 'update':
+      _video_upload_store($node);
+      break;
+
+    case 'delete':
+      ;
+      break;
+
+    case 'delete revision':
+      video_upload_delete_revision($node);
+      break;
+
+
+
+  }
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+ * We use this to add a file upload field to the video creation form.
+ */
+function video_upload_form_alter($form_id, &$form) {
+
+  if($form_id == 'video_node_form' && isset($form['video']) && user_access('upload video files')) {
+
+    //get node object from form
+    $node = $form['#node'];
+
+    // required for upload to work
+    $form['#attributes']['enctype'] = 'multipart/form-data';
+
+    if(variable_get('video_upload_override_vidfile', false)) {
+      // remove unnecessary fields
+      $form['video']['vidfile'] = NULL;
+      $form['video']['filesize'] = NULL;
+      $form['video'] += _video_upload_form($node);
+    }
+    else {
+      // vidfile field is no more required while upload is enabled.
+      $form['video']['vidfile']['#required'] = FALSE;
+
+      $form['video']['vidfile']['#description'] .= '<p>' . t('If you want to upload a video simply ignore this field and select your video file at the "Upload video file" field.') . '</p>';
+      $form['video']['video_upload'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Upload video'),
+        '#weight' => -19,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+
+      $form['video']['video_upload'] += _video_upload_form($node);
+    }
+  }
+}
+
+
+function _video_upload_load(&$node) {
+  if ($node->vid) {
+    $result = db_query('SELECT * FROM {files} f INNER JOIN {file_revisions} r ON f.fid = r.fid WHERE r.vid = %d ORDER BY f.fid DESC', $node->vid);
+    return db_fetch_object($result);
+  }
+}
+
+
+/**
+ * Validate video file
+ */
+function _video_upload_validate(&$node) {
+  // if we override the default video module vidfile field and we don't have a file uploaded set error
+  if (variable_get('video_upload_override_vidfile', false) && !isset($node->video_upload_file) && !isset($_SESSION['video_upload_file'])) {
+    form_set_error('video_upload_file', t('A file must be provided.'));
+    return;
+  }
+}
+
+
+function _video_upload_submit(&$node) {
+  ;
+}
+
+
+function _video_upload_prepare(&$node) {
+  // clear video file informations
+  if(count($_POST) == 0) {
+    if (!empty($_SESSION['video_upload_file'])) {
+      file_delete($_SESSION['video_upload_file']->filepath);
+    }
+    unset($_SESSION['video_upload_file']);
+  }
+
+
+  if ($file = file_check_upload('video_upload_file')) {
+    $temppath = file_directory_temp() . '/video/';
+    file_check_directory($temppath, TRUE);
+    $node->video_upload_file = file_save_upload($file, $temppath .'/'. $file->filename, FILE_EXISTS_REPLACE);
+    $node->video_upload_file->newfile = TRUE;
+
+    $_SESSION['video_upload_file'] = $node->video_upload_file;
+  }
+  else if (!empty($_SESSION['video_upload_file'])) {
+    $node->video_upload_file = $_SESSION['video_upload_file'];
+  } else {
+    $_SESSION['video_upload_file'] = $node->video_upload_file;
+  }
+}
+
+
+function _video_upload_store(&$node) {
+  if(!empty($_SESSION['video_upload_file'])) {
+    $file = $_SESSION['video_upload_file'];
+    $dest_dir = variable_get('video_upload_default_path', 'videos') .'/';
+    if ($file = file_save_upload($file, $dest_dir . $file->filename)) {
+      $file = $_SESSION['video_upload_file'];
+      $file->fid = db_next_id('{files}_fid');
+      db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, $node->nid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
+      db_query("INSERT INTO {file_revisions} (fid, vid, list, description) VALUES (%d, %d, %d, '%s')", $file->fid, $node->vid, $file->list, $file->description);
+      unset($_SESSION['video_upload_file']);
+    }
+
+  }
+}
+
+
+/**
+* Create video upload specific form fields
+*/
+function _video_upload_form($node) {
+  _video_upload_check_settings();
+
+  $form = array();
+
+  $form['video_upload_file'] = array(
+    '#type' => 'file',
+    '#title' => t('Upload video file'),
+    '#size' => 40,
+    '#weight' => -19,
+    '#description' => t('The uploaded file will be used as video file for this node.<br /><b>NOTE:</b> The max upload size is') . ' ' . format_size(_video_upload_get_max_upload_size()) . '.',
+  );
+
+  if (isset($node->video_upload_file)) {
+    $form['video_upload_file']['#prefix'] = theme('video_upload_file_info_form', $node);
+    $form['video_upload_file']['#title'] = t('Replace with');
+  }
+
+  return $form;
+}
+
+
+/**
+ * Display informations about already uploaded file
+ */
+function theme_video_upload_file_info_form(&$node) {
+  $output = '<p>' . t('A video file has been already uploaded.') . '</p>';
+
+  // create array containing uploaded file informations
+  $items = array(
+  '<b>'. t('file name') .':</b> ' . $node->video_upload_file->filename,
+  '<b>'. t('file path') .':</b> ' . $node->video_upload_file->filepath,
+  '<b>'. t('file size') .':</b> ' . format_size($node->video_upload_file->filesize),
+  '<b>'. t('file mime') .':</b> ' . $node->video_upload_file->filemime,
+  );
+
+  // create information list
+  $output .= theme_item_list($items, t('uploaded video informations:'));
+
+  return $output;
+}
+
+
+/**
+ * Check PHP's post_max_size and upload_max_filesize settings and determine
+ * the maximum size of a file upload.
+ * (code from audio.module)
+ * @return an integer number of bytes
+ */
+function _video_upload_get_max_upload_size() {
+  $limits = array();
+  foreach (array('upload_max_filesize', 'post_max_size') as $setting) {
+    // the post_max_size and upload_max_filesize settings could be a string
+    // ('2m', '1G') or an integer (2097152 or 1073741824).
+    $val = ini_get($setting);
+    if (!is_numeric($val)) {
+      // separate the numeric and alpha parts, then get to multiplying
+      $val = trim($val);
+      $last = strtolower($val{strlen($val)-1});
+      switch($last) {
+        case 'g':
+          $val *= 1024;
+        case 'm':
+          $val *= 1024;
+        case 'k':
+          $val *= 1024;
+      }
+    }
+    $limits[] = $val;
+  }
+  // the smallest value will be the limiting factor so retun it.
+  return min($limits);
+}
+
+
+/**
+ * Verify the video_upload module settings.
+ */
+function _video_upload_check_settings() {
+  // File paths
+  $video_path = file_create_path(variable_get('video_upload_default_path', 'videos'));
+  $temp_path = rtrim($video_path, '/') . '/temp';
+
+  if (!file_check_directory($video_path, FILE_CREATE_DIRECTORY, 'video_upload_default_path')) {
+    return false;
+  }
+  if (!file_check_directory($temp_path, FILE_CREATE_DIRECTORY, 'video_upload_default_path')) {
+    return false;
+  }
+
+  return true;
+}

@@ -1,0 +1,145 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Enable image support for video module.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+
+/**
+ * Implementation of hook_help().
+ */
+function video_image_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Enable thumbnails support for video module.');
+  }
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function video_image_form_alter($form_id, &$form) {
+
+  if($form_id == 'video_node_form' && isset($form['video'])) {
+
+    $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Use this form to upload an image.'));
+
+
+      if (function_exists('_image_check_settings')) {
+        _image_check_settings();
+        $node = $form['#node'];
+        $form['#attributes'] = array("enctype" => "multipart/form-data");
+
+        if ($node->iid) {
+          $image = node_load($node->iid);
+          $form['image']['image_thumbnail'] = array('#type' => 'item', '#title' => t('Thumbnail'), '#value' => image_display($image, 'thumbnail'));
+        }
+        $value = ($node->new_image) ? '#value' : '#default_value';
+        $form['image']['iid'] = array('#type' => 'hidden' , $value => $node->iid);
+        $form['image']['image'] = array('#type' => 'file', '#title' => t('Image'));
+        $form['image']['image_title'] = array('#type' => 'textfield', '#title' => t('Image title'), '#default_value' => '');
+      }
+  }
+
+}
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_image_nodeapi(&$node, $op, $teaser) {
+  if($node->type == 'video') {
+    switch ($op) {
+      case 'submit':
+        $node->serial_data['iid'] = $node->iid;
+      break;
+      case 'prepare':
+        $image->title = $_POST['edit']['image_title'];
+        $image->uid = $node->uid;
+        $image->name = $node->name;
+        $image->created = $node->created;
+        $image->type = 'image';
+        image_prepare($image, 'image');
+        if ($image->images) {
+          node_validate($image);
+          if (!form_get_errors()) {
+            $image = node_submit($image);
+            node_save($image);
+            $node->iid = $image->nid;
+            $node->new_image = TRUE;
+          }
+        }
+        elseif ($_POST['edit']['iid']) {
+          $node->iid = $_POST['edit']['iid'];
+        }
+      break;
+
+      case 'view':
+        //print_r($node);
+        if($teaser) {
+          if ($node->serial_data['image_teaser'] || $node->serial_data['iid']) { //If we are dealing with a teaser.
+            $node->teaser = theme('video_image_teaser', $node);
+          }
+        }
+        else {
+          if ($node->serial_data['image_view'] || $node->serial_data['iid']) {
+            $node->body = theme('video_image_body', $node) . $node->body;
+          }
+        }
+        break;
+    }
+  }
+}
+
+
+/**
+ * Render the output for the node teaser.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_image_teaser($node) {
+  if($node->serial_data['iid']) {
+    $image = node_load($node->serial_data['iid']);
+    $image = image_display($image, 'thumbnail', array('class' => 'video_image_teaser'));
+  }
+  else {
+    $image = theme('image', $node->serial_data['image_teaser'], $node->title, $node->title, array('class' => 'video_image_teaser'), FALSE);
+  }
+  $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); //Create a link with an image in it.
+  $output .= $node->teaser . '<br class="video_image_clear" />';
+  return $output;
+}
+
+
+/**
+ * Generates the image HTML displayed in the Node body.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_image_body($node) {
+  if($node->serial_data['iid']) {
+    $image = node_load($node->serial_data['iid']);
+    $image = image_display($image, 'thumbnail');
+  }
+  else { // only for backward compatibility
+    $image = theme('image', $node->serial_data['image_view'], $node->title, $node->title, array('class' => 'video_image_view'), FALSE); //Create image HTML
+  }
+  $output = l($image, "node/$node->nid/play", array('title' => t('play') . ' ' . $node->title), NULL, NULL, FALSE, TRUE); //Create link HTML with image in it.
+
+  return $output;
+}
+
+?>

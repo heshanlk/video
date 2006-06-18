@@ -1,0 +1,134 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Enable addition of optional metadata on video nodes created by video module.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+
+/**
+ * Implementation of hook_help().
+ */
+function video_optmetadata_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Enable addition of optional metadata on video nodes created by video module. Optional metadata are Video Bitrate, Audio Bitrate, Audio Sampling Rate and Audio Channels.');
+  }
+}
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function video_optmetadata_perm() {
+  return array('insert optional metadata');
+}
+
+
+
+/**
+ * Implementation of hook_form_alter()
+ * We use this to add some fields to the video creation form.
+ * In those fields users will be able to insert some video metadatas.
+ */
+function video_optmetadata_form_alter($form_id, &$form) {
+
+  if($form_id == 'video_node_form' && isset($form['video']) && user_access('insert optional metadata')) {
+
+    // get node object
+    $node = $form['#node'];
+    // Optional Video Metadata. We display this group expanded only if displaying of optional metadata is enabled.
+    $form['metadata'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Optional Metadata'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#weight' => -16,
+      '#description' => t('Insert here the metadata informations.')
+    );
+    $form['metadata']['video_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video Bitrate'),
+      '#length' => 11,
+      '#maxlength' => 11,
+      '#default_value' => $node->video_bitrate,
+      '#description' => t('Video bitrate in kbits/sec.')
+    );
+    $form['metadata']['audio_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Audio Bitrate'),
+      '#length' => 11,
+      '#maxlength' => 11,
+      '#default_value' => $node->audio_bitrate,
+      '#description' => t('Audio bitrate in kbits/sec.')
+    );
+    $form['metadata']['audio_sampling_rate'] = array(
+      '#type' => 'select',
+      '#title' => t('Audio Sampling Rate'),
+      '#options' => array(0 => 'none', 8000 => '8 kHz', 11025 => '11 kHz', 16000 => '16 kHz', 22050 => '22 kHz', 32000 => '32 kHz', 44100 => '44.1 kHz', 48000 => '48 kHz', 96000 => '96 kHz', 192400 => '192 kHz'),
+      '#default_value' => $node->audio_sampling_rate,
+      '#description' => t('Integer value of audio sampling rate in Hz.')
+    );
+    $form['metadata']['audio_channels'] = array(
+      '#type' => 'select',
+      '#title' => t('Audio Channels'),
+      '#options' => array('' => 'none', '5.1' => t('5.1'), 'stereo' => t('Stereo'), 'mono' => t('Mono')),
+      '#default_value' => $node->audio_channels
+    );
+    // Ends Video Optional Metadata
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_optmetadata_nodeapi(&$node, $op, $teaser) {
+  if($node->type == 'video') {
+    switch ($op) {
+      case 'view':
+        //Add the HTML formatted output of the optional video metadata to the bottom.
+        $node->body .= theme('video_metadata', $node);
+      break;
+    }
+  }
+}
+
+/**
+ * Display optional metadata (Video and Audio bitrate,..) on the view page.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels,
+ */
+function theme_video_metadata($node) {
+  //Make sure atleast one fields had data.
+  if ($node->video_bitrate != 0 or $node->audio_bitrate != 0 or $node->audio_sampling_rate != 0 or $node->audio_channels != 0) {
+    $output = "\n\n<div class=\"video_metadata\">\n";
+    $output .= '  <div class="title"><h2>'.t('Video Metadata')."</h2></div>\n";
+    if($node->video_bitrate != 0) {
+      $fields[] = array('title' => t('Video Bitrate') . ':', 'body' => $node->video_bitrate . ' ' . t('kbits/sec'));
+    }
+    if($node->audio_bitrate != 0) {
+      $fields[] = array('title' => t('Audio Bitrate') . ':', 'body' => $node->audio_bitrate . ' ' . t('kbits/sec'));
+    }
+    if($node->audio_sampling_rate != 0) {
+      $fields[] = array('title' => t('Audio Sampling Rate') . ':', 'body' => $node->audio_sampling_rate . ' ' . t('Hz'));
+    }
+    if($node->audio_channels != '') {
+      $fields[] = array('title' => t('Audio Channels') . ':', 'body' => $node->audio_channels);
+    }
+    $output .= theme('video_fields', $fields); //Generate the fields HTML.
+    $output .= '</div>'; //Closing div video_metadata
+  }
+  else { //If all the fields are blank then display nothing.
+    $output = '';
+  }
+  return $output;
+}

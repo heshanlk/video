@@ -16,7 +16,7 @@ For general instructions read video.module handbook:
 
 Please submit bugs/features/support requests at:
   http://drupal.org/node/add/project_issue/video
-  
+
 Maintainers:
   Fabio Varesano: fvaresano at yahoo dot it
   David Norman:   deekayen (at) deekayen [dot-} net

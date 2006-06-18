@@ -1,0 +1,303 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Enable multiple file download in video module.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+
+/**
+ * Implementation of hook_help().
+ */
+function video_multidownload_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Enable multiple file download in video module.');
+  }
+}
+
+
+/**
+ * Implementation of hook_menu().
+ *
+ * @param $may_cache
+ *   boolean indicating whether cacheable menu items should be returned
+ *
+ * @return
+ *   array of menu information
+ */
+function video_multidownload_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    ; // for further uses
+  }
+  else {
+    if (arg(0) == 'node' && is_numeric(arg(1))) {
+      if ($node = node_load(arg(1)) and $node->type == 'video') {
+        if(isset($node->disable_multidownload) &&
+           !$node->disable_multidownload) {
+          $items[] = array('path' => 'node/'.arg(1).'/multidownload',
+            'title' => t('download other formats'),
+            'callback' => 'video_multidownload_download',
+            'access' => user_access('access video'),
+            'weight' => 7,
+            'type' => MENU_LOCAL_TASK);
+        }
+      }
+    }
+  }
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function video_multidownload_perm() {
+  return array('create multi-file downloads');
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+ * We use this to add multidownload fields to the video creation form.
+ */
+function video_multidownload_form_alter($form_id, &$form) {
+
+  if ($form_id == 'video_node_form' && isset($form['video']) && user_access('create multi-file downloads')) {
+
+    $node = $form['#node'];
+
+    $form['multi-file'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Multiple files in download tab'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#weight' => -18,
+      '#description' => t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help', NULL, NULL, 'multi-download')
+    );
+    $form['multi-file']['disable_multidownload'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Disable multi-file downloads'),
+      '#default_value' => isset($node->disable_multidownload) ? $node->disable_multidownload : 1,
+      '#description' => t('Disables multi-file downloads for this video only.')
+     );
+    $form['multi-file']['download_folder'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Multi-file download folder'),
+      '#default_value' => $node->download_folder,
+      '#maxlength' => 250,
+      '#description' => t('Enter the folder containing your videos. It must be relative from the drupal directory. If the absolute path is "C:\inetpub\drupal\videos\projectfolder\" or "/usr/htdocs/drupal/videos/projectfolder/" then enter something like "videos/projectfolder/".'));
+    $form['multi-file']['use_play_folder'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show files in "play" folder'),
+      '#default_value' => $node->use_play_folder,
+      '#description' => t('Display videos in the same directory as the "play" video. If folder above is entered this will be in addition.'));
+  }
+}
+
+
+
+function video_multidownload_download() {
+  if ($node = node_load(arg(1))) {
+    if (variable_get("video_multidownload", 0) == 0 or $node->disable_multidownload == 1) {
+
+    }
+    else if (arg(3) != '') { //If we are passed an encoded URL redirect to the downloader.
+      _video_download_goto(arg(3), $node->vid, TRUE);
+    }
+    else { //Multiple file downloads is turned on.
+      $download_error = FALSE; //Initialize and clear the error flag.
+      $node->file_array = array(); //Initialize the final file array.
+      global $base_url;
+      $full_download_folder = getcwd() . '/' . $node->download_folder; //Get absolute path to folder.
+      //If the download folder is set and valid scan it for files.
+      if ($node->download_folder != '' and file_exists($full_download_folder)) {
+        $scan_download_folder = _video_multidownload_scandir($full_download_folder); //Get array of file names in the directory.
+        $scan_download_folder['local_dir'] = $full_download_folder; //For getting filesize.
+        $scan_download_folder['dir_stub'] = $node->download_folder; //To put in the URL.
+        $folder_array[] = $scan_download_folder;
+
+      }
+      //If option is set to use "play" folder and it exists, scan it for files.
+      $play_dir_stub = str_replace(basename($node->vidfile), "", $node->vidfile); //Remove the filename from the play file to get directory.
+      $play_dir = getcwd() . '/' . $play_dir_stub; //Get the local directory path where the file is kept.
+      if ($node->use_play_folder == 1 and file_exists($play_dir) and $play_dir_stub != '/') { //Make sure play stub won't allow scanning base drupal directory.
+        $scan_play_folder = _video_scandir($play_dir);
+        $scan_play_folder['local_dir'] = $play_dir; //For getting filesize.
+        $scan_play_folder['dir_stub'] = $play_dir_stub; //To put in the URL.
+        $folder_array[] = $scan_play_folder;
+      }
+
+      if (count($folder_array) > 0) { //Make sure we have a folder to scan.
+        foreach ($folder_array as $dir_scan) { //Scan through one or both folders results.
+          foreach ($dir_scan as $file) { //Go through each file in the directory.
+            if (is_file($dir_scan['local_dir'] . "/" . $file)) { //Make sure it's a valid file.
+              //Checks the new file with the files already in the array to eliminate dupes.
+              $match = false;
+              foreach ($node->file_array as $file_array_file) {
+                if ($file_array_file['file'] == $file) { //If the file is already in the array.
+                  $match = TRUE;
+                }
+              } //If we get here with $match still set FALSE we don't have a dupe.
+
+              $file_ext = substr($file, strrpos($file, '.') + 1); //Get the file extension.
+              $ext_array = explode(',', variable_get('video_download_ext', 'mov,wmv,avi'));
+
+              if (!$match and in_array($file_ext, $ext_array)) { //Only add file if it's not already in the array and it's extension shouldn't be hidden.
+                $file_array_size[] = filesize($dir_scan['local_dir'] . $file); //Create an array of the file sizes for sorting.
+
+                global $base_url;
+                $file_url = $base_url . '/' . $dir_scan['dir_stub'] . $file; //Generate absolute URL to video.
+                $file_url = str_replace(' ', '%20', $file_url); //Replace any spaces in filename.
+                $encoded_url = base64_encode($file_url); //Encode URL to base64 MIME value so it can be passed in URL.
+                $encoded_url = str_replace('/', '-', $encoded_url); //Replace "/" with "-" so it doesn't mess up the URL.
+
+                $node->file_array[] = array( 'file' => $file
+                  , 'type' => $file_ext
+                  , 'size' => filesize($dir_scan['local_dir'] . $file)
+                  , 'encoded_url' => $encoded_url
+                  );
+              }
+            } //Close the valid file check.
+          } //Close the directory scan.
+        } //Close scan location array.
+
+        if (count($node->file_array) > 0) { //Make sure atleast 1 file was found.
+          array_multisort($file_array_size, SORT_ASC, $node->file_array); //Sort based of file size.
+
+        }
+        else { //Else if no files were found in the directory.
+          $download_error = TRUE;
+        }
+      }
+      else { //Else if we have no valid folders to scan.
+        $download_error = TRUE;
+      }
+
+      //If there was no error send the files array to the theme function for display.
+      if($download_error == FALSE) {
+        print theme('video_multidownload_download', $node); //Print to the screen from the theme_video_download function.
+      }
+      else { //Else if there is an error download the play file.
+        _video_download_goto($node->vidfile, $node->vid);
+      }
+
+    } //Close multi-file downloads is turned on.
+  }
+}
+
+
+/**
+ * Outputs the HTML for the download page when multi-file download are turned on.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_multidownload_download($node) {
+  $output = '';
+  //Replace some common file types with full name and links.
+  $find = array('mov', 'wmv', 'rm', 'avi', 'zip', 'divx', 'flv');
+  $replace = array('<a href="http://www.apple.com/quicktime" title="'. t('QuickTime Homepage') . '">' . t('Quicktime') . '</a>'
+             , '<a href="http://www.microsoft.com/windowsmedia" title="'. t('Windows Media Homepage') . '">' . t('Windows Media') . '</a>'
+             , '<a href="http://www.real.com" title="'. t('Real Media Homepage') . '">' . t('Real Media') . '</a>'
+             , '<a href="http://en.wikipedia.org/wiki/AVI" title="'. t('AVI Information at wikipedia.org') . '">' . t('AVI') . '</a>'
+             , '<a href="http://en.wikipedia.org/wiki/ZIP_file_format" title="'. t('ZIP Information at wikipedia.org') . '">' . t('ZIP') . '</a>'
+             , '<a href="http://www.divx.com" title="'. t('Divx Homepage') . '">' . t('DIVX') . '</a>'
+             , '<a href="http://www.macromedia.com/go/getflashplayer" title="'. t('Macromedia Flash Homepage') . '">' .t('Flash FLV') . '</a>'
+             );
+  $output .= '<br /><div class="videodownload">'; //Enclose all HTML in "videodownload" class.
+  foreach($node->file_array as $file) { //Goes through the array of video files and gets them ready for display.
+    $file_type = str_replace($find, $replace, $file['type']); //Match and replace common file types.
+    $link = l($file['file'], "node/$node->nid/multidownload/" . $file['encoded_url']); //Create link to download file.
+    $file_array_table[] = array($link, format_size($file['size']), $file_type); //Create table row.
+  }
+  $headers = array(t('File Link'), t('File Size'), t('File Type'));
+  $output .= theme_table($headers, $file_array_table); //Create the table of files.
+  $output .= '</div>'; //Close the "videodownload" class.
+
+  //Adds a breadcrumb back to view on the download page. This may not be needed but some better breadcrumbs are.
+  $breadcrumb = drupal_get_breadcrumb();
+  $breadcrumb[] = l(t('View'), "node/$node->nid");
+  drupal_set_breadcrumb($breadcrumb);
+
+  drupal_set_title(t('Downloading').' '.$node->title);
+  return theme("page", $output);
+}
+
+
+
+/**
+ * Scans a directory and returns an array of all the filenames in the directory.
+ * This function is only necessary to maintain PHP 4 support.
+ *
+ * @param $dir
+ *   The directory. Can be an absolute path or relative from the current working directory.
+ *
+ * @return
+ *   array of filenames.
+ */
+function _video_multidownload_scandir($dir) {
+  //Try a few different ways to open the directory.
+  if (is_dir($dir)) {
+    $dir_open = opendir($dir);
+  }
+  else if (is_dir($new_dir = getcwd() . $dir)) {
+    $dir_open = opendir($new_dir);
+  }
+  else if (is_dir($new_dir = getcwd() . '/' . $dir)) {
+    $dir_open = opendir($new_dir);
+  }
+  else { //If directory does not exist.
+    return FALSE;
+  }
+  if (!$dir_open) { //If opendir returned false then return false.
+    return FALSE;
+  }
+  //If it makes it this far $dir_open should be valid.
+  while (($dir_content = readdir($dir_open)) !== FALSE) {
+    $files[] = $dir_content;
+  }
+  return $files;
+}
+
+
+/**
+ * Forward user directly to the file for downloading
+ *
+ * @param $input_url
+ *   string should be either a base64 encoded absolute URL, relative URL, or absolute URL.
+ *
+ * @param $vid
+ *   integer node version ID of the node to have it's download counter updated.
+ *
+ * @param $base64_encoded
+ *   boolean value determines whether the $input is base64 encoded.
+ *
+ * @return
+ *   Nothing
+ */
+function _video_multidownload_download_goto($input_url, $vid, $base64_encoded) {
+  if (user_access('download video') && $base64_encoded) {
+
+    $encoded_url = str_replace('-', '/', $input_url); //Replace "-" to "/" for MIME base64.
+    $location = base64_decode($encoded_url);
+
+    if (variable_get('video_downloadcounter', 1)) {
+      db_query("UPDATE {video} SET download_counter = download_counter + 1 where vid = '%d'", $vid); //Increment download counter.
+    }
+
+    header("Location: $location"); //Redirect to the video files URL.
+  }
+  else { //If the user does not have access to download videos.
+    drupal_set_message(t('You do not have permission to download videos.'), 'error');
+    $node = node_load(array('vid' => $vid)); //Load a node with the $vid so we can get the nid.
+    drupal_goto("node/$node->nid"); //Use the nid we just loaded to go back to the node page.
+  }
+}

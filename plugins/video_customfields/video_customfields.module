@@ -1,0 +1,225 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Enable addition of custom fileds on video nodes created by video module.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+
+/**
+ * Implementation of hook_help().
+ */
+function video_customfields_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Enable addition of custom fileds on video nodes created by video module.');
+  }
+}
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function video_customfields_perm() {
+  return array('insert custom fields');
+}
+
+
+/**
+ * Settings Hook
+ *
+ * @return
+ *   string of form content or error message
+ */
+function video_customfields_settings() {
+  //Must have "administer site configuration" and "administer video" privilages.
+  if (!user_access('administer video')) {
+    drupal_access_denied();
+  }
+
+  $form['customfields'] = array(
+    '#type' => 'fieldset',
+    '#weight' => -1,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => t('Custom display fields'),
+    '#description' => t('Creates custom fields. Fields only show up if you give them a name.')
+  );
+  $form['customfields']['video_customfieldtitle'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom field group title'),
+    '#default_value' => variable_get('video_customfieldtitle', ''),
+    '#description' => t('Title of the group of all custom fields.'));
+  $form['customfields']['video_customfield1'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom field 1 title'),
+    '#default_value' => variable_get('video_customfield1', ''));
+  $form['customfields']['video_customfield2'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom field 2 title'),
+    '#default_value' => variable_get('video_customfield2', ''));
+  $form['customfields']['video_customfield3'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom field 3 title'),
+    '#default_value' => variable_get('video_customfield3', ''));
+  $form['customfields']['video_customfield4'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom field 4 title'),
+    '#default_value' => variable_get('video_customfield4', ''));
+  $form['customfields']['video_customfield5'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom field 5 title'),
+    '#default_value' => variable_get('video_customfield5', ''));
+  $form['customfields']['video_customfield6'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom field 6 title'),
+    '#default_value' => variable_get('video_customfield6', ''));
+
+
+  $options = array(1 => 'Yes', 0 => 'No');
+
+  $form['customfields']['video_customgroupcollapsed'] = array(
+    '#type' => 'radios',
+    '#title' => t('Start group initially collapsed'),
+    '#options' => $options,
+    '#default_value' => variable_get('video_customgroupcollapsed', 1),
+    '#description' => t('Should the custom fields group be initially collapsed when creating and editing video nodes?')
+  );
+  return $form;
+}
+
+
+
+/**
+ * Implementation of hook_form_alter()
+ * We use this to add some custom fields to the video creation form.
+ * Fields will be displayed only if field title is set on settings page.
+ */
+function video_customfileds_form_alter($form_id, &$form) {
+
+  if($form_id == 'video_node_form' && isset($form['video']) && user_access('insert custom fields')) {
+
+    $title1 = variable_get('video_customfield1', '');
+    $title2 = variable_get('video_customfield2', '');
+    $title3 = variable_get('video_customfield3', '');
+    $title4 = variable_get('video_customfield4', '');
+    $title5 = variable_get('video_customfield5', '');
+    $title6 = variable_get('video_customfield6', '');
+    //Only display the custom fields group if atleast one field has a title.
+    if ($title1 . $title2 . $title3 . $title4 . $title5 . $title6 != '') {
+      $form['customfields'] = array('#type' => 'fieldset', '#title' => variable_get('video_customfieldtitle', 'Custom Fields'), '#collapsible' => TRUE, '#collapsed' => variable_get('video_customgroupcollapsed', FALSE), '#weight' => -17);
+      //If the custom field title is not blank, then display it.
+      if ($title1 != '') {
+        $form['customfields']['custom_field_1'] = array(
+          '#type' => 'textfield', '#title' => $title1, '#maxlength' => 250, '#default_value' => $node->custom_field_1);
+      }
+      if ($title2 != '') {
+        $form['customfields']['custom_field_2'] = array(
+          '#type' => 'textfield', '#title' => $title2, '#maxlength' => 250, '#default_value' => $node->custom_field_2);
+      }
+      if ($title3 != '') {
+        $form['customfields']['custom_field_3'] = array(
+          '#type' => 'textfield', '#title' => $title3, '#maxlength' => 250, '#default_value' => $node->custom_field_3);
+      }
+      if ($title4 != '') {
+        $form['customfields']['custom_field_4'] = array(
+          '#type' => 'textfield', '#title' => $title4, '#maxlength' => 250, '#default_value' => $node->custom_field_4);
+      }
+      if ($title5 != '') {
+        $form['customfields']['custom_field_5'] = array(
+          '#type' => 'textarea', '#title' => $title5, '#rows' => 4, '#default_value' => $node->custom_field_5);
+      }
+      if ($title6 != '') {
+        $form['customfields']['custom_field_6'] = array(
+          '#type' => 'textarea', '#title' => $title6, '#rows' => 4, '#default_value' => $node->custom_field_6);
+      }
+    }
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_customfields_nodeapi(&$node, $op, $teaser) {
+  if($node->type == 'video') {
+    switch ($op) {
+      case 'view':
+        //If the main node view is being displayed then add the extra video information.
+        if ($teaser == FALSE) {
+
+          if (($node->custom_field_1 . $node->custom_field_2 . $node->custom_field_3 . $node->custom_field_4 . $node->custom_field_5 . $node->custom_field_6) != '') { //Make sure there is data to display.
+            //Add the HTML formatted output of the custom fields to the bottom.
+            $node->body .= theme('video_customfields', $node);
+          }
+        }
+      break;
+    }
+  }
+}
+
+
+/**
+ * Display custom fields on the view page.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_customfields($node) {
+  //Adds the custom fields.
+  $group_title = variable_get('video_customfieldtitle', ''); //Title of the custom fields.
+  $title1 = variable_get('video_customfield1', '');
+  $title2 = variable_get('video_customfield2', '');
+  $title3 = variable_get('video_customfield3', '');
+  $title4 = variable_get('video_customfield4', '');
+  $title5 = variable_get('video_customfield5', '');
+  $title6 = variable_get('video_customfield6', '');
+  //Run the fields through the input filter set for the node, then remove paragraphs.
+  //Removes the <p> and </p> tags from the filter pass return. This allows each field to be on one line.
+  //A better system might be to remove only the first and last <p></P> tags.
+  $field1 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_1, $node->format, FALSE));
+  $field2 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_2, $node->format, FALSE));
+  $field3 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_3, $node->format, FALSE));
+  $field4 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_4, $node->format, FALSE));
+  $field5 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_5, $node->format, FALSE));
+  $field6 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_6, $node->format, FALSE));
+
+  $output = '';
+  //Make sure all the titles are not blank, if not then display them.
+  if (($title1 . $title2 . $title3 . $title4 . $title5 . $title6) != '') {
+    $output = '<div class="videofields">'; //Enclose all output in "videofields" div class.
+    if ($group_title != '') {
+      $output .= '<div class="title"><h2>' . $group_title . '</h2></div>' . "\n";
+    }
+    if ($title1 != '' and $node->custom_field_1 != '') {
+      $fields[] = array('title' => $title1, 'body' => $field1);
+    }
+    if ($title2 != '' and $node->custom_field_2 != '') {
+      $fields[] = array('title' => $title2, 'body' => $field2);
+    }
+    if ($title3 != '' and $node->custom_field_3 != '') {
+      $fields[] = array('title' => $title3, 'body' => $field3);
+    }
+    if ($title4 != '' and $node->custom_field_4 != '') {
+      $fields[] = array('title' => $title4, 'body' => $field4);
+    }
+    if ($title5 != '' and $node->custom_field_5 != '') {
+      $fields[] = array('title' => $title5, 'body' => $field5);
+    }
+    if ($title6 != '' and $node->custom_field_6 != '') {
+      $fields[] = array('title' => $title6, 'body' => $field6);
+    }
+    $output .= theme('video_fields', $fields); //Generate all the fields HTML.
+
+    $output .= '</div><br />'; //Close the "videofields" class div.
+  }
+  return $output;
+}
+
+

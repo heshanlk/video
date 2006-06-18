@@ -6,10 +6,10 @@ FILE TYPE INFORMATIONS
 Video.module for Drupal 4.7 supports multiple video formats.
 
 .mov, .wmv, .rm, .3gp, .mp4, .swf, .dir, .dcr
-  These files type are supported out the box. 
+  These files type are supported out the box.
   To play these file types you need to enter in the path to the file.
   If your video is on the same webserver as drupal, you can use a path relative
-  to the drupal directory, like "downloads/video.mov". 
+  to the drupal directory, like "downloads/video.mov".
   If your video is on another server you can enter the URI to the video
   like "http://www.example.com/videos/my-video.mov".
   The .mp4 and .3gp extentions use the Quicktime player.
@@ -20,14 +20,14 @@ Video.module for Drupal 4.7 supports multiple video formats.
   in the video creation page you will be able to specify the parameters.
 
 YouTube.com support
-  You can host videos on youtube.com and put them on your site. 
-  To do this, after you upload the video on youtube.com enter 
-  the video ID into the "Video File" field. If the URI youtube.com gives 
-  you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8" 
+  You can host videos on youtube.com and put them on your site.
+  To do this, after you upload the video on youtube.com enter
+  the video ID into the "Video File" field. If the URI youtube.com gives
+  you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8"
   you would enter "XM4QYXPf-s8".
 
 Google Video support
-  You can host videos on video.google.com and put them on your site. 
+  You can host videos on video.google.com and put them on your site.
   To do this, after you upload the video on Google video enter get the
   the embed code. In this code you will find an attribute like
   src="http://video.google.com/googleplayer.swf?docId=-1591729516923874694" .
@@ -37,7 +37,7 @@ Google Video support
 .flv
   Video.module for drupal 4.7 now support Macromedia Flash FLV Videos
   using FlowPlayer ( http://flowplayer.sourceforge.net/ ).
-  To use .flv files simply download Flowplayer and put the file 
+  To use .flv files simply download Flowplayer and put the file
   called "FlowPlayer.swf" or "Player.swf" into your Drupal folder.
   Then set the Flash player file name to use on the Flash settings in video module configuration page.
 

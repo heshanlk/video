@@ -41,14 +41,14 @@ function video_help($section = 'admin/help#video') {
     case 'admin/modules#description':
       return t('Allows video nodes.');
     case 'node/add#video':
-      return t('Allows you to insert videos as nodes');
+      return t('Allows you to insert videos as nodes.');
     case 'video/help':
       $help = '';
       $help .= '<a name="videofile"></a><h3>' . t('Video File Field') . '</h3>';
       $help .= '<p>' . t('This is the field where you enter the video file information. The Video module currently supports these file types:') . '</p>';
       $help .= '<ul><li><b>' . t('.mov, .wmv, .rm, .flv, .swf, .dir, .dcr') . '</b><ul><li>' . t('To play these file types you need to enter in the path to the file. If your video is on the same webserver as drupal, you can use a path relative to the drupal directory, like "downloads/video.mov". If your video is on another server you can enter the URI to the video like "http://www.example.com/videos/my-video.mov".') . '</li></ul><br /></li>';
       $help .= '<li><b><a href="http://www.youtube.com">' . t('YouTube.com support') . '</a></b><ul><li>' . t('You can host videos on youtube.com and put them on your site. To do this, after you upload the video on youtube.com enter the video ID into the "Video File" field. If the URI youtube.com gives you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8" you would enter "XM4QYXPf-s8".') . '</li></ul><br /></li>';
-      $help .= '<li><b><a href="http://video.google.com">' . t('Google Video support') . '</a></b><ul><li>' . t('You can host videos on video.google.com and put them on your site. 
+      $help .= '<li><b><a href="http://video.google.com">' . t('Google Video support') . '</a></b><ul><li>' . t('You can host videos on video.google.com and put them on your site.
   To do this, after you upload the video on Google video enter get the
   the embed code. In this code you will find an attribute like
   src="http://video.google.com/googleplayer.swf?docId=-1591729516923874694" .
@@ -104,7 +104,7 @@ function video_menu($may_cache) {
             'type' => MENU_LOCAL_TASK);
         }
         //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
-        if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype(($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') or $node->disable_multidownload == 0)) {
+        if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo')) {
           $items[] = array('path' => 'node/'.arg(1).'/download',
             'title' => t('download'),
             'callback' => 'video_download',
@@ -164,8 +164,9 @@ function video_link($type, $node = NULL) {
     }
 
     $link = substr($link, 0, -3); //Trim the last " | " off.
+    return array($link);
   }
-  return array($link);
+  return array();
 }
 
 /**
@@ -218,9 +219,6 @@ function video_feed() {
  */
 function video_perm() {
   $array = array('create video', 'access video', 'administer video', 'download video', 'view play counter', 'view download counter');
-  if (variable_get('video_multidownload', '0')) { //Only display permission if turned on in settings.
-    $array[] = 'create multi-file downloads';
-  }
   return $array;
 }
 
@@ -312,63 +310,6 @@ function video_settings() {
     '#default_value' => variable_get('video_download_ext', 'mov,wmv,rm,flv,avi,divx,mpg,mpeg,mp4,zip'),
     '#description' => t('The extensions of files to list from the multi-file download folder on the download page. Extensions should be comma seperated with no spaces, for example (mov,wmv,rm).'));
 
-  $form['video_display_metadata'] = array(
-    '#type' => 'radios',
-    '#title' => t('Display Optional Metadata'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_display_metadata', 0),
-    '#description' => t('Allows displaying a list of videos metadata: Video bitrate, Audio bitrate, Audio Sampling Rate and Audio Channels.'));
-
-  $form['video_object_parameters'] = array(
-    '#type' => 'radios',
-    '#title' => t('Allow adding of parameters to object HTML'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_object_parameters', 0),
-    '#description' => t('Turns on a text box that takes parameter=value pairs and puts them into parameter tags in the embedded object tag for each video.'));
-
-  $form['video_image'] = array(
-    '#type' => 'radios',
-    '#title' => t('Allow adding image to nodes and node teasers'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_image', 0),
-    '#description' => t('This will allow users to put images in the node teaser and node view.'));
-
-  $form['customfields'] = array('#type' => 'fieldset', '#weight' => -1, '#collapsible' => TRUE, '#collapsed' => TRUE, '#title' => t('Custom display fields'), '#description' => t('Creates custom fields. Fields only show up if you give them a name.'));
-  $form['customfields']['video_customfieldtitle'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Custom field group title'),
-    '#default_value' => variable_get('video_customfieldtitle', ''),
-    '#description' => t('Title of the group of all custom fields.'));
-  $form['customfields']['video_customfield1'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Custom field 1 title'),
-    '#default_value' => variable_get('video_customfield1', ''));
-  $form['customfields']['video_customfield2'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Custom field 2 title'),
-    '#default_value' => variable_get('video_customfield2', ''));
-  $form['customfields']['video_customfield3'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Custom field 3 title'),
-    '#default_value' => variable_get('video_customfield3', ''));
-  $form['customfields']['video_customfield4'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Custom field 4 title'),
-    '#default_value' => variable_get('video_customfield4', ''));
-  $form['customfields']['video_customfield5'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Custom field 5 title'),
-    '#default_value' => variable_get('video_customfield5', ''));
-  $form['customfields']['video_customfield6'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Custom field 6 title'),
-    '#default_value' => variable_get('video_customfield6', ''));
-  $form['customfields']['video_customgroupcollapsed'] = array(
-    '#type' => 'radios',
-    '#title' => t('Start group initially collapsed'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_customgroupcollapsed', 1),
-    '#description' => t('Should the custom fields group be initially collapsed when creating and editing video nodes?'));
 
   return $form;
 }
@@ -443,7 +384,7 @@ function video_form($node) {
     '#default_value' => $node->title, '#weight' => -20);
   $form['body_filter']['body'] = array('#type' => 'textarea',
     '#title' => t('Body'), '#default_value' => $node->body,
-    '#required' => TRUE, '#weight' => -15);
+    '#required' => FALSE, '#weight' => -15);
   $form['body_filter']['filter'] = filter_form($node->format);
   $form['log'] = array('#type' => 'fieldset', '#title' => t('Log message'),
     '#collapsible' => TRUE, '#collapsed' => TRUE);
@@ -459,6 +400,7 @@ function video_form($node) {
     '#default_value' => $node->vidfile,
     '#maxlength' => 700,
     '#required' => TRUE,
+    '#weight' => -20,
     '#description' => t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). To add Google videos you will need the docId values available on the embed code google provide with "google:" as heading. ') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
   $form['video']['videox'] = array(
     '#type' => 'textfield',
@@ -517,127 +459,9 @@ function video_form($node) {
     '#default_value' => $playtime['seconds'],
     '#description' => t('Integer of seconds.'));
 
-  if (variable_get('video_multidownload', 0) and user_access('create multi-file downloads')) { //If multi-file downloading is turned on display settings group.
-    $form['multi-file'] = array('#type' => 'fieldset', '#title' => t('Multiple files in download tab'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -18, '#description' => t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help', NULL, NULL, 'multi-download'));
-    $form['multi-file']['disable_multidownload'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Disable multi-file downloads'),
-      '#default_value' => isset($node->disable_multidownload) ? $node->disable_multidownload : 1,
-      '#description' => t('Disables multi-file downloads for this video only.'));
-    $form['multi-file']['download_folder'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Multi-file download folder'),
-      '#default_value' => $node->download_folder,
-      '#maxlength' => 250,
-      '#description' => t('Enter the folder containing your videos. It must be relative from the drupal directory. If the absolute path is "C:\inetpub\drupal\videos\projectfolder\" or "/usr/htdocs/drupal/videos/projectfolder/" then enter something like "videos/projectfolder/".'));
-    $form['multi-file']['use_play_folder'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Show files in "play" folder'),
-      '#default_value' => $node->use_play_folder,
-      '#description' => t('Display videos in the same directory as the "play" video. If folder above is entered this will be in addition.'));
-  }
-
-  if (variable_get('video_object_parameters', 0)) { //Only display the option if it is turned on in settings.
-    //We must convert the array data back to something that can go in the textarea.
-    $textarea = '';
-    if(is_array($node->serial_data['object_parameters'])) {
-      foreach ($node->serial_data['object_parameters'] as $param => $value) {
-        $textarea .= $param . '=' . $value . "\n";
-      }
-      $textarea = substr($textarea, 0, -1); //Remove the last newline "\n" from the end.
-    }
-    $form['parameters'] = array('#type' => 'fieldset', '#title' => t('HTML object parameters'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17);
-    $form['parameters']['object_parameters'] = array(
-      '#title' => t('Embedded object parameters'),
-      '#type' => 'textarea',
-      '#rows' => 5,
-      '#default_value' => $textarea,
-      '#description' => t('Enter the values that you would like to be embedded in &#60;param name="param_1" value="value_1" /&#62; tags. Each parameter should be on a seperate line with an equal sign between the parameter and its assigned value. Like param=value for example.'));
-  }
-
-  if (variable_get('video_image', 0)) { //Only display the option if it is turned on in settings.
-    $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Please enter full URL value to the image.'));
-    $form['image']['image_teaser'] = array(
-      '#title' => t('Image thumbnail for node teaser'),
-      '#type' => 'textfield',
-      '#maxlength' => 255,
-      '#default_value' => $node->serial_data['image_teaser'],
-      '#description' => t('This image will be displayed in the node teaser.'));
-    $form['image']['image_view'] = array(
-      '#title' => t('Image for node view'),
-      '#type' => 'textfield',
-      '#maxlength' => 255,
-      '#default_value' => $node->serial_data['image_view'],
-      '#description' => t('This image will be displayed on the full node view.'));
-  }
-
-  $title1 = variable_get('video_customfield1', '');
-  $title2 = variable_get('video_customfield2', '');
-  $title3 = variable_get('video_customfield3', '');
-  $title4 = variable_get('video_customfield4', '');
-  $title5 = variable_get('video_customfield5', '');
-  $title6 = variable_get('video_customfield6', '');
-  //Only display the custom fields group if atleast one field has a title.
-  if ($title1 . $title2 . $title3 . $title4 . $title5 . $title6 != '') {
-    $form['customfields'] = array('#type' => 'fieldset', '#title' => variable_get('video_customfieldtitle', 'Custom Fields'), '#collapsible' => TRUE, '#collapsed' => variable_get('video_customgroupcollapsed', FALSE), '#weight' => -17);
-    //If the custom field title is not blank, then display it.
-    if ($title1 != '') {
-      $form['customfields']['custom_field_1'] = array(
-        '#type' => 'textfield', '#title' => $title1, '#maxlength' => 250, '#default_value' => $node->custom_field_1);
-    }
-    if ($title2 != '') {
-      $form['customfields']['custom_field_2'] = array(
-        '#type' => 'textfield', '#title' => $title2, '#maxlength' => 250, '#default_value' => $node->custom_field_2);
-    }
-    if ($title3 != '') {
-      $form['customfields']['custom_field_3'] = array(
-        '#type' => 'textfield', '#title' => $title3, '#maxlength' => 250, '#default_value' => $node->custom_field_3);
-    }
-    if ($title4 != '') {
-      $form['customfields']['custom_field_4'] = array(
-        '#type' => 'textfield', '#title' => $title4, '#maxlength' => 250, '#default_value' => $node->custom_field_4);
-    }
-    if ($title5 != '') {
-      $form['customfields']['custom_field_5'] = array(
-        '#type' => 'textarea', '#title' => $title5, '#rows' => 4, '#default_value' => $node->custom_field_5);
-    }
-    if ($title6 != '') {
-      $form['customfields']['custom_field_6'] = array(
-        '#type' => 'textarea', '#title' => $title6, '#rows' => 4, '#default_value' => $node->custom_field_6);
-    }
-  }
-
-  // Optional Video Metadata. We display this group expanded only if displaying of optional metadata is enabled.
-  $form['metadata'] = array('#type' => 'fieldset', '#title' => t('Optional Metadata'), '#collapsible' => TRUE, '#collapsed' => !variable_get('video_display_metadata', FALSE), '#weight' => -16, '#description' => t('Metadata entered here will be displayed only if administrator enables displaying on the '.l(t('administration page'),'admin/settings/video', array('title'=>t('administration page'))).'.'));
-  $form['metadata']['video_bitrate'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Video Bitrate'),
-    '#length' => 11,
-    '#maxlength' => 11,
-    '#default_value' => $node->video_bitrate,
-    '#description' => t('Video bitrate in kbits/sec.'));
-  $form['metadata']['audio_bitrate'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Audio Bitrate'),
-    '#length' => 11,
-    '#maxlength' => 11,
-    '#default_value' => $node->audio_bitrate,
-    '#description' => t('Audio bitrate in kbits/sec.'));
-  $form['metadata']['audio_sampling_rate'] = array(
-    '#type' => 'select',
-    '#title' => t('Audio Sampling Rate'),
-    '#options' => array(0 => 'none', 8000 => '8 kHz', 11025 => '11 kHz', 16000 => '16 kHz', 22050 => '22 kHz', 32000 => '32 kHz', 44100 => '44.1 kHz', 48000 => '48 kHz', 96000 => '96 kHz', 192400 => '192 kHz'),
-    '#default_value' => $node->audio_sampling_rate,
-    '#description' => t('Integer value of audio sampling rate in Hz.'));
-  $form['metadata']['audio_channels'] = array(
-    '#type' => 'select',
-    '#title' => t('Audio Channels'),
-    '#options' => array('' => 'none', '5.1' => t('5.1'), 'stereo' => t('Stereo'), 'mono' => t('Mono')),
-    '#default_value' => $node->audio_channels);
-  // Ends Video Optional Metadata
-
   return $form;
 }
+
 
 /**
  * Hook: Create video record in video table
@@ -647,9 +471,13 @@ function video_form($node) {
  */
 function video_insert($node) {
   _video_db_preprocess($node); //Make changes to data before inserting into DB.
+
+  $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
+
   return db_query("INSERT INTO {video} (vid, nid, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5, custom_field_6, serialized_data) VALUES ('%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
     $node->vid, $node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data);
 }
+
 
 /**
  * Hook
@@ -663,6 +491,9 @@ function video_update($node) {
     return video_insert($node);
   }
   else {
+
+    $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
+
     return db_query("UPDATE {video} SET vidfile='%s', size='%d', videox='%d', videoy='%d', video_bitrate='%d', audio_bitrate='%d', audio_sampling_rate='%d', audio_channels='%s', playtime_seconds='%d', disable_multidownload='%d', download_folder='%s', use_play_folder='%d', custom_field_1='%s', custom_field_2='%s', custom_field_3='%s', custom_field_4='%s', custom_field_5='%s', custom_field_6='%s', serialized_data='%s' WHERE vid = '%d'",
          $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data, $node->vid);
   }
@@ -678,7 +509,7 @@ function video_update($node) {
  *   nothing
  */
 function _video_db_preprocess(&$node) {
-  $serial_data = array();
+  //$node->serial_data = array();
   //Calculate the time in seconds.
   $node->playtime_seconds += ($node->playtime_hours * 3600) + ($node->playtime_minutes * 60);
 
@@ -698,21 +529,6 @@ function _video_db_preprocess(&$node) {
   if (!user_access('create multi-file downloads')) {
     $node->disable_multidownload = 1;
   }
-
-  //Stick the data from the image fields into the array.
-  $serial_data['image_teaser'] = $node->image_teaser;
-  $serial_data['image_view'] = $node->image_view;
-
-  //Process the data in the object_parameters textarea.
-  if ($node->object_parameters != '') { //Make sure the textarea was not empty.
-    $lines = explode("\r\n", $node->object_parameters); //Make an array of each line from the textarea.
-    foreach ($lines as $line) { //Loop through each line.
-      $array = explode('=', $line); //Break apart at the "=" sign. $line should be in format param=value
-      $serial_data['object_parameters'][$array[0]] = $array[1]; //Assign the "param" as the key and "value" as the value.
-    }
-  }
-
-  $node->serialized_data = serialize($serial_data); //Serialize the data for insertion into the database.
 }
 
 /**
@@ -734,10 +550,7 @@ function video_delete($node) {
  */
 function video_validate($node) {
   if (isset($node->vidfile)) {
-    if ($node->vidfile == '') {
-      form_set_error('vidfile', t('You have to insert a valid file path for this video'));
-    }
-    else {
+    if ($node->vidfile != '') {
       //let's see if we have it yet
       $result = db_query("SELECT * from {video} WHERE vidfile = '%s' and nid <> '%d'", $node->vidfile, $node->nid);
       if (db_num_rows($result) > 0) {
@@ -776,14 +589,18 @@ function video_validate($node) {
 }
 
 /**
- * Hook
+ * Implementation of hook_load()
  *
  * @param $node
  *   object or boolean FALSE on error
  */
 function video_load($node) {
   if (is_numeric($node->vid)) {
-    return db_fetch_object(db_query("SELECT * FROM {video} WHERE vid = '%d'", $node->vid));
+    $node = db_fetch_object(db_query("SELECT * FROM {video} WHERE vid = '%d'", $node->vid));
+
+    // load serialized data for plug-ins
+    $node->serial_data = unserialize($node->serialized_data);
+    return $node;
   }
   else {
     return false;
@@ -799,24 +616,10 @@ function video_load($node) {
  */
 function video_view(&$node, $teaser = FALSE, $page = FALSE) {
   $node = node_prepare($node, $teaser); //Run the body through the standard filters.
-  $node->serial_data = unserialize($node->serialized_data);
-  //If the main node view is being displayed then add the extra video information.
-  if ($teaser == FALSE) {
-    if ($node->serial_data['image_view'] and variable_get('video_image', 0)) {
-      $node->body = theme('video_image_body', $node) . $node->body;
-    }
-    if (($node->custom_field_1 . $node->custom_field_2 . $node->custom_field_3 . $node->custom_field_4 . $node->custom_field_5 . $node->custom_field_6) != '') { //Make sure there is data to display.
-      //Add the HTML formatted output of the custom fields to the bottom.
-      $node->body .= theme('video_customfields', $node);
-    }
-    if(variable_get('video_display_metadata', FALSE)) {
-      //Add the HTML formatted output of the optional video metadata to the bottom.
-      $node->body .= theme('video_metadata', $node);
-    }
-  }
-  else if ($node->serial_data['image_teaser'] and variable_get('video_image', 0)) { //If we are dealing with a teaser.
-    $node->teaser = theme('video_image_teaser', $node);
-  }
+
+  // include the video css file
+  theme_add_style(drupal_get_path('module', 'video').'/video.css');
+
 }
 
 /********************************************************************
@@ -947,100 +750,17 @@ function video_block_list($delta = 0) {
  ****************************************************/
 
 /**
- * Either redirects to download the video file.
- * Or displays a list of files to download.
+ * Redirects to download the video file.
  */
 function video_download() {
   if ($node = node_load(arg(1))) {
-    if (variable_get("video_multidownload", 0) == 0 or $node->disable_multidownload == 1) {
-      if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') { //Make sure the video type is not youtube before downloading.
-        _video_download_goto($node->vidfile, $node->vid);
-      }
-      else { //If video is type youtube then it can't be downloaded.
-        drupal_set_message(t('There are no files to download for this video.'), 'error');
-        print theme('page', '');
-      }
+    if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') { //Make sure the video type is not youtube before downloading.
+      _video_download_goto($node->vidfile, $node->vid);
     }
-    else if (arg(3) != '') { //If we are passed an encoded URL redirect to the downloader.
-      _video_download_goto(arg(3), $node->vid, TRUE);
+    else { //If video is type youtube then it can't be downloaded.
+      drupal_set_message(t('There are no files to download for this video.'), 'error');
+      print theme('page', '');
     }
-    else { //Multiple file downloads is turned on.
-      $download_error = FALSE; //Initialize and clear the error flag.
-      $node->file_array = array(); //Initialize the final file array.
-      global $base_url;
-      $full_download_folder = getcwd() . '/' . $node->download_folder; //Get absolute path to folder.
-      //If the download folder is set and valid scan it for files.
-      if ($node->download_folder != '' and file_exists($full_download_folder)) {
-        $scan_download_folder = _video_scandir($full_download_folder); //Get array of file names in the directory.
-        $scan_download_folder['local_dir'] = $full_download_folder; //For getting filesize.
-        $scan_download_folder['dir_stub'] = $node->download_folder; //To put in the URL.
-        $folder_array[] = $scan_download_folder;
-      }
-      //If option is set to use "play" folder and it exists, scan it for files.
-      $play_dir_stub = str_replace(basename($node->vidfile), "", $node->vidfile); //Remove the filename from the play file to get directory.
-      $play_dir = getcwd() . '/' . $play_dir_stub; //Get the local directory path where the file is kept.
-      if ($node->use_play_folder == 1 and file_exists($play_dir) and $play_dir_stub != '/') { //Make sure play stub won't allow scanning base drupal directory.
-        $scan_play_folder = _video_scandir($play_dir);
-        $scan_play_folder['local_dir'] = $play_dir; //For getting filesize.
-        $scan_play_folder['dir_stub'] = $play_dir_stub; //To put in the URL.
-        $folder_array[] = $scan_play_folder;
-      }
-
-      if (count($folder_array) > 0) { //Make sure we have a folder to scan.
-        foreach ($folder_array as $dir_scan) { //Scan through one or both folders results.
-          foreach ($dir_scan as $file) { //Go through each file in the directory.
-            if (is_file($dir_scan['local_dir'] . "/" . $file)) { //Make sure it's a valid file.
-              //Checks the new file with the files already in the array to eliminate dupes.
-              $match = false;
-              foreach ($node->file_array as $file_array_file) {
-                if ($file_array_file['file'] == $file) { //If the file is already in the array.
-                  $match = TRUE;
-                }
-              } //If we get here with $match still set FALSE we don't have a dupe.
-
-              $file_ext = substr($file, strrpos($file, '.') + 1); //Get the file extension.
-              $ext_array = explode(',', variable_get('video_download_ext', 'mov,wmv,avi'));
-
-              if (!$match and in_array($file_ext, $ext_array)) { //Only add file if it's not already in the array and it's extension shouldn't be hidden.
-                $file_array_size[] = filesize($dir_scan['local_dir'] . $file); //Create an array of the file sizes for sorting.
-
-                global $base_url;
-                $file_url = $base_url . '/' . $dir_scan['dir_stub'] . $file; //Generate absolute URL to video.
-                $file_url = str_replace(' ', '%20', $file_url); //Replace any spaces in filename.
-                $encoded_url = base64_encode($file_url); //Encode URL to base64 MIME value so it can be passed in URL.
-                $encoded_url = str_replace('/', '-', $encoded_url); //Replace "/" with "-" so it doesn't mess up the URL.
-
-                $node->file_array[] = array( 'file' => $file
-                  , 'type' => $file_ext
-                  , 'size' => filesize($dir_scan['local_dir'] . $file)
-                  , 'encoded_url' => $encoded_url
-                  );
-              }
-            } //Close the valid file check.
-          } //Close the directory scan.
-        } //Close scan location array.
-
-        if (count($node->file_array) > 0) { //Make sure atleast 1 file was found.
-          array_multisort($file_array_size, SORT_ASC, $node->file_array); //Sort based of file size.
-
-        }
-        else { //Else if no files were found in the directory.
-          $download_error = TRUE;
-        }
-      }
-      else { //Else if we have no valid folders to scan.
-        $download_error = TRUE;
-      }
-
-      //If there was no error send the files array to the theme function for display.
-      if($download_error == FALSE){
-        print theme('video_download', $node); //Print to the screen from the theme_video_download function.
-      }
-      else { //Else if there is an error download the play file.
-        _video_download_goto($node->vidfile, $node->vid);
-      }
-
-    } //Close multi-file downloads is turned on.
   }
   else {
     drupal_not_found();
@@ -1052,11 +772,14 @@ function video_download() {
  */
 function video_play() {
   if ($node = node_load(arg(1))) {
+    // include video.js file for Internet Explorer fixes
+    theme('video_get_script');
     drupal_set_title(t('Playing') . ' ' . $node->title);
     switch (_video_get_filetype($node->vidfile)) {
       case 'mov':
       case 'mp4':
       case '3gp':
+      case '3g2':
         print theme('video_play_quicktime', $node);
         break;
       case 'rm':
@@ -1100,7 +823,7 @@ function video_play() {
  *********************************************************************/
 
 /**
- * Play videos from in Flash video format
+ * Play videos from in FLV Flash video format
  *
  * @param $node
  *   object with node information
@@ -1112,13 +835,30 @@ function theme_video_play_flash($node) {
   $loader_location = variable_get('video_flvplayerloader', 'Player.swf');
   $file = basename($node->vidfile);
   $url = _video_get_fileurl($node->vidfile);
-  $output = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" id="Player">
+
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
+data="'. $loader_location .'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
+classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+  $output .= '<param name="movie" value="'.$loader_location.'" />
                <param name="allowScriptAccess" value="sameDomain" />
-               <param name="movie" value="'.$loader_location.'" />
                <param name="quality" value="high" />
-               <param name="FlashVars" value="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5" />
-               <embed src="'.$loader_location.'" flashvars="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5"  width="'.$node->videox.'" height="'.$node->videoy.'" name="Player" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
-             </object>';
+               <param name="FlashVars" value="baseURL='. $url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5" />' . "\n"
+  . _video_get_parameters($node) .
+  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>';
+
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'),
                                       t('Link to Macromedia Flash Player Download Page'),
                                       t('Download latest Flash Player'));
@@ -1135,14 +875,31 @@ function theme_video_play_flash($node) {
  *   string of content to display
  */
 function theme_video_play_swf($node) {
-  $output = "<object width=\"$node->videox\" height=\"$node->videoy\">
-               <param name=\"movie\" value=\"$node->vidfile\" />"
-               . _video_get_parameters($node->serialized_data) .
-               "<embed src=\"$node->vidfile\" width=\"$node->videox\" height=\"$node->videoy\" />
-             </object>";
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
+data="'. $node->vidfile .'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
+classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+  $output .= '<param name="movie" value="'. $node->vidfile .'" />' . "\n"
+  . _video_get_parameters($node) .
+  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>';
+
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'), t('Link to Flash player download'), t('Download the latest Flash player'));
   return theme('page', $output);
 }
+
+
 
 /**
  * Play Director .dcr/.dir files.
@@ -1157,11 +914,26 @@ function theme_video_play_swf($node) {
 function theme_video_play_dcr($node) {
   $file = basename($node->vidfile);
   $url = _video_get_fileurl($node->vidfile);
-  $output = '<object classid="clsid:166B1BCA-3F9C-11CF-8075-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#version=10,0,0,0" width="'.$node->videox.'" height="'.$node->videoy.'" ID="player" />
-  			 <param name="src" value="'.$node->vidfile.'" />
-  			 '. _video_get_parameters($node->serialized_data) .'
-  			 <embed src="'.$node->vidfile.'" width="'.$node->videox.'" height="'.$node->videoy.'" type="application/x-director" pluginspace="http://www.macromedia.com/shockwave/download/" />
-  			 </object>';
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="application/x-director" width="'. $node->videox .'" height="'. $node->videoy .'"
+data="'. $node->vidfile .'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="application/x-director" width="'. $node->videox .'" height="'. $node->videoy .'"
+classid="clsid:166B1BCA-3F9C-11CF-8075-444553540000"
+codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#version=10,0,0,0">
+<![endif]-->' . "\n";
+
+// params will be passed to both IE or not IE browsers
+  $output .= '<param name="src" value="'. $node->vidfile .'" />' . "\n"
+  . _video_get_parameters($node) .
+  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>';
+
   $output = _theme_video_format_play($output, t('http://www.macromedia.com/shockwave/download/'),
                                       t('Link to Macromedia Shockwave Player Download Page'),
                                       t('Download latest Shockwave Player'));
@@ -1179,11 +951,36 @@ function theme_video_play_dcr($node) {
  *   string of content to display
  */
 function theme_video_play_quicktime($node) {
-  drupal_set_html_head('<script src="'. drupal_get_path('module', 'video') .'/video_insert.js" language="JavaScript" type="text/javascript"></script>');
-  $height = $node->videoy + 16; //Increase the height to accommodate the player controls on the bottom.
+  //Increase the height to accommodate the player controls on the bottom.
+  $height = $node->videoy + 16;
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="video/quicktime" width="'. $node->videox .'" height="'. $height .'"
+data="'. $node->vidfile .'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab" width="'. $node->videox .'" height="'. $height .'" scale="tofit" >
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+   $output .= '<param name="src" value="'. $node->vidfile .'" />
+              <param name="AUTOPLAY" value="true" />
+              <param name="KIOSKMODE" value="false" />' . "\n"
+   . _video_get_parameters($node) .
+   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
+
+
+  /*
   $output = '<script language="JavaScript" type="text/javascript">';
   $output .= "InsertQuicktimeVideo('{$node->vidfile}','$height','{$node->videox}');";
   $output .= '</script>';
+  */
+
+
   $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
                                       t('Link to QuickTime Download Page'),
                                       t('Download latest Quicktime Player'));
@@ -1203,23 +1000,39 @@ function theme_video_play_realmedia($node) {
   // Real's embeded player includes the controls
   // in the height
   $node->videoy += 40;
-  $output = '<object id="video1" classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" height="'.$node->videoy.'" width="'.$node->videox.'">
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="audio/x-pn-realaudio-plugin" width="'. $node->videox .'" height="'. $node->videoy .'"
+data="'. $node->vidfile .'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="audio/x-pn-realaudio-plugin" width="'. $node->videox .'" height="'. $node->videoy .'"
+classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+   $output .= '<param name="src" value="'. $node->vidfile .'" />
               <param name="_ExtentX" value="7276" />
-              <param name="_ExtentY" value="3307" />
-              <param name="AUTOSTART" value="1" />
+              <param name="" value="3307" />
+              <param name="AUTOSTART" value="true" />
               <param name="SHUFFLE" value="0" />
               <param name="PREFETCH" value="0" />
               <param name="NOLABELS" value="0" />
-              <param name="SRC" value="'.$node->vidfile.'" ref />
               <param name="CONTROLS" value="All" />
               <param name="CONSOLE" value="Clip1" />
               <param name="LOOP" value="0" />
               <param name="NUMLOOP" value="0" />
               <param name="CENTER" value="0" />
-              <param name="MAINTAINASPECT" value="0" />
-              <param name="BACKGROUNDCOLOR" value="#000000" />
-              <embed src="'.$node->vidfile.'" type="audio/x-pn-realaudio-plugin" console="Clip1" controls="All" height="'.$node->videoy.'" width="'.$node->videox.'" autostart="true"></embed>
-            </object>';
+              <param name="MAINTAINASPECT" value="1" />
+              <param name="BACKGROUNDCOLOR" value="#000000" />'
+   . _video_get_parameters($node) .
+   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
+
+
   $output = _theme_video_format_play($output, t('http://www.real.com/'),
                                       t('Link to Real'),
                                       t('Download latest Realmedia Player'));
@@ -1239,23 +1052,31 @@ function theme_video_play_windowsmedia($node) {
   // Windows Media's embeded player includes the controls in the height
   $node->videoy += 68;
   $vidfile = _video_get_fileurl($node->vidfile) . basename($node->vidfile);
-  $output = '<object id="video1" width="'.$node->videox.'" height="'.$node->videoy.'"
-              classid="CLSID:22d6f312-b0f6-11d0-94ab-0080c74c7e95"
-              codebase="http://activex.microsoft.com/activex/controls/mplayer/en/nsmp2inf.cab#Version=5,1,52,701"
-              standby="Loading Microsoft Windows Media Player components..." type="application/x-oleobject">
-              <param name="fileName" value="'.$vidfile.'" />
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="application/x-mplayer2" width="'. $node->videox .'" height="'. $node->videoy .'"
+data="'. $node->vidfile .'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="application/x-oleobject" width="'. $node->videox .'" height="'. $node->videoy .'"
+classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+   $output .= '<param name="src" value="'. $vidfile .'" />
+              <param name="URL" value="'.$vidfile.'" />
               <param name="animationatStart" value="true" />
               <param name="transparentatStart" value="true" />
               <param name="autoStart" value="true" />
               <param name="showControls" value="true" />
-              <param name="loop" value="true" />
-              <embed type="application/x-mplayer2"
-                pluginspage="http://microsoft.com/windows/mediaplayer/en/download/"
-                id="mediaPlayer" name="mediaPlayer" displaysize="4" autosize="-1"
-                showcontrols="true" showtracker="-1"
-                showdisplay="0" showstatusbar="-1" videoborder3d="-1" width="'.$node->videox.'" height="'.$node->videoy.'"
-                src="'.$vidfile.'" autostart="true" loop="true"></embed>
-             </object>';
+              <param name="loop" value="true" />'
+   . _video_get_parameters($node) .
+   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
+
 
   $output = _theme_video_format_play($output, t('http://windowsupdate.microsoft.com/'),
                                       t('Link to Windows Update'),
@@ -1277,10 +1098,28 @@ function theme_video_play_windowsmedia($node) {
 function theme_video_play_youtube($node) {
   $width = ($node->videox ? $node->videox : '425');
   $height = ($node->videoy ? $node->videoy : '350');
-  $output = '<object width="'.$width.'" height="'.$height.'">
-               <param name="movie" value="http://www.youtube.com/v/' . $node->vidfile . '" />
-               <embed src="http://www.youtube.com/v/' . $node->vidfile . '" type="application/x-shockwave-flash" width="'.$width.'" height="'.$height.'"></embed>
-             </object>';
+
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
+data="http://www.youtube.com/v/' . $node->vidfile . '">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
+classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+  $output .= '<param name="movie" value="http://www.youtube.com/v/' . $node->vidfile . '" />' . "\n"
+  . _video_get_parameters($node) .
+  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>';
+
+
   $output = _theme_video_format_play($output, t('http://www.youtube.com/help.php'), t('Link to youtube.com'), t('youtube.com'));
   return theme('page', $output);
 }
@@ -1300,10 +1139,34 @@ function theme_video_play_googlevideo($node) {
   $height = ($node->videoy ? $node->videoy : '350');
   // Strip heading "google:"
   $videoid = substr($node->vidfile, 7);
-  $output = '<object width="'.$width.'" height="'.$height.'">
-               <param name="movie" value="http://video.google.com/googleplayer.swf?docId=' . $videoid . '"></param>
-               <embed style="width:' . $width . 'px; height=' . $height . 'px;"  src="http://video.google.com/googleplayer.swf?docId=' . $videoid . '" type="application/x-shockwave-flash" width="'.$width.'" height="'.$height.'" allowScriptAccess="sameDomain" quality="best" bgcolor="#ffffff" scale="noScale" wmode="window" salign="TL"  FlashVars="playerMode=embedded"></embed>
-             </object>';
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
+data="http://video.google.com/googleplayer.swf?docId='. $videoid .'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
+classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+  $output .= '<param name="movie" value="http://video.google.com/googleplayer.swf?docId=' . $videoid . '" />' . "\n";
+  // following a list of params simply copied from old embed tag params. I don't know if this are really needed.
+  $output .= '<param name="quality" value="best" />
+  <param name="bgcolor" value="#ffffff" />
+  <param name="allowScriptAccess" value="sameDomain" />
+  <param name="scale" value="noScale" />
+  <param name="wmode" value="window" />
+  <param name="salign" value="TL" />
+  <param name="FlashVars" value="playerMode=embedded" />'
+  . _video_get_parameters($node) .
+  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>';
+
 
   $output = _theme_video_format_play($output, t('http://video.google.com/support'), t('Link to video.google.com'), t('video.google.com'));
   return theme('page', $output);
@@ -1331,101 +1194,6 @@ function _theme_video_format_play($output, $url, $title, $link_text) {
   return $output ."\n</p> \n </div>\n";
 }
 
-/**
- * Display custom fields on the view page.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_customfields($node) {
-  //Adds the custom fields.
-  $group_title = variable_get('video_customfieldtitle', ''); //Title of the custom fields.
-  $title1 = variable_get('video_customfield1', '');
-  $title2 = variable_get('video_customfield2', '');
-  $title3 = variable_get('video_customfield3', '');
-  $title4 = variable_get('video_customfield4', '');
-  $title5 = variable_get('video_customfield5', '');
-  $title6 = variable_get('video_customfield6', '');
-  //Run the fields through the input filter set for the node, then remove paragraphs.
-  //Removes the <p> and </p> tags from the filter pass return. This allows each field to be on one line.
-  //A better system might be to remove only the first and last <p></P> tags.
-  $field1 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_1, $node->format, FALSE));
-  $field2 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_2, $node->format, FALSE));
-  $field3 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_3, $node->format, FALSE));
-  $field4 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_4, $node->format, FALSE));
-  $field5 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_5, $node->format, FALSE));
-  $field6 = str_replace(array('<p>', '</p>'), '', check_markup($node->custom_field_6, $node->format, FALSE));
-
-  $output = '';
-  //Make sure all the titles are not blank, if not then display them.
-  if (($title1 . $title2 . $title3 . $title4 . $title5 . $title6) != '') {
-    $output = '<div class="videofields">'; //Enclose all output in "videofields" div class.
-    if ($group_title != '') {
-      $output .= '<div class="title"><h2>' . $group_title . '</h2></div>' . "\n";
-    }
-    if ($title1 != '' and $node->custom_field_1 != '') {
-      $fields[] = array('title' => $title1, 'body' => $field1);
-    }
-    if ($title2 != '' and $node->custom_field_2 != '') {
-      $fields[] = array('title' => $title2, 'body' => $field2);
-    }
-    if ($title3 != '' and $node->custom_field_3 != '') {
-      $fields[] = array('title' => $title3, 'body' => $field3);
-    }
-    if ($title4 != '' and $node->custom_field_4 != '') {
-      $fields[] = array('title' => $title4, 'body' => $field4);
-    }
-    if ($title5 != '' and $node->custom_field_5 != '') {
-      $fields[] = array('title' => $title5, 'body' => $field5);
-    }
-    if ($title6 != '' and $node->custom_field_6 != '') {
-      $fields[] = array('title' => $title6, 'body' => $field6);
-    }
-    $output .= theme('video_fields', $fields); //Generate all the fields HTML.
-
-    $output .= '</div><br />'; //Close the "videofields" class div.
-  }
-  return $output;
-}
-
-/**
- * Display optional metadata (Video and Audio bitrate,..) on the view page.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels,
- */
-function theme_video_metadata($node) {
-  //Make sure atleast one fields had data.
-  if ($node->video_bitrate != 0 or $node->audio_bitrate != 0 or $node->audio_sampling_rate != 0 or $node->audio_channels != 0) {
-    $output = "\n\n<div class=\"video_metadata\">\n";
-    $output .= '  <div class="title"><h2>'.t('Video Metadata')."</h2></div>\n";
-    if($node->video_bitrate != 0) {
-      $fields[] = array('title' => t('Video Bitrate') . ':', 'body' => $node->video_bitrate . ' ' . t('kbits/sec'));
-    }
-    if($node->audio_bitrate != 0) {
-      $fields[] = array('title' => t('Audio Bitrate') . ':', 'body' => $node->audio_bitrate . ' ' . t('kbits/sec'));
-    }
-    if($node->audio_sampling_rate != 0) {
-      $fields[] = array('title' => t('Audio Sampling Rate') . ':', 'body' => $node->audio_sampling_rate . ' ' . t('Hz'));
-    }
-    if($node->audio_channels != '') {
-      $fields[] = array('title' => t('Audio Channels') . ':', 'body' => $node->audio_channels);
-    }
-    $output .= theme('video_fields', $fields); //Generate the fields HTML.
-    $output .= '</div>'; //Closing div video_metadata
-  }
-  else { //If all the fields are blank then display nothing.
-    $output = '';
-  }
-  return $output;
-}
 
 /**
  * Takes an associative array of $fields with 'title' and 'body' keys and outputs the HTML.
@@ -1447,75 +1215,12 @@ function theme_video_fields($fields) {
   return $output;
 }
 
-/**
- * Render the output for the node teaser.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_image_teaser($node) {
-  $output = '<table border="0" cellpadding="6"><tr><td>';
-  $output .= l(theme('image', $node->serial_data['image_teaser'], $node->title, $node->title, NULL, FALSE), "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); //Create a link with an image in it.
-  $output .= '</td><td valign="top">' . $node->teaser . '</td></tr></table>';
-  return $output;
-}
 
 /**
- * Generates the image HTML displayed in the Node body.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
+ * Import the video.js script
  */
-function theme_video_image_body($node) {
-  $image = theme('image', $node->serial_data['image_view'], $node->title, $node->title, NULL, FALSE); //Create image HTML
-  $output = l($image, "node/$node->nid/play", array(), NULL, NULL, FALSE, TRUE); //Create link HTML with image in it.
-  return $output;
-}
-
-/**
- * Outputs the HTML for the download page when multi-file download are turned on.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_download($node) {
-  $output = '';
-  //Replace some common file types with full name and links.
-  $find = array('mov', 'wmv', 'rm', 'avi', 'zip', 'divx', 'flv');
-  $replace = array('<a href="http://www.apple.com/quicktime" title="'. t('QuickTime Homepage') . '">' . t('Quicktime') . '</a>'
-             , '<a href="http://www.microsoft.com/windowsmedia" title="'. t('Windows Media Homepage') . '">' . t('Windows Media') . '</a>'
-             , '<a href="http://www.real.com" title="'. t('Real Media Homepage') . '">' . t('Real Media') . '</a>'
-             , '<a href="http://en.wikipedia.org/wiki/AVI" title="'. t('AVI Information at wikipedia.org') . '">' . t('AVI') . '</a>'
-             , '<a href="http://en.wikipedia.org/wiki/ZIP_file_format" title="'. t('ZIP Information at wikipedia.org') . '">' . t('ZIP') . '</a>'
-             , '<a href="http://www.divx.com" title="'. t('Divx Homepage') . '">' . t('DIVX') . '</a>'
-             , '<a href="http://www.macromedia.com/go/getflashplayer" title="'. t('Macromedia Flash Homepage') . '">' .t('Flash FLV') . '</a>'
-             );
-  $output .= '<br /><div class="videodownload">'; //Enclose all HTML in "videodownload" class.
-  foreach($node->file_array as $file) { //Goes through the array of video files and gets them ready for display.
-    $file_type = str_replace($find, $replace, $file['type']); //Match and replace common file types.
-    $link = l($file['file'], "node/$node->nid/download/" . $file['encoded_url']); //Create link to download file.
-    $file_array_table[] = array($link, format_size($file['size']), $file_type); //Create table row.
-  }
-  $headers = array(t('File Link'), t('File Size'), t('File Type'));
-  $output .= theme_table($headers, $file_array_table); //Create the table of files.
-  $output .= '</div>'; //Close the "videodownload" class.
-
-  //Adds a breadcrumb back to view on the download page. This may not be needed but some better breadcrumbs are.
-  $breadcrumb = drupal_get_breadcrumb();
-  $breadcrumb[] = l(t('View'), "node/$node->nid");
-  drupal_set_breadcrumb($breadcrumb);
-
-  drupal_set_title(t('Downloading').' '.$node->title);
-  return theme("page", $output);
+function theme_video_get_script() {
+  drupal_set_html_head('<script defer="defer" type="text/javascript" src="'. check_url(base_path() . drupal_get_path('module', 'video')) . '/video.js"></script>');
 }
 
 /******************************************************************************
@@ -1559,9 +1264,6 @@ function _video_get_filetype($vidfile) {
  * @param $vid
  *   integer node version ID of the node to have it's download counter updated.
  *
- * @param $base64_encoded
- *   boolean value determines whether the $input is base64 encoded.
- *
  * @return
  *   Nothing
  */
@@ -1586,39 +1288,7 @@ function _video_download_goto($input_url, $vid, $base64_encoded = FALSE) {
   }
 }
 
-/**
- * Scans a directory and returns an array of all the filenames in the directory.
- * This function is only necessary to maintain PHP 4 support.
- *
- * @param $dir
- *   The directory. Can be an absolute path or relative from the current working directory.
- *
- * @return
- *   array of filenames.
- */
-function _video_scandir($dir) {
-  //Try a few different ways to open the directory.
-  if (is_dir($dir)) {
-    $dir_open = opendir($dir);
-  }
-  else if (is_dir($new_dir = getcwd() . $dir)) {
-    $dir_open = opendir($new_dir);
-  }
-  else if (is_dir($new_dir = getcwd() . '/' . $dir)) {
-    $dir_open = opendir($new_dir);
-  }
-  else { //If directory does not exist.
-    return FALSE;
-  }
-  if (!$dir_open) { //If opendir returned false then return false.
-    return FALSE;
-  }
-  //If it makes it this far $dir_open should be valid.
-  while (($dir_content = readdir($dir_open)) !== FALSE) {
-    $files[] = $dir_content;
-  }
-  return $files;
-}
+
 
 /**
  * Convert filesize to bytes
@@ -1738,19 +1408,19 @@ function _video_get_mime_type($node) {
 /**
  * Generates the HTML for any object parameters in an embedded video.
  *
- * @param $serialized_data
- *   string of the serialized data directly from the database.
+ * @param $node the node which is being played
  *
  * @return
  *   string with the parameters in HTML form.
  */
-function _video_get_parameters($serialized_data) {
-  $serial_data = unserialize($serialized_data);
-  if(is_array($serial_data)  && array_key_exists('object_parameters', $serial_data) && !empty($serial_data['object_parameters'])) {
-    $output = '';
-    foreach ($serial_data['object_parameters'] as $param => $value) {
-      $output .= "<param name=\"$param\" value=\"$value\" />\n";
-    }
+function _video_get_parameters(&$node) {
+
+  // call hook_v_get_params
+  $param_value = module_invoke_all('v_get_params', $node);
+
+  $output = '';
+  foreach ($param_value as $param => $value) {
+    $output .= "<param name=\"$param\" value=\"$value\" />\n";
   }
   return $output;
 }
