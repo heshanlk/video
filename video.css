@@ -1,0 +1,21 @@
+/* $Id$   /*
+
+/**
+ * @file
+ * Contains css theming rules for video module and plugins
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+.video_image_teaser {
+  float: left;
+  padding: 0.5em;
+}
+
+br.video_image_clear {
+  clear: both;
+}
+
+.video_image_view {
+  /* inser here rules for node page image */
+}
