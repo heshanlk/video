@@ -195,7 +195,7 @@ function theme_video_customfields($node) {
   if (($title1 . $title2 . $title3 . $title4 . $title5 . $title6) != '') {
     $output = '<div class="videofields">'; //Enclose all output in "videofields" div class.
     if ($group_title != '') {
-      $output .= '<div class="title"><h2>' . $group_title . '</h2></div>' . "\n";
+      $output .= '<div class="title"><h2>' . check_plain($group_title) . '</h2></div>' . "\n";
     }
     if ($title1 != '' and $node->custom_field_1 != '') {
       $fields[] = array('title' => $title1, 'body' => $field1);

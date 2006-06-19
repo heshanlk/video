@@ -63,40 +63,42 @@ function video_upload_perm() {
  * Implementation of hook_nodeapi()
  */
 function video_upload_nodeapi(&$node, $op, $teaser) {
-  switch ($op) {
-
-    case 'load':
-      $output['video_upload_file'] = _video_upload_load($node);
-      $output['vidfile'] = file_create_url($output['video_upload_file']->filepath);
-      return $output;
-    case 'prepare':
-      _video_upload_prepare($node);
-      break;
-
-    case 'validate':
-       _video_upload_validate($node);
-      break;
-
-
-    case 'submit':
-      _video_upload_submit($node);
-      break;
-
-    case 'insert':
-    case 'update':
-      _video_upload_store($node);
-      break;
-
-    case 'delete':
-      ;
-      break;
-
-    case 'delete revision':
-      video_upload_delete_revision($node);
-      break;
-
-
-
+  if($node->type == 'video') {
+    switch ($op) {
+  
+      case 'load':
+        $output['video_upload_file'] = _video_upload_load($node);
+        $output['vidfile'] = file_create_url($output['video_upload_file']->filepath);
+        return $output;
+      case 'prepare':
+        _video_upload_prepare($node);
+        break;
+  
+      case 'validate':
+         _video_upload_validate($node);
+        break;
+  
+  
+      case 'submit':
+        _video_upload_submit($node);
+        break;
+  
+      case 'insert':
+      case 'update':
+        _video_upload_store($node);
+        break;
+  
+      case 'delete':
+        ;
+        break;
+  
+      case 'delete revision':
+        video_upload_delete_revision($node);
+        break;
+  
+  
+  
+    }
   }
 }
 

@@ -100,6 +100,28 @@ function video_multidownload_form_alter($form_id, &$form) {
 }
 
 
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_upload_nodeapi(&$node, $op, $teaser) {
+  if($node->type == 'video') {
+    switch ($op) {
+  
+      case 'validate':
+        //Validate multi-file download values.
+        if (user_access('create multi-file downloads')) { //Make sure the user has permission.
+          //Checks to make sure either multi-downloads are disabled, or a valid folder is given, or use_play_folder is checked.
+          if ($node->disable_multidownload == 0 and !is_dir(getcwd() . '/' . $node->download_folder) and $node->use_play_folder == 0) {
+              form_set_error('disable_multidownload', t("Please disable multi-file downloads if you are not going to use the feature."));
+              form_set_error('download_folder', t('Download directory does not exist. Make sure it has a trailing forward slash "/".'));
+          }
+        }
+      break;
+    }
+  }
+}
+
+
 
 function video_multidownload_download() {
   if ($node = node_load(arg(1))) {
@@ -227,7 +249,7 @@ function theme_video_multidownload_download($node) {
   $breadcrumb[] = l(t('View'), "node/$node->nid");
   drupal_set_breadcrumb($breadcrumb);
 
-  drupal_set_title(t('Downloading').' '.$node->title);
+  drupal_set_title(t('Downloading').' '. theme('placeholder', $node->title));
   return theme("page", $output);
 }
 
