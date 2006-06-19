@@ -218,7 +218,7 @@ function video_feed() {
  *   array of permissions
  */
 function video_perm() {
-  $array = array('create video', 'access video', 'administer video', 'download video', 'view play counter', 'view download counter');
+  $array = array('create video', 'access video', 'administer video', 'download video', 'view play counter', 'view download counter', 'edit own video');
   return $array;
 }
 
@@ -337,6 +337,8 @@ function video_access($op, $node) {
       return $node->status;   // see book.module for reference
     case 'create':
       return user_access('create video');
+    case 'update':
+      return user_access('edit own video') && ($user->uid == $node->uid);
   }
 }
 

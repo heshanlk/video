@@ -55,6 +55,9 @@ function video_image_form_alter($form_id, &$form) {
 function video_image_nodeapi(&$node, $op, $teaser) {
   if($node->type == 'video') {
     switch ($op) {
+      case 'load': 
+        $output['iid'] = $node->serial_data['iid'];
+        return $output;
       case 'submit':
         $node->serial_data['iid'] = $node->iid;
       break;
@@ -80,7 +83,6 @@ function video_image_nodeapi(&$node, $op, $teaser) {
       break;
 
       case 'view':
-        //print_r($node);
         if($teaser) {
           if ($node->serial_data['image_teaser'] || $node->serial_data['iid']) { //If we are dealing with a teaser.
             $node->teaser = theme('video_image_teaser', $node);
@@ -111,7 +113,7 @@ function theme_video_image_teaser($node) {
     $image = node_load($node->serial_data['iid']);
     $image = image_display($image, 'thumbnail', array('class' => 'video_image_teaser'));
   }
-  else {
+  else { // only for backward compatibility
     $image = theme('image', $node->serial_data['image_teaser'], $node->title, $node->title, array('class' => 'video_image_teaser'), FALSE);
   }
   $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); //Create a link with an image in it.

@@ -68,8 +68,13 @@ function video_upload_nodeapi(&$node, $op, $teaser) {
   
       case 'load':
         $output['video_upload_file'] = _video_upload_load($node);
-        $output['vidfile'] = file_create_url($output['video_upload_file']->filepath);
-        return $output;
+        if($node->vidfile == '') { // we will disable uploaded file if a path is already live
+          $output['vidfile'] = file_create_url($output['video_upload_file']->filepath);
+          return $output;
+        }
+        else {
+          return NULL;
+        }
       case 'prepare':
         _video_upload_prepare($node);
         break;
@@ -133,7 +138,7 @@ function video_upload_form_alter($form_id, &$form) {
         '#title' => t('Upload video'),
         '#weight' => -19,
         '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
+        '#collapsed' => (isset($node->video_upload_file) ? TRUE : FALSE ),
       );
 
       $form['video']['video_upload'] += _video_upload_form($node);
