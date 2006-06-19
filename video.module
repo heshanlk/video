@@ -348,7 +348,7 @@ function video_nodeapi($node, $op, $arg) {
   switch ($op) {
     case 'rss item':
       if ($node->type == 'video') {
-        $attributes['url'] = check_url(_video_get_fileurl($node->vidfile) . basename($node->vidfile));
+        $attributes['url'] = _video_get_fileurl($node->vidfile);
         $attributes['length'] = $node->size;
         $mime_type = _video_get_mime_type($node);
         if ($mime_type) {
