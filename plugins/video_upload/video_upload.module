@@ -36,7 +36,7 @@ function video_upload_settings() {
   $form['video_upload_override_vidfile'] =  array(
     '#type' => 'checkbox',
     '#title' => t('override video file'),
-    '#description' => t('Check this if your users must only submit videos throught uploading. This disable path insertion.'),
+    '#description' => t('Check this if your users must only submit videos through uploading. This disables path insertion.'),
     '#default_value' => variable_get('video_upload_override_vidfile', false),
   );
   $form['video_upload_uploadable_extensions'] =  array(

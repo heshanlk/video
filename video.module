@@ -297,19 +297,6 @@ function video_settings() {
     '#default_value' => variable_get('video_downloadcounter', 1),
     '#description' => t('Counts a hit everytime someone downloads a video.'));
 
-  $form['multifile'] = array('#type' => 'fieldset', '#title' => t('Multi-file download options'), '#description' => t('Allows a list of files to be shown on the download page. The list is usually gotten from a specified folder. This ability is useful for providing different sizes and video types for download.'));
-  $form['multifile']['video_multidownload'] = array(
-    '#type' => 'radios',
-    '#title' => t('Allow Multi-file Downloads'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_multidownload', 0),
-    '#description' => t('This feature can be disabled separately for each node. If turned on make sure you set the permissions so users can use this feature.') . ' ' . l(t('access control'), 'admin/access'));
-  $form['multifile']['video_download_ext'] = array(
-    '#type' => 'textfield',
-    '#title' => t('File extensions to show'),
-    '#default_value' => variable_get('video_download_ext', 'mov,wmv,rm,flv,avi,divx,mpg,mpeg,mp4,zip'),
-    '#description' => t('The extensions of files to list from the multi-file download folder on the download page. Extensions should be comma seperated with no spaces, for example (mov,wmv,rm).'));
-
 
   return $form;
 }
@@ -332,6 +319,8 @@ function video_node_info() {
  * access hook
  */
 function video_access($op, $node) {
+  global $user;
+
   switch($op) {
     case 'view':
       return $node->status;   // see book.module for reference
@@ -1351,11 +1340,11 @@ function _video_get_fileurl($video_file) {
   global $base_url;
   
   //creation of absolute url
-  if (!preg_match("/^(http|ftp|mm|rstp)(s?):\/\//", $video_file)) { //If path is relative to drupal.
-    return check_url($base_url . '/' . $video_file);
+  if (preg_match("/^(http|ftp|mm|rstp)(s?):\/\//", $video_file)) { //If path is absolute
+    return check_plain($video_file);
   }
-  else { // path is absolute
-    return check_url($video_file);
+  else { // path is relative to drupal install
+    return check_plain($base_url . '/' . $video_file);
   }
 }
 
