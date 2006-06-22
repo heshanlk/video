@@ -203,11 +203,13 @@ function _video_upload_store(&$node) {
     $file = $_SESSION['video_upload_file'];
     $dest_dir = variable_get('video_upload_default_path', 'videos') .'/';
     if ($file = file_save_upload($file, $dest_dir . $file->filename)) {
-      $file = $_SESSION['video_upload_file'];
       $file->fid = db_next_id('{files}_fid');
       db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, $node->nid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
       db_query("INSERT INTO {file_revisions} (fid, vid, list, description) VALUES (%d, %d, %d, '%s')", $file->fid, $node->vid, $file->list, $file->description);
       unset($_SESSION['video_upload_file']);
+    }
+    else {
+      print 'error';
     }
 
   }
