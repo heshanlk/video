@@ -94,7 +94,7 @@ function video_upload_nodeapi(&$node, $op, $teaser) {
         break;
   
       case 'delete':
-        ;
+        _video_upload_delete($node);
         break;
   
       case 'delete revision':
@@ -209,10 +209,23 @@ function _video_upload_store(&$node) {
       unset($_SESSION['video_upload_file']);
     }
     else {
-      print 'error';
+      drupal_set_message(t('An error occurred during file saving. Your video file has not been stored.'), 'error');
     }
-
   }
+}
+
+
+/**
+ * Delete files associated to this video node
+ */
+function _video_upload_delete(&$node) {
+
+  // delete file
+  file_delete($node->video_upload_file->path);
+  
+  // delete file information from database
+  db_query('DELETE FROM {file_revisions} WHERE fid = %d', $node->video_upload_file->fid);
+  db_query('DELETE FROM {files} WHERE fid = %d', $node->video_upload_file->fid);
 }
 
 
