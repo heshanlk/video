@@ -327,6 +327,7 @@ function video_access($op, $node) {
     case 'create':
       return user_access('create video');
     case 'update':
+    case 'delete':
       return user_access('edit own video') && ($user->uid == $node->uid);
   }
 }
