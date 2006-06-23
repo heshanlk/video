@@ -98,8 +98,8 @@ function video_customfields_settings() {
  * We use this to add some custom fields to the video creation form.
  * Fields will be displayed only if field title is set on settings page.
  */
-function video_customfileds_form_alter($form_id, &$form) {
-
+function video_customfields_form_alter($form_id, &$form) {
+  
   if($form_id == 'video_node_form' && isset($form['video']) && user_access('insert custom fields')) {
 
     $title1 = variable_get('video_customfield1', '');
