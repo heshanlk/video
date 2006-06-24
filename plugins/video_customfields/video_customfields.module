@@ -102,12 +102,16 @@ function video_customfields_form_alter($form_id, &$form) {
   
   if($form_id == 'video_node_form' && isset($form['video']) && user_access('insert custom fields')) {
 
+    //get node object from form
+    $node = $form['#node'];
+    
     $title1 = variable_get('video_customfield1', '');
     $title2 = variable_get('video_customfield2', '');
     $title3 = variable_get('video_customfield3', '');
     $title4 = variable_get('video_customfield4', '');
     $title5 = variable_get('video_customfield5', '');
     $title6 = variable_get('video_customfield6', '');
+   
     //Only display the custom fields group if atleast one field has a title.
     if ($title1 . $title2 . $title3 . $title4 . $title5 . $title6 != '') {
       $form['customfields'] = array('#type' => 'fieldset', '#title' => variable_get('video_customfieldtitle', 'Custom Fields'), '#collapsible' => TRUE, '#collapsed' => variable_get('video_customgroupcollapsed', FALSE), '#weight' => -17);
