@@ -764,6 +764,9 @@ function video_play() {
     // include video.js file for Internet Explorer fixes
     theme('video_get_script');
     drupal_set_title(t('Playing') . ' ' . theme('placeholder', $node->title));
+    if (variable_get('video_playcounter', 1)) {
+      db_query("UPDATE {video} SET play_counter = play_counter + 1 where vid = %d", $node->vid); //Increment play counter.
+    }
     switch (_video_get_filetype($node->vidfile)) {
       case 'mov':
       case 'mp4':
@@ -789,9 +792,6 @@ function video_play() {
         drupal_set_message('Video type not supported', 'error');
         drupal_goto("node/$node->nid");
         break;
-    }
-    if (variable_get('video_playcounter', 1)) {
-      db_query("UPDATE {video} SET play_counter = play_counter + 1 where vid = %d", $node->vid); //Increment play counter.
     }
   }
   else {
