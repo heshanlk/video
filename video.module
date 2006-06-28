@@ -99,7 +99,7 @@ function video_menu($may_cache) {
           $items[] = array('path' => 'node/'. arg(1) .'/play',
             'title' => t('play'),
             'callback' => 'video_play',
-            'access' => user_access('access video'),
+            'access' => user_access('play video'),
             'weight' => 3,
             'type' => MENU_LOCAL_TASK);
         }
@@ -142,11 +142,20 @@ function video_link($type, $node = NULL) {
       $display_download_link = variable_get('video_displaydownloadlink', 1);
     }
 
-    if (variable_get('video_displayplaylink', 1)) {
-      $link .= l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))));
-      $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
+    if (user_access('play video')) {
+	  if (variable_get('video_displayplaylink', 1)) {
+        $link .= l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))));
+        $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
+      }
     }
-    if ($display_download_link == 1) {
+	else {
+	  $link .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
+	  $link .= ' ' . t('or') . ' ';
+	  $link .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
+	  $link .= t(' to play video');
+	  $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
+	}
+	if ($display_download_link == 1) {
       $link .= l(t('download'), "node/$node->nid/download", array('class' => 'outgoing', 'title' => t('download %link', array('%link' => $node->title))));
       $link .= ' | ';
     }
@@ -218,7 +227,7 @@ function video_feed() {
  *   array of permissions
  */
 function video_perm() {
-  $array = array('create video', 'access video', 'administer video', 'download video', 'view play counter', 'view download counter', 'edit own video');
+  $array = array('create video', 'access video', 'administer video', 'play video', 'download video', 'view play counter', 'view download counter', 'edit own video');
   return $array;
 }
 
