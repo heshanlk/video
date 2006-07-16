@@ -39,13 +39,6 @@ function video_upload_settings() {
     '#description' => t('Check this if your users must only submit videos through uploading. This disables path insertion.'),
     '#default_value' => variable_get('video_upload_override_vidfile', false),
   );
-  $form['video_upload_uploadable_extensions'] =  array(
-    '#type' => 'textfield',
-    '#title' => t('uploadable extensions'),
-    '#description' => t('Insert here a comma separated list of extensions you want to enable for upload.'),
-    '#default_value' => variable_get('video_upload_uploadable_extensions', ''),
-  );
-
 
   return $form;
 }
