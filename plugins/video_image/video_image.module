@@ -62,6 +62,12 @@ function video_image_nodeapi(&$node, $op, $teaser) {
         $node->serial_data['iid'] = $node->iid;
       break;
       case 'prepare':
+        // check that image.module is actived
+        if ( !module_exist("image")) {
+          db_query("UPDATE {system} SET status = 0 WHERE name ='video_image' AND type = 'module' LIMIT 1");
+          drupal_set_message(t('video_image module requires the %module module.<br />To prevent system errors video_image module has been disabled.<br />Please install the image module and then reactivate the video_image module.', array('%module' => l('image', 'http://drupal.org/project/image'))), 'error');
+          break;
+        }
         $image->title = $_POST['edit']['image_title'];
         $image->uid = $node->uid;
         $image->name = $node->name;
