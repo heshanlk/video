@@ -238,6 +238,8 @@ function video_perm() {
  *   string of form content or error message
  */
 function video_settings() {
+  global $base_url; 
+  
   //Must have "administer site configuration" and "administer video" privilages.
   if (!user_access('administer video')) {
     drupal_access_denied();
@@ -265,7 +267,12 @@ function video_settings() {
     '#title' => t('Filename of Flash loader'),
     '#default_value' => variable_get('video_flvplayerloader', 'Player.swf'),
     '#description' => t('The name of the Shockwave file that manages loading the FLV movie.'));
-
+  $form['ogg'] = array('#type' => 'fieldset', '#title' => t('Ogg Theora settings'));
+  $form['ogg']['video_cortado'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Filename of Cortado Java Applet'),
+      '#default_value' => variable_get('video_cortado', $base_url . '/cortado.jar'),
+      '#description' => t('The path to the Cortado Applet to play Ogg Theora Files.'));
   $form['menu'] = array('#type' => 'fieldset', '#title' => t('Items to display in the node menu'), '#weight' => -5, '#collapsible' => TRUE, '#collapsed' => TRUE);
   $form['menu']['video_displayplaylink'] = array(
     '#type' => 'radios',
@@ -784,6 +791,8 @@ function video_play() {
         return theme('video_play_dcr', $node);
       case 'wmv':
         return theme('video_play_windowsmedia', $node);
+      case 'ogg':
+        return theme('video_play_ogg_theora', $node);
       case 'youtube':
         return theme('video_play_youtube', $node);
       case 'googlevideo':
@@ -1160,6 +1169,61 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 }
 
 /**
+ * Play Ogg Theora videos with Cortado Applet
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_ogg_theora($node) {
+  global $base_url;
+  $cortado_location = variable_get('video_cortado', $base_url . '/cortado.jar');  
+  $url = _video_get_fileurl($node->vidfile);
+  
+  $width = ($node->videox ? $node->videox : '425');
+  $height = ($node->videoy ? $node->videoy : '350');
+  
+  $output = '
+  <!--[if !IE]>-->
+  <object classid="java:com.fluendo.player.Cortado.class" 
+          type="application/x-java-applet"
+          archive="' . $cortado_location . '" 
+          width="' . $width . '" height="' . $height . '" >
+  <!--<![endif]-->
+    <object classid="clsid:8AD9C840-044E-11D1-B3E9-00805F499D93" 
+              codebase="http://java.sun.com/update/1.5.0/jinstall-1_5_0-windows-i586.cab"
+              width="' . $width . '" height="' . $height . '" > 
+        <param name="code" value="com.fluendo.player.Cortado" />
+    <!--[if !IE]>-->
+    </object> 
+    <!--<![endif]-->
+      <!-- IE and Konqueror browser need the archive param -->
+      <param name="archive" value="' . $cortado_location . '" />
+      <param name="url" value="' . $url . '"/>
+      <param name="local" value="false" />
+      <param name="keepaspect" value="true" />
+      <param name="video" value="true" />
+      <param name="audio" value="true" />
+      <param name="seekable" value="true" />
+      <param name="duration" value="' . $node->playtime_seconds . '" />
+      <param name="bufferSize" value="200" /> 
+      <strong>
+          This browser does not have a Java Plug-in.<br />
+          <a href="http://java.com/download/">
+            Get the latest Java Plug-in here.
+          </a>
+      </strong>       
+  </object>
+  ';
+
+  $output = _theme_video_format_play($output, 
+    t('http://java.com/download/'), t('Link to java.com'), t('Download Java'));
+  return $output;
+}
+
+/**
  * Cut down on redundant link text
  *
  * @param $url
@@ -1384,6 +1448,8 @@ function _video_get_mime_type($node) {
     case 'youtube':
     case 'googlevideo':
       return false;
+    case 'ogg':
+      return 'application/ogg';
     default:
       // We couldn't detect the mime-type, so return false.
       return false;
