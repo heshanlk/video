@@ -831,7 +831,7 @@ function theme_video_play_flash($node) {
   // this will be executed by not Internet Explorer browsers
   $output = '<!--[if !IE]> <-->
 <object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
-data="'. check_plain($loader_location) .'">
+data="'. url() . check_plain($loader_location) .'">
 <!--> <![endif]-->' . "\n";
 
   // this will be executed by Internet Explorer
@@ -842,7 +842,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
-  $output .= '<param name="movie" value="' . check_plain($loader_location) . '" />
+  $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
                <param name="allowScriptAccess" value="sameDomain" />
                <param name="quality" value="high" />
                <param name="FlashVars" value="baseURL='. $base_url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5" />' . "\n"
