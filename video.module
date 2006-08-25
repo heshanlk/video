@@ -96,13 +96,18 @@ function video_menu($may_cache) {
     if (arg(0) == 'node' && is_numeric(arg(1))) {
       if ($node = node_load(arg(1)) and $node->type == 'video') {
         if (variable_get('video_displayplaymenutab', 1) == 1) {
-          $items[] = array('path' => 'node/'. arg(1) .'/play',
-            'title' => t('play'),
-            'callback' => 'video_play',
-            'access' => user_access('play video'),
-            'weight' => 3,
-            'type' => MENU_LOCAL_TASK);
+          $menu_type = MENU_LOCAL_TASK;
+        } 
+        else {
+          $menu_type = MENU_CALLBACK;	     	
         }
+        $items[] = array('path' => 'node/'. arg(1) .'/play',
+          'title' => t('play'),
+          'callback' => 'video_play',
+          'access' => user_access('play video'),
+          'weight' => 3,
+          'type' => $menu_type);
+
         //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
         if (variable_get('video_displaydownloadmenutab', 1) == 1 and (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo')) {
           $items[] = array('path' => 'node/'.arg(1).'/download',
@@ -1116,7 +1121,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 </object>';
 
 
-  $output = _theme_video_format_play($output, t('http://www.youtube.com/help.php'), t('Link to youtube.com'), t('youtube.com'));
+  $output = _theme_video_format_play($output, t('http://www.youtube.com/t/help_center'), t('Link to youtube.com'), t('youtube.com'));
   return $output;
 }
 
