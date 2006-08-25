@@ -247,7 +247,7 @@ function video_settings() {
   $options = array(1 => 'Yes', 0 => 'No');
 
   $form = array();
-  $form['tabs'] = array('#type' => 'fieldset', '#title' => t('Tab menu options'));
+  $form['tabs'] = array('#type' => 'fieldset', '#title' => t('Tab menu options'), '#collapsible' => TRUE, '#collapsed' => TRUE);
   $form['tabs']['video_displayplaymenutab'] = array(
     '#type' => 'radios',
     '#title' => t('Display play menu tab'),
@@ -261,13 +261,13 @@ function video_settings() {
     '#default_value' => variable_get('video_displaydownloadmenutab', 1),
     '#description' => t('Toggle display of menu link to download video from the node page.'));
 
-  $form['flash'] = array('#type' => 'fieldset', '#title' => t('Flash settings'));
+  $form['flash'] = array('#type' => 'fieldset', '#title' => t('Flash settings'), '#collapsible' => TRUE, '#collapsed' => TRUE);
   $form['flash']['video_flvplayerloader'] = array(
     '#type' => 'textfield',
     '#title' => t('Filename of Flash loader'),
     '#default_value' => variable_get('video_flvplayerloader', 'Player.swf'),
     '#description' => t('The name of the Shockwave file that manages loading the FLV movie.'));
-  $form['ogg'] = array('#type' => 'fieldset', '#title' => t('Ogg Theora settings'));
+  $form['ogg'] = array('#type' => 'fieldset', '#title' => t('Ogg Theora settings'), '#collapsible' => TRUE, '#collapsed' => TRUE);
   $form['ogg']['video_cortado'] = array(
       '#type' => 'textfield',
       '#title' => t('Filename of Cortado Java Applet'),
@@ -299,7 +299,7 @@ function video_settings() {
     '#default_value' => variable_get('video_displayfilesize', 1),
     '#description' => t('Toggle the display of the filesize for a video.'));
 
-  $form['counters'] = array('#type' => 'fieldset', '#title' => t('Statistics counters'), '#description' => t('To allow users to view counters visit: ') . l(t('access control'), 'admin/access'));
+  $form['counters'] = array('#type' => 'fieldset', '#title' => t('Statistics counters'), '#description' => t('To allow users to view counters visit: ') . l(t('access control'), 'admin/access'), '#collapsible' => TRUE, '#collapsed' => TRUE);
   $form['counters']['video_playcounter'] = array(
     '#type' => 'radios',
     '#title' => t('Count play hits'),
@@ -1471,7 +1471,7 @@ function _video_get_parameters(&$node) {
 
   $output = '';
   foreach ($param_value as $param => $value) {
-    $output .= '<param name="' . check_markup($param) . '" value="' . check_markup($value) . '" />\n';
+    $output .= '<param name="' . check_plain($param) . '" value="' . check_plain($value) . '" />\n';
   }
   return $output;
 }
