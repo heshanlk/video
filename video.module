@@ -436,7 +436,7 @@ function video_form($node) {
   $form['video']['filesize']['size'] = array(
     '#type' => 'textfield',
     '#title' => t('Size'),
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#length' => 12,
     '#maxlength' => 12,
     '#default_value' => $node->size,
@@ -477,13 +477,19 @@ function video_form($node) {
 
 
 /**
+ * Implementation of hook submit
+ */
+function video_submit(&$node) {
+  _video_db_preprocess($node); //Make changes to data before updating DB.
+}
+
+/**
  * Hook: Create video record in video table
  *
  * @return
  *   TRUE on success, FALSE on error
  */
 function video_insert($node) {
-  _video_db_preprocess($node); //Make changes to data before inserting into DB.
 
   $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
@@ -499,7 +505,6 @@ function video_insert($node) {
  *   TRUE on success, FALSE on error
  */
 function video_update($node) {
-  _video_db_preprocess($node); //Make changes to data before updating DB.
   if ($node->revision) { //If a new node revision is being added then insert a new row.
     return video_insert($node);
   }
@@ -530,8 +535,9 @@ function _video_db_preprocess(&$node) {
   if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') {
     //If file is on the local server get size, otherwise get size from function.
     $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
-    if (file_check_path($path)) { //If file exists locally set size.
-      $node->size = filesize($path);
+    $path_for_size = $path; // file_check_file will make $path unusable for filesize()
+    if (file_check_path($path) && is_file($path_for_size)) { //If file exists locally set size.
+      $node->size = filesize($path_for_size);
     }
     else {
       $node->size = _video_size2bytes($node); //Change the size to be correctly shown in bytes.
@@ -578,7 +584,7 @@ function video_validate($node) {
   }
   //Make sure file size is valid.
   $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
-  if (isset($node->size) and !file_check_path($path) and !is_numeric($node->size)) { //If the file is not local or a number then set error.
+  if (!isset($node->size) || !is_numeric($node->size) || $node->size < 0) { //If the file is not local or a number then set error.
     form_set_error('size', t('You have to insert a valid file size for this video.'));
   }
   
