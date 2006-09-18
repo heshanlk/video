@@ -63,6 +63,8 @@ function video_upload_nodeapi(&$node, $op, $teaser) {
         $output['video_upload_file'] = _video_upload_load($node);
         if($node->vidfile == '') { // we will disable uploaded file if a path is already live
           $output['vidfile'] = file_create_url($output['video_upload_file']->filepath);
+          // set the filesize - this seems not to work.. why???
+          $output['size'] = $output['video_upload_file']->filesize;
         }
         return $output;
       
@@ -181,11 +183,17 @@ function _video_upload_prepare(&$node) {
     file_check_directory($temppath, TRUE);
     $node->video_upload_file = file_save_upload($file, $temppath .'/'. $file->filename, FILE_EXISTS_REPLACE);
     $node->video_upload_file->newfile = TRUE;
+    
+    // set video size
+    $node->size = $node->video_upload_file->filesize;
 
     $_SESSION['video_upload_file'] = $node->video_upload_file;
   }
   else if (!empty($_SESSION['video_upload_file'])) {
     $node->video_upload_file = $_SESSION['video_upload_file'];
+    // set video size
+    $node->size = $node->video_upload_file->filesize;
+
   } else {
     $_SESSION['video_upload_file'] = $node->video_upload_file;
   }

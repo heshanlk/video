@@ -584,7 +584,7 @@ function video_validate($node) {
   }
   //Make sure file size is valid.
   $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
-  if (!isset($node->size) || !is_numeric($node->size) || $node->size < 0) { //If the file is not local or a number then set error.
+  if ((!isset($node->size) || !is_numeric($node->size) || $node->size < 0) && !$_SESSION['video_upload_file']) { //If the file is not local or not a valid number then set error. $_SESSION check needed for video_upload functionality
     form_set_error('size', t('You have to insert a valid file size for this video.'));
   }
   
@@ -749,7 +749,7 @@ function video_block_list($delta = 0) {
       $orderby = 'RAND()';
       break;
   }
-  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n, {video} v WHERE n.vid = v.vid AND n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, $count));
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n INNER JOIN {video} v ON n.vid = v.vid WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, $count));
 }
 
 /****************************************************
