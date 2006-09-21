@@ -1,0 +1,4 @@
+; $Id$
+name = video_multidownload
+description = Enable multiple file download in video module.
+

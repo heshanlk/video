@@ -1,0 +1,4 @@
+; $Id$
+name = video_customfields
+description = Enable addition of custom fileds on video nodes created by video module.
+

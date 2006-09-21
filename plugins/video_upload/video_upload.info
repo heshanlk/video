@@ -1,0 +1,4 @@
+; $Id$
+name = video_upload
+description = Enable video files uploading in video module.
+

@@ -1,0 +1,4 @@
+; $Id$
+name = video_image
+description = Enable thumbnails support for video module.
+
