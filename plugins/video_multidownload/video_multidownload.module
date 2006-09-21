@@ -32,7 +32,15 @@ function video_multidownload_help($section) {
 function video_multidownload_menu($may_cache) {
   $items = array();
   if ($may_cache) {
-    ; // for further uses
+    $items[] = array(
+        'path' => 'admin/content/video/multidownload',
+        'title' => t('multidownload'),
+        'description' => t('administer video_multidownload module settings'),
+        'callback' => 'drupal_get_form',
+        'callback arguments' => array('video_multidownload_settings_form'),
+        'access' => user_access('administer site configuration'),
+        'type' => MENU_NORMAL_ITEM,
+      );
   }
   else {
     if (arg(0) == 'node' && is_numeric(arg(1))) {
@@ -66,7 +74,7 @@ function video_multidownload_perm() {
 /**
  * Implementation of hook_settings()
  */
-function video_multidownload_settings() {
+function video_multidownload_settings_form() {
   $form = array();
 
   $options = array(1 => 'Yes', 0 => 'No');
@@ -84,7 +92,7 @@ function video_multidownload_settings() {
     '#default_value' => variable_get('video_download_ext', 'mov,wmv,rm,flv,avi,divx,mpg,mpeg,mp4,zip'),
     '#description' => t('The extensions of files to list from the multi-file download folder on the download page. Extensions should be comma seperated with no spaces, for example (mov,wmv,rm).'));
   
-  return $form;
+  return system_settings_form($form);
 }
 
 

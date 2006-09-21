@@ -14,9 +14,29 @@
  */
 function video_upload_help($section) {
   switch ($section) {
-    case 'admin/modules#description':
+    case 'admin/settings/modules#description':
       return t('Enable video files uploading in video module.');
   }
+}
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function video_upload_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/content/video/upload',
+      'title' => t('upload'),
+      'description' => t('administer video_upload module settings'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('video_upload_settings_form'),
+      'access' => user_access('administer site configuration'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+  return $items;
 }
 
 
@@ -26,7 +46,7 @@ function video_upload_help($section) {
  * @return
  *   string of form content or error message
  */
-function video_upload_settings() {
+function video_upload_settings_form() {
   //Must have "administer site configuration" and "administer video" privilages.
   if (!user_access('administer video')) {
     drupal_access_denied();
