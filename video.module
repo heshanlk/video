@@ -35,10 +35,10 @@ function video_help($section = 'admin/help#video') {
 <li>Create video posts at <a href="%node-add-video">create content &gt;&gt; video</a>.</li>
 <li>Administer video module settings at <a href="%admin-settings-video">administer &gt;&gt; settings &gt;&gt; video</a>.</li>
 </ul>
-', array('%admin-block' => url('admin/settings/block'), '%node-add-video' => url('node/add/video'), '%admin-settings-video' => url('admin/content/video')));
+', array('%admin-block' => url('admin/block'), '%node-add-video' => url('node/add/video'), '%admin-settings-video' => url('admin/settings/video')));
       $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="%video">Video page</a>.', array('%video' => 'http://www.drupal.org/handbook/modules/video/')) .'</p>';
       return $output;
-    case 'admin/settings/modules#description':
+    case 'admin/modules#description':
       return t('Allows video nodes.');
     case 'node/add#video':
       return t('Allows you to insert videos as nodes.');
@@ -91,15 +91,6 @@ function video_menu($may_cache) {
       'path' => 'node/add/video',
       'title' => t('video'),
       'access' => user_access('create video'));
-    $items[] = array(
-        'path' => 'admin/content/video',
-        'title' => t('video settings'),
-        'description' => t('administer video module settings'),
-        'callback' => 'drupal_get_form',
-        'callback arguments' => array('video_settings_form'),
-        'access' => user_access('administer site configuration'),
-        'type' => MENU_NORMAL_ITEM,
-      );
   }
   else { //If $may_cache is false.
     if (arg(0) == 'node' && is_numeric(arg(1))) {
@@ -145,7 +136,7 @@ function video_menu($may_cache) {
  *   array of link information
  */
 function video_link($type, $node = NULL) {
-  $link = array();
+  $link = '';
   // Node links for a video
   if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
     //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
@@ -158,28 +149,38 @@ function video_link($type, $node = NULL) {
 
     if (user_access('play video')) {
 	  if (variable_get('video_displayplaylink', 1)) {
-        $link['video_play'] = array(
-            'title' => t('play'),
-            'href' => "node/$node->nid/play",
-            'attributes' => array(
-                'class' => 'outgoing',
-                'title' => t('play %link', array('%link' => $node->title)),
-              ),
-          );
+        $link .= l(t('play'), "node/$node->nid/play", array('class' => 'outgoing', 'title' => t('play %link', array('%link' => $node->title))));
+        $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
       }
     }
+	else {
+	  $link .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
+	  $link .= ' ' . t('or') . ' ';
+	  $link .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
+	  $link .= t(' to play video');
+	  $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
+	}
 	if ($display_download_link == 1) {
-      $link['video_download'] = array(
-          'title' => t('download'),
-          'href' => "node/$node->nid/download",
-          'attributes' => array(
-              'class' => 'outgoing',
-              'title' => t('download %link', array('%link' => $node->title)),
-            ),
-        );
+      $link .= l(t('download'), "node/$node->nid/download", array('class' => 'outgoing', 'title' => t('download %link', array('%link' => $node->title))));
+      $link .= ' | ';
     }
+    if (variable_get('video_displayplaytime', 1)) {
+      $link .= format_interval($node->playtime_seconds) . ' | ';
+    }
+    if (variable_get('video_displayfilesize', 1) and $node->size != 0) {
+      $link .= format_size($node->size) . ' | ';
+    }
+    if (variable_get('video_playcounter', 1) and user_access('view play counter')) {
+      $link .= $node->play_counter . ' ' . t('plays') . ' | ';
+    }
+    if (variable_get('video_downloadcounter', 1) and user_access('view download counter')) {
+      $link .= $node->download_counter . ' ' . t('downloads') . ' | ';
+    }
+
+    $link = substr($link, 0, -3); //Trim the last " | " off.
+    return array($link);
   }
-  return $link;
+  return array();
 }
 
 /**
@@ -241,7 +242,7 @@ function video_perm() {
  * @return
  *   string of form content or error message
  */
-function video_settings_form() {
+function video_settings() {
   global $base_url; 
   
   //Must have "administer site configuration" and "administer video" privilages.
@@ -317,7 +318,8 @@ function video_settings_form() {
     '#default_value' => variable_get('video_downloadcounter', 1),
     '#description' => t('Counts a hit everytime someone downloads a video.'));
 
-  return system_settings_form($form);
+
+  return $form;
 }
 
 /******************************************************************************
@@ -331,12 +333,7 @@ function video_settings_form() {
  *   array
  */
 function video_node_info() {
-  return array('video' => array(
-          'name' => t('video'),
-          'module' => 'video',
-          'description' => t('allow a variety of video formats to be posted as nodes in your site'),
-      )
-    );
+  return array('video' => array('name' => t('video'), 'base' => 'video'));
 }
 
 /**
@@ -628,10 +625,8 @@ function video_view(&$node, $teaser = FALSE, $page = FALSE) {
   $node = node_prepare($node, $teaser); //Run the body through the standard filters.
 
   // include the video css file
-  drupal_add_css(drupal_get_path('module', 'video').'/video.css');
-  $node->content['body'] = array('#value' => $node->body);
+  theme_add_style(drupal_get_path('module', 'video').'/video.css');
 
-  return $node;
 }
 
 /********************************************************************
