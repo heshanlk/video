@@ -1007,7 +1007,7 @@ function theme_video_play_realmedia($node) {
   // Real's embeded player includes the controls
   // in the height
   $node->videoy += 40;
-
+  $url = _video_get_fileurl($node->vidfile);
   // this will be executed by not Internet Explorer browsers
   $output = '<!--[if !IE]> <-->
 <object type="audio/x-pn-realaudio-plugin" width="'. $node->videox .'" height="'. $node->videoy .'"
