@@ -156,7 +156,7 @@ function video_multidownload_download() {
 
     }
     else if (arg(3) != '') { //If we are passed an encoded URL redirect to the downloader.
-      _video_download_goto(arg(3), $node->vid, TRUE);
+      _video_multidownload_download_goto(arg(3), $node->vid, TRUE);
     }
     else { //Multiple file downloads is turned on.
       $download_error = FALSE; //Initialize and clear the error flag.
