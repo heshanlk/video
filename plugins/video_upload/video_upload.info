@@ -1,4 +1,5 @@
 ; $Id$
-name = video_upload
+name = Video Upload
 description = Enable video files uploading in video module.
-
+dependencies = video
+package = "Video"

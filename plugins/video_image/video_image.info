@@ -1,4 +1,5 @@
 ; $Id$
-name = video_image
+name = Video Image
 description = Enable thumbnails support for video module.
-
+dependencies = image video
+package = "Video"
