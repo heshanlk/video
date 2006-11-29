@@ -272,18 +272,35 @@ function _video_image_auto_thumbnail(&$node) {
     }
     return null;
   }
+  $debug = variable_get('video_image_auto_thumbnail_debug', false);
   $videofile = escapeshellarg($_SESSION['video_upload_file']->filepath);
-
   $filepath = tempnam(file_directory_temp(), 'ffmpeg-thumb');
   $seek = variable_get('video_image_auto_thumbnail_seek', 2);
   $ffmpeg = variable_get('video_image_path_to_ffmpeg', '/usr/bin/ffmpeg');
-  $command = "$ffmpeg -i $videofile -y -f mjpeg -ss $seek -vframes 1 -an $filepath";
-  if (variable_get('video_image_auto_thumbnail_debug', false)) {
-    drupal_set_message(t('ffmpeg command: ').$command);
+
+  /* try the -vframes option first (newer versions of ffmpeg support this)
+   * we use passthru so we can get the return value of ffmpeg to determine
+   * if it was successful or not (return 0 == success)
+   */
+  $command = "$ffmpeg -i $videofile -an -y -f mjpeg -ss $seek -vframes 1 $filepath";
+  ob_start();
+  passthru($command." 2>&1", $ffmpeg_return);
+  $ffmpeg_output = ob_get_contents();
+  ob_end_clean();
+
+  /* if we failed, we can try again, using the -t option instead of -vframes
+   * older versions of ffmpeg don't support -vframes only -t
+   */
+  if ($return) {
+    $command = "$ffmpeg -i $videofile -y -an -f mjpeg -ss $seek -t 0.001 $filepath";
+    ob_start();
+    passthru($command." 2>&1", $ffmpeg_return);
+    $ffmpeg_output = ob_get_contents();
+    ob_end_clean();
   }
-  $ffmpeg_output = shell_exec($command." 2>&1");
-  if (variable_get('video_image_auto_thumbnail_debug', false)) {
-    drupal_set_message(t('ffmpeg output: ').$ffmpeg_output);
+  if ($debug) {
+    drupal_set_message(t('ffmpeg command: ').$command);
+    drupal_set_message(t('ffmpeg output: ')."<pre>\n$ffmpeg_output\n</pre>");
   }
   if (!file_exists($filepath)) {
     drupal_set_message(t('video_image_auto_thumbnail: file %file does not exist', array('%file' => $filepath)), 'error');
@@ -294,10 +311,14 @@ function _video_image_auto_thumbnail(&$node) {
       'filesize' => filesize($filepath),
       'filepath' => $filepath,
       'nid' => $node->nid,
-    );
+      );
   $_SESSION['video_upload_file']->thumbnailed = TRUE;
-  if (variable_get('video_image_auto_thumbnail_debug', false)) {
-    drupal_set_message(t('Successfully thumbnailed video'));
+  if ($debug) {
+    if ($ffmpeg_return) {
+      drupal_set_message(t('ffmpeg failed to thumbnail video'));
+    } else {
+      drupal_set_message(t('Successfully thumbnailed video'));
+    }
   }
   return (object)$file;
 }
