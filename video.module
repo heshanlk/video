@@ -393,7 +393,6 @@ function video_nodeapi($node, $op, $arg) {
 function video_form($node) {
   //We must unserialize the array for display in the forms.
   $node->serial_data = unserialize($node->serialized_data);
-
   $form = array();
   $form['title'] = array('#type' => 'textfield', '#title' => t('Title'),
     '#size' => 60, '#maxlength' => 128, '#required' => TRUE,
@@ -790,7 +789,10 @@ function video_play() {
     if (variable_get('video_playcounter', 1)) {
       db_query("UPDATE {video} SET play_counter = play_counter + 1 where vid = %d", $node->vid); //Increment play counter.
     }
+    
     switch (_video_get_filetype($node->vidfile)) {
+      case 'divx':
+        return theme('video_play_divx', $node);
       case 'mov':
       case 'mp4':
       case '3gp':
@@ -947,6 +949,39 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#vers
                                       t('Link to Macromedia Shockwave Player Download Page'),
                                       t('Download latest Shockwave Player'));
    return $output;
+}
+
+/**
+ * Play videos from in DivX format
+ *
+ * @see http://developer.apple.com/internet/ieembedprep.html
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_divx($node) {
+  //Increase the height to accommodate the player controls on the bottom.
+  $height = $node->videoy + 20;
+  
+  $url = _video_get_fileurl($node->vidfile);
+  
+  $output = '<!-- [if IE] -->
+<object classid="clsid:67DABFBF-D0AB-41fa-9C46-CC0F21721616" width="'.$node->videox.'" height="'.$height.'" codebase="http://go.divx.com/plugin/DivXBrowserPlugin.cab">
+<!--> <![endif]-->'. "\n";
+	// this will be executed by not Internet Explorer browsers
+  $output = '<!-- [if !IE] --> 
+<object type="video/divx" data="'.$url.'" width="'.$node->videox.'" height="'.$height.'" mode="zero"> 
+<!--> <![endif]-->'."\n";
+  	
+ 	$output .= '<param name="src" value="'.$url.'"/>'."\n";
+  $output .= '<param name="mode" value="zero"/>'."\n";
+  $output .= '</object>';
+  $output = _theme_video_format_play($output,t('http://www.divx.com/divx/webplayer/'),
+                                     t('Link to DivX Download Page'),
+                                     t('Download latest DivX Web Player'));
+  return $output;
 }
 
 /**
@@ -1449,6 +1484,8 @@ function _video_get_mime_type($node) {
   switch (_video_get_filetype($node->vidfile)) {
     case 'mov':
       return 'video/quicktime';
+    case 'divx':
+      return 'video/vnd.divx';
     case 'rm':
       return 'application/vnd.rn-realmedia';
     case 'flv':
