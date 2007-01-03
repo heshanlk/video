@@ -31,6 +31,35 @@ function video_install() {
         serialized_data text NULL default NULL,
         PRIMARY KEY  (vid)
       ) TYPE=MyISAM COMMENT='size is in bytes' /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {video} (
+        vid integer NOT NULL default '0',
+        nid integer NOT NULL default '0',
+        vidfile text NOT NULL default '',
+        videox smallint NOT NULL default '0',
+        videoy smallint NOT NULL default '0',
+        size bigint default NULL,
+        download_counter integer NOT NULL default '0',
+        play_counter integer NOT NULL default '0',
+        video_bitrate integer default NULL,
+        audio_bitrate integer default NULL,
+        audio_sampling_rate integer default NULL,
+        audio_channels varchar(10) default NULL,
+        playtime_seconds integer default NULL,
+        download_folder varchar(255) NULL default NULL,
+        disable_multidownload smallint NOT NULL default '0',
+        use_play_folder smallint NOT NULL default '0',
+        custom_field_1 varchar(255) NULL default NULL,
+        custom_field_2 varchar(255) NULL default NULL,
+        custom_field_3 varchar(255) NULL default NULL,
+        custom_field_4 varchar(255) NULL default NULL,
+        custom_field_5 text NULL default NULL,
+        custom_field_6 text NULL default NULL,
+        serialized_data text NULL default NULL,
+        PRIMARY KEY  (vid)
+      );");
+
   }
 }
 

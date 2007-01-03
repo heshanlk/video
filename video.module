@@ -753,7 +753,7 @@ function video_block_list($delta = 0) {
       $orderby = 'RAND()';
       break;
   }
-  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title FROM {node} n INNER JOIN {video} v ON n.vid = v.vid WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, $count));
+  return node_title_list(db_query_range(db_rewrite_sql("SELECT n.nid, n.title, $orderby FROM {node} n INNER JOIN {video} v ON n.vid = v.vid WHERE n.type = 'video' AND n.status = 1 AND n.moderate = 0 ORDER BY $orderby DESC"),0, $count));
 }
 
 /****************************************************
