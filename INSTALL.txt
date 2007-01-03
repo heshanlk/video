@@ -1,5 +1,12 @@
 // $Id$
 
+REQUIREMENTS
+------------------------------------
+Optional:
+  Views support requires the Views module to be activated.
+  video_image module require image module to be activated.
+
+
 INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 -------------------------------------
 
@@ -9,6 +16,13 @@ INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 - Activate optional plugin modules (called video_something)
 - Set access control as you like (administer->access control)
 - (optional) Activate video.module blocks (administer->blocks)
+- (optional) Activate video views using views.module
+  * If you are upgrading from a previous version of the video module,
+    go to admin -> modules and choose "Save".  This will flush the
+    views cache to ensure you can see the views.
+  * Go to admin -> views.  You will see a default view supplied for
+    video.  You can also create a new one by choosing "Add."  In the
+    "Fields" section, you should see selections for "Video: (node info)".
 
 
 UPGRADING FROM DRUPAL 4.7 to CVS

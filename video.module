@@ -132,6 +132,18 @@ function video_menu($may_cache) {
   return $items;
 }
 
+
+/**
+ * Implementation of hook_init()
+ * Currently just does a check for whether the views module exists and, 
+ * if it does loads the video views module.
+ */
+function video_init() {
+  if (module_exist('views')) {
+    include(drupal_get_path('module', 'video') .'/views_video.inc');
+  }
+}
+
 /**
  * Internal Drupal links hook
  *
