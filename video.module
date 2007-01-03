@@ -840,7 +840,7 @@ function video_play() {
  *   string of content to display
  */
 function theme_video_play_flash($node) {
-  $loader_location = variable_get('video_flvplayerloader', 'Player.swf');
+  $loader_location = variable_get('video_flvplayerloader', 'FlowPlayer.swf');
   
   $url = _video_get_fileurl($node->vidfile);
   $file = basename($url);
@@ -863,7 +863,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
   $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
                <param name="allowScriptAccess" value="sameDomain" />
                <param name="quality" value="high" />
-               <param name="FlashVars" value="baseURL='. $base_url .'&videoFile='. $file .'&autoPlay=true&bufferLength=5" />' . "\n"
+               <param name="flashvars" value="config={baseURL:\''. $base_url .'\',videoFile:\''. $file .'\',autoPlay:true,bufferLength:5}" />' . "\n"
   . _video_get_parameters($node) .
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';
