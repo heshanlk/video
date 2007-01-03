@@ -89,12 +89,12 @@ function video_menu($may_cache) {
       'type' => MENU_CALLBACK);
     $items[] = array(
       'path' => 'node/add/video',
-      'title' => t('video'),
+      'title' => t('Video'),
       'access' => user_access('create video'));
     $items[] = array(
         'path' => 'admin/content/video',
-        'title' => t('video settings'),
-        'description' => t('administer video module settings'),
+        'title' => t('Video settings'),
+        'description' => t('Configure different aspects of the video module and its plugins'),
         'callback' => 'drupal_get_form',
         'callback arguments' => array('video_settings_form'),
         'access' => user_access('administer site configuration'),
@@ -139,7 +139,7 @@ function video_menu($may_cache) {
  * if it does loads the video views module.
  */
 function video_init() {
-  if (module_exist('views')) {
+  if (module_exists('views')) {
     include(drupal_get_path('module', 'video') .'/views_video.inc');
   }
 }
@@ -344,9 +344,9 @@ function video_settings_form() {
  */
 function video_node_info() {
   return array('video' => array(
-          'name' => t('video'),
+          'name' => t('Video'),
           'module' => 'video',
-          'description' => t('allow a variety of video formats to be posted as nodes in your site'),
+          'description' => t('Allow a variety of video formats to be posted as nodes in your site'),
       )
     );
 }

@@ -27,8 +27,8 @@ function video_image_menu($may_cache) {
   if ($may_cache) {
       $items[] = array(
       'path' => 'admin/content/video/image',
-      'title' => t('video image'),
-      'description' => t('administer video_image module settings'),
+      'title' => t('Video image'),
+      'description' => t('Administer video_image module settings'),
       'callback' => 'drupal_get_form',
       'callback arguments' => array('video_image_admin_settings'),
       'access' => user_access('administer site configuration'),

@@ -28,8 +28,8 @@ function video_upload_menu($may_cache) {
   if ($may_cache) {
     $items[] = array(
       'path' => 'admin/content/video/upload',
-      'title' => t('upload'),
-      'description' => t('administer video_upload module settings'),
+      'title' => t('Upload'),
+      'description' => t('Administer video_upload module settings'),
       'callback' => 'drupal_get_form',
       'callback arguments' => array('video_upload_settings_form'),
       'access' => user_access('administer site configuration'),

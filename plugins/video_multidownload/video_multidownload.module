@@ -34,8 +34,8 @@ function video_multidownload_menu($may_cache) {
   if ($may_cache) {
     $items[] = array(
         'path' => 'admin/content/video/multidownload',
-        'title' => t('multidownload'),
-        'description' => t('administer video_multidownload module settings'),
+        'title' => t('Multidownload'),
+        'description' => t('Administer video_multidownload module settings'),
         'callback' => 'drupal_get_form',
         'callback arguments' => array('video_multidownload_settings_form'),
         'access' => user_access('administer site configuration'),
