@@ -36,7 +36,7 @@ Google Video support
 
 .flv
   Video.module for drupal 4.7 now support Macromedia Flash FLV Videos
-  using FlowPlayer ( http://flowplayer.sourceforge.net/ ).
+  using FlowPlayer version 1.10 or above ( http://flowplayer.sourceforge.net/ ).
   To use .flv files simply download Flowplayer and put the file
   called "FlowPlayer.swf" or "Player.swf" into your Drupal folder.
   Then set the Flash player file name to use on the Flash settings in video module configuration page.
