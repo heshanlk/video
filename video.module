@@ -411,7 +411,7 @@ function video_form($node) {
     '#default_value' => $node->title, '#weight' => -20);
   $form['body_filter']['body'] = array('#type' => 'textarea',
     '#title' => t('Body'), '#default_value' => $node->body,
-    '#required' => FALSE, '#weight' => -15);
+    '#required' => FALSE, '#rows' => 10, '#weight' => -15);
   $form['body_filter']['filter'] = filter_form($node->format);
   $form['log'] = array('#type' => 'fieldset', '#title' => t('Log message'),
     '#collapsible' => TRUE, '#collapsed' => TRUE);
