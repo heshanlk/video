@@ -60,7 +60,7 @@ function video_upload_settings_form() {
     '#default_value' => variable_get('video_upload_override_vidfile', false),
   );
 
-  return $form;
+  return system_settings_form($form);
 }
 
 
@@ -102,7 +102,12 @@ function video_upload_nodeapi(&$node, $op, $teaser) {
         break;
   
       case 'insert':
+        _video_upload_store($node);
+        break;
       case 'update':
+        // is there a better way ???
+        $node->video_upload_file = _video_upload_load($node);
+        _video_upload_delete($node);
         _video_upload_store($node);
         break;
   

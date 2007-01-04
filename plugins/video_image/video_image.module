@@ -38,28 +38,6 @@ function video_image_menu($may_cache) {
   return $items;
 }
 
-/**
- * Validation for settings form
- */
-function video_image_admin_settings_validate($form_id, &$form_values, &$form) {
-  if ($form_values['video_image_auto_thumbnail']) {
-    if (function_exists('is_executable')) {
-      $test = 'is_executable';
-    } else {
-      $test = 'file_exists';
-    }
-    if (!$test($form_values['video_image_thumbnailer_path'])) {
-      form_set_error('video_image_thumbnailer_path', t('Set correct path for thumbnailer'));
-    }
-    if (!is_numeric($form_values['video_image_auto_thumbnail_seek'])) {
-      form_set_error('video_image_auto_thumbnail_seek', t('Seek time must be an integer'));
-    }
-	$options = $form_values['video_image_thumbnailer_options'];
-	if (!strstr($options, '%videofile') || !strstr($options, '%thumbfile')) {
-	  form_set_error('video_image_thumbnailer_options', t('Thumbnail options must contain mandatory arguments %videofile and %thumbfile'));
-	}
-  }
-}
 
 /**
  * Settings form
@@ -83,47 +61,6 @@ function video_image_admin_settings() {
       '#title' => t('Promote the thumbnails to the front page'),
       '#default_value' => _video_promote_thumbnails(),
     );
-  $form['autothumb'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Automatic video thumbnailing'),
-      );
-  $form['autothumb']['video_image_auto_thumbnail'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Auto thumbnail for videos'),
-      '#description' => t('This requires setting the path to the thumbnailer executable below.  If set up correctly, this will auto-generate a thumbnail for each video created.'),
-      '#default_value' => variable_get('video_image_auto_thumbnail', false),
-    );
-  $form['autothumb']['video_image_auto_thumbnail_only'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Use auto-thumbnailer exclusively for video images'),
-      '#description' => t('If checked, this will disable the file upload box for the user-supplied thumbnail.  Only check this if you have checked to be sure that auto-thumbnailing works.  Auto thumbnail must be selected for this to be enabled.'),
-      '#default_value' => variable_get('video_image_auto_thumbnail_only', false),
-      '#disabled' => !variable_get('video_image_auto_thumbnail', false),
-    );
-  $form['autothumb']['video_image_thumbnailer_path'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Video thumbnailer executable path'),
-      '#description' => t('Set the full path to the thumbnailer executable here to enable automatic thumbnailing of videos'),
-      '#default_value' => variable_get('video_image_thumbnailer_path', '/usr/bin/ffmpeg'),
-    );
-  $form['autothumb']['video_image_thumbnailer_options'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Video thumbnailer options'),
-      '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ').'<ol><li>'.t('%videofile (the video file to thumbnail)').'<li>'.t('%thumbfile (a newly created temporary file to overwrite with the thumbnail)').'<li>'.t('%seek (seconds to seek into video before extracting image).').'</ol>'.t('Only the first two are mandatory.  For example, older versions of ffmpeg should use something like: !old While newer versions should use something like: !new', array('!old' => "<div>-i %videofile -y -an -f mjpeg -ss %seek -t 0.001 %thumbfile</div>", '!new' => '<div>-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile</div>')),
-      '#default_value' => variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'),
-    );
-  $form['autothumb']['video_image_auto_thumbnail_seek'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Video seek offset for thumbnail'),
-      '#description' => t('Time in seconds to seek into video before extracting the thumbnail'),
-      '#default_value' => variable_get('video_image_auto_thumbnail_seek', 2),
-    );
-  $form['autothumb']['video_image_auto_thumbnail_debug'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Debug auto-thumbnail process'),
-      '#default_value' => variable_get('video_image_auto_thumbnail_debug', false),
-    );
-  return system_settings_form($form);
 }
 
 /**
@@ -141,12 +78,11 @@ function video_image_form_alter($form_id, &$form) {
       _image_check_settings();
       $form['#attributes'] = array("enctype" => "multipart/form-data");
 
-     if (!variable_get('video_image_auto_thumbnail_only', false)) {
-        $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Use this form to upload an image.'));
-
-        $form['image']['image'] = array('#type' => 'file', '#title' => t('Image'));
-        $form['image']['image_title'] = array('#type' => 'textfield', '#title' => t('Image title'), '#default_value' => $node->image->image_title);
-      }
+     
+      $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Use this form to upload an image.'));
+      
+      $form['image']['image'] = array('#type' => 'file', '#title' => t('Image'));
+      $form['image']['image_title'] = array('#type' => 'textfield', '#title' => t('Image title'), '#default_value' => $node->image->image_title);
     }
   }
 
@@ -174,11 +110,11 @@ function video_image_nodeapi(&$node, $op, $teaser) {
         $image->name = $node->name;
         $image->created = $node->created;
         $image->type = 'image';
-        $image->status = _video_publish_thumbnails();
-        $image->promote = _video_promote_thumbnails();
-        if (!$field_name && variable_get('video_image_auto_thumbnail', false)) {
+        $image->status = _video_image_publish_thumbnails();
+        $image->promote = _video_image_promote_thumbnails();
+        if (!$field_name && module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_thumbnail', false)) {
           $image->title = $_SESSION['video_upload_file']->filename;
-          $field_name = _video_image_auto_thumbnail($node);
+          $field_name = _video_ffmpeg_helper_auto_thumbnail($node);
         }
         else {
           $image->title = $_POST['edit']['image_title'];
@@ -263,62 +199,6 @@ function theme_video_image_body($node) {
   return $output;
 }
 
-/* Generates a thumbnail from the video file
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   a drupal file object
- */
-function _video_image_auto_thumbnail(&$node) {
-  if(empty($_SESSION['video_upload_file']) ||
-      !$_SESSION['video_upload_file']->newfile ||
-      $node->iid || $_SESSION['video_upload_file']->iid ||
-      $_SESSION['video_upload_file']->thumbnailed) {
-    if (variable_get('video_image_auto_thumbnail_debug', false)) {
-      if (empty($_SESSION['video_upload_file']))
-        drupal_set_message(t('no video has been uploaded: make sure that video_image weight is greater than video_upload weight; make sure that the video file is not too large to be uploaded.'));
-    }
-    return null;
-  }
-  $debug = variable_get('video_image_auto_thumbnail_debug', false);
-  $videofile = escapeshellarg($_SESSION['video_upload_file']->filepath);
-  $thumbfile = tempnam(file_directory_temp(), 'tnail-thumb');
-  $seek = variable_get('video_image_auto_thumbnail_seek', 2);
-  $tnail = variable_get('video_image_thumbnailer_path', '/usr/bin/ffmpeg');
-  $options = preg_replace(array('/%videofile/', '/%thumbfile/', '/%seek/'), array($videofile, $thumbfile, $seek), variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'));
-
-  $command = "$tnail $options";
-  ob_start();
-  passthru($command." 2>&1", $tnail_return);
-  $tnail_output = ob_get_contents();
-  ob_end_clean();
-
-  if ($debug) {
-    drupal_set_message(t('Thumbnailer command: ').$command);
-    drupal_set_message(t('Thumbnailer output: ')."<pre>\n$tnail_output\n</pre>");
-  }
-  if (!file_exists($thumbfile)) {
-    drupal_set_message(t('video_image_auto_thumbnail: file %file does not exist', array('%file' => $thumbfile)), 'error');
-  }
-  $file = array(
-      'filename' => $_SESSION['video_upload_file']->filename . ".video-thumb.jpg",
-      'filemime' => 'image/jpeg',
-      'filesize' => filesize($thumbfile),
-      'filepath' => $thumbfile,
-      'nid' => $node->nid,
-      );
-  $_SESSION['video_upload_file']->thumbnailed = TRUE;
-  if ($debug) {
-    if ($tnail_return) {
-      drupal_set_message(t('Failed to thumbnail video'));
-    } else {
-      drupal_set_message(t('Successfully thumbnailed video'));
-    }
-  }
-  return (object)$file;
-}
 
 /* If the user has set a promote preference, use that, otherwise return
  * if 'promote' is set in the drupal content type settings
@@ -326,7 +206,7 @@ function _video_image_auto_thumbnail(&$node) {
  * @return
  *   Returns whether we should promote thumbnails or not
  */
-function _video_promote_thumbnails() {
+function _video_image_promote_thumbnails() {
   $settings_override = variable_get('video_image_promote_thumbnail', NULL);
   if ($settings_override === NULL) {
     $node_options = variable_get('node_options_image', array('status', 'promote'));
@@ -341,7 +221,7 @@ function _video_promote_thumbnails() {
  * @return
  *   Returns whether we should publish thumbnails or not
  */
-function _video_publish_thumbnails() {
+function _video_image_publish_thumbnails() {
   $settings_override = variable_get('video_image_publish_thumbnail', NULL);
   if ($settings_override === NULL) {
     $node_options = variable_get('node_options_image', array('status', 'promote'));
