@@ -158,6 +158,76 @@ function video_init() {
  */
 function video_link($type, $node = NULL) {
   $link = array();
+  
+  // Node links for a video
+  if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
+    //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
+    if ((_video_get_filetype($node->vidfile) == 'youtube' or _video_get_filetype($node->vidfile) == 'googlevideo') and $node->disable_multidownload == 1) {
+      $display_download_link = 0;
+    }
+    else {
+      $display_download_link = variable_get('video_displaydownloadlink', 1);
+    }
+
+    if (user_access('play video')) {
+      if (variable_get('video_displayplaylink', 1)) {
+        $link['video_play'] = array(
+          'title' => t('play'),
+          'href' => "node/$node->nid/play",
+          'attributes' => array(
+            'class' => 'outgoing',
+            'title' => t('play %link', array('%link' => $node->title)),
+          ),
+        );
+      }
+    }
+    else {
+      //TODO: port the code below to 5. How???
+      /*
+      $link .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
+      $link .= ' ' . t('or') . ' ';
+      $link .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
+      $link .= t(' to play video');
+      $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
+      */
+    }
+    if ($display_download_link == 1) {
+      $link['video_download'] = array(
+        'title' => t('download'),
+        'href' => "node/$node->nid/download",
+        'attributes' => array(
+            'class' => 'outgoing',
+            'title' => t('download %link', array('%link' => $node->title)),
+          ),
+      );
+    }
+    if (variable_get('video_displayplaytime', 1)) {
+      $link['playtime'] = array(
+        'title' => format_interval($node->playtime_seconds),
+      );
+    }
+    if (variable_get('video_displayfilesize', 1) and $node->size != 0) {
+      $link['size'] = array(
+        'title' => format_size($node->size),
+      );
+    }
+    if (variable_get('video_playcounter', 1) and user_access('view play counter')) {
+      $link['play_counter'] = array(
+        'title' => format_plural($node->play_counter, '1 play', '@count plays'),
+      );
+    }
+    if (variable_get('video_downloadcounter', 1) and user_access('view download counter')) {
+      $link['download_counter'] = array(
+        'title' => format_plural($node->download_counter, '1 download', '@count downloads'),
+      );
+    }
+
+    return $link;
+  }
+  return array();
+}
+  
+  /*
   // Node links for a video
   if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
     //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
@@ -192,7 +262,8 @@ function video_link($type, $node = NULL) {
     }
   }
   return $link;
-}
+  */
+
 
 /**
  * Displays a Drupal page containing recently added videos

@@ -174,7 +174,7 @@ function theme_video_image_teaser($node) {
     $image = theme('image', $node->serial_data['image_teaser'], $node->title, $node->title, array('class' => 'video_image_teaser'), FALSE);
   }
   $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); //Create a link with an image in it.
-  $output .= $node->teaser . '<br class="video_image_clear" />';
+  $output .= '<br class="video_image_clear" />';
   return $output;
 }
 
