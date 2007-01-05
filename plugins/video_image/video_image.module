@@ -99,9 +99,6 @@ function video_image_nodeapi(&$node, $op, $teaser) {
         $output['iid'] = $node->serial_data['iid'];
         return $output;
       case 'submit':
-        $node->serial_data['iid'] = $node->iid;
-      break;
-      case 'prepare':
         if (variable_get('video_image_auto_thumbnail_debug', false) && variable_get('video_image_auto_thumbnail', false)) {
           drupal_set_message(t('video_image_nodeapi: prepare: ready to thumbnail image'));
         }
@@ -134,6 +131,11 @@ function video_image_nodeapi(&$node, $op, $teaser) {
         else if (isset($_SESSION['video_upload_file']->iid)) {
           $node->iid = $_SESSION['video_upload_file']->iid;
         }
+      
+        $node->serial_data['iid'] = $node->iid;
+      break;
+      case 'prepare':
+        ;
       break;
 
       case 'view':

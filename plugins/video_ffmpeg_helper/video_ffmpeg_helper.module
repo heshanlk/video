@@ -81,6 +81,21 @@ function video_ffmpeg_helper_admin_settings() {
     '#default_value' => variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg'),
   );
   
+  
+  $form['video_ffmpeg_helper_auto_resolution'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable resolution helper'),
+    '#description' => t('Use ffmpeg Helper to automaticcally get the resolution from the video.'),
+    '#default_value' => variable_get('video_ffmpeg_helper_auto_resolution', false),
+  );
+  
+  $form['video_ffmpeg_helper_auto_playtime'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable playtime helper'),
+    '#description' => t('Use ffmpeg Helper to automaticcally get the playtime from the video.'),
+    '#default_value' => variable_get('video_ffmpeg_helper_auto_playtime', false),
+  );
+  
   $form['autothumb'] = array(
           '#type' => 'fieldset',
           '#title' => t('Automatic video thumbnailing'),
@@ -138,9 +153,105 @@ function video_ffmpeg_helper_form_alter($form_id, &$form) {
         $form['image'] = NULL;
       }
     }
+    
+    if(variable_get('video_ffmpeg_helper_auto_resolution', false)) {
+      $form['video']['videox'] = NULL;
+      $form['video']['videoy'] = NULL;
+    }
+    
+    if(variable_get('video_ffmpeg_helper_auto_playtime', false)) {
+      $form['video']['playtime'] = NULL;
+    }
   }
 
 }
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
+  if($node->type == 'video') {
+    
+    switch ($op) {
+      case 'load': 
+        ; // for future uses
+        break;
+        
+      case 'submit':
+        if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_playtime', false)) {
+          _video_ffmpeg_helper_get_video_info($node);
+        }
+        break;
+        
+      case 'prepare':
+        
+      break;
+
+      case 'view':
+        ; // for future uses
+        break;
+        
+      case 'delete':
+        ; // for future uses
+        break;
+        
+    }
+  }
+}
+
+
+function _video_ffmpeg_helper_get_video_info(&$node) {
+
+  // create the full command to execute
+  $command = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg') . ' -i ' . $_SESSION['video_upload_file']->filepath;
+  
+  print $command;
+  
+  //execute the command
+  ob_start();
+  passthru($command." 2>&1", $command_return);
+  $command_output = ob_get_contents();
+  ob_end_clean();
+  
+  print $command_output;
+  
+  if(variable_get('video_ffmpeg_helper_auto_resolution', false)) {
+    // get resolution
+    $pattern = '/[0-9]{3}x[0-9]{3}/';
+    preg_match_all($pattern, $command_output, $matches, PREG_PATTERN_ORDER);
+    $resolution = $matches[0][0];
+    $xy = explode("x", $resolution);
+    
+    // store resolution information to the node object
+    $node->videox = $xy[0];
+    $node->videoy = $xy[1];
+  }
+  
+  
+  if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_playtime', false)) {
+    // get playtime
+    $pattern = '/[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]/';
+    preg_match_all($pattern, $command_output, $matches, PREG_PATTERN_ORDER);
+    $playtime = $matches[0][0];
+    
+    // ffmpge return lenght as 00:00:31.1 Let's get palytime from that
+    $hmsmm = explode(":", $playtime);
+    
+    $tmp = explode(".", $hmsmm[2]);
+    $seconds = $tmp[0];
+    
+    $hours = $hmsmm[0];
+    $minutes = $hmsmm[1];
+    
+    $node->playtime_seconds = $seconds + ($hours * 3600) + ($minutes * 60);
+
+  }
+  
+  //print_r($node); die;
+  
+}
+
 
 
 /* Generates a thumbnail from the video file
