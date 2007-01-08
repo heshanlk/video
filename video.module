@@ -162,7 +162,7 @@ function video_link($type, $node = NULL) {
   // Node links for a video
   if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
     //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
-    if ((_video_get_filetype($node->vidfile) == 'youtube' or _video_get_filetype($node->vidfile) == 'googlevideo') and $node->disable_multidownload == 1) {
+    if ((_video_get_filetype($node->vidfile) == 'youtube' || _video_get_filetype($node->vidfile) == 'googlevideo') && $node->disable_multidownload == 1) {
       $display_download_link = 0;
     }
     else {
@@ -182,14 +182,16 @@ function video_link($type, $node = NULL) {
       }
     }
     else {
-      //TODO: port the code below to 5. How???
-      /*
-      $link .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
-      $link .= ' ' . t('or') . ' ';
-      $link .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
-      $link .= t(' to play video');
-      $link .= ($display_download_link == 1) ? ' ' . t('or') . ' ' : ' | ';
-      */
+      $text .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
+      $text .= ' ' . t('or') . ' ';
+      $text .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
+      $text .= t(' to play video');
+      
+      $link['video_play'] = array(
+          'title' => $text,
+          'html' => TRUE,
+        );
+        
     }
     if ($display_download_link == 1) {
       $link['video_download'] = array(
@@ -206,17 +208,17 @@ function video_link($type, $node = NULL) {
         'title' => format_interval($node->playtime_seconds),
       );
     }
-    if (variable_get('video_displayfilesize', 1) and $node->size != 0) {
+    if (variable_get('video_displayfilesize', 1) && $node->size != 0) {
       $link['size'] = array(
         'title' => format_size($node->size),
       );
     }
-    if (variable_get('video_playcounter', 1) and user_access('view play counter')) {
+    if (variable_get('video_playcounter', 1) && user_access('view play counter')) {
       $link['play_counter'] = array(
         'title' => format_plural($node->play_counter, '1 play', '@count plays'),
       );
     }
-    if (variable_get('video_downloadcounter', 1) and user_access('view download counter')) {
+    if (variable_get('video_downloadcounter', 1) && user_access('view download counter')) {
       $link['download_counter'] = array(
         'title' => format_plural($node->download_counter, '1 download', '@count downloads'),
       );

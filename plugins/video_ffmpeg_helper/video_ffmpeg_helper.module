@@ -203,10 +203,12 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
 
 function _video_ffmpeg_helper_get_video_info(&$node) {
 
+  // escape file name for safety
+  $file = escapeshellarg($_SESSION['video_upload_file']->filepath);
   // create the full command to execute
-  $command = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg') . ' -i ' . $_SESSION['video_upload_file']->filepath;
+  $command = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg') . ' -i ' . $file;
   
-  print $command;
+  drupal_set_message('executing' . $command);
   
   //execute the command
   ob_start();
