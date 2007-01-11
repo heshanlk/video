@@ -66,7 +66,7 @@ function video_views_tables() {
   );
 
   // Add video_image support only if the video_image module is enabled
-  if (module_exist('video_image')) {
+  if (module_exists('video_image')) {
     $tables['video']['fields']['video_image'] = array(
    'name' => t('Video: Thumbnail'),
       'notafield' => true,

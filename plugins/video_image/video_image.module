@@ -54,13 +54,15 @@ function video_image_admin_settings() {
       '#type' => 'checkbox',
       '#title' => t('Publish the video thumbnails'),
       '#description' => t('Checking this value will cause the video thumbnail image nodes to be published and therefore could show up in blocks.  Usually, this is not what you want because then you could end up with both the thumbnail node and the video node showing up and since there is no way to link the image node to the video node, this is not desirable.  However, with this unchecked, the administrator will end up with a lot of unpublished nodes.'),
-      '#default_value' => _video_publish_thumbnails(),
+      '#default_value' => _video_image_publish_thumbnails(),
     );
   $form['video_image_promote_thumbnail'] = array(
       '#type' => 'checkbox',
       '#title' => t('Promote the thumbnails to the front page'),
-      '#default_value' => _video_promote_thumbnails(),
+      '#default_value' => _video_image_promote_thumbnails(),
     );
+    
+  return system_settings_form($form);
 }
 
 /**

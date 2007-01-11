@@ -8,6 +8,13 @@
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  */
 
+/**
+ * Define some constants
+*/
+define('VIDEO_RENDERING_PENGING', 0);
+define('VIDEO_RENDERING_ACTIVE', 5);
+define('VIDEO_RENDERING_COMPLETE', 10);
+
 
 /**
  * Implementation of hook_help().
@@ -132,6 +139,32 @@ function video_ffmpeg_helper_admin_settings() {
       '#title' => t('Debug auto-thumbnail process'),
       '#default_value' => variable_get('video_ffmpeg_helper_auto_thumbnail_debug', false),
     );
+  
+  // automatic video conversion settings
+  $form['autoconv'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Automatic video conversion'),
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE
+      );
+  $form['autoconv']['video_ffmpeg_helper_auto_conversion'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Auto conversion for videos'),
+      '#description' => t('If set up correctly, this will auto-convert each uploaded video to the configured format.') . '<br />' . t("IMPORTANT: you will need the video_render.php correctly configured and run by cron. See README.txt for more informations."),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_conversion', false),
+    );
+  $form['autoconv']['video_ffmpeg_helper_auto_converter_options'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video thumbnailer options'),
+      '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ol><li>'.t('%videofile (the video file to convert)').'<li>'.t('%convertfile (a newly created file to store the converted file)').'</ol>',
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv  %convertfile'),
+    );
+  $form['autoconv']['video_ffmpeg_helper_auto_converter_busy_video_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Busy video path'),
+      '#description' => t('Provide the relative path to a video displayed when the video is being rendered.'),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_busy_video_path', 'busy.flv'),
+    );
   return system_settings_form($form);
 }
 
@@ -141,7 +174,7 @@ function video_ffmpeg_helper_admin_settings() {
  */
 function video_ffmpeg_helper_form_alter($form_id, &$form) {
 
-  //print_r($form); 
+  //print_r($form);
   if($form_id == 'video_node_form') {
 
     if (function_exists('_image_check_settings')) {
@@ -154,7 +187,7 @@ function video_ffmpeg_helper_form_alter($form_id, &$form) {
       }
     }
     
-    if(variable_get('video_ffmpeg_helper_auto_resolution', false)) {
+    if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_convert', false)) {
       $form['video']['videox'] = NULL;
       $form['video']['videoy'] = NULL;
     }
@@ -182,10 +215,19 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
         if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_playtime', false)) {
           _video_ffmpeg_helper_get_video_info($node);
         }
+        
+        break;
+        
+      case 'insert':
+        if(variable_get('video_ffmpeg_helper_auto_conversion', false)) {
+          // add rendering job to queue
+          _video_ffmpeg_helper_add_rendering($node);
+        }
+        
         break;
         
       case 'prepare':
-        
+        ; // for future uses
       break;
 
       case 'view':
@@ -193,7 +235,7 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
         break;
         
       case 'delete':
-        ; // for future uses
+        db_query('DELETE FROM {video_rendering} WHERE vid = %d AND nid = %d', $node->vid, $node->nid);
         break;
         
     }
@@ -201,6 +243,25 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
 }
 
 
+/**
+ * Add a video conversion rendering process to the queue
+*/
+function _video_ffmpeg_helper_add_rendering(&$node) {
+  $file = $_SESSION['video_upload_file_stored']->filepath;
+  //print_r($node); die;
+  db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed) VALUES (%d, %d, "%s", %d, %d, %d, %d)', $node->vid, $node->nid, $file, 0, VIDEO_RENDERING_PENGING, 0, 0);
+  
+  // let's add the rendering in progress video
+  $node->vidfile = variable_get('video_ffmpeg_helper_auto_converter_busy_video_path', 'busy.flv');
+  db_query('UPDATE {video} SET vidfile = "%s" WHERE nid=%d AND vid=%d', $node->vidfile, $node->nid, $node->vid);
+  
+}
+
+
+
+/**
+ * Get some informations from the video file
+*/
 function _video_ffmpeg_helper_get_video_info(&$node) {
 
   // escape file name for safety
@@ -216,7 +277,7 @@ function _video_ffmpeg_helper_get_video_info(&$node) {
   $command_output = ob_get_contents();
   ob_end_clean();
   
-  print $command_output;
+  // print $command_output;
   
   if(variable_get('video_ffmpeg_helper_auto_resolution', false)) {
     // get resolution
@@ -231,13 +292,13 @@ function _video_ffmpeg_helper_get_video_info(&$node) {
   }
   
   
-  if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_playtime', false)) {
+  if(variable_get('video_ffmpeg_helper_auto_playtime', false)) {
     // get playtime
     $pattern = '/[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]/';
     preg_match_all($pattern, $command_output, $matches, PREG_PATTERN_ORDER);
     $playtime = $matches[0][0];
     
-    // ffmpge return lenght as 00:00:31.1 Let's get palytime from that
+    // ffmpge return lenght as 00:00:31.1 Let's get playtime from that
     $hmsmm = explode(":", $playtime);
     
     $tmp = explode(".", $hmsmm[2]);
