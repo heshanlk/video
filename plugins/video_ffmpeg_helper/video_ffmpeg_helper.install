@@ -1,0 +1,40 @@
+<?php
+// $Id$
+
+
+/**
+ * @file
+ * Provide installation functions for video_ffmpeg_helper.module .
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+
+function video_ffmpeg_helper_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {video_rendering} (
+        vid int(10) unsigned NOT NULL default '0',
+        nid int(10) unsigned NOT NULL default '0',
+        origfile text NOT NULL default '',
+        pid int(10) unsigned NOT NULL default '0',
+        status int(1) unsigned NOT NULL default '0',
+        started int NOT NULL default '0',
+        completed int NOT NULL default '0',
+        PRIMARY KEY  (vid)
+      ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {video_rendering} (
+        vid integer NOT NULL default '0',
+        nid integer NOT NULL default '0',
+        origfile text NOT NULL default '',
+        pid integer NOT NULL default '0',
+        status integer NOT NULL default '1',
+        PRIMARY KEY  (vid)
+      );");
+      break;
+  }
+}
+
