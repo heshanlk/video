@@ -260,7 +260,7 @@ function video_multidownload_download() {
 function theme_video_multidownload_download($node) {
   $output = '';
   //Replace some common file types with full name and links.
-  $find = array('mov', 'wmv', 'rm', 'avi', 'zip', 'divx', 'flv');
+  $find = array('mov', 'wmv', 'rm', 'avi', 'zip', 'divx', 'flv', 'ogg');
   $replace = array('<a href="http://www.apple.com/quicktime" title="'. t('QuickTime Homepage') . '">' . t('Quicktime') . '</a>'
              , '<a href="http://www.microsoft.com/windowsmedia" title="'. t('Windows Media Homepage') . '">' . t('Windows Media') . '</a>'
              , '<a href="http://www.real.com" title="'. t('Real Media Homepage') . '">' . t('Real Media') . '</a>'
@@ -268,6 +268,7 @@ function theme_video_multidownload_download($node) {
              , '<a href="http://en.wikipedia.org/wiki/ZIP_file_format" title="'. t('ZIP Information at wikipedia.org') . '">' . t('ZIP') . '</a>'
              , '<a href="http://www.divx.com" title="'. t('Divx Homepage') . '">' . t('DIVX') . '</a>'
              , '<a href="http://www.macromedia.com/go/getflashplayer" title="'. t('Macromedia Flash Homepage') . '">' .t('Flash FLV') . '</a>'
+             , '<a href="http://www.theora.org/theorafaq.html" title="'. t('Ogg Theora FAQ at theora.org') . '">'.t('Ogg Theora FAQ') .'</a>, <a href="http://en.wikipedia.org/wiki/Wikipedia:Media_help_(Ogg)" title="'. t('Ogg Theora media help at Wikipedia') . '">' . t('Ogg Theora help') . '</a>'
              );
   $output .= '<br /><div class="videodownload">'; //Enclose all HTML in "videodownload" class.
   foreach($node->file_array as $file) { //Goes through the array of video files and gets them ready for display.

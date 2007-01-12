@@ -354,7 +354,7 @@ function video_settings_form() {
   $form['flash']['video_flvplayerloader'] = array(
     '#type' => 'textfield',
     '#title' => t('Filename of Flash loader'),
-    '#default_value' => variable_get('video_flvplayerloader', 'Player.swf'),
+    '#default_value' => variable_get('video_flvplayerloader', 'FlowPlayer.swf'),
     '#description' => t('The name of the Shockwave file that manages loading the FLV movie.'));
   $form['ogg'] = array('#type' => 'fieldset', '#title' => t('Ogg Theora settings'), '#collapsible' => TRUE, '#collapsed' => TRUE);
   $form['ogg']['video_cortado'] = array(
