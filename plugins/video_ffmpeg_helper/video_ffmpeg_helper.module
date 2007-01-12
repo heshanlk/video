@@ -157,7 +157,7 @@ function video_ffmpeg_helper_admin_settings() {
       '#type' => 'textfield',
       '#title' => t('Video thumbnailer options'),
       '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ol><li>'.t('%videofile (the video file to convert)').'<li>'.t('%convertfile (a newly created file to store the converted file)').'</ol>',
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv  %convertfile'),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv -ar 22050 %convertfile'),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_converter_busy_video_path'] = array(
       '#type' => 'textfield',

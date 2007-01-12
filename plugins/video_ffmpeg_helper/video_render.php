@@ -3,31 +3,53 @@
 
 /**
  * @file
- * Manage video rendering scheduling.
+ * Implement video rendering scheduling.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  */
  
  
 /**
- * Configuration constats
+ * video_render.php configuration
 */
-define(VIDEO_RENDERING_FFMPEG_PATH, '/usr/bin/ffmpeg'); // set to the ffmpeg executable
-define(VIDEO_RENDERING_TEMP_PATH, '/tmp/video'); // set to the temp file path
 
- 
+// set to the ffmpeg executable
+define('VIDEO_RENDERING_FFMPEG_PATH', '/usr/bin/ffmpeg');
+
+// set to the temp file path.
+//IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
+define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video'); 
+
+
+
+
 /**
  * Define some constants
 */
-define(VIDEO_RENDERING_PENGING, 0);
-define(VIDEO_RENDERING_ACTIVE, 5);
-define(VIDEO_RENDERING_COMPLETE, 10);
+define('VIDEO_RENDERING_PENGING', 0);
+define('VIDEO_RENDERING_ACTIVE', 5);
+define('VIDEO_RENDERING_COMPLETE', 10);
 
 
 include_once './includes/bootstrap.inc';
+// disable error reporting for bootstrap process
+error_reporting(E_ERROR);
+// let's bootstrap: we will be able to use drupal apis
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+// enable full error reporting again
+error_reporting(E_ALL);
 
-video_render_main();
+
+// allow execution only from the command line!
+if(empty($_SERVER['REQUEST_METHOD'])) {
+  video_render_main();
+}
+else {
+  print t('This script is only executable from the command line.');
+  die();
+}
+
+
 
 /**
  * Main for video_render.php
@@ -38,7 +60,7 @@ function video_render_main() {
     video_render_start($job);
   }
   else {
-    print 'no jobs to schedule' . "\n";
+    watchdog('video_render', t('no video conversion jobs to schedule.'));
   }
 }
 
@@ -47,11 +69,15 @@ function video_render_main() {
  * Starts rendering for a job
 */
 function video_render_start($job) {
+  print_r($job);
+  db_query('DELETE FROM {video_rendering} WHERE nid=%d AND vid=%d', $job->nid, $job->vid);
+  
   // escape file name for safety
   $videofile = escapeshellarg($job->origfile);
   $convfile = tempnam(VIDEO_RENDERING_TEMP_PATH, 'video-rendering');
+
   $converter = VIDEO_RENDERING_FFMPEG_PATH;
-  $options = preg_replace(array('/%videofile/', '/%convertfile/'), array($videofile, $convfile), variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv  %convertfile.flv'));
+  $options = preg_replace(array('/%videofile/', '/%convertfile/'), array($videofile, $convfile), variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv  -ar 22050 %convertfile.flv'));
 
   $command = "$converter $options";
   
@@ -66,13 +92,12 @@ function video_render_start($job) {
   print $command_output;
   
   if (!file_exists($convfile)) {
-    print 'video conversion failed';
-    // TODO: better error handling
+    watchdog('video_render', t('video conversion failed. ffmpeg reported the following output: ' . $command_output, WATCHDOG_ERROR));
   }
   else {
     // move the video to the definitive location
     $file = array(
-      'filename' => $job->origfile . ".flv",
+      'filename' => basename($job->origfile . ".flv"),
       'filemime' => 'application/octet-stream', // is there something better???
       'filesize' => filesize($convfile),
       'filepath' => $convfile,
@@ -81,20 +106,24 @@ function video_render_start($job) {
 
     $file = ((object) $file);
 
+    print_r($file);
     $dest_dir = variable_get('video_upload_default_path', 'videos') .'/';
 
     //print file_directory_path() . '/' . $dest_dir . basename($file->filename);
-    if (file_move($file, $dest)) {
+    if (file_copy($file, file_directory_path() . '/' . $dest_dir)) {
       $file->fid = db_next_id('{files}_fid');
       print_r($file);
       db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, $job->nid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
       
       db_query("INSERT INTO {file_revisions} (fid, vid, list, description) VALUES (%d, %d, %d, '%s')", $file->fid, $job->vid, $file->list, $file->description);
       
-      db_query('UPDATE {video} SET vidfile = "%s" WHERE nid=%d AND vid=%d', $file->filename, $job->nid, $job->vid);
+      // set vidfile to "" to let video_upload overwrite it with the latest uploaded file
+      db_query('UPDATE {video} SET vidfile = "%s" WHERE nid=%d AND vid=%d', "", $job->nid, $job->vid);
+      
+      
     }
     else {
-      print 'error moving video to the final directory';
+      watchdog('video_render', t('error moving video to the final directory. Check folder permissions.'), WATCHDOG_ERROR);
     }
   }
 }
@@ -104,7 +133,11 @@ function video_render_start($job) {
  * Select a job from the queue
 */
 function video_render_select() {
+
   $result = db_query('SELECT * FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid INNER JOIN {video} v ON n.vid = v.vid WHERE n.nid = v.nid AND vr.nid = n.nid AND vr.status = %d ORDER BY n.created', VIDEO_RENDERING_PENDING);
+  
+  
+  
   
   return db_fetch_object($result);
 }
