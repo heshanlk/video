@@ -83,7 +83,7 @@ function video_ffmpeg_helper_admin_settings() {
   
   $form['video_ffmpeg_helper_ffmpeg_path'] = array(
     '#type' => 'textfield',
-    '#title' => t('Ffmpeg executable path'),
+    '#title' => t('FFmpeg executable path'),
     '#description' => t('Set the full path to the ffmpeg executable here.'),
     '#default_value' => variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg'),
   );
@@ -153,17 +153,52 @@ function video_ffmpeg_helper_admin_settings() {
       '#description' => t('If set up correctly, this will auto-convert each uploaded video to the configured format.') . '<br />' . t("IMPORTANT: you will need the video_render.php correctly configured and run by cron. See README.txt for more informations."),
       '#default_value' => variable_get('video_ffmpeg_helper_auto_conversion', false),
     );
-  $form['autoconv']['video_ffmpeg_helper_auto_converter_options'] = array(
+  $form['autoconv']['video_ffmpeg_helper_auto_converter_width'] = array(
       '#type' => 'textfield',
-      '#title' => t('Video thumbnailer options'),
-      '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ol><li>'.t('%videofile (the video file to convert)').'<li>'.t('%convertfile (a newly created file to store the converted file)').'</ol>',
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv -ar 22050 %convertfile'),
+      '#title' => t('Video rendering width'),
+      '#description' => t('The width of the converted video. The height will be automatically calculated to maintain aspect ratio.'),
+      '#size' => 3,
+      '#maxlength' => 3,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_width', 400),
+    );
+  $form['autoconv']['video_ffmpeg_helper_auto_converter_video_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video bitrate'),
+      '#description' => t('The video bitrate in kbit/s of the converted video.'),
+      '#size' => 3,
+      '#maxlength' => 4,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_video_bitrate', 200),
+    );
+  $form['autoconv']['video_ffmpeg_helper_auto_converter_audio_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Audio bitrate'),
+      '#description' => t('The audio bitrate in kbit/s of the converted video.'),
+      '#size' => 3,
+      '#maxlength' => 4,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_audio_bitrate', 64),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_converter_busy_video_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Busy video path'),
       '#description' => t('Provide the relative path to a video displayed when the video is being rendered.'),
       '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_busy_video_path', 'busy.flv'),
+    );
+  $form['autoconv']['advanced'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Advanced settings'),
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE
+      );
+  $form['autoconv']['advanced']['video_ffmpeg_helper_auto_converter_options'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video converter options'),
+      '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ul>'.
+      '<li>'.t('%videofile (the video file to convert)').
+      '<li>'.t('%convertfile (a newly created file to store the converted file)').
+      '<li>'.t('%size (video resolution of the converted file)').
+      '</ul>'.
+      t('For further informations refer to the !ffmpegdoc', array('!ffmpegdoc' => l(t('Official FFMpeg documentation.'), 'http://ffmpeg.mplayerhq.hu/ffmpeg-doc.html', NULL, NULL, TRUE))),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate %convertfile'),
     );
   return system_settings_form($form);
 }

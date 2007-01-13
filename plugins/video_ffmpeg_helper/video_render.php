@@ -20,8 +20,13 @@ define('VIDEO_RENDERING_FFMPEG_PATH', '/usr/bin/ffmpeg');
 //IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
 define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video'); 
 
+// number of conversion jobs active at the same time
+define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 
-
+/**
+ * video_render.php configuration ends.
+ * DO NOT EDIT BELOW THIS LINE
+*/
 
 /**
  * Define some constants
@@ -56,8 +61,10 @@ else {
 */
 function video_render_main() {
   
-  if($job = video_render_select()) {
-    video_render_start($job);
+  if($jobs = video_render_select()) {
+    foreach ($jobs as $job) {
+      video_render_start($job);
+    }
   }
   else {
     watchdog('video_render', t('no video conversion jobs to schedule.'));
@@ -69,17 +76,10 @@ function video_render_main() {
  * Starts rendering for a job
 */
 function video_render_start($job) {
-  print_r($job);
-  db_query('DELETE FROM {video_rendering} WHERE nid=%d AND vid=%d', $job->nid, $job->vid);
+  // print_r($job);
+  //db_query('DELETE FROM {video_rendering} WHERE nid=%d AND vid=%d', $job->nid, $job->vid);
   
-  // escape file name for safety
-  $videofile = escapeshellarg($job->origfile);
-  $convfile = tempnam(VIDEO_RENDERING_TEMP_PATH, 'video-rendering');
-
-  $converter = VIDEO_RENDERING_FFMPEG_PATH;
-  $options = preg_replace(array('/%videofile/', '/%convertfile/'), array($videofile, $convfile), variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv  -ar 22050 %convertfile.flv'));
-
-  $command = "$converter $options";
+  $command = _video_render_get_command($job);
   
   print('executing ' . $command);
   
@@ -91,7 +91,7 @@ function video_render_start($job) {
   
   print $command_output;
   
-  if (!file_exists($convfile)) {
+  if (!file_exists($job->convfile)) {
     watchdog('video_render', t('video conversion failed. ffmpeg reported the following output: ' . $command_output, WATCHDOG_ERROR));
   }
   else {
@@ -99,8 +99,8 @@ function video_render_start($job) {
     $file = array(
       'filename' => basename($job->origfile . ".flv"),
       'filemime' => 'application/octet-stream', // is there something better???
-      'filesize' => filesize($convfile),
-      'filepath' => $convfile,
+      'filesize' => filesize($job->convfile),
+      'filepath' => $job->convfile,
       'nid' => $job->nid,
       );
 
@@ -109,7 +109,6 @@ function video_render_start($job) {
     print_r($file);
     $dest_dir = variable_get('video_upload_default_path', 'videos') .'/';
 
-    //print file_directory_path() . '/' . $dest_dir . basename($file->filename);
     if (file_copy($file, file_directory_path() . '/' . $dest_dir)) {
       $file->fid = db_next_id('{files}_fid');
       print_r($file);
@@ -130,14 +129,63 @@ function video_render_start($job) {
 
 
 /**
- * Select a job from the queue
+ * Select VIDEO_RENDERING_FFMPEG_INSTANCES jobs from the queue
+ *
+ * @return an array containing jobs
 */
 function video_render_select() {
 
   $result = db_query('SELECT * FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid INNER JOIN {video} v ON n.vid = v.vid WHERE n.nid = v.nid AND vr.nid = n.nid AND vr.status = %d ORDER BY n.created', VIDEO_RENDERING_PENDING);
   
+  // TODO: order jobs by priority
   
+  $jobs = array();
+  $i = 0;
+  $count = db_num_rows($result);
+  while($i < $count && $i < VIDEO_RENDERING_FFMPEG_INSTANCES) {
+    $jobs[] = db_fetch_object($result);
+    $i++;
+  }
   
-  
-  return db_fetch_object($result);
+  return $jobs;
 }
+
+
+/**
+ * Get a string cointaining the command to be executed including options
+*/
+function _video_render_get_command(&$job) {
+
+  $videofile = escapeshellarg($job->origfile); // escape file name for safety
+  $convfile = tempnam(VIDEO_RENDERING_TEMP_PATH, 'video-rendering');
+  $audiobitrate = variable_get('video_ffmpeg_helper_auto_converter_audio_bitrate', 64);
+  $videobitrate = variable_get('video_ffmpeg_helper_auto_converter_video_bitrate', 200);
+  $size = _video_render_get_size($job);
+  
+
+  $converter = VIDEO_RENDERING_FFMPEG_PATH;
+  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'), array($videofile, $convfile, $audiobitrate, $size, $videobitrate), variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate %convertfile'));
+  
+  // set to the converted file output
+  $job->convfile = $convfile;
+  
+  return "$converter $options";
+}
+
+
+
+/**
+ * Calculate the converted video size basing on the width set on administration.
+ * Aspect ration is maintained.
+*/
+function _video_render_get_size(&$job) {
+  $def_width = variable_get('video_ffmpeg_helper_auto_converter_width', 400);
+  $x = $job->videox;
+  $y = $job->videoy;
+
+  $height = $def_width * ($y / $x); // do you remember proportions?? :-)
+  return $def_width . 'x' . $height;
+}
+
+
+?>
