@@ -14,13 +14,22 @@
 Drupal.video_upload_hide = function () {
   $('#node-form').hide();
   $("#sending").show();
+  $("#video_upload_cancel_link").click(Drupal.video_upload_show);
+}
+
+Drupal.video_upload_show = function() {
+  $('#node-form').show();
+  $("#sending").hide();
+  
+  //$("form").bind("submit", function() { return false; })
+  window.location = window.location;
 }
 
 /**
  * Attaches the upload behaviour to the video upload form.
  */
 Drupal.video_upload = function() {
-  $('#node-form').submit(video_upload_hide);
+  $('#node-form').submit(Drupal.video_upload_hide);
 }
 
 // Global killswitch
