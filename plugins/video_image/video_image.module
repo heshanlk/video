@@ -109,8 +109,8 @@ function video_image_nodeapi(&$node, $op, $teaser) {
         $image->name = $node->name;
         $image->created = $node->created;
         $image->type = 'image';
-        $image->status = _video_image_publish_thumbnails();
-        $image->promote = _video_image_promote_thumbnails();
+        //$image->status = _video_image_publish_thumbnails();
+        //$image->promote = _video_image_promote_thumbnails();
         if (!$field_name && module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_thumbnail', false)) {
           $image->title = $_SESSION['video_upload_file']->filename;
           $field_name = _video_ffmpeg_helper_auto_thumbnail($node);
@@ -125,6 +125,10 @@ function video_image_nodeapi(&$node, $op, $teaser) {
           if (!form_get_errors()) {
             $image = node_submit($image);
             node_save($image);
+            
+            // needed to set the correct status and promote values if the user does not have enought permissions. Is there a better solution???
+            db_query('UPDATE {node} SET status = %d, promote = %d WHERE nid = %d AND vid = %d', _video_image_publish_thumbnails(), _video_image_promote_thumbnails(), $image->nid, $image->vid); 
+            
             $node->iid = $node->serial_data['iid'] = $image->nid;
             $_SESSION['video_upload_file']->iid = $image->nid;
             $node->new_image = TRUE;

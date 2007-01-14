@@ -119,6 +119,9 @@ function video_render_main() {
       db_query('UPDATE {video} SET vidfile = "%s", videox = %d, videoy = %d WHERE nid=%d AND vid=%d', "", $job->calculatedx, $job->calculatedy, $job->nid, $job->vid);
       
       _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_COMPLETE);
+      
+      // delete the vile
+      unlink($job->convfile);
     }
     else {
       watchdog('video_scheduler', t('error moving video to the final directory. Check folder permissions.'), WATCHDOG_ERROR);
