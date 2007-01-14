@@ -133,6 +133,8 @@ function video_upload_nodeapi(&$node, $op, $teaser) {
 function video_upload_form_alter($form_id, &$form) {
 
   if($form_id == 'video_node_form' && isset($form['video']) && user_access('upload video files')) {
+    
+    theme('video_upload_get_script');
 
     //get node object from form
     $node = $form['#node'];
@@ -352,3 +354,15 @@ function _video_upload_check_settings() {
 
   return true;
 }
+
+
+
+/**
+ * Import the video_upload.js script
+ */
+function theme_video_upload_get_script() {
+  drupal_add_js(drupal_get_path('module', 'video_upload') . '/video_upload.js');
+}
+
+
+

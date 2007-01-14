@@ -1412,7 +1412,7 @@ function theme_video_fields($fields) {
  * Import the video.js script
  */
 function theme_video_get_script() {
-  drupal_set_html_head('<script defer="defer" type="text/javascript" src="'. check_url(base_path() . drupal_get_path('module', 'video')) . '/video.js"></script>');
+  drupal_set_html_head('<script type="text/javascript" src="'. check_url(base_path() . drupal_get_path('module', 'video')) . '/video.js"></script>');
 }
 
 /******************************************************************************
