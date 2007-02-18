@@ -654,17 +654,6 @@ function video_delete($node) {
  *   object
  */
 function video_validate($node) {
-  if (isset($node->vidfile)) {
-    if ($node->vidfile != '') {
-      //let's see if we have it yet
-      $result = db_query("SELECT * from {video} WHERE vidfile = '%s' and nid <> %d", $node->vidfile, $node->nid);
-      if (db_num_rows($result) > 0) {
-        $video = db_fetch_object($result);
-        $othernode = node_load($video->nid);
-        form_set_error('vidfile', t('A video %link-to-existing using that link already exists', array("%link-to-existing" => l($othernode->title, 'node/' . $othernode->nid . '/edit'))));
-      }
-    }
-  }
   if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') { //If video is of type youtube don't check size.
     if (isset($node->videox) && $node->videox <= 0) {
       form_set_error('videox', t('You have to insert a valid horizontal pixel size for this video'));
