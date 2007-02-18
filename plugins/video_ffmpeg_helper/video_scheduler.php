@@ -31,7 +31,7 @@ define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 /**
  * Define some constants
 */
-define('VIDEO_RENDERING_PENGING', 0);
+define('VIDEO_RENDERING_PENDING', 0);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
 

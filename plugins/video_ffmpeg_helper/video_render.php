@@ -36,7 +36,7 @@ define('VIDEO_RENDERING_NICE', 'nice -n 19');
 /**
  * Define some constants
 */
-define('VIDEO_RENDERING_PENGING', 0);
+define('VIDEO_RENDERING_PENDING', 0);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
 
@@ -137,13 +137,13 @@ function _video_render_get_command(&$job) {
 
   $videofile = escapeshellarg($job->origfile); // escape file name for safety
   $convfile = tempnam(VIDEO_RENDERING_TEMP_PATH, 'video-rendering');
-  $audiobitrate = variable_get('video_ffmpeg_helper_auto_converter_audio_bitrate', 64);
-  $videobitrate = variable_get('video_ffmpeg_helper_auto_converter_video_bitrate', 200);
+  $audiobitrate = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64);
+  $videobitrate = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200);
   $size = _video_render_get_size($job);
   
 
   $converter = VIDEO_RENDERING_FFMPEG_PATH;
-  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'), array($videofile, $convfile, $audiobitrate, $size, $videobitrate), variable_get('video_ffmpeg_helper_auto_converter_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate %convertfile'));
+  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'), array($videofile, $convfile, $audiobitrate, $size, $videobitrate), variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate %convertfile'));
   
   // set to the converted file output
   $job->convfile = $convfile;
@@ -158,7 +158,7 @@ function _video_render_get_command(&$job) {
  * Aspect ration is maintained.
 */
 function _video_render_get_size(&$job) {
-  $def_width = variable_get('video_ffmpeg_helper_auto_converter_width', 400);
+  $def_width = variable_get('video_ffmpeg_helper_auto_cvr_width', 400);
 
   $height = $def_width * ($job->videoy / $job->videox); // do you remember proportions?? :-)
   
