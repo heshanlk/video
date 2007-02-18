@@ -195,15 +195,16 @@ function theme_video_image_teaser($node) {
  *   string of content to display
  */
 function theme_video_image_body($node) {
-  if($node->serial_data['iid']) {
-    $image = node_load($node->serial_data['iid']);
-    $image = image_display($image, 'thumbnail');
+  if(variable_get('video_playinbody', 0) == 0){
+    if($node->serial_data['iid']) {
+      $image = node_load($node->serial_data['iid']);
+      $image = image_display($image, 'thumbnail');
+    }
+    else { // only for backward compatibility
+      $image = theme('image', $node->serial_data['image_view'], $node->title, $node->title, array('class' => 'video_image_view'), FALSE); //Create image HTML
+    }
+    $output = l($image, "node/$node->nid/play", array('title' => t('play') . ' ' . $node->title), NULL, NULL, FALSE, TRUE); //Create link HTML with image in it.
   }
-  else { // only for backward compatibility
-    $image = theme('image', $node->serial_data['image_view'], $node->title, $node->title, array('class' => 'video_image_view'), FALSE); //Create image HTML
-  }
-  $output = l($image, "node/$node->nid/play", array('title' => t('play') . ' ' . $node->title), NULL, NULL, FALSE, TRUE); //Create link HTML with image in it.
-
   return $output;
 }
 
