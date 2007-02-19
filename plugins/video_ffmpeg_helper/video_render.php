@@ -161,10 +161,17 @@ function _video_render_get_size(&$job) {
   $def_width = variable_get('video_ffmpeg_helper_auto_cvr_width', 400);
 
   $height = $def_width * ($job->videoy / $job->videox); // do you remember proportions?? :-)
-  
+
+    
+  $height = round($height);
+  // add one if odd
+  if($height % 2) {
+    $height++;
+  }
+
   $job->calculatedx = $def_width;
   $job->calculatedy = $height;
-  
+
   return $def_width . 'x' . $height;
 }
 
