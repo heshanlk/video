@@ -1326,7 +1326,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 </object>';
 
 
-  $output = _theme_video_format_play($output, t('http://www.youtube.com/t/help_center'), t('Link to youtube.com'), t('youtube.com'));
+  $output = _theme_video_format_play($output, t('http://www.google.com/support/youtube'), t('Link to youtube.com'), t('youtube.com'));
   return $output;
 }
 
