@@ -73,6 +73,7 @@ function video_help($section = 'admin/help#video') {
  *   array of menu information
  */
 function video_menu($may_cache) {
+  global $user;
   $items = array();
   if ($may_cache) {
     $items[] = array(
@@ -113,7 +114,7 @@ function video_menu($may_cache) {
         $items[] = array('path' => 'node/'. arg(1) .'/play',
           'title' => t('play'),
           'callback' => 'video_play',
-          'access' => user_access('play video'),
+          'access' => user_access('play video') && node_access('view', $node, $user->uid),
           'weight' => 3,
           'type' => $menu_type);
 
@@ -128,7 +129,7 @@ function video_menu($may_cache) {
           $items[] = array('path' => 'node/'.arg(1).'/download',
             'title' => t('download'),
             'callback' => 'video_download',
-            'access' => user_access('access video'),
+            'access' => user_access('access video') && node_access('view', $node, $user->uid),
             'weight' => 5,
             'type' => $menu_type);
         }
@@ -405,13 +406,11 @@ function video_node_info() {
 function video_access($op, $node) {
   global $user;
 
-  switch($op) {
-    case 'view':
-      return $node->status;   // see book.module for reference
-    case 'create':
+  if ($op == 'create') {
       return user_access('create video');
-    case 'update':
-    case 'delete':
+  }
+
+  if ($op == 'update' || $op == 'delete') {
       return user_access('edit own video') && ($user->uid == $node->uid);
   }
 }
