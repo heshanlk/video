@@ -63,6 +63,20 @@ function video_views_tables() {
          'help' => t('This will display the height (y) of the video'),
        ),
     ),
+    'sorts' => array(
+      'play_counter' => array(
+        'name' => t('Video: Play count'),
+        'help' => t('Sort by the number of video plays.'),
+       ),
+      'download_counter' => array(
+        'name' => t('Video: Download count'),
+        'help' => t('Sort by the number of video downloads.'),
+       ),
+      'playtime_seconds' => array(
+        'name' => t('Video: Length'),
+        'help' => t('Sort by the video length.'),
+      )
+    )
   );
 
   // Add video_image support only if the video_image module is enabled
