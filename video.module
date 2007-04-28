@@ -965,6 +965,7 @@ function theme_video_player($node) {
     case 'dir':
     case 'dcr':
       return theme('video_play_dcr', $node);
+    case 'asf':
     case 'wmv':
       return theme('video_play_windowsmedia', $node);
     case 'ogg':
@@ -1646,6 +1647,8 @@ function _video_get_mime_type($node) {
       return 'application/vnd.rn-realmedia';
     case 'flv':
       return 'flv-application/octet-stream';
+    case 'asf':
+      return 'video/x-ms-asf';
     case 'wmv':
       return 'video/x-ms-wmv';
     case '3gp':

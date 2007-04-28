@@ -5,7 +5,7 @@ FILE TYPE INFORMATIONS
 
 Video.module for Drupal 4.7 supports multiple video formats.
 
-.mov, .wmv, .rm, .3gp, .mp4, .swf, .dir, .dcr
+.mov, .wmv, .asf, .rm, .3gp, .mp4, .swf, .dir, .dcr
   These files type are supported out the box.
   To play these file types you need to enter in the path to the file.
   If your video is on the same webserver as drupal, you can use a path relative
