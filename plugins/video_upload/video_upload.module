@@ -370,7 +370,7 @@ function theme_video_upload_get_script() {
 function theme_video_upload_busy() {
   return '<div id="sending" style="display: none;">
 				 <h3>' . t('Sending video... please wait.') . '</h3>
-						<img src="'url() . drupal_get_path('module', 'video_upload') . '/busy.gif" alt="' . t('Sending video... please wait.') . '"/>
+						<img src="'. url() . drupal_get_path('module', 'video_upload') . '/busy.gif" alt="' . t('Sending video... please wait.') . '"/>
             <p>'. t('Video upload could take some minutes.') . '<br /><a href="#" id="video_upload_cancel_link">abort upload.</a></p>
 						</div>';
 }
