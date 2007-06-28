@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Video module 5.x\n"
 "POT-Creation-Date: 2007-06-27 16:16+0000\n"
-"PO-Revision-Date: 2007-06-28 12:57-0500\n"
+"PO-Revision-Date: 2007-06-28 13:07-0500\n"
 "Last-Translator: Pierre-Etienne Paradis <mediameriquat@hotmail.com>\n"
 "Language-Team: Koumbit <peparadis@koumbit.org>\n"
 "MIME-Version: 1.0\n"
@@ -266,11 +266,11 @@ msgstr "Configurer les différents aspects du module Vidéo et de ses extensions
 #: video.module:115;182
 #: plugins/video_image/video_image.module:206
 msgid "play"
-msgstr "visionner"
+msgstr "Visionner"
 
 #: video.module:130;205
 msgid "download"
-msgstr "télécharger"
+msgstr "Télécharger"
 
 #: video.module:186
 msgid "play %link"
@@ -318,11 +318,11 @@ msgstr "Visionner dans le noeud"
 
 #: video.module:315
 msgid "Toggle display of video in the body of the node."
-msgstr "Option permettant d'afficher ou non le vidéo dans le corps des noeuds."
+msgstr "Option permettant de visionner ou non le vidéo directement dans le corps des noeuds."
 
 #: video.module:318
 msgid "Display play menu tab"
-msgstr "Afficher l'onglet Visionnement"
+msgstr "Afficher l'onglet Visionner"
 
 #: video.module:321
 msgid "Toggle display of menu link to play video from the node page. If you have chosen to display the video in the body of the node, then this is redundant and must be set to \"No.\""
@@ -330,7 +330,7 @@ msgstr "Option permettant d'afficher ou non l'onglet de lecture du vidéo. Si vo
 
 #: video.module:324
 msgid "Display download menu tab"
-msgstr "Afficher l'onglet Téléchargement"
+msgstr "Afficher l'onglet Télécharger"
 
 #: video.module:327
 msgid "Toggle display of menu link to download video from the node page."
@@ -415,7 +415,7 @@ msgstr "Pour permettre aux usagers de voir les statistiques des compteurs, confi
 #: video.module:372
 #: plugins/video_multidownload/video_multidownload.module:88
 msgid "access control"
-msgstr "Contrôle d'accès."
+msgstr "contrôle d'accès."
 
 #: video.module:375
 msgid "Count play hits"
@@ -1212,7 +1212,7 @@ msgstr "Fichiers multiples dans l'onglet de téléchargement"
 
 #: plugins/video_multidownload/video_multidownload.module:115
 msgid "These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. "
-msgstr "Les options suivantes vous permettent d'afficher plusieurs fichiers dans la page de téléchargement. Ceci rend possible l'accès à plusieurs tailles et formats d'un même vidéo, par exemple."
+msgstr "Les options suivantes vous permettent d'afficher plusieurs fichiers dans la page de téléchargement. Ceci rend possible l'accès à plusieurs tailles et formats d'un même vidéo, par exemple. "
 
 #: plugins/video_multidownload/video_multidownload.module:121
 msgid "Disables multi-file downloads for this video only."
