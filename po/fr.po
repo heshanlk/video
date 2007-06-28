@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Video module 5.x\n"
 "POT-Creation-Date: 2007-06-27 16:16+0000\n"
-"PO-Revision-Date: 2007-06-28 13:07-0500\n"
+"PO-Revision-Date: 2007-06-28 13:27-0500\n"
 "Last-Translator: Pierre-Etienne Paradis <mediameriquat@hotmail.com>\n"
 "Language-Team: Koumbit <peparadis@koumbit.org>\n"
 "MIME-Version: 1.0\n"
@@ -237,7 +237,7 @@ msgstr "Cette option vous permet de spécifier un répertoire du serveur local c
 #: video.module:61
 #: plugins/video_multidownload/video_multidownload.module:131
 msgid "Show files in \"play\" folder"
-msgstr "Afficher les fichiers dans le dossier Visionner"
+msgstr "Afficher les fichiers dans la page Visionnement"
 
 #: video.module:61
 msgid "This option will list all the files in the same folder is the \"play\" file listed in the \"Video File\" field above. You can use this option in addition to the download folder to list the videos in both folders."
@@ -488,7 +488,7 @@ msgstr "Taille"
 
 #: video.module:509
 msgid "If the video is on the local server the size will be set automatically. Otherwise enter a value. Entering 0 will turn the display off. Must be less than 2GB."
-msgstr "Si le fichier vidéo réside sur le serveur local, la taille sera ajustée automatiquement. Sinon, entrez une valeur (qui doit être inférieure à 2 Go). Si vous entrez le chiffre 0, l'affichage de la taille sera désactivé."
+msgstr "Si le fichier vidéo réside sur le serveur local, la taille sera ajustée automatiquement. Sinon, entrez une valeur (qui doit être inférieure à 2 Go). Si vous entrez le nombre 0, l'affichage de la taille sera désactivé."
 
 #: video.module:512
 msgid "size units"
@@ -1092,7 +1092,7 @@ msgstr "Pour plus de détails, veuillez vous référer à la !ffmpegdoc"
 
 #: plugins/video_ffmpeg_helper/video_ffmpeg_helper.module:200
 msgid "Official FFMpeg documentation."
-msgstr "Documentation officielle FFmpeg."
+msgstr "documentation officielle FFmpeg."
 
 #: plugins/video_ffmpeg_helper/video_ffmpeg_helper.module:370
 msgid "no video has been uploaded: make sure that video_image weight is greater than video_upload weight; make sure that the video file is not too large to be uploaded."
@@ -1224,7 +1224,7 @@ msgstr "Entrez le chemin du dossier contenant vos vidéos. Celui-ci doit être r
 
 #: plugins/video_multidownload/video_multidownload.module:133
 msgid "Display videos in the same directory as the \"play\" video. If folder above is entered this will be in addition."
-msgstr "Afficher les vidéos sous l'onglet Visionner au même titre que le vidéo principal. Si un répertoire de téléchargement multiple a été entré, les fichiers n'en seront que plus disponibles."
+msgstr "Afficher les vidéos dans la page Visionnement au même titre que le vidéo principal. Si un répertoire de téléchargement multiple a été spécifié, les fichiers n'en seront que plus faciles d'accès."
 
 #: plugins/video_multidownload/video_multidownload.module:150
 msgid "Please disable multi-file downloads if you are not going to use the feature."
@@ -1436,7 +1436,7 @@ msgstr "Permet le téléversement de fichiers vidéo dans le module Vidéo."
 
 #: plugins/video_upload/video_upload.module:31
 msgid "Upload"
-msgstr "Téléverser"
+msgstr "Téléversement"
 
 #: plugins/video_upload/video_upload.module:32
 msgid "Administer video_upload module settings"
@@ -1444,7 +1444,7 @@ msgstr "Administrer les paramètres du module video_upload"
 
 #: plugins/video_upload/video_upload.module:58
 msgid "override video file"
-msgstr "passer outre le fichier vidéo"
+msgstr "Ignorer le chemin du fichier vidéo"
 
 #: plugins/video_upload/video_upload.module:59
 msgid "Check this if your users must only submit videos through uploading. This disables path insertion."
@@ -1452,7 +1452,7 @@ msgstr "Cochez cette case si vous voulez que les utilisateurs ne puissent soumet
 
 #: plugins/video_upload/video_upload.module:157
 msgid "If you want to upload a video simply ignore this field and select your video file at the \"Upload video file\" field."
-msgstr "Si vous voulez ajouter un vidéo, ignorez ce champ et entrez votre vidéo dans le champ «&nbsp;Téléverser un fichier vidéo&nbsp;»."
+msgstr "Si vous voulez ajouter un vidéo, ignorez ce champ et entrez votre vidéo dans le champ «&nbsp;Téléverser un vidéo&nbsp;»."
 
 #: plugins/video_upload/video_upload.module:160
 msgid "Upload video"
