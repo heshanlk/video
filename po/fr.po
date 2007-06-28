@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Video module 5.x\n"
 "POT-Creation-Date: 2007-06-27 16:16+0000\n"
-"PO-Revision-Date: 2007-06-27 19:55-0500\n"
+"PO-Revision-Date: 2007-06-28 12:57-0500\n"
 "Last-Translator: Pierre-Etienne Paradis <mediameriquat@hotmail.com>\n"
 "Language-Team: Koumbit <peparadis@koumbit.org>\n"
 "MIME-Version: 1.0\n"
@@ -127,7 +127,7 @@ msgstr "Télécharger"
 
 #: views_video.inc:179
 msgid "Play"
-msgstr "Lire le fichier"
+msgstr "Visionner"
 
 #: video.module:30
 msgid "The video module (4.7 or with backport patch to 4.6) allows users to post video content to their site. The emergence of portable phones with video capture capabilities has made video capture ubiquitous. Video logging, or <a href=\"%elink-en-wikipedia-org\">vlogging</a> as a medium for personal video broadcasting has proven to be popular and is following the blogging, and podcasting phenomena's. Videos are useful for creative collaboration among community members. If community members can not meet in person videos of meetings are valuable for enhancing the interaction between community members."
@@ -314,7 +314,7 @@ msgstr "Options des onglets"
 
 #: video.module:312
 msgid "Play in node"
-msgstr "Lire dans le noeud"
+msgstr "Visionner dans le noeud"
 
 #: video.module:315
 msgid "Toggle display of video in the body of the node."
@@ -322,19 +322,19 @@ msgstr "Option permettant d'afficher ou non le vidéo dans le corps des noeuds."
 
 #: video.module:318
 msgid "Display play menu tab"
-msgstr "Afficher l'onglet de lecture"
+msgstr "Afficher l'onglet Visionnement"
 
 #: video.module:321
 msgid "Toggle display of menu link to play video from the node page. If you have chosen to display the video in the body of the node, then this is redundant and must be set to \"No.\""
-msgstr "Option permettant d'afficher ou non l'onglet de lecture du vidéo. Si vous avez choisi d'afficher le vidéo directement dans le corps du noeud, cette option est inutile et il vaut mieux ne pas la sélectionner."
+msgstr "Option permettant d'afficher ou non l'onglet de lecture du vidéo. Si vous avez choisi de visionner le vidéo directement dans le corps du noeud, cette option est inutile et il vaut mieux ne pas la sélectionner."
 
 #: video.module:324
 msgid "Display download menu tab"
-msgstr "Afficher l'onglet de téléchargement"
+msgstr "Afficher l'onglet Téléchargement"
 
 #: video.module:327
 msgid "Toggle display of menu link to download video from the node page."
-msgstr "Option permettant d'afficher ou non le lien de téléchargement dans le noeud."
+msgstr "Option permettant d'afficher ou non l'onglet Télécharger dans le noeud."
 
 #: video.module:329
 msgid "Flash settings"
@@ -342,11 +342,11 @@ msgstr "Paramètres Flash"
 
 #: video.module:332
 msgid "Filename of Flash loader"
-msgstr "Nom du fichier de l'application Flash"
+msgstr "Chemin de l'application FlowPlayer"
 
 #: video.module:334
 msgid "The name of the Shockwave file that manages loading the FLV movie."
-msgstr "Le nom du fichier Shockwave permettant de lire les vidéos de type FLV."
+msgstr "Le chemin du fichier Flash permettant de lire les vidéos de type FLV."
 
 #: video.module:337
 msgid "Fullscreen URL to use with FlowPlayer"
@@ -354,7 +354,7 @@ msgstr "URL plein écran à utiliser avec FlowPlayer"
 
 #: video.module:339
 msgid "The URL that takes care of the fullscreen display."
-msgstr "L'URL prenant en charge l'affichage en mode plein écran."
+msgstr "L'URL absolue prenant en charge l'affichage en mode plein écran."
 
 #: video.module:340
 msgid "Ogg Theora settings"
@@ -410,16 +410,16 @@ msgstr "Compteurs statistiques"
 
 #: video.module:372
 msgid "To allow users to view counters visit: "
-msgstr "Pour permettre aux usagers de voir les statistiques des compteurs, réglez le"
+msgstr "Pour permettre aux usagers de voir les statistiques des compteurs, configurez le "
 
 #: video.module:372
 #: plugins/video_multidownload/video_multidownload.module:88
 msgid "access control"
-msgstr "Contrôle d'accès"
+msgstr "Contrôle d'accès."
 
 #: video.module:375
 msgid "Count play hits"
-msgstr "Compter le nombre de lectures"
+msgstr "Compter le nombre de visionnements"
 
 #: video.module:378
 msgid "Counts a hit everytime someone views the play page."
@@ -455,7 +455,7 @@ msgstr "Fichier vidéo"
 
 #: video.module:483
 msgid "Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). To add Google videos you will need the docId values available on the embed code google provide with \"google:\" as heading. "
-msgstr "Insérez le chemin du fichier vidéo ici. Vous pouvez utiliser le chemin relatif à la racine du site Drupal (exemple : fichers/video.mov) ou l'adresse absolue (comme http://www.exemple.fr/videos/videos.mov). L'application Windows Media requiert présentement une URL entière pour fonctionner. Les vidéos Flash risquent par ailleurs de ne pas se charger si le chemin ou le nom du fichier contiennent des espaces. Pour insérer des vidéos YouTube, entrez l'identifiant fourni pour ce vidéo. Par exemple, si l'URL de votre vidéo est (http://www.youtube.com/watch.php?v=aBM4QYXPf-s), vous pouvez entrer le suffixe (aBM4QYXPf-s). Pour ajouter des vidéos Google, vous devrez entrer les paramètres docId disponibles dans le code dont l'en-tête commence par «google:»."
+msgstr "Insérez le chemin du fichier vidéo ici. Vous pouvez utiliser le chemin relatif à la racine du site Drupal (exemple : fichers/video.mov) ou l'adresse absolue (comme http://www.exemple.fr/videos/videos.mov). L'application Windows Media requiert présentement une URL entière pour fonctionner. Les vidéos Flash risquent par ailleurs de ne pas se charger si le chemin ou le nom du fichier contiennent des espaces. Pour insérer des vidéos YouTube, entrez l'identifiant fourni pour ce vidéo. Par exemple, si l'URL de votre vidéo est (http://www.youtube.com/watch.php?v=aBM4QYXPf-s), vous pouvez entrer le suffixe (aBM4QYXPf-s). Pour ajouter des vidéos Google, vous devrez entrer les paramètres docId disponibles dans le code dont l'en-tête commence par «google:». "
 
 #: video.module:483
 #: plugins/video_multidownload/video_multidownload.module:115
@@ -556,11 +556,11 @@ msgstr "Nombre de secondes"
 
 #: video.module:563
 msgid "You cannot have the play link turned on if you are playing videos in the node body."
-msgstr "Vous ne pouvez activer le lien « Lire le fichier » si vous avez choisi de faire jouer directement le vidéo dans le corps du noeud."
+msgstr "Vous ne pouvez activer le lien Visionner si vous avez choisi de faire jouer directement le vidéo dans le corps du noeud."
 
 #: video.module:566
 msgid "You cannot have the play tab turned on if you are playing videos in the node body."
-msgstr "Vous ne pouvez activer l'onglet « Lire le fichier » si vous avez choisi de faire jouer directement le vidéo dans le corps du noeud."
+msgstr "Vous ne pouvez activer l'onglet Visionner si vous avez choisi de faire jouer directement le vidéo dans le corps du noeud."
 
 #: video.module:570
 msgid "You have NOT selected a method to display videos. Please choose at least one play option below. If you only want users to download videos, you can ignore this message, but usually you will want at least one option turned on. The current possible options are: Display play link, Display in node, and Display play menu tab."
@@ -616,7 +616,7 @@ msgstr "Il n'y a pas eu de téléchargement de ce vidéo."
 
 #: video.module:889;951
 msgid "Playing"
-msgstr "Lecture en cours"
+msgstr "Visionnement de"
 
 #: video.module:1039;1077;1116;1191;1252;1297;1339;1387
 msgid "Your browser is not able to display this multimedia content."
@@ -712,7 +712,7 @@ msgstr "Lien vers YouTube.com"
 
 #: video.module:1343
 msgid "youtube.com"
-msgstr "youtube.com"
+msgstr "Aide de youtube.com"
 
 #: video.module:1391
 msgid "http://video.google.com/support"
@@ -740,7 +740,7 @@ msgstr "Téléchargez Java"
 
 #: video.module:1467
 msgid "Problems viewing videos?"
-msgstr "Vous éprouvez des problèmes de visionnement?"
+msgstr "Vous éprouvez des problèmes de visionnement&nbsp;?"
 
 #: video.module:1557
 #: plugins/video_multidownload/video_multidownload.module:357
@@ -773,7 +773,7 @@ msgstr "administrer les vidéos"
 
 #: video.module:289
 msgid "play video"
-msgstr "lire les fichiers vidéo"
+msgstr "visionner les vidéos"
 
 #: video.module:289
 msgid "download video"
@@ -853,7 +853,7 @@ msgstr "Groupe de départ replié par défaut"
 
 #: plugins/video_customfields/video_customfields.module:107
 msgid "Should the custom fields group be initially collapsed when creating and editing video nodes?"
-msgstr "Est-ce que le groupe de champs optionnels doit être replié par défaut, dans la page de publication de noeuds vidéo?"
+msgstr "Est-ce que le groupe de champs personnalisés doit être replié par défaut, dans la page de publication de noeuds vidéo?"
 
 #: plugins/video_customfields/video_customfields.module:27
 msgid "insert custom fields"
@@ -996,7 +996,7 @@ msgstr "%thumbfile (le nouveau fichier temporaire écrasé par la vignette)"
 
 #: plugins/video_ffmpeg_helper/video_ffmpeg_helper.module:128
 msgid "%seek (seconds to seek into video before extracting image)."
-msgstr "%seek (le nombre de secondes de recherche dans le vidéo avant d'en extraire une image)."
+msgstr "%seek (le temps de recherche en secondes dans le fichier vidéo pour générer la vignette)."
 
 #: plugins/video_ffmpeg_helper/video_ffmpeg_helper.module:128
 msgid "Only the first two are mandatory.  For example, older versions of ffmpeg should use something like: !old While newer versions should use something like: !new"
@@ -1168,7 +1168,7 @@ msgstr "video_image"
 
 #: plugins/video_multidownload/video_multidownload.module:18
 msgid "Enable multiple file download in video module."
-msgstr "Permet le téléchargement de fichiers multiples dans le module Vidéo."
+msgstr "Permettre le téléchargement de fichiers multiples dans le module Vidéo."
 
 #: plugins/video_multidownload/video_multidownload.module:37
 msgid "Multidownload"
@@ -1188,7 +1188,7 @@ msgstr "Options de téléchargement de fichiers multiples"
 
 #: plugins/video_multidownload/video_multidownload.module:82
 msgid "Allows a list of files to be shown on the download page. The list is usually gotten from a specified folder. This ability is useful for providing different sizes and video types for download."
-msgstr "Permet à une liste de fichiers d'être affichée dans la page de téléchargement. La liste est généralement dressée à partir d'un dossier spécifique. Cette fonctionnalité est pratique dans le cas où vous souhaitez rendre disponible une variété de tailles et de formats."
+msgstr "Cette fonctionnalité permet à une liste de fichiers d'être affichée dans la page de téléchargement. La liste est généralement dressée à partir d'un dossier spécifique. Cette fonctionnalité est pratique dans le cas où vous souhaitez rendre disponible une variété de tailles et de formats."
 
 #: plugins/video_multidownload/video_multidownload.module:85
 msgid "Allow Multi-file Downloads"
@@ -1196,7 +1196,7 @@ msgstr "Permet le téléchargement de fichiers multiples"
 
 #: plugins/video_multidownload/video_multidownload.module:88
 msgid "This feature can be disabled separately for each node. If turned on make sure you set the permissions so users can use this feature."
-msgstr "Cette fonctionnalité peut être désactivée séparément dans chaque noeud. Mais si vous décidez de l'activer, assurez-vous d'avoir bien configurer les droits d'accès de manière à ce que le public en bénéficier."
+msgstr "Cette fonctionnalité peut être désactivée séparément dans chaque noeud. Mais si vous décidez de l'activer, assurez-vous d'avoir bien configurer les droits d'accès de manière à ce que le public puisse en bénéficier."
 
 #: plugins/video_multidownload/video_multidownload.module:91
 msgid "File extensions to show"
@@ -1204,7 +1204,7 @@ msgstr "Extensions à afficher"
 
 #: plugins/video_multidownload/video_multidownload.module:93
 msgid "The extensions of files to list from the multi-file download folder on the download page. Extensions should be comma seperated with no spaces, for example (mov,wmv,rm)."
-msgstr "Les extensions de fichier devant être affichées dans le dossier de téléchargement de fichiers multiples de la page de téléchargement. Les extensions doivent être séparées par des virgules, sans espace. Exemple : (mov,wmv,rm)."
+msgstr "Les extensions de fichier qui seront affichées dans le dossier de téléchargement de fichiers multiples de la page de téléchargement. Les extensions doivent être séparées par des virgules, sans espace. Exemple : (mov,wmv,rm)."
 
 #: plugins/video_multidownload/video_multidownload.module:111
 msgid "Multiple files in download tab"
@@ -1220,7 +1220,7 @@ msgstr "Cette option désactive le téléchargement de fichiers multiples pour c
 
 #: plugins/video_multidownload/video_multidownload.module:128
 msgid "Enter the folder containing your videos. It must be relative from the drupal directory. If the absolute path is \"C:\\inetpub\\drupal\\videos\\projectfolder\\\" or \"/usr/htdocs/drupal/videos/projectfolder/\" then enter something like \"videos/projectfolder/\"."
-msgstr "Entrez le chemin du dossier contenant vos vidéos. Celui-ci doit être relatif à la racine de votre site Drupal. Si le chemin absolu est \"C:\\inetpub\\drupal\\videos\\projectfolder\\\" ou \"/usr/htdocs/drupal/videos/projectfolder/\"alors entrez quelque chose comme \"videos/projectfolder/\"."
+msgstr "Entrez le chemin du dossier contenant vos vidéos. Celui-ci doit être relatif à la racine de votre site Drupal. Si le chemin absolu est \"C:\\inetpub\\drupal\\videos\\repertoire_projet\\\" ou \"/usr/htdocs/drupal/videos/repertoire_projet/\"alors entrez quelque chose comme \"videos/repertoire_projet/\"."
 
 #: plugins/video_multidownload/video_multidownload.module:133
 msgid "Display videos in the same directory as the \"play\" video. If folder above is entered this will be in addition."
@@ -1328,7 +1328,7 @@ msgstr "Téléchargement en cours"
 
 #: plugins/video_multidownload/video_multidownload.module:70
 msgid "create multi-file downloads"
-msgstr "créer des téléchargements de fichiers multiples"
+msgstr "permettre le téléchargements de fichiers multiples"
 
 #: plugins/video_multidownload/video_multidownload.module:0
 msgid "video_multidownload"
@@ -1452,7 +1452,7 @@ msgstr "Cochez cette case si vous voulez que les utilisateurs ne puissent soumet
 
 #: plugins/video_upload/video_upload.module:157
 msgid "If you want to upload a video simply ignore this field and select your video file at the \"Upload video file\" field."
-msgstr "Si vous voulez ajouter un vidéo, ignorez ce champ et entrez votre vidéo dans le champ « Téléverser un fichier vidéo »."
+msgstr "Si vous voulez ajouter un vidéo, ignorez ce champ et entrez votre vidéo dans le champ «&nbsp;Téléverser un fichier vidéo&nbsp;»."
 
 #: plugins/video_upload/video_upload.module:160
 msgid "Upload video"
@@ -1512,7 +1512,7 @@ msgstr "Le téléversement du fichier vidéo pourrait prendre quelques minutes."
 
 #: plugins/video_upload/video_upload.module:71
 msgid "upload video files"
-msgstr "fichiers vidéo ajoutés"
+msgstr "video_tracker_block"
 
 #: plugins/video_upload/video_upload.module:0
 msgid "video_upload"
