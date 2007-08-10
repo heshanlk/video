@@ -2,8 +2,8 @@
 # $Id$
 # Uwe Hermann <uwe@hermann-uwe.de>, 2005.
 msgid ""
-""
-msgstr "Project-Id-Version: de\n"
+msgstr ""
+"Project-Id-Version: de\n"
 "POT-Creation-Date: 2005-08-31 21:59+0000\n"
 "PO-Revision-Date: 2006-10-28 23:08+0200\n"
 "Last-Translator: Norbert Fuerst <nf@fuerstentum.net>\n"
@@ -72,7 +72,6 @@ msgstr "Multi-Datei Download Verzeichnis"
 #: video.module:91
 msgid "Allows you to specify a folder on the local server containing the files you wish to show up on the download tab. This folder should be relative to the drupal root directory, so if the absolute path is \"C:\\inetpub\\drupal\\videos\\projectfolder\\\" or \"/usr/htdocs/drupal/videos/projectfolder/\" then you would enter \"videos/projectfolder/\"."
 msgstr "Damit wird ein lokales Verzeichnis am Server festgelegt, das jene Dateien enthält, die auf der Download-Seite gezeigt werden sollen. Dieses Verzeichnis ist relativ zum Drupal Verzeichnis. Wenn also der absolute Pfad \"C:\\inetpub\\drupal\\videos\\projectfolder\\\" oder \"/usr/htdocs/drupal/videos/projectfolder/\" ist, dann sollte hier \"videos/projectfolder/\" eingetragen werden."
-""
 
 #: video.module:92
 msgid "Show files in \"play\" folder"
@@ -148,7 +147,7 @@ msgstr "Abspiel-Link anzeigen"
 
 #: video.module:270
 msgid "Toggle display of \"play\" link (below the node content in most themes)"
-msgstr "Schaltet den \"Abspielen\” Link (unter dem Beitrag in den meisten Themes) ein oder aus."
+msgstr "Schaltet den „Abspielen“-Link (unter dem Beitrag in den meisten Themes) ein oder aus."
 
 #: video.module:271
 msgid "Display download link"
@@ -488,7 +487,7 @@ msgstr ""
 
 #: video.module:867
 msgid "Link to Macromedia Flash Player Download Page"
-msgstr "Link zur Adobe-Macromedia Flash Player Download Seite"
+msgstr "Link zur Adobe-Macromedia Flash Player Download-Seite"
 
 #: video.module:868
 msgid "Download latest Flash Player"
@@ -500,7 +499,7 @@ msgstr ""
 
 #: video.module:890
 msgid "Link to QuickTime Download Page"
-msgstr "Link zur Apple Quicktime Download Seite"
+msgstr "Link zur Apple Quicktime Download-Seite"
 
 #: video.module:891
 msgid "Download latest Quicktime Player"
@@ -524,7 +523,7 @@ msgstr ""
 
 #: video.module:964
 msgid "Link to Windows Update"
-msgstr "Link zur Microsoft Windows Update Seite"
+msgstr "Link zur Microsoft Windows Update-Seite"
 
 #: video.module:965
 msgid "Download latest Windows Media Player"
