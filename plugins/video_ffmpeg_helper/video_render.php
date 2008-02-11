@@ -19,7 +19,7 @@ define('VIDEO_RENDERING_FFMPEG_PATH', '/usr/bin/ffmpeg');
 
 // set to the temp file path.
 //IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
-define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video'); 
+define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video');
 
 // number of conversion jobs active at the same time
 define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
@@ -36,9 +36,10 @@ define('VIDEO_RENDERING_NICE', 'nice -n 19');
 /**
  * Define some constants
 */
-define('VIDEO_RENDERING_PENDING', 0);
+define('VIDEO_RENDERING_PENDING', 1);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
+define('VIDEO_RENDERING_FAILED', 20);
 
 
 include_once './includes/bootstrap.inc';
@@ -68,7 +69,7 @@ else {
 print("\n");
 
 function video_render_main() {
-  
+
   // set the status to active
   _video_render_job_change_status($_SERVER['argv'][1], $_SERVER['argv'][2], VIDEO_RENDERING_ACTIVE);
   $job = _video_render_load_job($_SERVER['argv'][1], $_SERVER['argv'][2], VIDEO_RENDERING_ACTIVE);
@@ -78,20 +79,22 @@ function video_render_main() {
     die;
   }
   $command = _video_render_get_command($job);
-  
+
   //print('executing ' . $command);
   watchdog('video_render', t('executing: ') . $command);
-  
+
   //execute the command
   ob_start();
   passthru($command." 2>&1", $command_return);
   $command_output = ob_get_contents();
   ob_end_clean();
-  
+
   //print $command_output;
-  
+
   if (!file_exists($job->convfile)) {
     watchdog('video_render', t('video conversion failed. ffmpeg reported the following output: ' . $command_output, WATCHDOG_ERROR));
+    _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
+    _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
   }
   else {
     // move the video to the definitive location
@@ -106,28 +109,61 @@ function video_render_main() {
     $file = ((object) $file);
 
     //print_r($file);
-    $dest_dir = variable_get('video_upload_default_path', 'videos') .'/';
+    //$dest_dir = variable_get('video_upload_default_path', 'videos') .'/';
+    // the above no more works as token supports - use dirname
+    $dest_dir = dirname($job->origfile) . '/';
 
-    if (file_copy($file, file_directory_path() . '/' . $dest_dir)) {
+    if (file_copy($file, $dest_dir)) {
       $file->fid = db_next_id('{files}_fid');
       //print_r($file);
       db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, $job->nid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
-      
+
       db_query("INSERT INTO {file_revisions} (fid, vid, list, description) VALUES (%d, %d, %d, '%s')", $file->fid, $job->vid, $file->list, $file->description);
-      
-      // set vidfile to "" to let video_upload overwrite it with the latest uploaded file
+
+      // update the video table
       db_query('UPDATE {video} SET vidfile = "%s", videox = %d, videoy = %d WHERE nid=%d AND vid=%d', "", $job->calculatedx, $job->calculatedy, $job->nid, $job->vid);
+
+      // update the video_encoded_fid in video serial data
+      _video_render_set_video_encoded_fid($job->nid, $job->vid, $file->fid);
       
       _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_COMPLETE);
       
-      // delete the vile
+      watchdog('video_render', t('successfully converted %orig to %dest', array('%orig' => $job->origfile, '%dest' => $file->filepath)));
+
+      // delete the temp file
       unlink($job->convfile);
     }
     else {
-      watchdog('video_scheduler', t('error moving video to the final directory. Check folder permissions.'), WATCHDOG_ERROR);
+      // get the username of the process owner
+      $ownerarray = posix_getpwuid(posix_getuid());
+      $owner=$ownerarray['name'];
+      // get the username of the destination folder owner
+      $fownerarray = posix_getpwuid(fileowner($dest_dir));
+      $fowner=$fownerarray['name'];
+      // get destination folder permissions
+      $perms = substr(sprintf('%o', fileperms($dest_dir)), -4);
+      watchdog('video_render', t('error moving video %vid_file with nid = %nid to %dir the final directory. Check folder permissions.<br />The script was run by %uname .<br />The folder owner is %fowner .<br />The folder permissions are %perms .', array('%vid_file' => $job->origfile, '%nid' => $job->nid, '%dir' => $dest_dir, '%uname' => $owner, '%fowner' => $fowner, '%perms' => $perms)), WATCHDOG_ERROR);
+      _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
+      _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
     }
   }
 }
+
+
+/**
+ * Set the video_encoded_fid in the video table
+ * We store -1 as video_encoded_fid if the encoding failed
+*/
+function _video_render_set_video_encoded_fid($nid, $vid, $encoded_fid) {
+  db_lock_table('video');
+  $node = db_fetch_object(db_query("SELECT serialized_data FROM {video} WHERE nid = %d AND vid = %d", $nid, $vid));
+  $node->serial_data = unserialize($node->serialized_data);
+  $node->serial_data['video_encoded_fid'] = $encoded_fid;
+  $node->serialized_data = serialize($node->serial_data);
+  db_query("UPDATE {video} SET serialized_data = '%s' WHERE nid = %d AND vid = %d", $node->serialized_data, $nid, $vid);
+  db_unlock_tables();
+}
+
 
 
 /**
@@ -140,14 +176,14 @@ function _video_render_get_command(&$job) {
   $audiobitrate = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64);
   $videobitrate = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200);
   $size = _video_render_get_size($job);
-  
+
 
   $converter = VIDEO_RENDERING_FFMPEG_PATH;
-  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'), array($videofile, $convfile, $audiobitrate, $size, $videobitrate), variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate %convertfile'));
-  
+  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'), array($videofile, $convfile, $audiobitrate, $size, $videobitrate), variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate -qscale 1 %convertfile'));
+
   // set to the converted file output
   $job->convfile = $convfile;
-  
+
   return VIDEO_RENDERING_NICE . " $converter $options";
 }
 
@@ -162,7 +198,7 @@ function _video_render_get_size(&$job) {
 
   $height = $def_width * ($job->videoy / $job->videox); // do you remember proportions?? :-)
 
-    
+
   $height = round($height);
   // add one if odd
   if($height % 2) {
@@ -181,7 +217,7 @@ function _video_render_get_size(&$job) {
 */
 function _video_render_load_job($nid, $vid, $status) {
   $result = db_query('SELECT * FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid INNER JOIN {video} v ON n.vid = v.vid WHERE n.nid = v.nid AND vr.nid = n.nid AND vr.status = %d AND n.nid = %d AND n.vid = %d', $status, $nid, $vid);
-  
+
   return db_fetch_object($result);
 }
 

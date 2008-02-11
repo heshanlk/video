@@ -1,0 +1,147 @@
+<?php
+// $Id$
+// ex: set tabstop=2 expandtab shiftwidth=2 softtabstop=2:
+
+/**
+ * @file
+ * Enable Path or URL support for video module.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ */
+
+
+/**
+ * Implementation of hook_menu
+*/
+function video_url_menu($maycache) {
+  $items = array();
+  if($maycache) {
+    $items[] = array(
+      'path' => 'node/add/video/url',
+      'title' => t('URL'),
+      'access' => user_access('create video')
+    );
+  }
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_v_help
+*/
+function video_url_v_help() {
+
+  $help = array();
+  $help['url']['data'] = '<b>' . t('Url support') . '</b>';
+  $help['url']['children'] = array(t('You can link to any video file on the Internet.'));
+
+  return $help;
+}
+
+
+/**
+ * Implementation of hook_v_info()
+*/
+function video_url_v_info() {
+  $info['url'] = array(
+    '#name' => 'URL Video',
+    '#description' => t('Post a video available on the Internet to this website.'),
+    '#downloadable' => TRUE,
+    '#autothumbable' => TRUE,
+    '#autoresolution' => TRUE,
+  );
+
+  return $info;
+}
+
+
+/**
+ * Implementation of hook_v_form()
+*/
+function video_url_v_form(&$node, &$form) {
+
+  $form['video']['vidfile'] = array(
+    '#type' => 'textfield',
+    '#title' => t('URL to the video'),
+    '#default_value' => $node->vidfile,
+    '#maxlength' => 700,
+    '#required' => TRUE,
+    '#weight' => -20,
+    '#description' => t('Insert the URL to the video file. ') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
+
+  return $form;
+}
+
+
+/**
+ * implementation of hook_v_validate
+*/
+function video_url_v_validate($node) {
+  // Can you suggest a validation?
+  // validation should allow URLs, relative paths but also streaming servers URLs
+}
+
+/**
+ * Implementation of hook_v_play
+*/
+function video_url_v_play($node) {
+  include_once(drupal_get_path('module', 'video') .'/includes/common.inc');
+  return _video_common_get_player($node);
+}
+
+/**
+ * Implementation of hook_v_auto_thumbnail
+ */
+function video_url_v_auto_thumbnail(&$node) {
+  if (count($_POST)) {
+    if ($_POST['vidfile'] == $node->vidfile) {
+      _video_image_thumbnail_debug(t('No new video to thumbnail'));
+      return NULL;
+    }
+    if ($_POST['tempimage']['fids']['_original']) {
+      _video_image_thumbnail_debug(t('Video already thumbnailed'));
+      return NULL;
+    }
+    if ($node->iid && !$_POST['new_video_upload_file']) {
+      _video_image_thumbnail_debug(t('No new video to thumbnail'));
+      return NULL;
+    }
+    if (!$node->vidfile) {
+      $node->vidfile = $_POST['vidfile'];
+    }
+  }
+
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    $node->new_video_upload_file = (object)array(
+      'filepath' => $node->vidfile,
+      'filename' => basename($node->vidfile),
+    );
+    $ret = _video_ffmpeg_helper_auto_thumbnail($node);
+    unset($node->new_video_upload_file);
+    return $ret;
+  }
+  return false;
+}
+
+/**
+ * Implements the hook_v_auto_resolution
+*/
+function video_url_v_auto_resolution(&$node) {
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    $node->new_video_upload_file = (object)array(
+      'filepath' => $node->vidfile,
+      'filename' => basename($node->vidfile),
+    );
+    $ret = _video_ffmpeg_helper_auto_resolution($node);
+    unset($node->new_video_upload_file);
+    return $ret;
+  }
+  return false;
+}
+
+
+
+

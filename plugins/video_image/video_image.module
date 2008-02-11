@@ -1,5 +1,6 @@
 <?php
 // $Id$
+// ex: set tabstop=2 expandtab shiftwidth=2 softtabstop=2:
 
 /**
  * @file
@@ -15,7 +16,7 @@
 function video_image_help($section) {
   switch ($section) {
     case 'admin/modules#description':
-      return t('Enable thumbnails support for video module.');
+      return t('Enable thumbnail support for video module.');
   }
 }
 
@@ -26,7 +27,7 @@ function video_image_menu($may_cache) {
   $items = array();
   if ($may_cache) {
       $items[] = array(
-      'path' => 'admin/content/video/image',
+      'path' => 'admin/settings/video/image',
       'title' => t('Video image'),
       'description' => t('Administer video_image module settings'),
       'callback' => 'drupal_get_form',
@@ -40,14 +41,21 @@ function video_image_menu($may_cache) {
 
 
 /**
+ * Implementation of hook_perm
+ */
+function video_image_perm() {
+  $array = array('override autothumbnailing using uploaded image');
+  return $array;
+}
+
+
+/**
  * Settings form
  */
 function video_image_admin_settings() {
-  if (module_exists('video_upload')) {
-    if (variable_get('video_image_auto_thumbnail', 0)) {
-      $upload_weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_upload'"));
-      db_query("UPDATE {system} SET weight=".($upload_weight+1)." WHERE name='video_image'");
-    }
+  if (module_exists('video_upload') && variable_get('video_image_auto_thumbnail', 0)) {
+    $upload_weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_upload'"));
+    db_query("UPDATE {system} SET weight=".($upload_weight+1)." WHERE name='video_image'");
   }
   $form = array();
   $form['video_image_publish_thumbnail'] = array(
@@ -61,9 +69,63 @@ function video_image_admin_settings() {
       '#title' => t('Promote the thumbnails to the front page'),
       '#default_value' => _video_image_promote_thumbnails(),
     );
-    
+  $form['autothumb'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Automatic video thumbnailing'),
+          '#collapsible' => TRUE,
+          '#collapsed' => FALSE,
+          '#description' => t('This feature requires the \'video_ffmpeg_helper\' module'),
+      );
+  $auto_thumb_disable = !module_exists('video_ffmpeg_helper');
+  $form['autothumb']['video_image_auto_thumbnail'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Auto thumbnail for videos'),
+      '#description' => t('If set up correctly, this will auto-generate a thumbnail for each video created.'),
+      '#default_value' => variable_get('video_image_auto_thumbnail', false) && !$auto_thumb_disable,
+      '#disabled' => $auto_thumb_disable,
+    );
+    /*
+  $form['autothumb']['video_image_auto_thumbnail_only'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use auto-thumbnailer exclusively for video images'),
+      '#description' => t('If checked, this will disable the file upload box for the user-supplied thumbnail.  Only check this if you have checked to be sure that auto-thumbnailing works.  Auto thumbnail must be selected for this to be enabled.'),
+      '#default_value' => variable_get('video_image_auto_thumbnail_only', false),
+      '#disabled' => !variable_get('video_image_auto_thumbnail', false),
+    );
+    */
+  $form['autothumb']['video_image_auto_thumbnail_debug'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Debug automatic thumbnail process'),
+      '#default_value' => variable_get('video_image_auto_thumbnail_debug', false),
+      '#description' => t('Automatic thumbnailing of videos is dependent on the actual video types.  Some video types may not be able to be automatically thumbnailed.  Setting this option will allow messages to be show when posting and editing of videos that can be automatically thumbnailed.'),
+      '#disabled' => $auto_thumb_disable,
+    );
+
+
   return system_settings_form($form);
 }
+
+function video_image_admin_settings_validate($form_id, &$form_values, &$form) {
+  if (module_exists('video_ffmpeg_helper')) {
+    if ($form_values['video_image_auto_thumbnail']) {
+      $path_ok = _video_ffmpeg_helper_check_exe_path();
+      if (!$path_ok) {
+        drupal_set_message(t('The path for \'ffmpeg\' is not valid.  Please check settings on the !ffmpeg_settings_page', array('!ffmpeg_settings_page' => l(t('Video ffmpeg helper settings page'), 'admin/settings/video/ffmpeg_helper'))), 'error');
+      }
+    }
+  }
+}
+
+
+/**
+ * Return true if the video support authothumbnailing
+*/
+function video_image_is_autothumbable($node) {
+  $info = video_get_type_info($node->vtype);
+  $has_hook = module_hook('video_' . $node->vtype, 'v_auto_thumbnail');
+  return $has_hook && isset($info[$node->vtype]['#autothumbable']) && $info[$node->vtype]['#autothumbable'];
+}
+
 
 /**
  * Implementation of hook_form_alter()
@@ -76,18 +138,32 @@ function video_image_form_alter($form_id, &$form) {
     $value = ($node->new_image) ? '#value' : '#default_value';
     $form['iid'] = array('#type' => 'hidden', $value => $node->iid);
 
-    if (function_exists('_image_check_settings')) {
-      _image_check_settings();
+    if (!is_array($node->tempimage['fids'])) {
+      $fids = array('_original' => 0);
+      foreach (_image_get_sizes() as $size) {
+        $fids[$size['label']] = 0;
+      }
+      $node->tempimage['fids'] = $fids;
+    }
+    $form['tempimage']['#tree'] = true;
+    foreach ($node->tempimage['fids'] as $label => $fid) {
+      $form['tempimage']['fids'][$label] = array('#type' => 'hidden', $value => $fid);
+    }
+
+    if(!video_image_is_autothumbable($node) || user_access('override autothumnailing using uploaded images')) { 
+      // let's be sure that image directories are ready
+      if (function_exists('_image_check_settings')) {
+        _image_check_settings();
+      }
+      // needed for uploading
       $form['#attributes'] = array("enctype" => "multipart/form-data");
 
-     
-      $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Use this form to upload an image.'));
-      
+
+      $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Upload an image to be used as the thumbnail for this video.'));
+
       $form['image']['image'] = array('#type' => 'file', '#title' => t('Image'));
-      $form['image']['image_title'] = array('#type' => 'textfield', '#title' => t('Image title'), '#default_value' => $node->image->image_title);
     }
   }
-
 }
 
 
@@ -97,65 +173,22 @@ function video_image_form_alter($form_id, &$form) {
 function video_image_nodeapi(&$node, $op, $teaser) {
   if($node->type == 'video') {
     switch ($op) {
-      case 'load': 
-        $output['iid'] = $node->serial_data['iid'];
-        return $output;
-      case 'submit':
-        if (variable_get('video_image_auto_thumbnail_debug', false) && variable_get('video_image_auto_thumbnail', false)) {
-          drupal_set_message(t('video_image_nodeapi: prepare: ready to thumbnail image'));
-        }
-        $field_name = file_check_upload('image');
-        $image->uid = $node->uid;
-        $image->name = $node->name;
-        $image->created = $node->created;
-        $image->type = 'image';
-        //$image->status = _video_image_publish_thumbnails();
-        //$image->promote = _video_image_promote_thumbnails();
-        if (!$field_name && module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_thumbnail', false)) {
-          $image->title = $_SESSION['video_upload_file']->filename;
-          $field_name = _video_ffmpeg_helper_auto_thumbnail($node);
-        }
-        else {
-          $image->title = $_POST['edit']['image_title'];
-          $field_name = 'image';
-        }
-        image_prepare($image, $field_name);
-        if ($image->images) {
-          node_validate($image);
-          if (!form_get_errors()) {
-            $image = node_submit($image);
-            node_save($image);
-            
-            // needed to set the correct status and promote values if the user does not have enought permissions. Is there a better solution???
-            db_query('UPDATE {node} SET status = %d, promote = %d WHERE nid = %d AND vid = %d', _video_image_publish_thumbnails(), _video_image_promote_thumbnails(), $image->nid, $image->vid); 
-            
-            $node->iid = $node->serial_data['iid'] = $image->nid;
-            $_SESSION['video_upload_file']->iid = $image->nid;
-            $node->new_image = TRUE;
-          }
-        }
-        else if (isset($_SESSION['video_upload_file']->iid)) {
-          $node->iid = $_SESSION['video_upload_file']->iid;
-        }
+      case 'load':
+        return _video_image_load($node);
       
-        $node->serial_data['iid'] = $node->iid;
-      break;
       case 'prepare':
-        ;
-      break;
+        _video_image_prepare($node);
+        break;
+
+      case 'submit':
+        _video_image_submit($node);
+        break;
 
       case 'view':
-        if ($node->iid) {
-          if($teaser) {
-            $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_teaser', $node));
-          }
-          else {
-            $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_body', $node));
-          }
-        }
+        _video_image_view($node, $teaser);
         break;
       case 'delete':
-        node_delete(array('nid' => $node->iid));
+        _video_image_delete($node);
         break;
     }
   }
@@ -166,20 +199,20 @@ function video_image_nodeapi(&$node, $op, $teaser) {
  * Render the output for the node teaser.
  *
  * @param $node
- *   object with node information
+ *   object with image node information
  *
  * @return
  *   string of content to display
  */
 function theme_video_image_teaser($node) {
-  if($node->serial_data['iid']) {
-    $image = node_load($node->serial_data['iid']);
-    $image = image_display($image, 'thumbnail', array('class' => 'video_image_teaser'));
+  if($node->type == 'image') {
+    $image = image_display($node, 'thumbnail', array('class' => 'video_image_teaser'));
   }
   else { // only for backward compatibility
     $image = theme('image', $node->serial_data['image_teaser'], $node->title, $node->title, array('class' => 'video_image_teaser'), FALSE);
   }
-  $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); //Create a link with an image in it.
+  //Create a link with an image in it.
+  $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); 
   $output .= '<br class="video_image_clear" />';
   return $output;
 }
@@ -195,10 +228,10 @@ function theme_video_image_teaser($node) {
  *   string of content to display
  */
 function theme_video_image_body($node) {
+  $m = variable_get('video_playinbody', 0);
   if(variable_get('video_playinbody', 0) == 0){
-    if($node->serial_data['iid']) {
-      $image = node_load($node->serial_data['iid']);
-      $image = image_display($image, 'thumbnail');
+    if($node->type == 'image') {
+      $image = image_display($node, 'thumbnail');
     }
     else { // only for backward compatibility
       $image = theme('image', $node->serial_data['image_view'], $node->title, $node->title, array('class' => 'video_image_view'), FALSE); //Create image HTML
@@ -208,6 +241,162 @@ function theme_video_image_body($node) {
   return $output;
 }
 
+/* nodeapi split out hooks */
+function _video_image_load(&$node) {
+  $output['iid'] = $node->serial_data['iid'];
+  return $output;
+}
+
+function _video_image_prepare(&$node) {
+  // let's check that we have a valid image
+  if (count($_POST)) {
+    $field_name = file_check_upload('image');
+    if (!$field_name && video_image_is_autothumbable($node)) {
+      _video_image_thumbnail_debug(t('video_image_nodeapi: prepare: ready to thumbnail video'));
+      $field_name = module_invoke('video_' . $node->vtype, 'v_auto_thumbnail', $node);
+      if ($field_name === false && count($_POST)) {
+        drupal_set_message(t('The thumbnailing process of your video failed for some reason. Video thumbnail will not be available.'), 'error');
+     }
+    }
+  }
+  if ($field_name) {
+    $node->tempimage = _video_image_temp_image_store($field_name);
+    $node->new_image = TRUE;
+  } else if (is_array($_POST['tempimage']) && 
+      ($_POST['op'] == 'Preview' || $_POST['op'] == 'Submit')) {
+    $node->tempimage = (array)_video_image_temp_image_load(array_values($_POST['tempimage']['fids']));
+  }
+}
+
+function _video_image_submit(&$node) {
+  if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['_original']) {
+    $image = _video_image_temp_image_load(array_values($node->tempimage['fids']));
+    db_query("DELETE FROM {files} WHERE fid in (%s)",
+            implode(',', array_values($node->tempimage['fids'])));
+    // initialize standard node fields
+    $image->uid = $node->uid;
+    $image->created = time();
+    $image->title = t('Video thumbnail for !title', array('!title' => $node->title));
+    $image = node_submit($image);
+    $image->uid = $node->uid;
+    $image->status = _video_image_publish_thumbnails();
+    $image->promote = _video_image_promote_thumbnails();
+    // This is a messages hack (we don't want to see what happens under the covers)
+    _video_image_pause_messages(true);
+    if ($node->iid) {
+      $oldimage = node_load($node->iid);
+      $oldimage->images = $image->images;
+      // delete the old images?
+      $oldimage->new_image = 1;
+      node_save($oldimage);
+      $node->iid = $oldimage->nid;
+    } else {
+      node_save($image);
+      $node->iid = $image->nid;
+      // store the iid into the serial_data
+      $node->serial_data['iid'] = $node->iid;
+      // needed to set the correct status and promote values even if the user does not have enough permissions. Is there a better solution???
+      // db_query('UPDATE {node} SET status = %d, promote = %d WHERE nid = %d AND vid = %d', _video_image_publish_thumbnails(), _video_image_promote_thumbnails(), $image->nid, $image->vid);
+    }
+    _video_image_pause_messages();
+  }
+  else {
+    $node->serial_data['iid'] = $node->iid;
+  }
+}
+
+function _video_image_view(&$node, $teaser) {
+  if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['_original']) {
+    $image = _video_image_temp_image_load(array_values($node->tempimage['fids']));
+    $image->nid = $node->nid;
+  } else if ($node->iid) {
+    $image = node_load($node->iid);
+    $image->nid = $node->nid;
+  } else {
+    $image = $node;
+  }
+  if($teaser) {
+    $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_teaser', $image));
+  }
+  else {
+    $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_body', $image));
+  }
+}
+
+function _video_image_delete(&$node) {
+  _video_image_pause_messages(true);
+  node_delete(array('nid' => $node->iid));
+  _video_image_pause_messages();
+}
+
+/* At times, when doing sub-node processing (creating/deleting thumbnail nodes)
+ * we don't really want to show all the messages through to the end user or it
+ * gets a little bit confusing (image created messages when creating a video)
+ * so we suppress the messages with this procedure.
+ */
+function _video_image_pause_messages($snapshot = false) {
+  static $messages = null;
+  if ($snapshot) {
+    $messages = drupal_get_messages();
+  } else if (is_array($messages)) {
+    $_SESSION['messages'] = $messages;
+    $messages = null;
+  }
+}
+
+/* debugging framework for troublesome thumbnailing */
+function _video_image_thumbnail_debug($msg) {
+  static $debug = NULL;
+  if ($debug == NULL) {
+    $debug = variable_get('video_image_auto_thumbnail_debug', false);
+  }
+  if ($debug) {
+    $t = debug_backtrace();
+    $l = array_shift($t);
+    drupal_set_message(basename($l['file'], '.module').': '.$msg);
+  }
+}
+
+function _video_image_temp_image_store(&$file) {
+  $image = new stdClass();
+  $image->type = 'image';
+  $image->uid = 1;
+  $image->created = time();
+  $image->title = t('video image thumbnail');
+  image_prepare($image, $file);
+  if ($image->images) {
+    node_validate($image);
+    if (!form_get_errors()) {
+      // save the images in the files table
+      foreach ($image->images as $l => $f) {
+        $info = image_get_info($f);
+        $fid = db_next_id('{files}_fid');
+        db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', '%s')",
+            $fid, 1, "video_image_temp.$l", $f, $info['mime_type'], $info['file_size']);
+        $image->fids[$l] = $fid;
+      }
+    }
+  }
+  return (array)$image;
+}
+
+/* Create a fake node object that acts like an image node
+ * by looking up each file in the array $fids and loading
+ * them into the images array.
+ */
+function _video_image_temp_image_load($fids) {
+  $image = new stdClass();
+  $image->type = 'image';
+  $image->new_file = 1;
+  $fids = implode(',', $fids);
+  $results = db_query("SELECT fid, filename, filepath FROM {files} WHERE fid IN (%s)", $fids);
+  while ($file = db_fetch_object($results)) {
+    $label = substr($file->filename, 17);
+    $image->images[$label] = $file->filepath;
+    $image->fids[$label] = $file->fid;
+  }
+  return $image;
+}
 
 /* If the user has set a promote preference, use that, otherwise return
  * if 'promote' is set in the drupal content type settings
@@ -238,4 +427,34 @@ function _video_image_publish_thumbnails() {
   }
   return $settings_override;
 }
-?>
+
+
+/**
+ * Create an image file object from a given image url
+*/
+function _video_image_get_thumb_file_object($thumbnail_url, $id) {
+  
+  if($thumbnail_url && $thumbnail_url != '' && $image = image_gd_open($thumbnail_url, 'jpeg')) {
+    // save image to temp directory for processing
+    $location = file_directory_temp() .'/'. $id .'.jpg';
+    image_gd_close($image, $location, 'jpeg');
+    
+    
+    // get info and build a file object
+    $filepath = file_create_path($location, file_directory_temp());
+    $info = image_get_info($filepath);
+    
+    $file = new stdClass();
+    $file->filepath = realpath($filepath);
+    $file->filename = basename($file->filepath);
+    $file->filesize = $info['file_size'];
+    $file->filemime = $info['mime_type'];
+  
+    return $file;
+  }
+  
+  return null;
+}
+
+
+

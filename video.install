@@ -8,6 +8,7 @@ function video_install() {
       db_query("CREATE TABLE {video} (
         vid int(10) unsigned NOT NULL default '0',
         nid int(10) unsigned NOT NULL default '0',
+        vtype varchar(32) NOT NULL default '',
         vidfile text NOT NULL default '',
         videox smallint(4) unsigned NOT NULL default '0',
         videoy smallint(4) unsigned NOT NULL default '0',
@@ -36,6 +37,7 @@ function video_install() {
       db_query("CREATE TABLE {video} (
         vid integer NOT NULL default '0',
         nid integer NOT NULL default '0',
+        vtype varchar(32) NOT NULL default '',
         vidfile text NOT NULL default '',
         videox smallint NOT NULL default '0',
         videoy smallint NOT NULL default '0',
@@ -61,6 +63,12 @@ function video_install() {
       );");
 
   }
+  
+  // default values for some variables use for resolution stuff
+  variable_set('video_resolution_1_name', '4:3 - Television');
+  variable_set('video_resolution_1_value', '400x300');
+  variable_set('video_resolution_2_name', '16:9 - Widescreen');
+  variable_set('video_resolution_2_value', '400x226');
 }
 
 /**
@@ -156,3 +164,36 @@ function video_update_4() {
   }
   return $ret;
 }
+
+
+/**
+ * Add the vtype field for video module subtypes
+ *
+ * @return array
+ */
+function video_update_5() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+    case 'pgsql':
+      $ret[] = update_sql("ALTER TABLE {video} ADD vtype varchar(32) NOT NULL default ''");
+      //TODO: set the appropriate value to the newly added vtype field of existing nodes
+  }
+  return $ret;
+}
+
+
+/**
+ * Set default values of resolutions
+*/
+function video_update_6() {
+  variable_set('video_resolution_1_name', '4:3 - Television');
+  variable_set('video_resolution_1_value', '400x300');
+  variable_set('video_resolution_2_name', '16:9 - Widescreen');
+  variable_set('video_resolution_2_value', '400x226');
+  
+  return array();
+}
+
+

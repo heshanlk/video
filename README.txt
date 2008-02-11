@@ -4,7 +4,7 @@ VIDEO MODULE
 -----
 
 This module add the possibility to create
-video nodes wich are containers to embed
+video nodes which are containers to embed
 videos into drupal pages.
 
 For installation and upgrade instructions see INSTALL.txt
@@ -21,3 +21,4 @@ Maintainers:
   Fabio Varesano: fvaresano at yahoo dot it
   David Norman:   deekayen (at) deekayen [dot-} net
   Luke Last:      luke [at] lukelast dot com
+  Vernon Mauery:  vernon at mauery dot com

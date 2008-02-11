@@ -89,7 +89,7 @@ function video_views_tables() {
       'help' => t('This will display the thumbnail image for the video.'),
       );
   }
-  
+
   return $tables;
 }
 
@@ -102,7 +102,7 @@ function video_views_tables() {
 **/
 function video_views_default_views() {
   $views = array();
- 
+
   // recent video node activity view
   $view = new stdClass();
   $view->name = 'video_tracker';
@@ -171,7 +171,7 @@ function video_views_default_views() {
   $view->exposed_filter = array ();
   $view->requires = array(node, users, video);
   $views[$view->name] = $view;
- 
+
   return $views;
 }
 
@@ -200,20 +200,20 @@ function video_views_handler_field_play($fieldinfo, $fielddata, $value, $data) {
 function video_views_handler_field_playtime_seconds($fieldinfo, $fielddata, $value, $data) {
   $seconds = $value;
   $hms = _video_sec2hms($seconds);
- 
+
   // Pad the minutes / seconds with a leading "0", if
   // necessary
   if ($hms['hours'] > 0) {
     $hms['minutes'] = str_pad($hms['minutes'], 2, '0', STR_PAD_LEFT);
   }
   $hms['seconds'] = str_pad($hms['seconds'], 2, '0', STR_PAD_LEFT);
-  
+
   $out = '';
   if ($hms['hours'] > 0) {
  $out .= $hms['hours'].":";
   }
   $out .= $hms['minutes'].":".$hms['seconds'];
-  
+
   return t($out);
 }
 

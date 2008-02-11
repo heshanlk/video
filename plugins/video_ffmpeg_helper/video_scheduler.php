@@ -7,8 +7,8 @@
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  */
- 
- 
+
+
 /**
  * video_scheduler.php configuration
 */
@@ -18,7 +18,7 @@ define('VIDEO_RENDERING_FFMPEG_PATH', '/usr/bin/ffmpeg');
 
 // set to the temp file path.
 //IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
-define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video'); 
+define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video');
 
 // number of conversion jobs active at the same time
 define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
@@ -31,9 +31,10 @@ define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 /**
  * Define some constants
 */
-define('VIDEO_RENDERING_PENDING', 0);
+define('VIDEO_RENDERING_PENDING', 1);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
+define('VIDEO_RENDERING_FAILED', 20);
 
 
 include_once './includes/bootstrap.inc';
@@ -60,7 +61,7 @@ else {
  * Main for video_scheduler.php
 */
 function video_scheduler_main() {
-  
+
   if($jobs = video_scheduler_select()) {
     foreach ($jobs as $job) {
       video_scheduler_start($job);
@@ -88,9 +89,10 @@ function video_scheduler_start($job) {
 function video_scheduler_select() {
 
   $result = db_query('SELECT * FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid INNER JOIN {video} v ON n.vid = v.vid WHERE n.nid = v.nid AND vr.nid = n.nid AND vr.status = %d ORDER BY n.created', VIDEO_RENDERING_PENDING);
-  
+
   // TODO: order jobs by priority
-  
+
+  // TODO: use db_query_range
   $jobs = array();
   $i = 0;
   $count = db_num_rows($result);
@@ -98,7 +100,7 @@ function video_scheduler_select() {
     $jobs[] = db_fetch_object($result);
     $i++;
   }
-  
+
   return $jobs;
 }
 

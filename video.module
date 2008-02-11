@@ -1,5 +1,6 @@
 <?php
 // $Id$
+// ex: set tabstop=2 expandtab shiftwidth=2 softtabstop=2:
 
 /**
  * @file
@@ -7,9 +8,15 @@
  * or Windows Media WMV formats.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * @author David Norman <deekayen at: deekayen (dot) net>
- * @author Luke Last <luke [at] lukelast dot com>
- */
+*/
+
+
+/**
+ * Let's include views logic if views module is enabled
+*/
+if (module_exists('views')) {
+  include(drupal_get_path('module', 'video') .'/views_video.inc');
+}
 
 /********************************************************************
  * General Hooks
@@ -43,23 +50,12 @@ function video_help($section = 'admin/help#video') {
     case 'node/add#video':
       return t('Allows you to insert videos as nodes.');
     case 'video/help':
-      $help = '';
-      $help .= '<a name="videofile"></a><h3>' . t('Video File Field') . '</h3>';
-      $help .= '<p>' . t('This is the field where you enter the video file information. The Video module currently supports these file types:') . '</p>';
-      $help .= '<ul><li><b>' . t('.mov, .wmv, .rm, .flv, .swf, .dir, .dcr') . '</b><ul><li>' . t('To play these file types you need to enter in the path to the file. If your video is on the same webserver as drupal, you can use a path relative to the drupal directory, like "downloads/video.mov". If your video is on another server you can enter the URI to the video like "http://www.example.com/videos/my-video.mov".') . '</li></ul><br /></li>';
-      $help .= '<li><b><a href="http://www.youtube.com">' . t('YouTube.com support') . '</a></b><ul><li>' . t('You can host videos on youtube.com and put them on your site. To do this, after you upload the video on youtube.com enter the video ID into the "Video File" field. If the URI youtube.com gives you for the video is "http://www.youtube.com/watch.php?v=XM4QYXPf-s8" you would enter "XM4QYXPf-s8".') . '</li></ul><br /></li>';
-      $help .= '<li><b><a href="http://video.google.com">' . t('Google Video support') . '</a></b><ul><li>' . t('You can host videos on video.google.com and put them on your site.
-  To do this, after you upload the video on Google video enter get the
-  the embed code. In this code you will find an attribute like
-  src="http://video.google.com/googleplayer.swf?docId=-1591729516923874694" .
-  You will need the -1591729516923874694 like number just after docId= .
-  Then use "google:-1591729516923874694" as video file value.') . '</li></ul></li></ul>';
-      $help .= '<a name="multi-download"></a><h3>' . t('Multi-file Dowload Help') . '</h3>';
-      $help .= '<p>' . t('If enabled, this group holds all the settings for multi-file downloads. Multi-file downloads allows you to have a list of any number of files on the download page. These files are usually scanned from a folder. This allows the listing of multiple sizes and video types for visitors to choose from, you can even zip the files up.') . '</p>';
-      $help .= '<ul><li><b>' . t('Disable multi-file downloads') . '</b><ul><li>' . t('This checkbox will disable multi-file downloads for this video. This means the download tab and link will send visitors straight to download the same video as is set to play. Use this option if you only have one version of your video.') . '</li></ul><br /></li>';
-      $help .= '<li><b>' . t('Multi-file download folder') . '</b><ul><li>' . t('Allows you to specify a folder on the local server containing the files you wish to show up on the download tab. This folder should be relative to the drupal root directory, so if the absolute path is "C:\inetpub\drupal\videos\projectfolder\" or "/usr/htdocs/drupal/videos/projectfolder/" then you would enter "videos/projectfolder/".') . '</li></ul><br /></li>';
-      $help .= '<li><b>' . t('Show files in "play" folder') . '</b><ul><li>' . t('This option will list all the files in the same folder is the "play" file listed in the "Video File" field above. You can use this option in addition to the download folder to list the videos in both folders.') . '</li></ul></li></ul>';
-      return $help;
+      
+      // Get the video-type-specific help contents
+      $help_items = array();
+      
+      return theme('item_list',module_invoke_all('v_help')); //$help_items);
+
   }
 }
 
@@ -74,6 +70,7 @@ function video_help($section = 'admin/help#video') {
  */
 function video_menu($may_cache) {
   global $user;
+  
   $items = array();
   if ($may_cache) {
     $items[] = array(
@@ -91,44 +88,30 @@ function video_menu($may_cache) {
     $items[] = array(
       'path' => 'node/add/video',
       'title' => t('Video'),
+      'callback' => 'video_add',
       'access' => user_access('create video'));
     $items[] = array(
-        'path' => 'admin/content/video',
-        'title' => t('Video settings'),
-        'description' => t('Configure different aspects of the video module and its plugins'),
-        'callback' => 'drupal_get_form',
-        'callback arguments' => array('video_settings_form'),
-        'access' => user_access('administer site configuration'),
-        'type' => MENU_NORMAL_ITEM,
-      );
+      'path' => 'admin/settings/video',
+      'title' => t('Video'),
+      'description' => t('Configure different aspects of the video module and its plugins'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('video_settings_form'),
+      'access' => user_access('administer video'),
+      'type' => MENU_NORMAL_ITEM,
+    );
   }
   else { //If $may_cache is false.
     if (arg(0) == 'node' && is_numeric(arg(1))) {
       if ($node = node_load(arg(1)) and $node->type == 'video') {
-        if (variable_get('video_displayplaymenutab', 1) == 1) {
-          $menu_type = MENU_LOCAL_TASK;
-        } 
-        else {
-          $menu_type = MENU_CALLBACK;	     	
-        }
-        $items[] = array('path' => 'node/'. arg(1) .'/play',
-          'title' => t('play'),
-          'callback' => 'video_play',
-          'access' => user_access('play video') && node_access('view', $node, $user->uid),
-          'weight' => 3,
-          'type' => $menu_type);
 
-        //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
-        if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') {
-          if (variable_get('video_displayplaymenutab', 1) == 1) {
-            $menu_type = MENU_LOCAL_TASK;
-          }
-          else {
-            $menu_type = MENU_CALLBACK;
-          }
-          $items[] = array('path' => 'node/'.arg(1).'/download',
-            'title' => t('download'),
+        //enable the download tab only if it is supported
+        if (video_support_download($node)) {
+          
+          $menu_type = (variable_get('video_displaydownloadmenutab', 1)) ? MENU_LOCAL_TASK : MENU_CALLBACK;
+          $items[] = array('path' => 'node/'.$node->nid.'/download',
+            'title' => t('Download'),
             'callback' => 'video_download',
+            'callback arguments' => array($node),
             'access' => user_access('access video') && node_access('view', $node, $user->uid),
             'weight' => 5,
             'type' => $menu_type);
@@ -139,17 +122,6 @@ function video_menu($may_cache) {
   return $items;
 }
 
-
-/**
- * Implementation of hook_init()
- * Currently just does a check for whether the views module exists and, 
- * if it does loads the video views module.
- */
-function video_init() {
-  if (module_exists('views')) {
-    include(drupal_get_path('module', 'video') .'/views_video.inc');
-  }
-}
 
 /**
  * Internal Drupal links hook
@@ -165,41 +137,17 @@ function video_init() {
  */
 function video_link($type, $node = NULL) {
   $link = array();
-  
+
   // Node links for a video
   if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
     //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
-    if ((_video_get_filetype($node->vidfile) == 'youtube' || _video_get_filetype($node->vidfile) == 'googlevideo') && $node->disable_multidownload == 1) {
+    if (!video_support_download($node) && $node->disable_multidownload == 1) {
       $display_download_link = 0;
     }
     else {
       $display_download_link = variable_get('video_displaydownloadlink', 1);
     }
 
-    if (variable_get('video_displayplaylink', 1)) {
-      if (user_access('play video')) {
-        $link['video_play'] = array(
-          'title' => t('play'),
-          'href' => "node/$node->nid/play",
-          'attributes' => array(
-            'class' => 'outgoing',
-            'title' => t('play %link', array('%link' => $node->title)),
-          ),
-        );
-      }
-      else {
-        $text .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
-        $text .= ' ' . t('or') . ' ';
-        $text .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
-        $text .= t(' to play video');
-      
-        $link['video_play'] = array(
-            'title' => $text,
-            'html' => TRUE,
-          );
-        
-      }
-	}
     if ($display_download_link == 1) {
       $link['video_download'] = array(
         'title' => t('download'),
@@ -286,7 +234,7 @@ function video_feed() {
  *   array of permissions
  */
 function video_perm() {
-  $array = array('create video', 'access video', 'administer video', 'play video', 'download video', 'view play counter', 'view download counter', 'edit own video');
+  $array = array('create video', 'access video', 'administer video', 'play video', 'download video', 'view play counter', 'view download counter', 'edit own video', 'edit all video nodes');
   return $array;
 }
 
@@ -297,89 +245,167 @@ function video_perm() {
  *   string of form content or error message
  */
 function video_settings_form() {
-  global $base_url; 
-  
-  //Must have "administer site configuration" and "administer video" privilages.
-  if (!user_access('administer video')) {
-    drupal_access_denied();
-  }
-  $options = array(1 => 'Yes', 0 => 'No');
+  global $base_url;
+
 
   $form = array();
-  $form['tabs'] = array('#type' => 'fieldset', '#title' => t('Tab menu options'), '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['tabs']['video_playinbody'] = array(
-    '#type' => 'radios',
-    '#title' => t('Play in node'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_playinbody', 1),
-    '#description' => t('Toggle display of video in the body of the node.')); 
-  $form['tabs']['video_displayplaymenutab'] = array(
-    '#type' => 'radios',
-    '#title' => t('Display play menu tab'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_displayplaymenutab', 1),
-    '#description' => t('Toggle display of menu link to play video from the node page. If you have chosen to display the video in the body of the node, then this is redundant and must be set to "No."'));
-  $form['tabs']['video_displaydownloadmenutab'] = array(
-    '#type' => 'radios',
+  
+  $form['menu'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('General behavior'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
+  $vtypes = video_get_types_infos();
+  if ($vtypes) { // no vtype available
+    $video_types = array();
+    foreach ($vtypes as $vtype => $info) {
+      $video_types[$vtype] = $info['#name'];
+    }
+    $video_types[0] = t('No default type');
+    $form['menu']['video_default_video_type'] = array(
+        '#type' => 'select',
+        '#title' => t('Choose default video type'),
+        '#default_value' => variable_get('video_default_video_type', 0),
+        '#description' => t('For installations that have more than one video type available, this sets the default video type when a user visits node/add/video'),
+        '#options' => $video_types,
+      );
+  }
+  $form['menu']['video_displaydownloadmenutab'] = array(
+    '#type' => 'checkbox',
     '#title' => t('Display download menu tab'),
-    '#options' => $options,
     '#default_value' => variable_get('video_displaydownloadmenutab', 1),
-    '#description' => t('Toggle display of menu link to download video from the node page.'));
-
-  $form['flash'] = array('#type' => 'fieldset', '#title' => t('Flash settings'), '#collapsible' => TRUE, '#collapsed' => TRUE);
+    '#description' => t('Toggle display of menu tab to download video from the node page.')
+  );
+  $form['menu']['video_displaydownloadlink'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display download link'),
+    '#default_value' => variable_get('video_displaydownloadlink', 1),
+    '#description' => t('Toggle display of "download" link (below the node content in most themes).')
+  );
+  $form['menu']['video_displayplaytime'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display playtime'),
+    '#default_value' => variable_get('video_displayplaytime', 1),
+    '#description' => t('Toggle the display of the playtime for a video.')
+  );
+  $form['menu']['video_displayfilesize'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display filesize'),
+    '#default_value' => variable_get('video_displayfilesize', 1),
+    '#description' => t('Toggle the display of the filesize for a video.')
+  );
+  
+  $form['resolutions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Video resolutions'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
+  
+  $form['resolutions']["video_resolution_width"] = array(
+    '#type' => 'textfield',
+    '#title' => t("Default width"),
+    '#default_value' => variable_get("video_resolution_width", 400),
+    '#description' => t('The width which will be used to scale video during playing. This let all videos on the website look the same')
+  );
+  
+  $i = 1;
+  while($i <= 4) {
+    $form['resolutions']["video_resolution_{$i}_name"] = array(
+      '#type' => 'textfield',
+      '#title' => t("Resolution {$i} name"),
+      '#default_value' => variable_get("video_resolution_{$i}_name", ''),
+    );
+    $form['resolutions']["video_resolution_{$i}_value"] = array(
+      '#type' => 'textfield',
+      '#title' => t("Resolution {$i} value"),
+      '#default_value' => variable_get("video_resolution_{$i}_value", ''),
+      '#description' => t('The resolution: two numbers representing width and height separated by an "x"'),
+    );
+    $i++;
+  }
+  
+  // statistics stuff
+  $form['counters'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Statistics counters'),
+    '#description' => t('To allow users to view counters visit: ') . l(t('access control'), 'admin/access'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
+  $form['counters']['video_playcounter'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Count play hits'),
+    '#default_value' => variable_get('video_playcounter', 1),
+    '#description' => t('Counts a hit everytime someone views the play page.')
+  );
+  $form['counters']['video_downloadcounter'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Count downloads'),
+    '#default_value' => variable_get('video_downloadcounter', 1),
+    '#description' => t('Counts a hit everytime someone downloads a video.')
+  );
+    
+  $form['flash'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Flash settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
   $form['flash']['video_flvplayerloader'] = array(
     '#type' => 'textfield',
     '#title' => t('Filename of Flash loader'),
     '#default_value' => variable_get('video_flvplayerloader', 'FlowPlayer.swf'),
-    '#description' => t('The name of the Shockwave file that manages loading the FLV movie.'));
-  $form['ogg'] = array('#type' => 'fieldset', '#title' => t('Ogg Theora settings'), '#collapsible' => TRUE, '#collapsed' => TRUE);
+    '#description' => t('The name of the Shockwave file that manages loading the FLV movie. This is relative to the website root.')
+  );
+  $form['ogg'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Ogg Theora settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
   $form['ogg']['video_cortado'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Filename of Cortado Java Applet'),
-      '#default_value' => variable_get('video_cortado', $base_url . '/cortado.jar'),
-      '#description' => t('The path to the Cortado Applet to play Ogg Theora Files.'));
-  $form['menu'] = array('#type' => 'fieldset', '#title' => t('Items to display in the node menu'), '#weight' => -5, '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['menu']['video_displayplaylink'] = array(
-    '#type' => 'radios',
-    '#title' => t('Display play link'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_displayplaylink', 1),
-    '#description' => t('Toggle display of "play" link (below the node content in most themes). If you choose to display the video in the body of the node, then this is redundant and must be set to "No."'));
-  $form['menu']['video_displaydownloadlink'] = array(
-    '#type' => 'radios',
-    '#title' => t('Display download link'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_displaydownloadlink', 1),
-    '#description' => t('Toggle display of "download" link (below the node content in most themes).'));
-  $form['menu']['video_displayplaytime'] = array(
-    '#type' => 'radios',
-    '#title' => t('Display playtime'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_displayplaytime', 1),
-    '#description' => t('Toggle the display of the playtime for a video.'));
-  $form['menu']['video_displayfilesize'] = array(
-    '#type' => 'radios',
-    '#title' => t('Display filesize'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_displayfilesize', 1),
-    '#description' => t('Toggle the display of the filesize for a video.'));
-
-  $form['counters'] = array('#type' => 'fieldset', '#title' => t('Statistics counters'), '#description' => t('To allow users to view counters visit: ') . l(t('access control'), 'admin/access'), '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['counters']['video_playcounter'] = array(
-    '#type' => 'radios',
-    '#title' => t('Count play hits'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_playcounter', 1),
-    '#description' => t('Counts a hit everytime someone views the play page.'));
-  $form['counters']['video_downloadcounter'] = array(
-    '#type' => 'radios',
-    '#title' => t('Count downloads'),
-    '#options' => $options,
-    '#default_value' => variable_get('video_downloadcounter', 1),
-    '#description' => t('Counts a hit everytime someone downloads a video.'));
+    '#type' => 'textfield',
+    '#title' => t('Filename of Cortado Java Applet'),
+    '#default_value' => variable_get('video_cortado', $base_url . '/cortado.jar'),
+    '#description' => t('The path to the Cortado Applet to play Ogg Theora Files.')
+  );
 
   return system_settings_form($form);
 }
+
+
+/**
+ * Form API callback to validate the upload settings form.
+ *
+ * Keeps the use from showing the play tab or the play link
+ * if they have chosen to display the video in the node body.
+ *
+ * @param $form_id
+ *   The identifier of the form
+ *
+ * @param $form_values
+ *   form values from the settings page
+ *
+ */
+function video_settings_form_validate($form_id, $form_values){
+  //print_r($form_values); die;
+  
+  // if admin set a name for a resolution he also have to set its value
+  while($i <= 4) {
+    if($form_values["video_resolution_{$i}_name"] != '' && $form_values["video_resolution_{$i}_value"] == '') {
+      form_set_error("video_resolution_{$i}_value", t('You have to set a value for resolution %res_num if you want to enable it.', array('%res_num' => $i)));
+    }
+    if($form_values["video_resolution_{$i}_value"] != '' && !preg_match('/^[0-9]{2,4}x[0-9]{2,4}$/',$form_values["video_resolution_{$i}_value"])) { // check valid resolution value
+      form_set_error("video_resolution_{$i}_value", t('You have to set valid value for resolution %res_num if you want to enable it. A valid value is 400x300', array('%res_num' => $i)));
+    }
+    
+    $i++;
+  }
+  ; // for future use
+}
+
 
 /******************************************************************************
  * Node Hooks
@@ -411,7 +437,7 @@ function video_access($op, $node) {
   }
 
   if ($op == 'update' || $op == 'delete') {
-      return user_access('edit own video') && ($user->uid == $node->uid);
+      return (user_access('edit own video') && ($user->uid == $node->uid)) || user_access('edit all video nodes');
   }
 }
 
@@ -440,6 +466,114 @@ function video_nodeapi($node, $op, $arg) {
   }
 }
 
+
+/**
+ * Create video submission page. Let the user select the actived video types
+ * or display the video form for the selected video type
+*/
+function video_add() {
+  global $user;
+
+  $edit = isset($_POST['edit']) ? $_POST['edit'] : '';
+
+  // If a video type has been specified, validate its existence.
+
+  $vtypes = video_get_types();
+
+  if (arg(3) && in_array(arg(3), $vtypes)) { // is a valid video type
+    $type = arg(3);
+
+    // Initialize settings:
+    $node = (object) array('uid' => $user->uid, 'name' => $user->name, 'type' => 'video', 'vtype' => $type);
+
+    $output = drupal_get_form('video_node_form', $node);
+    drupal_set_title(t('Submit %name video', array('%name' => $type)));
+  }
+  else if (count($vtypes) == 1) { // only one vtype active. redirect the user to the active type form
+    // Initialize settings:
+    $node = (object) array('uid' => $user->uid, 'name' => $user->name, 'type' => 'video', 'vtype' => $vtypes[0]);
+
+    $output = drupal_get_form('video_node_form', $node);
+    drupal_set_title(t('Submit %name video', array('%name' => $vtypes[0])));
+  }
+  else if ($vtype = variable_get('video_default_video_type', 0)) {
+    // Initialize settings:
+    $node = (object) array('uid' => $user->uid, 'name' => $user->name, 'type' => 'video', 'vtype' => $vtype);
+
+    $output = drupal_get_form('video_node_form', $node);
+    drupal_set_title(t('Submit %name video', array('%name' => $vtype)));
+  }
+  else {
+    $output = video_types_page();
+  }
+  return $output;
+}
+
+
+/**
+ * Display a video types selection page
+*/
+function video_types_page() {
+
+  drupal_set_title(t('Submit Video')); // we have to set a titl ebecause the node module will not do it for us as we are using a callback video_add()
+
+  $vtypes = video_get_types_infos();
+  if(!$vtypes) { // no vtype available
+    return t('There are no Video types enabled.');
+  }
+  else {
+    $items = array();
+    foreach ($vtypes as $vtype => $infos) {
+      $out = '<dt>'. l($infos['#name'], "node/add/video/$vtype", array('title' => t('Add a !s.', array('!s' => $infos['#name'])))) .'</dt>';
+      $out .= '<dd>'. $infos['#description'] .'</dd>';
+      $items[$vtype] = $out;
+    }
+    // let's order by type name
+    ksort($items);
+    return t('Choose from the following available video types:') .'<dl>'. implode('', $items) .'</dl>';
+  }
+}
+
+
+/**
+ *  Return an array containing enabled Video Types
+ */
+function video_get_types(){
+  return array_keys(video_get_types_infos());
+}
+
+
+/**
+ *  Return an array containing informations on enabled Video Types
+ */
+function video_get_types_infos(){
+  static $infos = NULL;
+
+  if(!is_array($infos)) {
+    $infos = module_invoke_all('v_info');
+  }
+  return $infos;
+}
+
+
+/**
+ * Return the informations for a given video type
+*/
+function video_get_type_info($type) {
+  return module_invoke('video_'.$type, 'v_info');
+}
+
+
+/**
+ * Return true if a given video type is downloadable
+*/
+function video_support_download($node) {
+  $info = video_get_type_info($node->vtype);
+  return $info[$node->vtype]['#downloadable'];
+}
+
+
+
 /**
  * Hook, displays the contents of the node form page for creating and editing nodes.
  *
@@ -451,8 +585,11 @@ function video_nodeapi($node, $op, $arg) {
  */
 function video_form($node) {
   //We must unserialize the array for display in the forms.
-  $node->serial_data = unserialize($node->serialized_data);
+  if($node->serial_data) {
+    $node->serial_data = unserialize($node->serialized_data);
+  }
   $form = array();
+  // default node stuff
   $form['title'] = array('#type' => 'textfield', '#title' => t('Title'),
     '#size' => 60, '#maxlength' => 128, '#required' => TRUE,
     '#default_value' => $node->title, '#weight' => -20);
@@ -460,121 +597,91 @@ function video_form($node) {
     '#title' => t('Body'), '#default_value' => $node->body,
     '#required' => FALSE, '#rows' => 10, '#weight' => -15);
   $form['body_filter']['filter'] = filter_form($node->format);
+  /*
   $form['log'] = array('#type' => 'fieldset', '#title' => t('Log message'),
     '#collapsible' => TRUE, '#collapsed' => TRUE);
   $form['log']['message'] = array(
     '#type' => 'textarea', '#default_value' => $node->log, '#rows' => 5,
     '#description' => t('An explanation of the additions or updates being made to help other authors understand your motivations.')
   );
+  */
+  // set an hidden field to store video type
+  $form['vtype'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->vtype
+  );
 
-  $form['video'] = array('#type' => 'fieldset', '#title' => t('Video File'), '#weight' => -19);
-  $form['video']['vidfile'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Video File'),
-    '#default_value' => $node->vidfile,
-    '#maxlength' => 700,
-    '#required' => TRUE,
-    '#weight' => -20,
-    '#description' => t('Put here the video file path. You can use either relative to the drupal root directory (something/video.mov) or absolute (http://www.example.com/videos/videos.mov). Windows Media currently requires a fully qualified URL to function. Flash movies may not play with spaces in the path or filename. To add youtube.com videos enter the video ID. If your video was at (http://www.youtube.com/watch.php?v=aBM4QYXPf-s) you would enter (aBM4QYXPf-s). To add Google videos you will need the docId values available on the embed code google provide with "google:" as heading. ') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
-  $form['video']['videox'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Video Size Width (x)'),
-    '#required' => TRUE,
-    '#length' => 4,
-    '#maxlength' => 4,
-    '#default_value' => $node->videox,
-    '#description' => t('Horizontal video pixel size.'));
-  $form['video']['videoy'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Video Size Height (y)'),
-    '#required' => TRUE,
-    '#length' => 4,
-    '#maxlength' => 4,
-    '#default_value' => $node->videoy,
-    '#description' => t('Vertical video pixel size.'));
+  $form['video'] = array('#type' => 'fieldset', '#title' => t('Video Information'), '#weight' => -19);
+  
+  if(!video_support_autoresolution($node)) { // this vtype doesn't support autoresolution
+    // let's display the resolution selection
+    $form['video']['vresolution'] = array(
+      '#type' => 'select',
+      '#title' => t('Resolution'),
+      '#description' => t("Select the approriate resolution (aspect ratio) for your video.<br />If you don't know what to choose then the default value will probably be ok for you."),
+      '#options' => _video_get_resolution_options(),
+      '#default_value' => $node->vresolution,
+      '#required' => true,
+    );
+  }
 
-  $form['video']['filesize'] = array('#type' => 'fieldset', '#title' => t('Filesize'));
-  $form['video']['filesize']['size'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Size'),
-    '#required' => FALSE,
-    '#length' => 12,
-    '#maxlength' => 12,
-    '#default_value' => $node->size,
-    '#description' => t('If the video is on the local server the size will be set automatically. Otherwise enter a value. Entering 0 will turn the display off. Must be less than 2GB.'));
-  $form['video']['filesize']['size_format'] = array(
-    '#type' => 'select',
-    '#title' => t('size units'),
-    '#options' => array('B' => t('bytes'), 'Kb' => t('Kilobits'), 'KB' => t('KiloBytes'), 'Mb' => t('Megabits'), 'MB' => t('MegaBytes'), 'Gb' => t('Gigabits'), 'GB' => t('GigaBytes')),
-    '#default_value' => 'B');
-
-  $form['video']['playtime'] = array('#type' => 'fieldset', '#title' => t('Playtime'), '#description' => t('Values may be entered in excess of their normal "clock maximum" (the seconds field may be 3600 to represent 1 hour), however each value will be summed for a total of all three.'));
-  $playtime = _video_sec2hms($node->playtime_seconds);
-  $form['video']['playtime']['playtime_hours'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Hours'),
-    '#length' => 11,
-    '#maxlength' => 11,
-    '#default_value' => $playtime['hours'],
-    '#description' => t('Integer of hours.'));
-  $form['video']['playtime']['playtime_minutes'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Minutes'),
-    '#length' => 11,
-    '#maxlength' => 11,
-    '#default_value' => $playtime['minutes'],
-    '#description' => t('Integer of minutes.'));
-  $form['video']['playtime']['playtime_seconds'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Seconds'),
-    '#required' => TRUE,
-    '#length' => 11,
-    '#maxlength' => 11,
-    '#default_value' => $playtime['seconds'],
-    '#description' => t('Integer of seconds.'));
+  // Get the video-type-specific bits.
+  $form = module_invoke('video_' . $node->vtype, 'v_form', $node, $form);
 
   return $form;
 }
 
+
 /**
- * Form API callback to validate the upload settings form.
- * 
- * Keeps the use from showing the play tab or the play link
- * if they have chosen to display the video in the node body.
- * 
- * @param $form_id
- *   The identifier of the form
- * 
- * @param $form_values
- *   form values from the settings page
- * 
+ * Implementation of hook_validate
  */
-function video_settings_form_validate($form_id, $form_values){
-  // If the user has selected to play videos in the body
-  // and also has the play tab or the play link on
-  // report back that this is redundant and throw an error.
-  if($form_values['video_playinbody'] == 1){
-    if($form_values['video_displayplaylink'] == 1){
-      form_set_error('video_displayplaylink', t('You cannot have the play link turned on if you are playing videos in the node body.'));
-    }
-    if($form_values['video_displayplaymenutab'] == 1){
-      form_set_error('video_displayplaymenutab', t('You cannot have the play tab turned on if you are playing videos in the node body.'));
+function video_validate($node) {
+  
+  if(!video_support_autoresolution($node) || $node->vresolution) { // we have some resolution value
+    // form api checked for good values of vresolution
+    if(variable_get("video_{$node->vresolution}_value", '') == '') {
+
     }
   }
-  if($form_values['video_playinbody'] == 0 && $form_values['video_displayplaylink'] == 0 && $form_values['video_displayplaymenutab'] == 0){
-    drupal_set_message(t('You have NOT selected a method to display videos. Please choose at least one play option below. If you only want users to download videos, you can ignore this message, but usually you will want at least one option turned on. The current possible options are: Display play link, Display in node, and Display play menu tab.'));
-  }
+  
+  module_invoke('video_'.$node->vtype, 'v_validate', $node);
+
+  
 }
+
 
 /**
  * Implementation of hook submit
  */
 function video_submit(&$node) {
-  _video_db_preprocess($node); //Make changes to data before updating DB.
+  
+  if(video_support_autoresolution($node)) { // vtype support autoresolution getting
+    $xy = module_invoke('video_' . $node->vtype, 'v_auto_resolution', $node);
+    if ($xy) {
+      $node->videox = $xy[0];
+      $node->videoy = $xy[1];
+    }
+  }
+  else {
+    // we should have good
+    if($node->vresolution) {
+      $node->videox = 800;
+      $node->videoy = 600;
+    }
+  }
+  
+  if(video_support_autoplaytime($node)) { // vtype support auto playtime
+    $node->playtime_seconds = module_invoke('video_' . $node->vtype, 'v_auto_playtime', $node);
+  }
+  else { // vtype does not support auto_playtime
+    $node->playtime_seconds += ($node->playtime_hours * 3600) + ($node->playtime_minutes * 60);
+  }
+  
 }
 
 /**
- * Hook: Create video record in video table
+ * Implementation of hook_insert.
+ * Create video record in the video table
  *
  * @return
  *   TRUE on success, FALSE on error
@@ -583,8 +690,8 @@ function video_insert($node) {
 
   $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
-  return db_query("INSERT INTO {video} (vid, nid, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5, custom_field_6, serialized_data) VALUES (%d, %d, '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-    $node->vid, $node->nid, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data);
+  return db_query("INSERT INTO {video} (vid, nid, vtype, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5, custom_field_6, serialized_data) VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
+    $node->vid, $node->nid, $node->vtype, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data);
 }
 
 
@@ -607,72 +714,16 @@ function video_update($node) {
   }
 }
 
-/**
- * This function makes changes to node data before it is put into the database.
- *
- * @param $node
- *   object a reference to a $node object to modify.
- *
- * @return
- *   nothing
- */
-function _video_db_preprocess(&$node) {
 
-  //Calculate the time in seconds.
-  $node->playtime_seconds += ($node->playtime_hours * 3600) + ($node->playtime_minutes * 60);
-
-  //If video type is youtube or googlevideo, don't attempt to get filesize (googlevideo filenames are too long to stat)
-  if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') {
-    //If file is on the local server get size, otherwise get size from function.
-    $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
-    $path_for_size = $path; // file_check_file will make $path unusable for filesize()
-    if (file_check_path($path) && is_file($path_for_size)) { //If file exists locally set size.
-      $node->size = filesize($path_for_size);
-    }
-    else {
-      $node->size = _video_size2bytes($node); //Change the size to be correctly shown in bytes.
-    }
-  }
-}
 
 /**
- * Hook
- *
- * @param $node
- *   object
+ * Implementation of hook_delete
  */
 function video_delete($node) {
     db_query("DELETE FROM {video} WHERE nid = %d", $node->nid);
 }
 
-/**
- * Hook to see if every video field has been filled
- * and contains a valid value.
- *
- * @param $node
- *   object
- */
-function video_validate($node) {
-  if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') { //If video is of type youtube don't check size.
-    if (isset($node->videox) && $node->videox <= 0) {
-      form_set_error('videox', t('You have to insert a valid horizontal pixel size for this video'));
-    }
-    if (isset($node->videoy) && $node->videoy <= 0) {
-      form_set_error('videoy', t('You have to insert a valid vertical pixel size for this video'));
-    }
-  }
-  //Make sure file size is valid.
-  $path = getcwd() . '/' . $node->vidfile; //Local path to video file.
-  if ((!isset($node->size) || !is_numeric($node->size) || $node->size < 0) && !$_SESSION['video_upload_file']) { //If the file is not local or not a valid number then set error. $_SESSION check needed for video_upload functionality
-    form_set_error('size', t('You have to insert a valid file size for this video.'));
-  }
-  
-  //Makes sure the total playtime is greater than 0.
-  $time = $node->playtime_seconds + $node->playtime_minutes + $node->playtime_hours;
-  if ((isset($node->playtime_minutes) and isset($node->playtime_hours) and isset($node->playtime_seconds)) and $time == 0) {
-    form_set_error('playtime_seconds', t('Please enter valid playtime information for this video.'));
-  }
-}
+
 
 /**
  * Implementation of hook_load()
@@ -695,17 +746,14 @@ function video_load($node) {
 
 /**
  * Implementation of hook_view().
- * In addition to standard uses, it adds the 6 custom fields to the body of the node.
- *
- * @return
- *   Nothing, modifies $node which is passed by reference.
  */
 function video_view(&$node, $teaser = FALSE, $page = FALSE) {
-  $node = node_prepare($node, $teaser); //Run the body through the standard filters.
-
+  
   // include the video css file
   drupal_add_css(drupal_get_path('module', 'video').'/video.css');
-  $node->content['body'] = array('#value' => $node->body);
+  
+  //Run the body through the standard filters.
+  $node = node_prepare($node, $teaser); 
 
   // theme the teaser
   $node->teaser = theme('video_teaser', $node, $teaser, $page);
@@ -713,19 +761,17 @@ function video_view(&$node, $teaser = FALSE, $page = FALSE) {
   // if we are viewing the page, run the body through the theme
   if ($page) {
     $output = '';
-	if (variable_get('video_playinbody', 0)) {
-	  if (user_access('play video')) {
-        $output .= theme('video_player', $node);
-      }
-	  else {
-	    $output .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
-        $output .= ' ' . t('or') . ' ';
-        $output .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
-        $output .= t(' to play video');
-      }
-	}
-    $output .= theme('video_view', $node, $teaser, $page);
-	$node->content['body'] = array('#value' => $output);
+    if (user_access('play video')) {
+      $node->content['video_player'] = array('#value' => theme('video_player', $node), '#weight' => -1);
+    }
+    else {
+      $output .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
+      $output .= ' ' . t('or') . ' ';
+      $output .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
+      $output .= t(' to play video');
+      $output .= theme('video_view', $node, $teaser, $page);
+      $node->content['video_player'] = array('#value' => $output, '#weight' => -1);
+    }
   }
 
   return $node;
@@ -861,10 +907,11 @@ function video_block_list($delta = 0) {
 /**
  * Redirects to download the video file.
  */
-function video_download() {
-  if ($node = node_load(arg(1))) {
-    if (_video_get_filetype($node->vidfile) != 'youtube' and _video_get_filetype($node->vidfile) != 'googlevideo') { //Make sure the video type is not youtube before downloading.
-      _video_download_goto($node->vidfile, $node->vid);
+function video_download($node) {
+  // $node as been loaded by video_menu
+  if ($node) {
+    if (video_support_download($node) && _video_allow_download($node)) { //Make sure the video type is not youtube before downloading.
+      _video_download_goto($node);
     }
     else { //If video is type youtube then it can't be downloaded.
       drupal_set_message(t('There are no files to download for this video.'), 'error');
@@ -876,36 +923,29 @@ function video_download() {
   }
 }
 
+
 /**
- * Implements play callback function from node menu
- */
-function video_play() {
-  if ($node = node_load(arg(1))) {
-    drupal_set_title(t('Playing') . ' ' . theme('placeholder', $node->title));
-	$output = theme('video_player', $node);
-    if($output == ''){
-      drupal_goto("node/$node->nid");
-    }
-    return $output;
-  }
-  else {
-    drupal_not_found();
-  }
+ * Return true if the video is downloadable, false otherwise
+*/
+function _video_allow_download($node) {
+  return true;
+  
 }
+
 
 /**
  * Theme the teaser
- * 
+ *
  * This is just in place for site admins and theme developers
  * who need to adjust how the teaser is themed.
- * 
+ *
  * @param $node
  *   The node to be displayed.
- * @param $teaser 
+ * @param $teaser
  *   Whether we are to generate a "teaser" or summary of the node, rather than display the whole thing.
- * @param $page 
+ * @param $page
  *   Whether the node is being displayed as a standalone page. If this is TRUE, the node title should not be displayed, as it will be printed automatically by the theme system. Also, the module may choose to alter the default breadcrumb trail in this case.
- * 
+ *
  * @return
  *   html
  */
@@ -916,14 +956,14 @@ function theme_video_teaser($node, $teaser = FALSE, $page = FALSE) {
 /**
  * theme the view of the page to include the video
  * assumes that body was put through prepare in hook_view
- * 
+ *
  * @param $node
  *   The node to be displayed.
- * @param $teaser 
+ * @param $teaser
  *   Whether we are to generate a "teaser" or summary of the node, rather than display the whole thing.
- * @param $page 
+ * @param $page
  *   Whether the node is being displayed as a standalone page. If this is TRUE, the node title should not be displayed, as it will be printed automatically by the theme system. Also, the module may choose to alter the default breadcrumb trail in this case.
- * 
+ *
  * @return
  *   html
  */
@@ -933,505 +973,27 @@ function theme_video_view($node, $teaser = FALSE, $page = FALSE) {
 
 /**
 * theme function to control which player is presented
-* 
+*
 * @param $node
 *   node object
-* 
+*
 * @return
 *   html
 */
 function theme_video_player($node) {
   // include video.js file for Internet Explorer fixes
   theme('video_get_script');
-  drupal_set_title(t('Playing') . ' ' . theme('placeholder', $node->title));
+  
   if (variable_get('video_playcounter', 1)) {
     db_query("UPDATE {video} SET play_counter = play_counter + 1 where vid = %d", $node->vid); //Increment play counter.
   }
-    
-  switch (_video_get_filetype($node->vidfile)) {
-    case 'divx':
-      return theme('video_play_divx', $node);
-    case 'mov':
-    case 'mp4':
-    case '3gp':
-    case '3g2':
-      return theme('video_play_quicktime', $node);
-    case 'rm':
-      return theme('video_play_realmedia', $node);
-    case 'flv':
-      return theme('video_play_flash', $node);
-    case 'swf':
-      return theme('video_play_swf', $node);
-    case 'dir':
-    case 'dcr':
-      return theme('video_play_dcr', $node);
-    case 'asf':
-    case 'wmv':
-      return theme('video_play_windowsmedia', $node);
-    case 'ogg':
-      return theme('video_play_ogg_theora', $node);
-    case 'youtube':
-      return theme('video_play_youtube', $node);
-    case 'googlevideo':
-      return theme('video_play_googlevideo', $node);
-    default:
-      drupal_set_message('Video type not supported', 'error');
-      drupal_goto("node/$node->nid");
-      break;
-  }
-}
-
-/*********************************************************************
- * Themeable functions for playing videos. They print a page with a player embedded.
- *********************************************************************/
-
-/**
- * Play videos from in FLV Flash video format
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_flash($node) {
-  $loader_location = variable_get('video_flvplayerloader', 'FlowPlayer.swf');
   
-  $url = _video_get_fileurl($node->vidfile);
-  $file = basename($url);
-  $base_url = substr($url, 0, strrpos($url, '/'));
+  _video_scale_video($node);
+  $output = module_invoke('video_'.$node->vtype, 'v_play', $node);
   
-  $height = $node->videoy + 24; // add commands height
-
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $height .'"
-data="'. url() . check_plain($loader_location) .'">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $height .'"
-classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
-<![endif]-->' . "\n";
-
-  // params will be passed to both IE or not IE browsers
-  $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
-               <param name="allowScriptAccess" value="sameDomain" />
-               <param name="quality" value="high" />
-               <param name="flashvars" value="config={baseURL:\''. $base_url .'\',videoFile:\''. $file .'\',autoPlay:true,bufferLength:5}" />' . "\n"
-  . _video_get_parameters($node) .
-  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
-
-  $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'),
-                                      t('Link to Macromedia Flash Player Download Page'),
-                                      t('Download latest Flash Player'));
-   return $output;
-}
-
-/**
- * Play Flash .swf files.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_swf($node) {
-
-  $url = _video_get_fileurl($node->vidfile);
-  
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
-data="'. $url .'">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-shockwave-flash" width="'. $node->videox .'" height="'. $node->videoy .'"
-classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
-<![endif]-->' . "\n";
-
-  // params will be passed to both IE or not IE browsers
-  $output .= '<param name="movie" value="'. $url .'" />' . "\n"
-  . _video_get_parameters($node) .
-  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
-
-  $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'), t('Link to Flash player download'), t('Download the latest Flash player'));
   return $output;
 }
 
-
-
-/**
- * Play Director .dcr/.dir files.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-
-function theme_video_play_dcr($node) {
-  
-  $url = _video_get_fileurl($node->vidfile);
-
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="application/x-director" width="'. $node->videox .'" height="'. $node->videoy .'"
-data="'. $url .'">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-director" width="'. $node->videox .'" height="'. $node->videoy .'"
-classid="clsid:166B1BCA-3F9C-11CF-8075-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#version=10,0,0,0">
-<![endif]-->' . "\n";
-
-// params will be passed to both IE or not IE browsers
-  $output .= '<param name="src" value="'. $url .'" />' . "\n"
-  . _video_get_parameters($node) .
-  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
-
-  $output = _theme_video_format_play($output, t('http://www.macromedia.com/shockwave/download/'),
-                                      t('Link to Macromedia Shockwave Player Download Page'),
-                                      t('Download latest Shockwave Player'));
-   return $output;
-}
-
-/**
- * Play videos from in DivX format
- *
- * @see http://developer.apple.com/internet/ieembedprep.html
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_divx($node) {
-  //Increase the height to accommodate the player controls on the bottom.
-  $height = $node->videoy + 20;
-  
-  $url = _video_get_fileurl($node->vidfile);
-  
-  $output = '<!-- [if IE] -->
-<object classid="clsid:67DABFBF-D0AB-41fa-9C46-CC0F21721616" width="'.$node->videox.'" height="'.$height.'" codebase="http://go.divx.com/plugin/DivXBrowserPlugin.cab">
-<!--> <![endif]-->'. "\n";
-	// this will be executed by not Internet Explorer browsers
-  $output = '<!-- [if !IE] --> 
-<object type="video/divx" data="'.$url.'" width="'.$node->videox.'" height="'.$height.'" mode="zero"> 
-<!--> <![endif]-->'."\n";
-  	
- 	$output .= '<param name="src" value="'.$url.'"/>'."\n";
-  $output .= '<param name="mode" value="zero"/>'."\n";
-  $output .= '</object>';
-  $output = _theme_video_format_play($output,t('http://www.divx.com/divx/webplayer/'),
-                                     t('Link to DivX Download Page'),
-                                     t('Download latest DivX Web Player'));
-  return $output;
-}
-
-/**
- * Play videos from in Quicktime format
- *
- * @see http://developer.apple.com/internet/ieembedprep.html
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_quicktime($node) {
-  //Increase the height to accommodate the player controls on the bottom.
-  $height = $node->videoy + 16;
-  
-  $url = _video_get_fileurl($node->vidfile);
-
-
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="video/quicktime" width="'. $node->videox .'" height="'. $height .'"
-data="'. $url .'">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab" width="'. $node->videox .'" height="'. $height .'" scale="tofit" >
-<![endif]-->' . "\n";
-
-  // params will be passed to both IE or not IE browsers
-   $output .= '<param name="src" value="'. $url .'" />
-              <param name="AUTOPLAY" value="true" />
-              <param name="KIOSKMODE" value="false" />' . "\n"
-   . _video_get_parameters($node) .
-   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
-
-
-  /*
-  $output = '<script language="JavaScript" type="text/javascript">';
-  $output .= "InsertQuicktimeVideo('{$node->vidfile}','$height','{$node->videox}');";
-  $output .= '</script>';
-  */
-
-
-  $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
-                                      t('Link to QuickTime Download Page'),
-                                      t('Download latest Quicktime Player'));
-  return $output;
-}
-
-/**
- * Play videos from in Realmedia format
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_realmedia($node) {
-  // Real's embeded player includes the controls
-  // in the height
-  $node->videoy += 40;
-  
-  $url = _video_get_fileurl($node->vidfile);
-  
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="audio/x-pn-realaudio-plugin" width="'. $node->videox .'" height="'. $node->videoy .'"
-data="'. $url .'">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="audio/x-pn-realaudio-plugin" width="'. $node->videox .'" height="'. $node->videoy .'"
-classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
-<![endif]-->' . "\n";
-
-  // params will be passed to both IE or not IE browsers
-   $output .= '<param name="src" value="'. $url .'" />
-              <param name="_ExtentX" value="7276" />
-              <param name="" value="3307" />
-              <param name="AUTOSTART" value="true" />
-              <param name="SHUFFLE" value="0" />
-              <param name="PREFETCH" value="0" />
-              <param name="NOLABELS" value="0" />
-              <param name="CONTROLS" value="All" />
-              <param name="CONSOLE" value="Clip1" />
-              <param name="LOOP" value="0" />
-              <param name="NUMLOOP" value="0" />
-              <param name="CENTER" value="0" />
-              <param name="MAINTAINASPECT" value="1" />
-              <param name="BACKGROUNDCOLOR" value="#000000" />'
-   . _video_get_parameters($node) .
-   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
-
-
-  $output = _theme_video_format_play($output, t('http://www.real.com/'),
-                                      t('Link to Real'),
-                                      t('Download latest Realmedia Player'));
-  return $output;
-}
-
-/**
- * Play videos from in WindowsMediaVideo format
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_windowsmedia($node) {
-  // Windows Media's embeded player includes the controls in the height
-  $node->videoy += 68;
-  $url = _video_get_fileurl($node->vidfile);
-
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="application/x-mplayer2" width="'. $node->videox .'" height="'. $node->videoy .'"
-data="'. $url .'">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-oleobject" width="'. $node->videox .'" height="'. $node->videoy .'"
-classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
-<![endif]-->' . "\n";
-
-  // params will be passed to both IE or not IE browsers
-   $output .= '<param name="src" value="'. $url .'" />
-              <param name="URL" value="'.$url.'" />
-              <param name="animationatStart" value="true" />
-              <param name="transparentatStart" value="true" />
-              <param name="autoStart" value="true" />
-              <param name="showControls" value="true" />
-              <param name="loop" value="true" />'
-   . _video_get_parameters($node) .
-   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
-
-
-  $output = _theme_video_format_play($output, t('http://windowsupdate.microsoft.com/'),
-                                      t('Link to Windows Update'),
-                                      t('Download latest Windows Media Player'));
-  return $output;
-}
-
-/**
- * Play videos hosted on youtube.com
- * Allows users to host videos on youtube.com and then use the video ID to post it in the module.
- * In the future it could also use the youtube developer API to get info and comments of the video.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_youtube($node) {
-  $width = ($node->videox ? $node->videox : '425');
-  $height = ($node->videoy ? $node->videoy : '350');
-
-
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
-data="http://www.youtube.com/v/' . check_plain($node->vidfile) . '">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
-classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
-<![endif]-->' . "\n";
-
-  // params will be passed to both IE or not IE browsers
-  $output .= '<param name="movie" value="http://www.youtube.com/v/' . check_plain($node->vidfile) . '" />' . "\n"
-  . _video_get_parameters($node) .
-  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
-
-
-  $output = _theme_video_format_play($output, t('http://www.google.com/support/youtube'), t('Link to youtube.com'), t('youtube.com'));
-  return $output;
-}
-
-/**
- * Play videos hosted on video.google.com
- * Allows users to host videos on video.google.com and then use the video ID to post it in the module.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_googlevideo($node) {
-  $width = ($node->videox ? $node->videox : '425');
-  $height = ($node->videoy ? $node->videoy : '350');
-  // Strip heading "google:"
-  $videoid = substr($node->vidfile, 7);
-
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
-data="http://video.google.com/googleplayer.swf?docId='. check_plain($videoid) .'">
-<!--> <![endif]-->' . "\n";
-
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
-classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
-<![endif]-->' . "\n";
-
-  // params will be passed to both IE or not IE browsers
-  $output .= '<param name="movie" value="http://video.google.com/googleplayer.swf?docId=' . check_plain($videoid) . '" />' . "\n";
-  // following a list of params simply copied from old embed tag params. I don't know if this are really needed.
-  $output .= '<param name="quality" value="best" />
-  <param name="bgcolor" value="#ffffff" />
-  <param name="allowScriptAccess" value="sameDomain" />
-  <param name="scale" value="noScale" />
-  <param name="wmode" value="window" />
-  <param name="salign" value="TL" />
-  <param name="FlashVars" value="playerMode=embedded" />'
-  . _video_get_parameters($node) .
-  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
-
-
-  $output = _theme_video_format_play($output, t('http://video.google.com/support'), t('Link to video.google.com'), t('video.google.com'));
-  return $output;
-}
-
-/**
- * Play Ogg Theora videos with Cortado Applet
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_ogg_theora($node) {
-  global $base_url;
-  $cortado_location = variable_get('video_cortado', $base_url . '/cortado.jar');  
-  $url = _video_get_fileurl($node->vidfile);
-  
-  $width = ($node->videox ? $node->videox : '425');
-  $height = ($node->videoy ? $node->videoy : '350');
-  
-  $output = '
-  <!--[if !IE]>-->
-  <object classid="java:com.fluendo.player.Cortado.class" 
-          type="application/x-java-applet"
-          archive="' . $cortado_location . '" 
-          width="' . $width . '" height="' . $height . '" >
-  <!--<![endif]-->
-    <object classid="clsid:8AD9C840-044E-11D1-B3E9-00805F499D93" 
-              codebase="http://java.sun.com/update/1.5.0/jinstall-1_5_0-windows-i586.cab"
-              width="' . $width . '" height="' . $height . '" > 
-        <param name="code" value="com.fluendo.player.Cortado" />
-    <!--[if !IE]>-->
-    </object> 
-    <!--<![endif]-->
-      <!-- IE and Konqueror browser need the archive param -->
-      <param name="archive" value="' . $cortado_location . '" />
-      <param name="url" value="' . $url . '"/>
-      <param name="local" value="false" />
-      <param name="keepaspect" value="true" />
-      <param name="video" value="true" />
-      <param name="audio" value="true" />
-      <param name="seekable" value="true" />
-      <param name="duration" value="' . $node->playtime_seconds . '" />
-      <param name="bufferSize" value="200" /> 
-      <strong>
-          This browser does not have a Java Plug-in.<br />
-          <a href="http://java.com/download/">
-            Get the latest Java Plug-in here.
-          </a>
-      </strong>       
-  </object>
-  ';
-
-  $output = _theme_video_format_play($output, 
-    t('http://java.com/download/'), t('Link to java.com'), t('Download Java'));
-  return $output;
-}
 
 /**
  * Cut down on redundant link text
@@ -1482,7 +1044,7 @@ function theme_video_fields($fields) {
  * Import the video.js script
  */
 function theme_video_get_script() {
-  drupal_set_html_head('<script type="text/javascript" src="'. check_url(base_path() . drupal_get_path('module', 'video')) . '/video.js"></script>');
+  drupal_add_js(drupal_get_path('module', 'video') . '/video.js');
 }
 
 /******************************************************************************
@@ -1501,48 +1063,41 @@ function theme_video_get_script() {
  *   string value of file type or boolean FALSE on error
  */
 function _video_get_filetype($vidfile) {
-    //If the filename doesn't contain a ".", "/", or "\" and is exactly 11 characters then consider it a youtube video ID.
-    if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) == 11) {
-      $file_type = 'youtube';
-    }
-    else if (strpos($vidfile, 'google:') === 0) {
-      $file_type = 'googlevideo';
-    }
-    else if (strstr($vidfile, '.')) { //If file contains a "." then get the file extension after the "."
-      $file_type = substr($vidfile, strrpos($vidfile, '.') + 1);
-    }
-    else {
-      $file_type = FALSE;
-    }
-    return $file_type;
+  //If the filename doesn't contain a ".", "/", or "\" and is exactly 11 characters then consider it a youtube video ID.
+  if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) == 11) {
+    $file_type = 'youtube';
+  }
+  else if (strpos($vidfile, 'google:') === 0) {
+    $file_type = 'googlevideo';
+  }
+  else if (strstr($vidfile, '.')) { //If file contains a "." then get the file extension after the "."
+    
+    $file_type = end(explode('.', $vidfile));
+  }
+  else {
+    $file_type = FALSE;
+  }
+  
+  return $file_type;
 }
 
 /**
  * Forward user directly to the file for downloading
  *
- * @param $input_url
- *   string should be either a base64 encoded absolute URL, relative URL, or absolute URL.
- *
- * @param $vid
- *   integer node version ID of the node to have it's download counter updated.
- *
- * @return
- *   Nothing
  */
-function _video_download_goto($input_url, $vid) {
+function _video_download_goto($node) {
   if (user_access('download video')) {
-    
-    $url = _video_get_fileurl($input_url);
-    
+
     if (variable_get('video_downloadcounter', 1)) {
-      db_query("UPDATE {video} SET download_counter = download_counter + 1 where vid = %d", $vid); //Increment download counter.
+      db_query("UPDATE {video} SET download_counter = download_counter + 1 where vid = %d", $node->vid); //Increment download counter.
     }
-    header("Location: $url"); //Redirect to the video files URL.
+    
+    // let the submodule handle the real download logic
+    module_invoke('video_'.$node->vtype, 'v_download', $node);
   }
   else { //If the user does not have access to download videos.
     drupal_set_message(t('You do not have permission to download videos.'), 'error');
-    $node = node_load(array('vid' => $vid)); //Load a node with the $vid so we can get the nid.
-    drupal_goto("node/$node->nid"); //Use the nid we just loaded to go back to the node page.
+    drupal_goto("node/".$node->nid); //Use the nid we just loaded to go back to the node page.
   }
 }
 
@@ -1585,6 +1140,7 @@ function _video_size2bytes($node) {
   }
 }
 
+
 /**
  * Convert seconds to hours, minutes, and seconds.
  * Derived from h:m:s example by Jon Haworth
@@ -1623,7 +1179,7 @@ function _video_sec2hms($sec = 0) {
  */
 function _video_get_fileurl($video_file) {
   global $base_url;
-  
+
   //creation of absolute url
   if (preg_match("/^(http|ftp|mm|rstp)(s?):\/\//", $video_file)) { //If path is absolute
     return check_plain($video_file);
@@ -1689,3 +1245,60 @@ function _video_get_parameters(&$node) {
   }
   return $output;
 }
+
+
+/**
+ * Return true if the video support auto resolution
+*/
+function video_support_autoresolution($node) {
+  $info = video_get_type_info($node->vtype);
+  $has_hook = module_hook('video_' . $node->vtype, 'v_auto_resolution');
+  return $has_hook && isset($info[$node->vtype]['#autoresolution']) && $info[$node->vtype]['#autoresolution'];
+}
+
+
+/**
+ * Return true if the video support auto playtime
+*/
+function video_support_autoplaytime($node) {
+  $info = video_get_type_info($node->vtype);
+  $has_hook = module_hook('video_' . $node->vtype, 'v_auto_playtime');
+  return $has_hook && isset($info[$node->vtype]['#autoplaytime']) && $info[$node->vtype]['#autoplaytime'];
+}
+
+
+/**
+ * Get the resolution options array to use on the video form
+*/
+function _video_get_resolution_options() {
+  
+  $options = array();
+  
+  $i = 1;
+  while($i <= 4) {
+    if(variable_get('video_resolution_'.$i.'_value', '') != '') { // only if we have a value
+      $options[$i] = variable_get('video_resolution_'.$i.'_name', '');
+    }
+    $i++;
+  }
+  return $options;
+}
+
+
+/**
+ * Scale a video to match the desired width
+*/
+function _video_scale_video(&$node) {
+  $def_width = (int) variable_get("video_resolution_width", 400);
+  
+  $height = $def_width * ($node->videoy / $node->videox); // do you remember proportions?? :-)
+
+  $height = round($height);
+  // add one if odd
+  if($height % 2) {
+    $height++;
+  }
+  $node->video_scaled_x = $def_width;
+  $node->video_scaled_y = $height;
+}
+

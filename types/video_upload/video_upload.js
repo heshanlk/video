@@ -2,7 +2,7 @@
 /**
  * @file
  * Javascript functions for busy status on video uploads
- * 
+ *
  * TODO: Support AJAX Uploads :-)
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
@@ -12,7 +12,10 @@
  * Hide the node form and show the busy div
 */
 Drupal.video_upload_hide = function () {
-  $('#node-form').hide();
+  // hiding the form (using display: none) makes its file values empty in Konqueror (Possibly also Safari). So let's move the form away of the view of the browser
+
+  $('#node-form').css({ position: "absolute", top: "-4000px" });
+
   $("#sending").show();
   $("#video_upload_cancel_link").click(Drupal.video_upload_show);
 }
@@ -20,7 +23,7 @@ Drupal.video_upload_hide = function () {
 Drupal.video_upload_show = function() {
   $('#node-form').show();
   $("#sending").hide();
-  
+
   //$("form").bind("submit", function() { return false; })
   window.location = window.location;
 }

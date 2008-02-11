@@ -1,0 +1,688 @@
+<?php
+// $Id$
+// ex: set tabstop=2 expandtab shiftwidth=2 softtabstop=2:
+
+/**
+ * @file
+ * Enable Uploaded videos support for video module.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * @contributor Vernon Mauery <vernon at mauery dot com>
+ */
+
+
+/**
+ * Implementation of hook_menu
+*/
+function video_upload_menu($maycache) {
+  $items = array();
+  if($maycache) {
+    $items[] = array(
+      'path' => 'node/add/video/upload',
+      'title' => t('Upload'),
+      'access' => user_access('create video')
+    );
+    $items[] = array(
+      'path' => 'admin/settings/video/upload',
+      'title' => t('Upload'),
+      'description' => t('Configure various settings of the video upload plugin.'),
+      'access' => user_access('administer site configuration'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('video_upload_admin_settings'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+
+  return $items;
+}
+
+
+/**
+ * Setting form for video_upload
+*/
+function video_upload_admin_settings() {
+  $form = array();
+
+  $form['video_upload_allowed_extensions'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Allowed extensions'),
+    '#description' => t('A comma separated list of video extesions uploadable with the video upload feature. Do not insert any space'),
+    '#default_value' => variable_get('video_upload_allowed_extensions', 'mov,flv,wmv'),
+  );
+
+  $form['video_upload_path_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Pattern for the file prefix'),
+    '#description' => t('Specify the pattern to prefix to file names uploaded with the video_upload module.  It will be appended after the site files directory (e.g., files) but before the file name itself.  Do not include a leading or trailing slash.  Spaces will be converted to underscores to avoid file system issues.'),
+    '#default_value' => variable_get('video_upload_path_prefix', 'videos'),
+  );
+  
+  $form['token_help'] = array(
+    '#title' => t('Replacement patterns'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
+  );
+  $form['token_help']['help'] = array(
+    '#value' => theme('token_help', 'node'),
+  );
+
+  return system_settings_form($form);
+}
+
+
+/**
+ * Implementation of hook_cron().
+ * Look for uploaded videos which have not been submitted (only previews) and
+ * delete them
+ */
+function video_upload_cron() {
+  /* look for crusty files */
+  $temppath = file_directory_temp() . '/video/';
+  $files = file_scan_directory(file_create_path($temppath), '.*');
+  foreach ($files as $file => $info) {
+    if (time() - filemtime($file) > 60*60*6) {
+      db_query("DELETE FROM {files} WHERE filename LIKE 'video_upload_temp.%' AND nid = 1 AND filepath = '%s'", $file);
+      file_delete($file);
+    }
+  }
+}
+
+
+
+
+/**
+ * Implementation of hook_v_help
+*/
+function video_upload_v_help() {
+
+  $help = array();
+  $help['upload']['data'] = '<b>' . t('Url support') . '</b>';
+  $help['upload']['children'] = array(t('You can link to any video file on the Internet.'));
+
+  return $help;
+}
+
+
+/**
+ * Implementation of hook_v_info()
+*/
+function video_upload_v_info() {
+  $info['upload'] = array(
+    '#name' => 'Upload Video',
+    '#description' => t('Post a video available on your computer as a file to this website.'),
+    '#downloadable' => true,
+    '#autothumbable' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_thumbnail', false),
+    '#autoresolution' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_resolution', false),
+  );
+
+  return $info;
+}
+
+
+/**
+ * Implements the hook_v_auto_thumnail
+*/
+function video_upload_v_auto_thumbnail(&$node) {
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    return _video_ffmpeg_helper_auto_thumbnail($node);
+  }
+  return false;
+}
+
+
+/**
+ * Implements the hook_v_auto_resolution
+*/
+function video_upload_v_auto_resolution(&$node) {
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    return _video_ffmpeg_helper_auto_resolution($node);
+  }
+  return false;
+}
+
+
+/**
+ * Implements the hook_v_download
+*/
+function video_upload_v_download($node) {
+  // the code below comes from the audio.module
+  
+  // The mime_header_encode function does not (yet) support
+  // quoted-string encoding of ASCII strings with special
+  // characters.  See discussion at http://drupal.org/node/82614
+  $filename = basename($node->current_video_upload_file->filename);
+  // If the string contains non-ASCII characters, process it through
+  // the mime_header_encode function.
+  if (preg_match('/[^\x20-\x7E]/', $filename)) {
+    $filename = mime_header_encode($filename);
+  }
+  // Otherwise, if the string contains special characters (like
+  // space), perform quoted-string encoding.
+  elseif (preg_match('/[ \(\)<>@,;:\\"\/\[\]\?=]/', $filename)) {
+    $filename = '"'. str_replace('"', '\"', $filename) .'"';
+  }
+  $headers = array(
+    'Content-Type: '. mime_header_encode($node->current_video_upload_file->filemime),
+    'Content-Length: '. $node->current_video_upload_file->filesize,
+    'Content-Disposition: attachment; filename='. $filename,
+  );
+  video_upload_file_transfer($node->current_video_upload_file->filepath, $headers);
+}
+
+
+/**
+ * Variation on Drupal's file_transfer() function. The only difference
+ * is that set_time_limit() is called to allow for large files.
+ 
+ * This code comes from audio module
+ *
+ * @param $source File to transfer.
+ * @param $headers An array of http headers to send along with file.
+ */
+function video_upload_file_transfer($source, $headers) {
+  ob_end_clean();
+
+  foreach ($headers as $header) {
+    // To prevent HTTP header injection, we delete new lines that are
+    // not followed by a space or a tab.
+    // See http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
+    $header = preg_replace('/\r?\n(?!\t| )/', '', $header);
+    header($header);
+  }
+
+  $source = file_create_path($source);
+
+  // Transfer file in 1024 byte chunks to save memory usage.
+  if ($fd = fopen($source, 'rb')) {
+    if (!ini_get('safe_mode')){
+      set_time_limit(0);
+    }
+    while (!feof($fd)) {
+      print fread($fd, 1024);
+      ob_flush();
+      flush();
+    }
+    fclose($fd);
+  }
+  else {
+    drupal_not_found();
+  }
+  exit();
+}
+
+
+/**
+ * Implementation of hook_v_form()
+*/
+function video_upload_v_form(&$node, &$form) {
+  //print 'form';
+
+  // add js stuff for the 'upload in progess' message
+  theme('video_upload_get_script');
+  // add hidden html used for the 'upload in progess' message
+  $form['#suffix'] = theme('video_upload_busy');
+
+  // required for upload to work
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+
+  $form['video'] += _video_upload_form($node);
+
+  return $form;
+}
+
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_upload_nodeapi(&$node, $op) {
+  if($node->type == 'video' && $node->vtype == 'upload') {
+    switch ($op) {
+
+      case 'load':
+        return _video_upload_load($node);
+
+      case 'prepare':
+        _video_upload_prepare($node);
+        break;
+
+      case 'validate':
+         _video_upload_validate($node);
+        break;
+
+      case 'submit':
+        _video_upload_submit($node);
+        break;
+
+      case 'insert':
+        _video_upload_insert($node);
+        break;
+
+      case 'update':
+        _video_upload_update($node);
+        break;
+
+      case 'delete':
+        _video_upload_delete($node);
+        break;
+
+      case 'delete revision':
+        video_upload_delete_revision($node);
+        break;
+        
+      case 'view':
+        _video_upload_view($node);
+    }
+  }
+}
+
+
+
+function _video_upload_load(&$node) {
+  //print 'load';
+
+  $output = array();
+  $output['video_fid'] = $node->serial_data['video_fid'];
+  $file = _video_upload_get_file($output['video_fid']);
+  $output['current_video_upload_file'] = $file;
+  $output['vidfile'] = file_create_url($file->filepath);
+  // set the filesize
+  $output['size'] = $file->filesize;
+
+  return $output;
+}
+
+
+/*
+The following hooks implementation is pretty Drupal voodoo :-) .. you should be
+pretty confortable on drupal apis. See
+http://www.varesano.net/blog/fabio/understanding+drupal+hook+nodeapi+execution+order 
+for some hints
+*/
+
+function _video_upload_prepare(&$node) {
+  if (!count($_POST))
+    return;
+  //print 'prepare';
+  if (is_object($node->video_upload_file)) {
+    $file_field = $node->video_upload_file;
+  } else {
+    $file_field = 'video_upload_file';
+  }
+  
+  if (count($_POST) && $file = file_check_upload($file_field)) { // a file has been uploaded
+    // this is the temp directory to store files
+    $temppath = file_directory_temp() . '/video/';
+    // let's check that the directory is good
+    file_check_directory($temppath, TRUE);
+    // let's save the uploaded file to the temp directory
+    $file = file_save_upload($file, $temppath . '/' . $file->filename, FILE_EXISTS_REPLACE);
+    
+    // let's store the temp file into the DB
+    $file->fid = db_next_id('{files}_fid');
+    db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, 1, 'video_upload_temp.'.$file->filename, $file->filepath, $file->filemime, $file->filesize);
+    
+    // TODO: delete here the previous $node->new_video_upload_file
+    
+    $node->new_video_upload_file = $file;
+  }
+  else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Submit') {
+    $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
+  }
+  else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Preview') {
+    $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
+    
+  }
+}
+
+/**
+* Create video upload specific form fields
+*/
+function _video_upload_form(&$node) {
+  _video_upload_check_settings();
+
+  $form = array();
+
+  if($node->new_video_upload_file) { // there is a newly uploaded file (this has been initialized by _prepare())
+    $form['new_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => $node->new_video_upload_file->fid);
+    $form['new_video_upload_file_info'] = array('#type' => 'item', '#value' => theme('video_upload_file_info_form', $node->new_video_upload_file, $node), '#weight' => -10);
+    //print_r($node->new_video_upload_file); die;
+  } else {
+    $form['new_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => 0);
+    if($node->current_video_upload_file) { // we don't have a new file
+      $form['current_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => $node->current_video_upload_file->fid);
+      $form['current_video_upload_file_info'] = array('#type' => 'item', '#value' => theme('video_upload_file_info_form', $node->current_video_upload_file, $node), '#weight' => -10);
+    }
+  }
+  $form['video_upload_file'] = array(
+    '#type' => 'file',
+    '#title' => t('Upload video file'),
+    '#size' => 40,
+    '#weight' => -9,
+    '#description' => t('Choose a video file from you pc.<br /><b>NOTE:</b> The max upload size is') . ' ' . format_size(file_upload_max_size()) . '.',
+  );
+
+  return $form;
+}
+
+
+/**
+ * Validate video file
+ */
+function _video_upload_validate(&$node) {
+  //TODO: check that the file arrived.
+  //print 'validate';
+  //print_r($node); die;
+  
+  if(!($node->new_file_uploaded || $node->new_video_upload_file_fid > 0 || $node->new_video_upload_file_fid > 0 || $node->current_video_upload_file_fid > 0)) { // 
+    form_set_error('video_upload_file', t('You have not provided any video file. Please upload one.<br />If you uploaded a video but the system did not received it, please check that it is smaller than') . ' ' . format_size(file_upload_max_size()).'.');
+  }
+  else if($node->new_file_uploaded || $node->new_video_upload_file_fid > 0 || $node->new_video_upload_file_fid > 0){ 
+    if($node->new_file_uploaded) { // only if the user oploaded a new file
+      $file = $node->new_file_uploaded;
+    }
+    else {
+      $file = _video_upload_get_file($node->new_video_upload_file_fid);
+    }
+    
+    // let's check file extension
+    $extensions = variable_get('video_upload_allowed_extensions', 'mov,flv,wmv');
+    $regex = '/\.('. ereg_replace(',+', '|', preg_quote($extensions)) .')$/i';
+    if (!preg_match($regex, $file->filename)) {
+      //set an error message and delete the the file
+      form_set_error('audio', t('The selected file %name can not be uploaded, because it is only possible to upload files with the following extensions: %files-allowed.', array('%name' => $file->filename, '%files-allowed' => $extensions)));
+      _video_upload_delete_file($file);
+    }
+  }
+}
+
+
+function _video_upload_submit(&$node) {
+  //print 'submit';
+  
+  //print_r($node); die;
+  if($node->new_video_upload_file_fid) {
+    $fid = $node->new_video_upload_file_fid;
+  }
+  else {
+    $fid = $node->current_video_upload_file_fid;
+  }
+  $node->serial_data['video_fid'] = $fid;
+}
+
+function _video_upload_insert(&$node) {
+  //print 'insert';
+  
+  if($node->new_video_upload_file_fid && $file = _video_upload_get_file($node->new_video_upload_file_fid)) { // there is a new file uploaded (now stored on the temp path); need to store in the final directory
+
+    _video_upload_store_file($file, $node);
+  }
+}
+
+function _video_upload_update(&$node) {
+  //print 'update';
+  
+  if($node->new_video_upload_file_fid && $file = _video_upload_get_file($node->new_video_upload_file_fid)) { // there is a new file uploaded (now stored on the temp path)
+    //need to store in the final directory
+    _video_upload_store_file($file, $node);
+    
+    if($node->current_video_upload_file) {
+      // let's delete the old video
+      _video_upload_delete_file($node->current_video_upload_file);
+    }
+  }
+  
+}
+
+/**
+ * Delete files associated to this video node
+ */
+function _video_upload_delete(&$node) {
+  //print 'delete';
+  
+  // delete file
+  file_delete($node->current_video_upload_file->path);
+  
+  // delete file information from database
+  db_query('DELETE FROM {file_revisions} WHERE fid = %d', $node->current_video_upload_file->fid);
+  db_query('DELETE FROM {files} WHERE fid = %d', $node->current_video_upload_file->fid);
+}
+
+
+/**
+ *
+*/
+function _video_upload_view(&$node) {
+  //print 'view';
+}
+
+
+/**
+ * Move a temp file into the final directory associating it with the node
+*/
+function _video_upload_store_file(&$file, &$node) {
+  // $file->filename is video_upload_temp.realfile.ext : let's restore original filename 
+
+  $file->filename = _video_get_original_filename($file->filename);
+
+  _video_upload_get_path(&$file, &$node);
+
+  if (file_move($file, file_directory_path())) { // file moved successfully
+    
+    // update the file db entry
+    db_query("UPDATE {files} SET nid = %d, filename = '%s', filepath = '%s', filemime = '%s', filesize = %d WHERE fid = %d", $node->nid, $file->filename, $file->filepath, $file->filemime, $file->filesize, $file->fid);
+    // add an entry in the file_revisions table
+    db_query("INSERT INTO {file_revisions} (fid, vid, list, description) VALUES (%d, %d, %d, '%s')", $file->fid, $node->vid, $file->list, $file->description);
+  }
+  else {
+    drupal_set_message(t('An error occurred during file saving. Your video file has not been stored.'), 'error');
+    $rep = array(
+      '!path' => $file,
+      '!dest' => $dest_path,
+    );
+    watchdog('video_upload', t('moving file !path to !dest failed', $rep));
+  }
+}
+
+
+/**
+ * Gets the definitive path for stored videos
+*/
+function _video_upload_get_path(&$file, &$node) {
+  // this code is from uploadpath.module
+  $file_name = str_replace(array(' ', "\n", "\t"), '_', token_replace(variable_get('video_upload_path_prefix', 'videos') . '/', 'node', $node)) . $file->filename;
+  
+  // Create the directory if it doesn't exist yet.
+  $dirs = explode('/', dirname($file_name));
+  $directory = file_directory_path();
+  while (count($dirs)) {
+    $directory .= '/' . array_shift($dirs);
+    file_check_directory($directory, FILE_CREATE_DIRECTORY);
+  }
+  $file->filename = $file_name;
+}
+
+
+/**
+ * Get the file object with the given $fid. This function cache its results
+*/
+function _video_upload_get_file($fid) {
+  static $files = array();
+
+  if (!$fid) {
+    return null;
+  }
+  if (!isset($files[$fid])) {
+    $files[$fid] = db_fetch_object(db_query('SELECT * from {files} WHERE fid = %d', $fid));
+  }
+  return $files[$fid];
+}
+
+
+/**
+ * Delete a file
+*/
+function _video_upload_delete_file($file) {
+  
+   // delete file
+  file_delete($file->path);
+
+  // delete file information from database
+  db_query('DELETE FROM {file_revisions} WHERE fid = %d', $file->fid);
+  db_query('DELETE FROM {files} WHERE fid = %d', $file->fid);
+}
+
+
+/**
+ * Display informations about already uploaded file
+ */
+function theme_video_upload_file_info_form($file, $node) {
+  // create array containing uploaded file informations
+  $items = array(
+  '<b>'. t('file name') .':</b> ' . _video_get_original_filename(basename($file->filename)), // do not display parent folders
+  '<b>'. t('file size') .':</b> ' . format_size($file->filesize),
+  );
+
+  // create information list
+  $output .= theme_item_list($items, t('uploaded video information:'));
+
+  return $output;
+}
+
+
+/**
+ * Return the original filename (without 'video_upload_temp.')
+*/
+function _video_get_original_filename($filename) {
+  if(strpos($filename, 'video_upload_temp.') === 0) {
+    return substr($filename, strlen('video_upload_temp.'));
+  }
+  return $filename;
+}
+
+
+/**
+ * Verify the video_upload module settings.
+ */
+function _video_upload_check_settings() {
+  
+  /*
+  // File paths
+  $video_path = file_create_path(variable_get('video_upload_default_path', 'videos'));
+  $temp_path = rtrim($video_path, '/') . '/temp';
+
+  if (!file_check_directory($video_path, FILE_CREATE_DIRECTORY, 'video_upload_default_path')) {
+    return false;
+  }
+  if (!file_check_directory($temp_path, FILE_CREATE_DIRECTORY, 'video_upload_default_path')) {
+    return false;
+  }
+  */
+  return true;
+  
+}
+
+
+
+/**
+ * Import the video_upload.js script
+ */
+function theme_video_upload_get_script() {
+  drupal_add_js(drupal_get_path('module', 'video_upload') . '/video_upload.js');
+}
+
+
+/**
+ * Renders a 'upload in progress' message
+*/
+function theme_video_upload_busy() {
+  return '<div id="sending" style="display: none;">
+         <h3>' . t('Sending video... please wait.') . '</h3>
+            <img src="'. base_path() . drupal_get_path('module', 'video_upload') . '/busy.gif'.'" alt="' . t('Sending video... please wait.') . '"/>
+            <p>'. t('Please wait while your video is uploading.') . '<br /><a href="#" id="video_upload_cancel_link">abort upload.</a></p>
+            </div>';
+}
+
+
+/**
+ * Implementation of hook_v_play
+*/
+function video_upload_v_play($node) {
+  include(drupal_get_path('module', 'video') .'/includes/common.inc');
+  return _video_common_get_player($node);
+}
+
+
+/**
+ * Function to other modules to use to create image nodes.
+ *
+ * @param $filepath
+ *   String filepath of an image file. Note that this file will be moved into 
+ *   the image module's images directory.
+ * @param $title
+ *   String to be used as the node's title. If this is ommitted the filename 
+ *   will be used.
+ * @param $body 
+ *   String to be used as the node's body.
+ * @param $taxonomy
+ *   Taxonomy terms to assign to the node if the taxonomy.module is installed.
+ * @return 
+ *   A node object if the node is created successfully or FALSE on error.
+ */
+function video_upload_create_node_from($filepath, $title = NULL, $body = '', $taxonomy = NULL) {
+  global $user;
+
+  if (!user_access('create images')) {
+    drupal_access_denied();
+  }
+
+  if (!is_object($filepath)) {
+    $p = $filepath;
+    $filepath = new stdClass();
+    $filepath->filepath = $p;
+    $filepath->filename = basename($p);
+    $filepath->filesize = filesize($p);
+  }
+
+  // Ensure it's a valid video
+  //if (!$image_info = image_get_info($filepath)) {
+  //  return FALSE;
+  //}
+
+  // Build the node.
+  $node = new stdClass();
+  $node->type = 'video';
+  $node->vtype = 'upload';
+  $node->uid = $user->uid;
+  $node->name = $user->name;
+  $node->title = isset($title) ? $title : basename($filepath);
+  $node->body = $body;
+
+  // Set the node's defaults... (copied this from node and comment.module)
+  $node_options = variable_get('node_options_'. $node->type, array('status', 'promote'));
+  $node->status = in_array('status', $node_options);
+  $node->promote = in_array('promote', $node_options);
+  if (module_exists('comment')) {
+    $node->comment = variable_get("comment_$node->type", COMMENT_NODE_READ_WRITE);
+  }
+  if (module_exists('taxonomy')) {
+    $node->taxonomy = $taxonomy;
+  }
+  $node->video_upload_file = $filepath;
+  node_invoke_nodeapi($node, 'prepare');
+  $node->new_video_upload_file_fid = $node->new_video_upload_file->fid;
+
+  // Save the node.
+  $node = node_submit($node);
+  node_save($node);
+
+  // Remove the original image now that the import has completed.
+  file_delete($original_path);
+
+  return $node;
+}
+
