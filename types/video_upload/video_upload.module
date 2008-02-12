@@ -469,7 +469,7 @@ function _video_upload_store_file(&$file, &$node) {
 
   $file->filename = _video_get_original_filename($file->filename);
 
-  _video_upload_get_path(&$file, &$node);
+  _video_upload_get_path($file, $node);
 
   if (file_move($file, file_directory_path())) { // file moved successfully
     
