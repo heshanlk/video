@@ -270,6 +270,7 @@ function _video_image_prepare(&$node) {
 
 function _video_image_submit(&$node) {
   if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['_original']) {
+    dm($node);
     $image = _video_image_temp_image_load(array_values($node->tempimage['fids']));
     db_query("DELETE FROM {files} WHERE fid in (%s)",
             implode(',', array_values($node->tempimage['fids'])));

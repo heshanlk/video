@@ -1,5 +1,6 @@
 <?php
 // $Id$
+// ex: set syntax=php tabstop=2 expandtab shiftwidth=2 softtabstop=2:
 
 function video_install() {
   switch ($GLOBALS['db_type']) {
@@ -165,7 +166,6 @@ function video_update_4() {
   return $ret;
 }
 
-
 /**
  * Add the vtype field for video module subtypes
  *
@@ -178,16 +178,56 @@ function video_update_5() {
     case 'mysqli':
     case 'pgsql':
       $ret[] = update_sql("ALTER TABLE {video} ADD vtype varchar(32) NOT NULL default ''");
-      //TODO: set the appropriate value to the newly added vtype field of existing nodes
   }
   return $ret;
 }
 
 
+/* used for update 6 */
+function _video_update_6_get_vtype($node) {
+  $file_type = '';
+  $vidfile = $node->vidfile;
+  //If the filename doesn't contain a ".", "/", or "\" and is exactly 11 characters then consider it a youtube video ID.
+  if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) == 11) {
+    $file_type = 'youtube';
+  }
+  else if (strpos($vidfile, 'google:') === 0) {
+    $file_type = 'google';
+  }
+  else if (preg_match('#^http[s]?://#', $vidfile) === 1) { // starts with http[s]?://
+    $file_type = 'url';
+  }
+  else {
+    $files = db_result(db_query("SELECT count(fid) FROM {files} WHERE nid=%d", $node->nid));
+    if ($files > 0) {
+      $file_type = 'upload';
+    }
+  }
+  if ($file_type == '') {
+    drupal_set_message(t('Could not determine video type of node %nid', array('%nid' => $node->nid)), 'error');
+  }
+  return $file_type;
+}
+
+/**
+ * Set vtype for all the videos
+*/
+function video_update_6() {
+  /* this function should be able to be run again and again until
+   * all the videos have been updated */
+  $videos = db_query("SELECT nid,vidfile FROM {video} WHERE vtype=''");
+  while ($video = db_fetch_object($videos)) {
+    db_query("UPDATE {video} SET vtype='%s' WHERE nid=%d",
+      _video_update_6_get_vtype($video), $video->nid);
+  }
+  
+  return array();
+}
+
 /**
  * Set default values of resolutions
 */
-function video_update_6() {
+function video_update_7() {
   variable_set('video_resolution_1_name', '4:3 - Television');
   variable_set('video_resolution_1_value', '400x300');
   variable_set('video_resolution_2_name', '16:9 - Widescreen');
@@ -196,4 +236,36 @@ function video_update_6() {
   return array();
 }
 
+/**
+ * Video_upload changes from relying on files table to locate
+ * video file to saving it in serialized_data as video_fid
+*/
+function video_update_8() {
+  /* select all the video upload video nodes */
+  $vnodes = db_query("SELECT n.nid,n.vid,serialized_data FROM {node} n INNER JOIN {video} v on n.nid = v.nid WHERE n.type = 'video' AND v.vtype = 'upload' AND v.serialized_data NOT LIKE '%video_fid%'");
 
+  while ($node = db_fetch_object($vnodes)) {
+    /* load the video file info */
+    if ($node->vid) {
+      $result = db_query('SELECT * FROM {files} f INNER JOIN {file_revisions} r ON f.fid = r.fid WHERE r.vid = %d ORDER BY f.fid DESC', $node->vid);
+      if (!$result) {
+        continue;
+      }
+      $result = db_fetch_object($result);
+      /* save the new serialized_data */
+      $data = unserialize($node->serialized_data);
+      $data['video_fid'] = $result->fid;
+      $data = serialize($data);
+      $res = db_query("UPDATE {video} SET serialized_data='%s' WHERE nid=%d", $data, $node->nid);
+    }
+  }
+  return array();
+}
+
+/**
+ * Update the vidfile for youtube videos so they will work again
+ */
+function video_update_9() {
+  $res[] = update_sql("UPDATE {video} SET vidfile=CONCAT('http://www.youtube.com/watch?v=',vidfile) WHERE vtype='youtube' AND vidfile NOT LIKE '%youtube.com/watch%'");
+  return $res;
+}

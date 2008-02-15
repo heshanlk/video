@@ -1290,8 +1290,12 @@ function _video_get_resolution_options() {
 */
 function _video_scale_video(&$node) {
   $def_width = (int) variable_get("video_resolution_width", 400);
-  
-  $height = $def_width * ($node->videoy / $node->videox); // do you remember proportions?? :-)
+
+  if (!$node->videox || !$node->videoy) {
+    $height = $def_width * 3 / 4;
+  } else {
+    $height = $def_width * ($node->videoy / $node->videox); // do you remember proportions?? :-)
+  }
 
   $height = round($height);
   // add one if odd
