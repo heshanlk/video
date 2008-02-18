@@ -22,6 +22,8 @@
  */
 
 
+//TODO: When we will release a stable version we have to document all the APIs
+//      the video module have
 
 
 function hook_v_info() {};
