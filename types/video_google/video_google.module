@@ -216,7 +216,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 </object>';
 
 
-  $output = _theme_video_format_play($output, t('http://video.google.com/support'), t('Link to video.google.com'), t('video.google.com'));
+  $output = theme('video_format_play', $output, t('http://video.google.com/support'), t('Link to video.google.com'), t('video.google.com'));
   return $output;
 }
 

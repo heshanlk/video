@@ -97,7 +97,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';
 
-  $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'),
+  $output = theme('video_format_play', $output, t('http://www.macromedia.com/go/getflashplayer'),
                                       t('Link to Macromedia Flash Player Download Page'),
                                       t('Download latest Flash Player'));
    return $output;
@@ -135,7 +135,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';
 
-  $output = _theme_video_format_play($output, t('http://www.macromedia.com/go/getflashplayer'), t('Link to Flash player download'), t('Download the latest Flash player'));
+  $output = theme('video_format_play', $output, t('http://www.macromedia.com/go/getflashplayer'), t('Link to Flash player download'), t('Download the latest Flash player'));
   return $output;
 }
 
@@ -174,7 +174,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#vers
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';
 
-  $output = _theme_video_format_play($output, t('http://www.macromedia.com/shockwave/download/'),
+  $output = theme('video_format_play', $output, t('http://www.macromedia.com/shockwave/download/'),
                                       t('Link to Macromedia Shockwave Player Download Page'),
                                       t('Download latest Shockwave Player'));
    return $output;
@@ -207,7 +207,7 @@ function theme_video_play_divx($node) {
    $output .= '<param name="src" value="'.$url.'"/>'."\n";
   $output .= '<param name="mode" value="zero"/>'."\n";
   $output .= '</object>';
-  $output = _theme_video_format_play($output,t('http://www.divx.com/divx/webplayer/'),
+  $output = theme('video_format_play', $output,t('http://www.divx.com/divx/webplayer/'),
                                      t('Link to DivX Download Page'),
                                      t('Download latest DivX Web Player'));
   return $output;
@@ -257,7 +257,7 @@ data="'. $url .'">
   */
 
 
-  $output = _theme_video_format_play($output, t('http://www.apple.com/quicktime/download'),
+  $output = theme('video_format_play', $output, t('http://www.apple.com/quicktime/download'),
                                       t('Link to QuickTime Download Page'),
                                       t('Download latest Quicktime Player'));
   return $output;
@@ -311,7 +311,7 @@ classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
 </object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
 
 
-  $output = _theme_video_format_play($output, t('http://www.real.com/'),
+  $output = theme('video_format_play', $output, t('http://www.real.com/'),
                                       t('Link to Real'),
                                       t('Download latest Realmedia Player'));
   return $output;
@@ -356,7 +356,7 @@ classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
 </object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
 
 
-  $output = _theme_video_format_play($output, t('http://windowsupdate.microsoft.com/'),
+  $output = theme('video_format_play', $output, t('http://windowsupdate.microsoft.com/'),
                                       t('Link to Windows Update'),
                                       t('Download latest Windows Media Player'));
   return $output;
@@ -415,7 +415,7 @@ function theme_video_play_ogg_theora($node) {
   </object>
   ';
 
-  $output = _theme_video_format_play($output,
+  $output = theme('video_format_play', $output,
     t('http://java.com/download/'), t('Link to java.com'), t('Download Java'));
   return $output;
 }

@@ -1010,7 +1010,7 @@ function theme_video_player($node) {
  * @return
  *   string HTML link
  */
-function _theme_video_format_play($output, $url, $title, $link_text) {
+function theme_video_format_play($output, $url, $title, $link_text) {
   $output = "\n<div id=\"video-player\">\n" . $output;
   $output .= "<p>\n". t('Problems viewing videos?');
   $output .= "<br />\n";
