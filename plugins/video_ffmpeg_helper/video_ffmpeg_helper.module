@@ -446,7 +446,7 @@ function _video_ffmpeg_helper_auto_thumbnail(&$node) {
   // let's create a temp filename into the drupal temp directory
   $thumbfile = tempnam(file_directory_temp(), 'tnail-thumb');
   // get ffmpeg configurations
-  $seek = variable_get('video_image_auto_thumbnail_seek', 2);
+  $seek = variable_get('video_ffmpeg_helper_auto_thumbnail_seek', 2);
   $tnail = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
   $options = preg_replace(array('/%videofile/', '/%thumbfile/', '/%seek/'), array($videofile, $thumbfile, $seek), variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'));
 
