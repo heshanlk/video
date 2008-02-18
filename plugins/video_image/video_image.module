@@ -205,41 +205,22 @@ function video_image_nodeapi(&$node, $op, $teaser) {
  *   string of content to display
  */
 function theme_video_image_teaser($node) {
+  $image = NULL;
   if($node->type == 'image') {
     $image = image_display($node, 'thumbnail', array('class' => 'video_image_teaser'));
   }
-  else { // only for backward compatibility
+  else if($node->serial_data['image_teaser']){ // only for backward compatibility
     $image = theme('image', $node->serial_data['image_teaser'], $node->title, $node->title, array('class' => 'video_image_teaser'), FALSE);
   }
-  //Create a link with an image in it.
-  $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); 
-  $output .= '<br class="video_image_clear" />';
-  return $output;
-}
-
-
-/**
- * Generates the image HTML displayed in the Node body.
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_image_body($node) {
-  $m = variable_get('video_playinbody', 0);
-  if(variable_get('video_playinbody', 0) == 0){
-    if($node->type == 'image') {
-      $image = image_display($node, 'thumbnail');
-    }
-    else { // only for backward compatibility
-      $image = theme('image', $node->serial_data['image_view'], $node->title, $node->title, array('class' => 'video_image_view'), FALSE); //Create image HTML
-    }
-    $output = l($image, "node/$node->nid/play", array('title' => t('play') . ' ' . $node->title), NULL, NULL, FALSE, TRUE); //Create link HTML with image in it.
+  
+  if($image) {
+    //Create a link with an image in it.
+    $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); 
+    $output .= '<br class="video_image_clear" />';
   }
   return $output;
 }
+
 
 /* nodeapi split out hooks */
 function _video_image_load(&$node) {
@@ -315,11 +296,9 @@ function _video_image_view(&$node, $teaser) {
   } else {
     $image = $node;
   }
+  
   if($teaser) {
     $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_teaser', $image));
-  }
-  else {
-    $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_body', $image));
   }
 }
 
