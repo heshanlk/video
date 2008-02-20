@@ -19,3 +19,8 @@ br.video_image_clear {
 .video_image_view {
   /* inser here rules for node page image */
 }
+
+.video-ffmpeg-helper-inprogress {
+  border: 1px solid red;
+  padding: .5em;
+}
