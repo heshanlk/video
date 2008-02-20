@@ -202,17 +202,6 @@ function video_ffmpeg_helper_form_alter($form_id, &$form) {
       $form['#attributes'] = array("enctype" => "multipart/form-data");
 
     }
-
-    /*
-    if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_convert', false)) {
-      $form['video']['videox'] = NULL;
-      $form['video']['videoy'] = NULL;
-    }
-
-    if(variable_get('video_ffmpeg_helper_auto_playtime', false)) {
-      $form['video']['playtime'] = NULL;
-    }
-    */
   }
 
 }
@@ -394,7 +383,7 @@ function _video_ffmpeg_helper_auto_resolution(&$node) {
  * Return the playtime seconds of a video
 */
 function _video_ffmpeg_helper_auto_playtime(&$node) {
-  
+
   if(variable_get('video_ffmpeg_helper_auto_playtime', false)) {
     
     // call ffmpeg -i
@@ -402,7 +391,7 @@ function _video_ffmpeg_helper_auto_playtime(&$node) {
     
     // get playtime
     $pattern = '/[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]/';
-    preg_match_all($pattern, $command_output, $matches, PREG_PATTERN_ORDER);
+    preg_match_all($pattern, $ffmpeg_output, $matches, PREG_PATTERN_ORDER);
     $playtime = $matches[0][0];
 
     // ffmpeg return lenght as 00:00:31.1 Let's get playtime from that

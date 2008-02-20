@@ -49,6 +49,7 @@ function video_google_v_info() {
     '#description' => t('Post a video available on !link to this website.', array('!link' => l(t('Google Video'), 'http://video.google.com'), NULL, NULL, NULL, TRUE)),
     '#autothumbable' => true,
     '#autoresolution' => true,
+    '#autoplaytime' => false, // seems that thereisn't a video lenght field in the google video xml
   );
 
   return $info;

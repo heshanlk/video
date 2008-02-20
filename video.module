@@ -141,7 +141,7 @@ function video_link($type, $node = NULL) {
   // Node links for a video
   if ($type == 'node' && $node->type == 'video' && $node->vidfile && user_access('access video')) {
     //If the video is of type youtube and multi-file downloads aren't turned on don't show the download link.
-    if (!video_support_download($node) && $node->disable_multidownload == 1) {
+    if (!video_support_download($node) || $node->disable_multidownload == 1) {
       $display_download_link = 0;
     }
     else {
@@ -158,7 +158,7 @@ function video_link($type, $node = NULL) {
           ),
       );
     }
-    if (variable_get('video_displayplaytime', 1)) {
+    if (variable_get('video_displayplaytime', 1) && $node->playtime_seconds > 0) { // hide the duration if the admin hided it or we don't have playtime informations
       $link['playtime'] = array(
         'title' => format_interval($node->playtime_seconds),
       );
@@ -597,14 +597,7 @@ function video_form($node) {
     '#title' => t('Body'), '#default_value' => $node->body,
     '#required' => FALSE, '#rows' => 10, '#weight' => -15);
   $form['body_filter']['filter'] = filter_form($node->format);
-  /*
-  $form['log'] = array('#type' => 'fieldset', '#title' => t('Log message'),
-    '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['log']['message'] = array(
-    '#type' => 'textarea', '#default_value' => $node->log, '#rows' => 5,
-    '#description' => t('An explanation of the additions or updates being made to help other authors understand your motivations.')
-  );
-  */
+  
   // set an hidden field to store video type
   $form['vtype'] = array(
     '#type' => 'hidden',
@@ -622,6 +615,38 @@ function video_form($node) {
       '#options' => _video_get_resolution_options(),
       '#default_value' => $node->vresolution,
       '#required' => true,
+    );
+  }
+  
+  if(!video_support_autoplaytime($node)) { // this vtype doesn't support autoplaytime
+    $form['video']['playtime'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Playtime'),
+      '#collapsible' => true,
+      '#collapsed' => ($node->playtime_seconds) ? false : true, // display expanded if we have values inserted by the user
+      '#description' => t('Insert here the duration of the video.<br />Values may be entered in excess of their normal "clock maximum" (the seconds field may be 3600 to represent 1 hour), however each value will be summed for a total of all three.'));
+    $playtime = _video_sec2hms($node->playtime_seconds);
+    $form['video']['playtime']['playtime_hours'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Hours'),
+      '#size' => 11,
+      '#maxlength' => 11,
+      '#default_value' => $playtime['hours'],
+    );
+    $form['video']['playtime']['playtime_minutes'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Minutes'),
+      '#size' => 11,
+      '#maxlength' => 11,
+      '#default_value' => $playtime['minutes'],
+    );
+    $form['video']['playtime']['playtime_seconds'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Seconds'),
+      '#required' => FALSE,
+      '#size' => 11,
+      '#maxlength' => 11,
+      '#default_value' => $playtime['seconds'],
     );
   }
 
@@ -663,7 +688,7 @@ function video_submit(&$node) {
     }
   }
   else {
-    // we should have good
+    // we should have good values 
     if($node->vresolution) {
       $node->videox = 800;
       $node->videoy = 600;

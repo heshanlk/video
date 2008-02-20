@@ -98,8 +98,8 @@ function video_upload_cron() {
 function video_upload_v_help() {
 
   $help = array();
-  $help['upload']['data'] = '<b>' . t('Url support') . '</b>';
-  $help['upload']['children'] = array(t('You can link to any video file on the Internet.'));
+  $help['upload']['data'] = '<b>' . t('Upload support') . '</b>';
+  $help['upload']['children'] = array(t('You can upload a video file from your computer to this website.'));
 
   return $help;
 }
@@ -115,6 +115,7 @@ function video_upload_v_info() {
     '#downloadable' => true,
     '#autothumbable' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_thumbnail', false),
     '#autoresolution' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_resolution', false),
+    '#autoplaytime' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_playtime', false),
   );
 
   return $info;
@@ -140,6 +141,18 @@ function video_upload_v_auto_resolution(&$node) {
   // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
   if(module_exists('video_ffmpeg_helper')) {
     return _video_ffmpeg_helper_auto_resolution($node);
+  }
+  return false;
+}
+
+
+/**
+ * Implements the hook_v_auto_resolution
+*/
+function video_upload_v_auto_playtime(&$node) {
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    return _video_ffmpeg_helper_auto_playtime($node);
   }
   return false;
 }

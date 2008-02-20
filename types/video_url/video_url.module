@@ -48,8 +48,9 @@ function video_url_v_info() {
     '#name' => 'URL Video',
     '#description' => t('Post a video available on the Internet to this website.'),
     '#downloadable' => TRUE,
-    '#autothumbable' => TRUE,
-    '#autoresolution' => TRUE,
+    '#autothumbable' => FALSE,
+    '#autoresolution' => FALSE,
+    '#autoplaytime' => FALSE,
   );
 
   return $info;
@@ -68,7 +69,7 @@ function video_url_v_form(&$node, &$form) {
     '#maxlength' => 700,
     '#required' => TRUE,
     '#weight' => -20,
-    '#description' => t('Insert the URL to the video file. ') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
+    '#description' => t('Insert the URL to the video file. This shuold be something similar to http://www.example.com/videos/myvideo.flv') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
 
   return $form;
 }
@@ -89,59 +90,5 @@ function video_url_v_play($node) {
   include_once(drupal_get_path('module', 'video') .'/includes/common.inc');
   return _video_common_get_player($node);
 }
-
-/**
- * Implementation of hook_v_auto_thumbnail
- */
-function video_url_v_auto_thumbnail(&$node) {
-  if (count($_POST)) {
-    if ($_POST['vidfile'] == $node->vidfile) {
-      _video_image_thumbnail_debug(t('No new video to thumbnail'));
-      return NULL;
-    }
-    if ($_POST['tempimage']['fids']['_original']) {
-      _video_image_thumbnail_debug(t('Video already thumbnailed'));
-      return NULL;
-    }
-    if ($node->iid && !$_POST['new_video_upload_file']) {
-      _video_image_thumbnail_debug(t('No new video to thumbnail'));
-      return NULL;
-    }
-    if (!$node->vidfile) {
-      $node->vidfile = $_POST['vidfile'];
-    }
-  }
-
-  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
-  if(module_exists('video_ffmpeg_helper')) {
-    $node->new_video_upload_file = (object)array(
-      'filepath' => $node->vidfile,
-      'filename' => basename($node->vidfile),
-    );
-    $ret = _video_ffmpeg_helper_auto_thumbnail($node);
-    unset($node->new_video_upload_file);
-    return $ret;
-  }
-  return false;
-}
-
-/**
- * Implements the hook_v_auto_resolution
-*/
-function video_url_v_auto_resolution(&$node) {
-  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
-  if(module_exists('video_ffmpeg_helper')) {
-    $node->new_video_upload_file = (object)array(
-      'filepath' => $node->vidfile,
-      'filename' => basename($node->vidfile),
-    );
-    $ret = _video_ffmpeg_helper_auto_resolution($node);
-    unset($node->new_video_upload_file);
-    return $ret;
-  }
-  return false;
-}
-
-
 
 

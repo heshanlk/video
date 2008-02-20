@@ -101,6 +101,7 @@ function video_youtube_v_info() {
     '#description' => t('Post a video available on !link to this website.', array('!link' => l(t('Youtube'), 'http://www.youtube.com'), NULL, NULL, NULL, TRUE)),
     '#autothumbable' => variable_get('video_youtube_auto_thumbnail', false),
     '#autoresolution' => true,
+    '#autoplaytime' => true,
   );
 
   return $info;
@@ -137,6 +138,7 @@ function video_youtube_v_validate($node) {
     // the approach used here is to return errors only if Youtube explicitely says "an error has occurred"
     $id = _video_youtube_get_id($node->vidfile);
     $response = _video_apiclient_youtube_request('youtube.videos.get_details', array('video_id' => $id));
+    //print_r($response); die;
     if(isset($response['ERROR'])) {
       form_set_error('vidfile', t('The Youtube Video URL validation as failed for some reason. Please check the URL and try again.<br />If the error persists please contact %site_name administrators.', array('%site_name' => variable_get('site_name', 'Drupal'))));
       if(isset($response['ERROR']['DESCRIPTION'][0])) {
@@ -229,6 +231,17 @@ function video_youtube_v_auto_thumbnail($node) {
 function video_youtube_v_auto_resolution(&$node) {
   // we set youtube videos to 425x350 by default
   return array(425, 350);
+}
+
+
+/**
+ * Implementation of hook_v_auto_playtime
+*/
+function video_youtube_v_auto_playtime(&$node) {
+  $id = _video_youtube_get_id($node->vidfile);
+  $response = _video_apiclient_youtube_request('youtube.videos.get_details', array('video_id' => $id)); // NOTE: here we already passed validation so we expect a valid response
+  
+  return $response['VIDEO_DETAILS']['LENGTH_SECONDS'][0]; // return the lenght in seconds
 }
 
 
