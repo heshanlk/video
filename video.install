@@ -269,3 +269,12 @@ function video_update_9() {
   $res[] = update_sql("UPDATE {video} SET vidfile=CONCAT('http://www.youtube.com/watch?v=',vidfile) WHERE vtype='youtube' AND vidfile NOT LIKE '%youtube.com/watch%'");
   return $res;
 }
+
+/**
+ * Update vidfile for google videos -- they play, but they are not editable
+ * in the current form because validation fails upon submit
+ */
+function video_update_10() {
+  $res[] = update_sql("UPDATE {video} SET vidfile=CONCAT('http://video.google.com/videoplay?docid=',SUBSTR(vidfile,8)) WHERE vidfile LIKE 'google:%'");
+  return $res;
+}
