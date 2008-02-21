@@ -275,6 +275,6 @@ function video_update_9() {
  * in the current form because validation fails upon submit
  */
 function video_update_10() {
-  $res[] = update_sql("UPDATE {video} SET vidfile=CONCAT('http://video.google.com/videoplay?docid=',SUBSTR(vidfile,8)) WHERE vidfile LIKE 'google:%'");
+  $res[] = update_sql("UPDATE {video} SET vidfile=CONCAT('http://video.google.com/videoplay?docid=',SUBSTR(vidfile,8)) WHERE vtype='google' AND vidfile LIKE 'google:%'");
   return $res;
 }
