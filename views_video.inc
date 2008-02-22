@@ -219,10 +219,12 @@ function video_views_handler_field_playtime_seconds($fieldinfo, $fielddata, $val
 
 
 /**
-* Handler to to render the preview image associated with a video
+* Handler to render the preview image associated with a video
 **/
 function video_views_handler_field_video_image($fieldinfo, $fielddata, $value, $data) {
  $node = node_load($data->nid);
- $output = theme_video_image_body($node);
+ if($node->iid && $image = node_load($node->iid)) {
+   $output = theme_video_image_teaser($image);
+ }
  return $output;
 }
