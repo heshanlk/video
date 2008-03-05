@@ -154,7 +154,7 @@ function video_link($type, $node = NULL) {
         'href' => "node/$node->nid/download",
         'attributes' => array(
             'class' => 'outgoing',
-            'title' => t('download %link', array('%link' => $node->title)),
+            'title' => t('download @link', array('@link' => $node->title)),
           ),
       );
     }
