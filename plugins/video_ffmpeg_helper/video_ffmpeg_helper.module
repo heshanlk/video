@@ -369,9 +369,9 @@ function _video_ffmpeg_helper_auto_resolution(&$node) {
     $ffmpeg_output = _video_ffmpeg_helper_get_video_info($node);
 
     // get resolution
-    $pattern = '/[0-9]{2,4}x[0-9]{2,4}/';
+    $pattern = '/Video: .*, ([0-9]{2,4}x[0-9]{2,4})/';
     preg_match_all($pattern, $ffmpeg_output, $matches, PREG_PATTERN_ORDER);
-    $resolution = $matches[0][0];
+    $resolution = $matches[1][0];
 
     return explode("x", $resolution);
   }
@@ -390,9 +390,9 @@ function _video_ffmpeg_helper_auto_playtime(&$node) {
     $ffmpeg_output = _video_ffmpeg_helper_get_video_info($node);
     
     // get playtime
-    $pattern = '/[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]/';
+    $pattern = '/Duration: ([0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9])/';
     preg_match_all($pattern, $ffmpeg_output, $matches, PREG_PATTERN_ORDER);
-    $playtime = $matches[0][0];
+    $playtime = $matches[1][0];
 
     // ffmpeg return lenght as 00:00:31.1 Let's get playtime from that
     $hmsmm = explode(":", $playtime);
