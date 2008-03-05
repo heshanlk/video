@@ -5,6 +5,8 @@ This helper module facilitates uploading new videos using the video module. It
 features a batch processing queue for videos to be transcoded and automatic
 thumbnail generation.
 
+IMPORTANT: the ffmpeg helper currently only works on unix based environment. It currently doesn't support Windows based servers.
+
 Install instructions
 --------------------
 
@@ -22,9 +24,17 @@ Install instructions
     The crontab should look something like this:
     
     # m     h       dom     mon     dow     user            command
-    */1     *       *       *       *       www-data        cd /var/www/filmforge/drupal ; php video_scheduler.php
+    */1     *       *       *       *       www-data        cd /absolute/path/to/drupal/ ; php video_scheduler.php
     
     Note that the video_scheduler doesn't produce any output and cannot be called
     from the web. It will, however, put some information in the watchdog.
-  
+    
+
+
+Troubleshooting
+------------------------
+
+Configuring and installing ffmpeg in a web server environment might be pretty difficult. In order to help you troubleshoot the transcoding process the ffmpeg helper puts debugging informations on the drupal logs. I strongly suggest to have a look at them if you are experiencing problems with transcoding.
+
+The ffmpeg puts in the drupal logs the commands it was trying to execute. You might try to rerun them on a command shell in order understand what went wrong.
   
