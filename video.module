@@ -589,14 +589,29 @@ function video_form($node) {
     $node->serial_data = unserialize($node->serialized_data);
   }
   $form = array();
+  
   // default node stuff
-  $form['title'] = array('#type' => 'textfield', '#title' => t('Title'),
-    '#size' => 60, '#maxlength' => 128, '#required' => TRUE,
-    '#default_value' => $node->title, '#weight' => -20);
-  $form['body_filter']['body'] = array('#type' => 'textarea',
-    '#title' => t('Body'), '#default_value' => $node->body,
-    '#required' => FALSE, '#rows' => 10, '#weight' => -15);
-  $form['body_filter']['filter'] = filter_form($node->format);
+  $type = node_get_types('type', $node);
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -20
+  );
+  
+  if ($type->has_body) {
+    $form['body_filter']['body'] = array(
+      '#type' => 'textarea',
+      '#title' => check_plain($type->body_label),
+      '#required' => ($type->min_word_count > 0),
+      '#default_value' => $node->body,
+    );
+    $form['body_filter']['format'] = filter_form($node->format);
+  }
   
   // set an hidden field to store video type
   $form['vtype'] = array(
