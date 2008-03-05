@@ -24,7 +24,9 @@ Install instructions
     The crontab should look something like this:
     
     # m     h       dom     mon     dow     user            command
-    */1     *       *       *       *       www-data        cd /absolute/path/to/drupal/ ; php video_scheduler.php
+    */20     *       *       *       *       www-data        cd /absolute/path/to/drupal/ ; php video_scheduler.php
+    
+    This will execute the video_scheduler every 20 minutes.
     
     Note that the video_scheduler doesn't produce any output and cannot be called
     from the web. It will, however, put some information in the watchdog.
