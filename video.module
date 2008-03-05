@@ -613,7 +613,7 @@ function video_form($node) {
       '#title' => t('Resolution'),
       '#description' => t("Select the approriate resolution (aspect ratio) for your video.<br />If you don't know what to choose then the default value will probably be ok for you."),
       '#options' => _video_get_resolution_options(),
-      '#default_value' => $node->vresolution,
+      '#default_value' => _video_get_resolution_selected_option($node),
       '#required' => true,
     );
   }
@@ -688,10 +688,11 @@ function video_submit(&$node) {
     }
   }
   else {
-    // we should have good values 
+    // we should have a good value (checked by Form API)
     if($node->vresolution) {
-      $node->videox = 800;
-      $node->videoy = 600;
+      $res = explode('x', variable_get('video_resolution_' . $node->vresolution . '_value', ''));
+      $node->videox = $res[0];
+      $node->videoy = $res[1];
     }
   }
   
@@ -1309,6 +1310,22 @@ function _video_get_resolution_options() {
   return $options;
 }
 
+
+/**
+ * Get the selected resolution id from the videox and videoy fields
+*/
+function _video_get_resolution_selected_option($node) {
+  $value = $node->videox . "x" . $node->videoy;
+
+  $i = 1;
+  while($i <= 4) {
+    if(variable_get('video_resolution_'.$i.'_value', '') == $value) {
+      return $i;
+    }
+    
+    $i++;
+  }
+}
 
 /**
  * Scale a video to match the desired width

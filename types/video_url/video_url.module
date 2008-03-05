@@ -69,7 +69,7 @@ function video_url_v_form(&$node, &$form) {
     '#maxlength' => 700,
     '#required' => TRUE,
     '#weight' => -20,
-    '#description' => t('Insert the URL to the video file. This shuold be something similar to http://www.example.com/videos/myvideo.flv') . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
+    '#description' => t('Insert the URL to the video file. This shuold be something similar to <em>http://www.example.com/videos/myvideo.flv</em>') . ' ' . l(t('More information.'), 'video/help', NULL, NULL, 'videofile'));
 
   return $form;
 }
