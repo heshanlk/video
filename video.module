@@ -1224,6 +1224,11 @@ function _video_get_mime_type($node) {
   switch (_video_get_filetype($node->vidfile)) {
     case 'mov':
       return 'video/quicktime';
+    case 'avi' :    // Added
+      return 'video/x-msvideo';
+    case 'mpg' :    // Added
+    case 'mpeg' :   // Added
+      return 'video/mpeg';   // Added
     case 'divx':
       return 'video/vnd.divx';
     case 'rm':
