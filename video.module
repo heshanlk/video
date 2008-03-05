@@ -173,7 +173,7 @@ function video_link($type, $node = NULL) {
         'title' => format_plural($node->play_counter, '1 play', '@count plays'),
       );
     }
-    if (variable_get('video_downloadcounter', 1) && user_access('view download counter')) {
+    if (variable_get('video_downloadcounter', 1) && user_access('view download counter') && video_support_download($node)) {
       $link['download_counter'] = array(
         'title' => format_plural($node->download_counter, '1 download', '@count downloads'),
       );
