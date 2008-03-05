@@ -87,6 +87,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 
   // params will be passed to both IE or not IE browsers
   $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
+               <param name="wmode" value="transparent" />
                <param name="allowScriptAccess" value="sameDomain" />
                <param name="quality" value="high" />
                <param name="flashvars" value="config={baseURL:\''. $base_url .'\',videoFile:\''. $file .'\',autoPlay:true,bufferLength:5}" />' . "\n"
@@ -127,7 +128,8 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
-  $output .= '<param name="movie" value="'. $url .'" />' . "\n"
+  $output .= '<param name="movie" value="'. $url .'" />'. "\n" .
+              '<param name="wmode" value="transparent" />' . "\n"
   . _video_get_parameters($node) .
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';

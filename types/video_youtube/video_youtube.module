@@ -282,6 +282,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 
   // params will be passed to both IE or not IE browsers
   $output .= '<param name="movie" value="http://www.youtube.com/v/' . $id . '&rel='.$rel.'" />' . "\n"
+  . '<param name="wmode" value="transparent" />' . "\n"
   . _video_get_parameters($node) .
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';
