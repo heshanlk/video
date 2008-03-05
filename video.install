@@ -194,16 +194,13 @@ function _video_update_6_get_vtype($node) {
   else if (strpos($vidfile, 'google:') === 0) {
     $file_type = 'google';
   }
-  else if (preg_match('#^http[s]?://#', $vidfile) === 1) { // starts with http[s]?://
+  else if(db_result(db_query("SELECT count(fid) FROM {files} WHERE nid=%d", $node->nid)) > 0) {
+    $file_type = 'upload';
+  }
+  else if ($vidfile != '' ) { // enable absolute urls and relative paths
     $file_type = 'url';
   }
   else {
-    $files = db_result(db_query("SELECT count(fid) FROM {files} WHERE nid=%d", $node->nid));
-    if ($files > 0) {
-      $file_type = 'upload';
-    }
-  }
-  if ($file_type == '') {
     drupal_set_message(t('Could not determine video type of node %nid', array('%nid' => $node->nid)), 'error');
   }
   return $file_type;

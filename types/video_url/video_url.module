@@ -92,3 +92,13 @@ function video_url_v_play($node) {
 }
 
 
+/**
+ * Implements the hook_v_download
+*/
+function video_url_v_download($node) {
+    $url = _video_get_fileurl($node->vidfile);
+    
+    header("Location: $url"); //Redirect to the video file URL.
+}
+
+

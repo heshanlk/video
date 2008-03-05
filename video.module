@@ -954,8 +954,9 @@ function video_download($node) {
  * Return true if the video is downloadable, false otherwise
 */
 function _video_allow_download($node) {
+  // TODO: now videos are downloadable by default. why not implementing a feature to let users choose if they want their videos to be downloadable?
+
   return true;
-  
 }
 
 
