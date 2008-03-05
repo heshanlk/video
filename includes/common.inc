@@ -16,7 +16,7 @@
  * Get the object for the suitable player for the parameter resource
 */
 function _video_common_get_player($node) {
-  switch (_video_get_filetype($node->vidfile)) {
+  switch (strtolower(_video_get_filetype($node->vidfile))) {
     case 'divx':
       return theme('video_play_divx', $node);
     case 'mov':
