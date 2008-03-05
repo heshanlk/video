@@ -1105,7 +1105,7 @@ function _video_get_filetype($vidfile) {
     $file_type = FALSE;
   }
   
-  return $file_type;
+  return strtolower($file_type);
 }
 
 /**

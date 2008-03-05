@@ -16,7 +16,7 @@
  * Get the object for the suitable player for the parameter resource
 */
 function _video_common_get_player($node) {
-  switch (strtolower(_video_get_filetype($node->vidfile))) {
+  switch (_video_get_filetype($node->vidfile)) {
     case 'divx':
       return theme('video_play_divx', $node);
     case 'mov':
@@ -46,9 +46,6 @@ function _video_common_get_player($node) {
       return theme('video_play_googlevideo', $node);
     default:
       drupal_set_message('Video type not supported', 'error');
-      if(!variable_get('video_playinbody', 1)) {
-        drupal_goto("node/$node->nid");
-      }
       break;
   }
 }
