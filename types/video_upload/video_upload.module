@@ -649,7 +649,7 @@ function video_upload_v_play($node) {
 function video_upload_create_node_from($filepath, $title = NULL, $body = '', $taxonomy = NULL) {
   global $user;
 
-  if (!user_access('create images')) {
+  if (!user_access('create video')) {
     drupal_access_denied();
   }
 
