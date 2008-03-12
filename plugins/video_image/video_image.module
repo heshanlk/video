@@ -122,9 +122,7 @@ function video_image_admin_settings_validate($form_id, &$form_values, &$form) {
 */
 function video_image_is_autothumbable($node) {
   $info = video_get_type_info($node->vtype);
-  dm($info[$node->vtype]['#autothumbable']);
   $has_hook = module_hook('video_' . $node->vtype, 'v_auto_thumbnail');
-  dm($has_hook);
   return $has_hook && isset($info[$node->vtype]['#autothumbable']) && $info[$node->vtype]['#autothumbable'];
 }
 
@@ -238,28 +236,20 @@ function _video_image_load(&$node) {
 function _video_image_prepare(&$node) {
   // let's check that we have a valid image
   if (count($_POST)) {
-  here();
     $field_name = file_check_upload('image');
-    dm($field_name);
-    dm($node);
     if (!$field_name && video_image_is_autothumbable($node)) {
-  here();
       _video_image_thumbnail_debug(t('video_image_nodeapi: prepare: ready to thumbnail video'));
       $field_name = module_invoke('video_' . $node->vtype, 'v_auto_thumbnail', $node);
-  here();
       if ($field_name === false && count($_POST)) {
         drupal_set_message(t('The thumbnailing process of your video failed for some reason. Video thumbnail will not be available.'), 'error');
      }
     }
   }
-  here();
   if ($field_name) {
-  here();
     $node->tempimage = _video_image_temp_image_store($field_name);
     $node->new_image = TRUE;
   } else if (is_array($_POST['tempimage']) && 
       ($_POST['op'] == 'Preview' || $_POST['op'] == 'Submit')) {
-  here();
     $node->tempimage = (array)_video_image_temp_image_load(array_values($_POST['tempimage']['fids']));
   }
 }
