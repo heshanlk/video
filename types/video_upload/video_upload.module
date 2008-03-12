@@ -113,7 +113,7 @@ function video_upload_v_info() {
     '#name' => 'Upload Video',
     '#description' => t('Post a video available on your computer as a file to this website.'),
     '#downloadable' => true,
-    '#autothumbable' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_thumbnail', false),
+    '#autothumbable' => module_exists('video_ffmpeg_helper') && variable_get('video_image_auto_thumbnail', false),
     '#autoresolution' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_resolution', false),
     '#autoplaytime' => module_exists('video_ffmpeg_helper') && variable_get('video_ffmpeg_helper_auto_playtime', false),
   );

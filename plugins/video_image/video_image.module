@@ -122,7 +122,9 @@ function video_image_admin_settings_validate($form_id, &$form_values, &$form) {
 */
 function video_image_is_autothumbable($node) {
   $info = video_get_type_info($node->vtype);
+  dm($info[$node->vtype]['#autothumbable']);
   $has_hook = module_hook('video_' . $node->vtype, 'v_auto_thumbnail');
+  dm($has_hook);
   return $has_hook && isset($info[$node->vtype]['#autothumbable']) && $info[$node->vtype]['#autothumbable'];
 }
 
@@ -150,7 +152,9 @@ function video_image_form_alter($form_id, &$form) {
       $form['tempimage']['fids'][$label] = array('#type' => 'hidden', $value => $fid);
     }
 
-    if(!video_image_is_autothumbable($node) || user_access('override autothumnailing using uploaded images')) { 
+    $auto_thumbable = video_image_is_autothumbable($node);
+
+    if(!$auto_thumbable || user_access('override autothumnailing using uploaded images')) { 
       // let's be sure that image directories are ready
       if (function_exists('_image_check_settings')) {
         _image_check_settings();
@@ -162,6 +166,9 @@ function video_image_form_alter($form_id, &$form) {
       $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Upload an image to be used as the thumbnail for this video.'));
 
       $form['image']['image'] = array('#type' => 'file', '#title' => t('Image'));
+    }
+    if ($node->nid && $auto_thumbable) {
+      $form['regenerate_thumbnail'] = array('#type' => 'checkbox', '#title' => t('Auto regenerate thumbnail'), '#default_value' => 0);
     }
   }
 }
@@ -231,25 +238,36 @@ function _video_image_load(&$node) {
 function _video_image_prepare(&$node) {
   // let's check that we have a valid image
   if (count($_POST)) {
+  here();
     $field_name = file_check_upload('image');
+    dm($field_name);
+    dm($node);
     if (!$field_name && video_image_is_autothumbable($node)) {
+  here();
       _video_image_thumbnail_debug(t('video_image_nodeapi: prepare: ready to thumbnail video'));
       $field_name = module_invoke('video_' . $node->vtype, 'v_auto_thumbnail', $node);
+  here();
       if ($field_name === false && count($_POST)) {
         drupal_set_message(t('The thumbnailing process of your video failed for some reason. Video thumbnail will not be available.'), 'error');
      }
     }
   }
+  here();
   if ($field_name) {
+  here();
     $node->tempimage = _video_image_temp_image_store($field_name);
     $node->new_image = TRUE;
   } else if (is_array($_POST['tempimage']) && 
       ($_POST['op'] == 'Preview' || $_POST['op'] == 'Submit')) {
+  here();
     $node->tempimage = (array)_video_image_temp_image_load(array_values($_POST['tempimage']['fids']));
   }
 }
 
 function _video_image_submit(&$node) {
+  if ($node->regenerate_thumbnail) {
+    _video_image_regenerate_thumbnail($node);
+  }
   if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['_original']) {
     $image = _video_image_temp_image_load(array_values($node->tempimage['fids']));
     db_query("DELETE FROM {files} WHERE fid in (%s)",
@@ -299,6 +317,14 @@ function _video_image_view(&$node, $teaser) {
   
   if($teaser) {
     $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_teaser', $image));
+  }
+}
+
+function _video_image_regenerate_thumbnail(&$node) {
+  $field_name = module_invoke('video_' . $node->vtype, 'v_auto_thumbnail', $node);
+  if ($field_name) {
+    $node->tempimage = _video_image_temp_image_store($field_name);
+    $node->new_image = TRUE;
   }
 }
 
