@@ -363,20 +363,25 @@ function _video_upload_form(&$node) {
   if($node->new_video_upload_file) { // there is a newly uploaded file (this has been initialized by _prepare())
     $form['new_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => $node->new_video_upload_file->fid);
     $form['new_video_upload_file_info'] = array('#type' => 'item', '#value' => theme('video_upload_file_info_form', $node->new_video_upload_file, $node), '#weight' => -10);
-    //print_r($node->new_video_upload_file); die;
-  } else {
+    
+    $we_have_video = true;
+  }
+  else {
     $form['new_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => 0);
     if($node->current_video_upload_file) { // we don't have a new file
       $form['current_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => $node->current_video_upload_file->fid);
       $form['current_video_upload_file_info'] = array('#type' => 'item', '#value' => theme('video_upload_file_info_form', $node->current_video_upload_file, $node), '#weight' => -10);
+      
+      $we_have_video = true;
     }
   }
   $form['video_upload_file'] = array(
     '#type' => 'file',
-    '#title' => t('Upload video file'),
+    '#title' => $we_have_video ? t('Replace with') : t('Upload video file'),
     '#size' => 40,
     '#weight' => -9,
     '#description' => t('Choose a video file from your pc.<br /><b>NOTE:</b> The max upload size is') . ' ' . format_size(file_upload_max_size()) . '.',
+    // no need to set this as required as we do validation in the validate nodeapi hook
   );
 
   return $form;
@@ -387,7 +392,6 @@ function _video_upload_form(&$node) {
  * Validate video file
  */
 function _video_upload_validate(&$node) {
-  //TODO: check that the file arrived.
   //print 'validate';
   //print_r($node); die;
   
