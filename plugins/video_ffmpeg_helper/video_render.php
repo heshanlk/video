@@ -5,6 +5,10 @@
  * @file
  * Renders a video. This script is called concurrently by video_scheduler.php
  * This script has to be launched with "php video_render.php nid vid"
+ * If you are not using sites/default/settings.php as your settings file, 
+ * add an optional parameter for the drupal site url:
+ * "php video_render.php nid vid http://example.com/" or
+ * "php video_render.php nid vid http://example.org/drupal/"
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  */
@@ -41,6 +45,11 @@ define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
 define('VIDEO_RENDERING_FAILED', 20);
 
+if (isset($_SERVER['argv'][3])) {
+  $url = parse_url($_SERVER['argv'][3]);
+  $_SERVER['SCRIPT_NAME'] = $url['path'];
+  $_SERVER['HTTP_HOST'] = $url['host'];
+}
 
 include_once './includes/bootstrap.inc';
 // disable error reporting for bootstrap process
@@ -53,7 +62,7 @@ error_reporting(E_ALL);
 
 // allow execution only from the command line!
 if(empty($_SERVER['REQUEST_METHOD'])) {
-  if($_SERVER['argc'] != 3) { // check for command line arguments
+  if($_SERVER['argc'] < 3) { // check for command line arguments
     watchdog('video_render', t('Incorrect parameters to the video_render.php script.', WATCHDOG_ERROR));
     print t('Incorrect parameters');
   }
@@ -69,10 +78,15 @@ else {
 print("\n");
 
 function video_render_main() {
+  
+  // get parameters passed from command line
+  $nid = $_SERVER['argv'][1];
+  $vid = $_SERVER['argv'][2];
 
   // set the status to active
-  _video_render_job_change_status($_SERVER['argv'][1], $_SERVER['argv'][2], VIDEO_RENDERING_ACTIVE);
-  $job = _video_render_load_job($_SERVER['argv'][1], $_SERVER['argv'][2], VIDEO_RENDERING_ACTIVE);
+  _video_render_job_change_status($nid, $vid, VIDEO_RENDERING_ACTIVE);
+  // load the job object
+  $job = _video_render_load_job($nid, $vid, VIDEO_RENDERING_ACTIVE);
 
   if($job == NULL) {
     watchdog('video_render', t('video_render.php has been called with an invalid job resource. exiting.'));
@@ -80,7 +94,7 @@ function video_render_main() {
   }
   $command = _video_render_get_command($job);
 
-  //print('executing ' . $command);
+  //print('executing ' . $command); die;
   watchdog('video_render', t('executing: ') . $command);
 
   //execute the command
@@ -91,7 +105,7 @@ function video_render_main() {
 
   //print $command_output;
 
-  if (!file_exists($job->convfile)) {
+  if (!file_exists($job->convfile) || !filesize($job->convfile)) {
     watchdog('video_render', t('video conversion failed. ffmpeg reported the following output: ' . $command_output, WATCHDOG_ERROR));
     _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
     _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
@@ -143,6 +157,7 @@ function video_render_main() {
       // get destination folder permissions
       $perms = substr(sprintf('%o', fileperms($dest_dir)), -4);
       watchdog('video_render', t('error moving video %vid_file with nid = %nid to %dir the final directory. Check folder permissions.<br />The script was run by %uname .<br />The folder owner is %fowner .<br />The folder permissions are %perms .', array('%vid_file' => $job->origfile, '%nid' => $job->nid, '%dir' => $dest_dir, '%uname' => $owner, '%fowner' => $fowner, '%perms' => $perms)), WATCHDOG_ERROR);
+      
       _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
       _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
     }

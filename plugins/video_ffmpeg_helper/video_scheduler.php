@@ -4,6 +4,10 @@
 /**
  * @file
  * Implement video rendering scheduling.
+ * If you are not using sites/default/settings.php as your settings file,  
+ * add an optional parameter for the drupal site url:
+ * "php video_scheduler.php http://example.com/" or
+ * "php video_scheduler.php http://example.org/drupal/"
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  */
@@ -36,6 +40,11 @@ define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
 define('VIDEO_RENDERING_FAILED', 20);
 
+if (isset($_SERVER['argv'][1])) {
+  $url = parse_url($_SERVER['argv'][1]);
+  $_SERVER['SCRIPT_NAME'] = $url['path'];
+  $_SERVER['HTTP_HOST'] = $url['host'];
+}
 
 include_once './includes/bootstrap.inc';
 // disable error reporting for bootstrap process
@@ -77,7 +86,8 @@ function video_scheduler_main() {
  * Starts rendering for a job
 */
 function video_scheduler_start($job) {
-  exec("php video_render.php $job->nid $job->vid > /dev/null &");
+  $url = (isset($_SERVER['argv'][1])) ? escapeshellarg($_SERVER['argv'][1]) : '';
+  exec("php video_render.php $job->nid $job->vid $url > /dev/null &");
 }
 
 

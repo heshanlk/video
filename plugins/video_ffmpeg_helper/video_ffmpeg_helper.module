@@ -20,8 +20,10 @@ define('VIDEO_RENDERING_FAILED', 20);
 
 
 function video_ffmpeg_helper_cron() {
+  global $base_url;
+  
   if(variable_get('video_ffmpeg_helper_auto_cvr_cron', true)) {
-    exec("php video_scheduler.php > /dev/null &");
+    exec("php video_scheduler.php $base_url > /dev/null &");
   }
 }
 
@@ -77,13 +79,14 @@ function video_ffmpeg_helper_admin_settings_validate($form_id, &$form_values, &$
  * Settings form
  */
 function video_ffmpeg_helper_admin_settings() {
-  // let's execute after video_image
-  if (module_exists('video_image')) {
-    if (variable_get('video_image_auto_thumbnail', 0)) {
-      $upload_weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_image'"));
-      db_query("UPDATE {system} SET weight=".($upload_weight+1)." WHERE name='video_ffmpeg_helper'");
-    }
+  // let's execute after video_image and video_upload
+  if (module_exists('video_image') && variable_get('video_image_auto_thumbnail', 0)) {
+    $weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_image'"));
+  } else { // video_image might be disabled.. execute after video_upload
+    $weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_upload'"));
   }
+  // update the weight in the system table
+  db_query("UPDATE {system} SET weight=".($weight+1)." WHERE name='video_ffmpeg_helper'");
 
   $form['video_ffmpeg_helper_ffmpeg_path'] = array(
     '#type' => 'textfield',
@@ -155,18 +158,18 @@ function video_ffmpeg_helper_admin_settings() {
   $form['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Video bitrate'),
-      '#description' => t('The video bitrate in kbit/s of the converted video.'),
-      '#size' => 3,
-      '#maxlength' => 4,
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200),
+      '#description' => t('The video bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200000),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_cvr_audio_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Audio bitrate'),
-      '#description' => t('The audio bitrate in kbit/s of the converted video.'),
-      '#size' => 3,
-      '#maxlength' => 4,
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64),
+      '#description' => t('The audio bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
     );
   $form['autoconv']['advanced'] = array(
           '#type' => 'fieldset',
@@ -268,6 +271,7 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
             $node->content['video_player']['#value'] = theme('video_ffmpeg_helper_encoding_failed', $node);
           }
         }
+        //print_r($node); die;
         break;
         
       case 'alter':
