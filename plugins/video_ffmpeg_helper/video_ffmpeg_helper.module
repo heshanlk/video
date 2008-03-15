@@ -27,13 +27,22 @@ function video_ffmpeg_helper_cron() {
   }
 }
 
+
+/**
+ * Implementatio of hook_perm()
+*/
+function video_ffmpeg_helper_perm() {
+  return array('bypass automatic video conversion');
+}
+
+
 /**
  * Implementation of hook_help().
  */
 function video_ffmpeg_helper_help($section) {
   switch ($section) {
     case 'admin/modules#description':
-      return t('Enable thumbnails support for video module.');
+      return t('Enable ffmpeg support for video module.');
   }
 }
 
@@ -205,6 +214,16 @@ function video_ffmpeg_helper_form_alter($form_id, &$form) {
       $form['#attributes'] = array("enctype" => "multipart/form-data");
 
     }
+    
+    
+    if(user_access('bypass automatic video conversion') && variable_get('video_ffmpeg_helper_auto_conversion', false)) {
+      $form['video']['video_ffmpeg_helper_convertion_bypass'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Bypass automatic video conversion'),
+        '#description' => t('Check this if you want that your video is submitted as it is, without being converted.'),
+        '#default_value' => $node->video_ffmpeg_helper_convertion_bypass, // for node previews
+      );
+    }
   }
 
 }
@@ -250,7 +269,7 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
         }
       /* FALLTHROUGH */
       case 'insert':
-        if(variable_get('video_ffmpeg_helper_auto_conversion', false) && $node->new_video_upload_file_fid > 0) {
+        if(variable_get('video_ffmpeg_helper_auto_conversion', false) && $node->new_video_upload_file_fid > 0 && !$node->video_ffmpeg_helper_convertion_bypass) {
           // add rendering job to queue
           _video_ffmpeg_helper_add_rendering($node);
         }

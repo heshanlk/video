@@ -608,6 +608,7 @@ function video_form($node) {
       '#type' => 'textarea',
       '#title' => check_plain($type->body_label),
       '#required' => ($type->min_word_count > 0),
+      '#rows' => 10,
       '#default_value' => $node->body,
     );
     $form['body_filter']['format'] = filter_form($node->format);
@@ -809,8 +810,8 @@ function video_view(&$node, $teaser = FALSE, $page = FALSE) {
       $output .= l(t('login'), "user/login", array('class' => 'outgoing', 'title' => t('login to your account')));
       $output .= ' ' . t('or') . ' ';
       $output .= l(t('register'), "user/register", array('class' => 'outgoing', 'title' => t('create a new account')));
-      $output .= t(' to play video');
-      $output .= theme('video_view', $node, $teaser, $page);
+      $output .= ' ' . t('to play video');
+      
       $node->content['video_player'] = array('#value' => $output, '#weight' => -1);
     }
   }
