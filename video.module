@@ -449,17 +449,47 @@ function video_nodeapi($node, $op, $arg) {
   switch ($op) {
     case 'rss item':
       if ($node->type == 'video') {
+        // RSS Enclosure http://cyber.law.harvard.edu/rss/rss.html#ltenclosuregtSubelementOfLtitemgt
         $attributes['url'] = _video_get_fileurl($node->vidfile);
         $attributes['length'] = $node->size;
         $mime_type = _video_get_mime_type($node);
         if ($mime_type) {
           $attributes['type'] = $mime_type;
+          $enclosure = array('key' => 'enclosure', 'attributes' => $attributes);
         }
+
+        // MRSS media:content http://search.yahoo.com/mrss
         $media['url'] = $attributes['url'];
-        $media['fileSize'] = $attributes['length'];
-        $media['type'] = $attributes['type'];
-        return array(array('key' => 'enclosure', 'attributes' => $attributes), array('key' => 'media', 'value' => '', 'attributes' => $media));
+        if ($attributes['length'] > 1) {
+          $media['fileSize'] = $attributes['length'];
+        }
+        if ($mime_type) {
+          $media['type'] = $mime_type;
+        }
+        if (isset($node->playtime_seconds) && $node->playtime_seconds > 0) {
+          $media['duration'] = $node->playtime_seconds;
+        }
+        if (isset($node->video_bitrate) && $node->video_bitrate > 0) {
+          $media['bitrate'] = $node->video_bitrate;
+        }
+        if (isset($node->videox) && isset($node->videoy) && $node->videox > 0) {
+          $media['width'] = $node->videox;
+          $media['height'] = $node->videoy;
+        }
+        if (isset($node->audio_sampling_rate) && $node->audio_sampling_rate > 0) {
+          $media['samplingrate'] = $node->audio_sampling_rate;
+        }
+        $mrss = array('key' => 'media:content', 'attributes' => $media);
+
+        // work around for http://drupal.org/node/157709
+        static $been_here = FALSE;
+        if (! $been_here) {
+          $mrss['namespace'] = array('xmlns:media="http://search.yahoo.com/mrss/"');
+          $been_here = TRUE;
+        }
       }
+      return array($enclosure, $mrss);
+
     case 'revision delete':
       db_query('DELETE FROM {video} WHERE vid = %d', $node->vid);
       break;
