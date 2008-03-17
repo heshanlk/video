@@ -201,26 +201,30 @@ function video_image_nodeapi(&$node, $op, $teaser) {
 
 
 /**
- * Render the output for the node teaser.
+ * Renders thumbnail node with a link to the video node to be used on video teasers.
  *
- * @param $node
+ * @param $image
  *   object with image node information
+ * @param $video
+ *   the video node associated with image
  *
  * @return
  *   string of content to display
  */
-function theme_video_image_teaser($node) {
-  $image = NULL;
-  if($node->type == 'image') {
-    $image = image_display($node, 'thumbnail', array('class' => 'video_image_teaser'));
+function theme_video_image_teaser($image, $video) {
+  
+  $image_html = NULL;
+  
+  if($image != NULL && $image->type == 'image') {
+    $image_html = image_display($image, 'thumbnail', array('class' => 'video_image_teaser'));
   }
-  else if($node->serial_data['image_teaser']){ // only for backward compatibility
-    $image = theme('image', $node->serial_data['image_teaser'], $node->title, $node->title, array('class' => 'video_image_teaser'), FALSE);
+  else if($image_node == NULL && $video->serial_data['image_teaser']){ // only for backward compatibility
+    $image_html = theme('image', $video->serial_data['image_teaser'], $video->title, $video->title, array('class' => 'video_image_teaser'), FALSE);
   }
   
   if($image) {
     //Create a link with an image in it.
-    $output .= l($image, "node/$node->nid", array(), NULL, NULL, FALSE, TRUE); 
+    $output .= l($image_html, "node/$video->nid", array(), NULL, NULL, FALSE, TRUE); 
     $output .= '<br class="video_image_clear" />';
   }
   return $output;
@@ -297,16 +301,14 @@ function _video_image_submit(&$node) {
 function _video_image_view(&$node, $teaser) {
   if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['_original']) {
     $image = _video_image_temp_image_load(array_values($node->tempimage['fids']));
-    $image->nid = $node->nid;
   } else if ($node->iid) {
     $image = node_load($node->iid);
-    $image->nid = $node->nid;
   } else {
-    $image = $node;
+    $image = NULL; // this is for backward compatibility
   }
   
   if($teaser) {
-    $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_teaser', $image));
+    $node->content['video_image_thumbnail'] = array('#value' => theme('video_image_teaser', $image, $node));
   }
 }
 

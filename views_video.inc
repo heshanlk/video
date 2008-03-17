@@ -224,7 +224,7 @@ function video_views_handler_field_playtime_seconds($fieldinfo, $fielddata, $val
 function video_views_handler_field_video_image($fieldinfo, $fielddata, $value, $data) {
  $node = node_load($data->nid);
  if($node->iid && $image = node_load($node->iid)) {
-   $output = theme('video_image_teaser', $image);
+   $output = theme('video_image_teaser', $image, $node);
  }
  return $output;
 }
