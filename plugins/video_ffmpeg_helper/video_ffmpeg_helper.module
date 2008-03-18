@@ -206,6 +206,8 @@ function video_ffmpeg_helper_admin_settings() {
  */
 function video_ffmpeg_helper_form_alter($form_id, &$form) {
 
+  $node = $form['#node'];
+  
   //print_r($form);
   if($form_id == 'video_node_form') {
 
@@ -216,7 +218,7 @@ function video_ffmpeg_helper_form_alter($form_id, &$form) {
     }
     
     
-    if(user_access('bypass automatic video conversion') && variable_get('video_ffmpeg_helper_auto_conversion', false)) {
+    if($node->vtype == 'upload' && user_access('bypass automatic video conversion') && variable_get('video_ffmpeg_helper_auto_conversion', false)) {
       $form['video']['video_ffmpeg_helper_convertion_bypass'] = array(
         '#type' => 'checkbox',
         '#title' => t('Bypass automatic video conversion'),
