@@ -140,7 +140,7 @@ function video_youtube_v_validate($node) {
     $response = _video_apiclient_youtube_request('youtube.videos.get_details', array('video_id' => $id));
     //print_r($response); die;
     if(isset($response['ERROR'])) {
-      form_set_error('vidfile', t('The Youtube Video URL validation as failed for some reason. Please check the URL and try again.<br />If the error persists please contact %site_name administrators.', array('%site_name' => variable_get('site_name', 'Drupal'))));
+      form_set_error('vidfile', t('The Youtube Video URL validation has failed for some reason. Please check the URL and try again.<br />If the error persists please contact %site_name administrators.', array('%site_name' => variable_get('site_name', 'Drupal'))));
       if(isset($response['ERROR']['DESCRIPTION'][0])) {
         drupal_set_message(t('The Youtube validation service reported the following error: %error', array('%error'=>$response['ERROR']['DESCRIPTION'][0])), 'error');
       }
