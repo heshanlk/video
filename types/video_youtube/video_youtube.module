@@ -56,11 +56,24 @@ function video_youtube_admin_settings() {
     '#default_value' => variable_get('video_youtube_related', false),
     '#description' => t('If you enable related videos the Youtube player will display a list of related videos once the video completes playing.'),
   );
+  $form['video_youtube_validation'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable validation'),
+    '#default_value' => variable_get('video_youtube_validation', false),
+    '#description' => t('If you enable validation, on each youtube video submission, you web server will contact Youtube to check that the inserted video is available and embeddable.'),
+  );
   $form['video_youtube_api_key'] = array(
     '#type' => 'textfield',
-    '#title' => t('Developer ID:'),
-    '#description' => t('Insert here the developer ID. You can get one from <a href="http://www.youtube.com/my_profile_dev">Youtube Development pages</a>.'),
+    '#title' => t('Developer Key'),
+    '#description' => t('Insert here the developer Key. You can get one from <a href="http://www.youtube.com/my_profile_dev">Youtube Development pages</a>.'),
     '#default_value' =>variable_get('video_youtube_api_key', ''),
+  );
+  // jlampton added: new youtube optional client id
+  $form['video_youtube_client_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Client ID'),
+    '#description' => t('Insert here the client ID. You can get one from <a href="http://www.youtube.com/my_profile_dev">Youtube Development pages</a>.'),
+    '#default_value' =>variable_get('video_youtube_client_id', ''),
   );
   return system_settings_form($form);
 }
@@ -73,7 +86,7 @@ function video_youtube_admin_settings_validate($form_id, &$form_values, &$form) 
   if ($form_values['video_youtube_auto_thumbnail']) { // autothumbnailing is active
     // let's check we have a valid dev key
     if($form_values['video_youtube_api_key'] == '') {
-      form_set_error('video_youtube_api_key', t('You have to insert a valid Youtube Developer ID for auto thumbnailing to work'));
+      form_set_error('video_youtube_api_key', t('You have to insert a valid Youtube Developer Key for auto thumbnailing to work'));
     }
   }
 }
@@ -133,12 +146,12 @@ function video_youtube_v_validate($node) {
   if(!preg_match("/^http:\/\/([a-z]{2,3}\.)?youtube\.com\/watch\?v=/", $node->vidfile)) {
     form_set_error('vidfile', t('The Youtube Video URL field must be similar to <em>http://youtube.com/watch?v=IICWFx7sKmw</em>, <em>http://www.youtube.com/watch?v=IICWFx7sKmw</em> or <em>http://it.youtube.com/watch?v=IICWFx7sKmw</em>'));
   }
-  else {
+  else if(variable_get('video_youtube_validation', false)){
     // we have a good URL. Let's check that the video is available on Youtube and that it is embeddable.
     // the approach used here is to return errors only if Youtube explicitely says "an error has occurred"
     $id = _video_youtube_get_id($node->vidfile);
-    $response = _video_apiclient_youtube_request('youtube.videos.get_details', array('video_id' => $id));
-    //print_r($response); die;
+    // jlampton changed the youtube validation url
+    $response = _video_apiclient_youtube_request('gdata.youtube.com/feeds/api/videos', array('video_id' => $id));
     if(isset($response['ERROR'])) {
       form_set_error('vidfile', t('The Youtube Video URL validation has failed for some reason. Please check the URL and try again.<br />If the error persists please contact %site_name administrators.', array('%site_name' => variable_get('site_name', 'Drupal'))));
       if(isset($response['ERROR']['DESCRIPTION'][0])) {
@@ -300,7 +313,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 */
 function _video_youtube_get_id($url) {
   $parsed_url = parse_url($url);
-  parse_str($parsed_url['query'], $parsed_query);
+  parse_str($parsed_url['query'], $parsed_query);;
   return $parsed_query['v'];
 }
 
