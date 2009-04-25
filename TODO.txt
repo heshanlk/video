@@ -8,6 +8,4 @@ TODO LIST
 - Thumbnails - http://drupal.org/node/31784
 - Work on XHTML compliance - http://drupal.org/node/30953
 - Director/Flash (.dcr/.dir and .swf) - http://drupal.org/node/30100
-- Your suggestions here - 
-
-http://drupal.org/node/add/project_issue/video
+- Your suggestions here - http://drupal.org/node/add/project_issue/video

@@ -5,7 +5,7 @@ FILE TYPE INFORMATIONS
 
 Video.module for Drupal 4.7 supports multiple video formats.
 
-.mov, .wmv, .rm, .3gp, .mp4, .swf, .dir, .dcr
+.mov, .wmv, .asf, .rm, .3gp, .mp4, .swf, .dir, .dcr
   These files type are supported out the box.
   To play these file types you need to enter in the path to the file.
   If your video is on the same webserver as drupal, you can use a path relative
@@ -42,7 +42,7 @@ Google Video support
   Then set the Flash player file name to use on the Flash settings in video module configuration page.
 
 .ogg
- Ogg Theora videos, video.module uses the java applet cortado to display Ogg Theora files, 
+ Ogg Theora videos, video.module uses the java applet cortado to display Ogg Theora files,
  you can find the latest version of cortado at http://www.flumotion.net//jar/cortado/
  get http://www.flumotion.net//jar/cortado/cortado-ovt-stripped-0.2.0.jar
  and put it into your Drupal folder as cortado.jar

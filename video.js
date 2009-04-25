@@ -8,6 +8,9 @@
  * file for more informations.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
 */
 
 //We do this code only on Internet Explorer.

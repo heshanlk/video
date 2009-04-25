@@ -1,12 +1,14 @@
 <?php
-
-
 /**
 * Implementation of hook_views_tables
 *
 * @return
 *   array - Enables support in the video module for views integration
+* porting to Drupal 6
+* @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+* @todo
 **/
+
 function video_views_tables() {
   $tables['video'] = array(
     'name' => 'video',
@@ -63,6 +65,20 @@ function video_views_tables() {
          'help' => t('This will display the height (y) of the video'),
        ),
     ),
+    'sorts' => array(
+      'play_counter' => array(
+        'name' => t('Video: Play count'),
+        'help' => t('Sort by the number of video plays.'),
+       ),
+      'download_counter' => array(
+        'name' => t('Video: Download count'),
+        'help' => t('Sort by the number of video downloads.'),
+       ),
+      'playtime_seconds' => array(
+        'name' => t('Video: Length'),
+        'help' => t('Sort by the video length.'),
+      )
+    )
   );
 
   // Add video_image support only if the video_image module is enabled
@@ -75,7 +91,7 @@ function video_views_tables() {
       'help' => t('This will display the thumbnail image for the video.'),
       );
   }
-  
+
   return $tables;
 }
 
@@ -88,7 +104,7 @@ function video_views_tables() {
 **/
 function video_views_default_views() {
   $views = array();
- 
+
   // recent video node activity view
   $view = new stdClass();
   $view->name = 'video_tracker';
@@ -157,7 +173,7 @@ function video_views_default_views() {
   $view->exposed_filter = array ();
   $view->requires = array(node, users, video);
   $views[$view->name] = $view;
- 
+
   return $views;
 }
 
@@ -167,7 +183,7 @@ function video_views_default_views() {
 **/
 function video_views_handler_field_download($fieldinfo, $fielddata, $value, $data) {
   $nid = $data->nid;
-  return l(t('Download'), "node/$nid/download", NULL);
+  return l(t('Download'), "node/$nid/download", array());
 }
 
 
@@ -176,7 +192,7 @@ function video_views_handler_field_download($fieldinfo, $fielddata, $value, $dat
 **/
 function video_views_handler_field_play($fieldinfo, $fielddata, $value, $data) {
   $nid = $data->nid;
-  return l(t('Play'), "node/$nid/play", NULL);
+  return l(t('Play'), "node/$nid/play", array());
 }
 
 
@@ -186,29 +202,31 @@ function video_views_handler_field_play($fieldinfo, $fielddata, $value, $data) {
 function video_views_handler_field_playtime_seconds($fieldinfo, $fielddata, $value, $data) {
   $seconds = $value;
   $hms = _video_sec2hms($seconds);
- 
+
   // Pad the minutes / seconds with a leading "0", if
   // necessary
   if ($hms['hours'] > 0) {
     $hms['minutes'] = str_pad($hms['minutes'], 2, '0', STR_PAD_LEFT);
   }
   $hms['seconds'] = str_pad($hms['seconds'], 2, '0', STR_PAD_LEFT);
-  
+
   $out = '';
   if ($hms['hours'] > 0) {
  $out .= $hms['hours'].":";
   }
   $out .= $hms['minutes'].":".$hms['seconds'];
-  
+
   return t($out);
 }
 
 
 /**
-* Handler to to render the preview image associated with a video
+* Handler to render the preview image associated with a video
 **/
 function video_views_handler_field_video_image($fieldinfo, $fielddata, $value, $data) {
  $node = node_load($data->nid);
- $output = theme_video_image_body($node);
+ if($node->iid && $image = node_load($node->iid)) {
+   $output = theme('video_image_teaser', $image, $node);
+ }
  return $output;
 }

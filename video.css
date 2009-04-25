@@ -1,10 +1,11 @@
-/* $Id$   /*
-
 /**
  * @file
  * Contains css theming rules for video module and plugins
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
  */
 
 .video_image_teaser {
@@ -18,4 +19,9 @@ br.video_image_clear {
 
 .video_image_view {
   /* inser here rules for node page image */
+}
+
+.video-ffmpeg-helper-inprogress {
+  border: 1px solid red;
+  padding: .5em;
 }

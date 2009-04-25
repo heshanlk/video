@@ -1,4 +1,4 @@
-; $Id$
 name = Video
 description = Allows video nodes.
 package = "Video"
+core = 6.x
