@@ -1,0 +1,102 @@
+<?php
+/**
+ * @file
+ * Enable Path or URL support for video module.
+ *
+ * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
+ */
+
+
+/**
+ * Implementation of hook_menu
+*/
+function video_url_menu() {
+  $items = array();
+  $maycache=true;
+  if($maycache) {
+    $items['node/add/video/url'] = array(
+      'title' => 'URL',
+      'access arguments' => array('create video')
+    );
+  }
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_v_help
+*/
+function video_url_v_help() {
+
+  $help = array();
+  $help['url']['data'] = '<b>' . t('Url support') . '</b>';
+  $help['url']['children'] = array(t('You can link to any video file on the Internet.'));
+
+  return $help;
+}
+
+
+/**
+ * Implementation of hook_v_info()
+*/
+function video_url_v_info() {
+  $info['url'] = array(
+    '#name' => 'URL Video',
+    '#description' => t('Post a video available on the Internet to this website.'),
+    '#downloadable' => TRUE,
+    '#autothumbable' => FALSE,
+    '#autoresolution' => FALSE,
+    '#autoplaytime' => FALSE,
+  );
+
+  return $info;
+}
+
+
+/**
+ * Implementation of hook_v_form()
+*/
+function video_url_v_form(&$node, &$form) {
+
+  $form['video']['vidfile'] = array(
+    '#type' => 'textfield',
+    '#title' => t('URL to the video'),
+    '#default_value' => $node->vidfile,
+    '#maxlength' => 700,
+    '#required' => TRUE,
+    '#weight' => -20,
+    '#description' => t('Insert the URL to the video file. This shuold be something similar to <em>http://www.example.com/videos/myvideo.flv</em>') . ' ' . l(t('More information.'), 'video/help', array('fragment' => 'videofile')));
+
+  return $form;
+}
+
+
+/**
+ * implementation of hook_v_validate
+*/
+function video_url_v_validate($node) {
+  // Can you suggest a validation?
+  // validation should allow URLs, relative paths but also streaming servers URLs
+}
+
+/**
+ * Implementation of hook_v_play
+*/
+function video_url_v_play($node) {
+  module_load_include('inc', 'video', 'includes/common');
+  return _video_common_get_player($node);
+}
+
+
+/**
+ * Implements the hook_v_download
+*/
+function video_url_v_download($node) {
+    $url = _video_get_fileurl($node->vidfile);
+    
+    header("Location: $url"); //Redirect to the video file URL.
+}

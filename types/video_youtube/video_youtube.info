@@ -1,0 +1,5 @@
+name = Youtube Video
+description = Enable Youtube videos support for Video module.
+dependencies[] = video
+package = "Video"
+core = 6.x
