@@ -1,5 +1,6 @@
-; $Id$
 name = Video ffmpeg Helper
 description = Provide apis for ffmpeg. Simplify video nodes creation.
-dependencies = video video_upload
+dependencies[] = video
+dependencies[] = video_upload
 package = "Video"
+core = 6.x

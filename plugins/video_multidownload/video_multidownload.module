@@ -1,19 +1,20 @@
 <?php
-// $Id$
-
 /**
  * @file
  * Enable multiple file download in video module.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
  */
 
 
 /**
  * Implementation of hook_help().
  */
-function video_multidownload_help($section) {
-  switch ($section) {
+function video_multidownload_help($path, $arg) {
+  switch ($path) {
     case 'admin/modules#description':
       return t('Enable multiple file download in video module.');
   }
@@ -29,16 +30,36 @@ function video_multidownload_help($section) {
  * @return
  *   array of menu information
  */
-function video_multidownload_menu($may_cache) {
+function video_multidownload_menu() {
   $items = array();
+/* TODO
+   Non menu code that was placed in hook_menu under the '!$may_cache' block
+   so that it could be run during initialization, should now be moved to hook_init.
+   Previously we called hook_init twice, once early in the bootstrap process, second
+   just after the bootstrap has finished. The first instance is now called boot
+   instead of init.
+   
+   In Drupal 6, there are now two hooks that can be used by modules to execute code
+   at the beginning of a page request. hook_boot() replaces hook_boot() in Drupal 5
+   and runs on each page request, even for cached pages. hook_boot() now only runs
+   for non-cached pages and thus can be used for code that was previously placed in
+   hook_menu() with $may_cache = FALSE:
+   
+   Dynamic menu items under a '!$may_cache' block can often be simplified
+   to remove references to arg(n) and use of '%<function-name>' to check
+   conditions. See http://drupal.org/node/103114.
+   
+   The title and description arguments should not have strings wrapped in t(),
+   because translation of these happen in a later stage in the menu system.
+*/
+    $may_cache=true;
   if ($may_cache) {
-    $items[] = array(
-        'path' => 'admin/content/video/multidownload',
-        'title' => t('Multidownload'),
-        'description' => t('Administer video_multidownload module settings'),
-        'callback' => 'drupal_get_form',
-        'callback arguments' => array('video_multidownload_settings_form'),
-        'access' => user_access('administer site configuration'),
+    $items['admin/content/video/multidownload'] = array(
+        'title' => 'Multidownload',
+        'description' => 'Administer video_multidownload module settings',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('video_multidownload_settings_form'),
+        'access arguments' => array('administer site configuration'),
         'type' => MENU_NORMAL_ITEM,
       );
   }
@@ -47,12 +68,12 @@ function video_multidownload_menu($may_cache) {
       if ($node = node_load(arg(1)) and $node->type == 'video') {
         if(isset($node->disable_multidownload) &&
            !$node->disable_multidownload &&
-			  ($node->use_play_folder || $node->download_folder!='')
-	        ) {
-          $items[] = array('path' => 'node/'.arg(1).'/multidownload',
-            'title' => t('download other formats'),
-            'callback' => 'video_multidownload_download',
-            'access' => user_access('access video'),
+        ($node->use_play_folder || $node->download_folder!='')
+          ) {
+          $items['node/'.'%'.'/multidownload'] = array(
+            'title' => 'download other formats',
+            'page callback' => 'video_multidownload_download',
+            'access arguments' => array('access video'),
             'weight' => 7,
             'type' => MENU_LOCAL_TASK);
         }
@@ -78,7 +99,7 @@ function video_multidownload_settings_form() {
   $form = array();
 
   $options = array(1 => 'Yes', 0 => 'No');
-  
+
   $form['multifile'] = array('#type' => 'fieldset', '#title' => t('Multi-file download options'), '#description' => t('Allows a list of files to be shown on the download page. The list is usually gotten from a specified folder. This ability is useful for providing different sizes and video types for download.'));
   $form['multifile']['video_multidownload'] = array(
     '#type' => 'radios',
@@ -91,7 +112,7 @@ function video_multidownload_settings_form() {
     '#title' => t('File extensions to show'),
     '#default_value' => variable_get('video_download_ext', 'mov,wmv,rm,flv,avi,divx,mpg,mpeg,mp4,zip'),
     '#description' => t('The extensions of files to list from the multi-file download folder on the download page. Extensions should be comma seperated with no spaces, for example (mov,wmv,rm).'));
-  
+
   return system_settings_form($form);
 }
 
@@ -100,7 +121,7 @@ function video_multidownload_settings_form() {
  * Implementation of hook_form_alter()
  * We use this to add multidownload fields to the video creation form.
  */
-function video_multidownload_form_alter($form_id, &$form) {
+function video_multidownload_form_alter(&$form, &$form_state, $form_id) {
 
   if ($form_id == 'video_node_form' && isset($form['video']) && user_access('create multi-file downloads')) {
 
@@ -112,7 +133,7 @@ function video_multidownload_form_alter($form_id, &$form) {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
       '#weight' => -18,
-      '#description' => t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help', NULL, NULL, 'multi-download')
+      '#description' => t('These options allow you to have multiple files shown on the download page. This is useful for allowing users to download different file sizes and video formats. ') . l(t('More information.'), 'video/help', array('fragment' => 'multi-download'))
     );
     $form['multi-file']['disable_multidownload'] = array(
       '#type' => 'checkbox',
@@ -141,7 +162,7 @@ function video_multidownload_form_alter($form_id, &$form) {
 function video_multidownload_nodeapi(&$node, $op, $teaser) {
   if($node->type == 'video') {
     switch ($op) {
-  
+
       case 'validate':
         //Validate multi-file download values.
         if (user_access('create multi-file downloads')) { //Make sure the user has permission.
@@ -358,4 +379,15 @@ function _video_multidownload_download_goto($input_url, $vid, $base64_encoded) {
     $node = node_load(array('vid' => $vid)); //Load a node with the $vid so we can get the nid.
     drupal_goto("node/$node->nid"); //Use the nid we just loaded to go back to the node page.
   }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function video_multidownload_theme() {
+  return array(
+    'video_multidownload_download' => array(
+      'arguments' => array('node' => NULL),
+    ),
+  );
 }

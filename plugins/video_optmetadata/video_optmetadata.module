@@ -1,19 +1,21 @@
 <?php
-// $Id$
 
 /**
  * @file
  * Enable addition of optional metadata on video nodes created by video module.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
  */
 
 
 /**
  * Implementation of hook_help().
  */
-function video_optmetadata_help($section) {
-  switch ($section) {
+function video_optmetadata_help($path, $arg) {
+  switch ($path) {
     case 'admin/modules#description':
       return t('Enable addition of optional metadata on video nodes created by video module. Optional metadata are Video Bitrate, Audio Bitrate, Audio Sampling Rate and Audio Channels.');
   }
@@ -34,7 +36,7 @@ function video_optmetadata_perm() {
  * We use this to add some fields to the video creation form.
  * In those fields users will be able to insert some video metadatas.
  */
-function video_optmetadata_form_alter($form_id, &$form) {
+function video_optmetadata_form_alter(&$form, &$form_state, $form_id) {
 
   if($form_id == 'video_node_form' && isset($form['video']) && user_access('insert optional metadata')) {
 
@@ -131,4 +133,15 @@ function theme_video_metadata($node) {
     $output = '';
   }
   return $output;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function video_optmetadata_theme() {
+  return array(
+    'video_metadata' => array(
+      'arguments' => array('node' => NULL),
+    ),
+  );
 }

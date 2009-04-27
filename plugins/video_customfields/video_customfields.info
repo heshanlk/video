@@ -1,5 +1,5 @@
-; $Id$
 name = Video Custom Fields
 description = Enable addition of custom fileds on video nodes created by video module.
-dependencies = video
+dependencies[] = video
 package = "Video"
+core = 6.x
