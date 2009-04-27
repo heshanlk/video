@@ -1,40 +1,77 @@
 <?php
-// $Id$
-
-
 /**
  * @file
  * Provide installation functions for video_ffmpeg_helper.module .
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
  */
+
+/**
+ * Implementation of hook_schema().
+ */
+function video_ffmpeg_helper_schema() {
+  $schema['video_rendering'] = array(
+    'description' => t('TODO'),
+    'fields' => array(
+      'vid' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'nid' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'origfile' => array(
+        'description' => t('TODO'),
+        'type' => 'text',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'pid' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'started' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('vid'),
+  );
+
+  return $schema;
+}
 
 
 function video_ffmpeg_helper_install() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      db_query("CREATE TABLE {video_rendering} (
-        vid int(10) unsigned NOT NULL default '0',
-        nid int(10) unsigned NOT NULL default '0',
-        origfile text NOT NULL default '',
-        pid int(10) unsigned NOT NULL default '0',
-        status int(1) unsigned NOT NULL default '0',
-        started int NOT NULL default '0',
-        completed int NOT NULL default '0',
-        PRIMARY KEY  (vid)
-      ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
-      break;
-    case 'pgsql':
-      db_query("CREATE TABLE {video_rendering} (
-        vid integer NOT NULL default '0',
-        nid integer NOT NULL default '0',
-        origfile text NOT NULL default '',
-        pid integer NOT NULL default '0',
-        status integer NOT NULL default '1',
-        PRIMARY KEY  (vid)
-      );");
-      break;
-  }
+  // Create tables.
+  drupal_install_schema('video_ffmpeg_helper');
 }
 

@@ -1,44 +1,85 @@
 <?php
-// $Id$
 
 /**
  * @file
  * Provide some api for use ffmpeg. Simplify video nodes creation.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
  */
 
 /**
  * Define some constants
 */
-define('VIDEO_RENDERING_PENDING', 0);
+define('VIDEO_RENDERING_PENDING', 1);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
+define('VIDEO_RENDERING_FAILED', 20);
+
+
+
+function video_ffmpeg_helper_cron() {
+  global $base_url;
+  
+  if(variable_get('video_ffmpeg_helper_auto_cvr_cron', true)) {
+    exec("php video_scheduler.php $base_url > /dev/null &");
+  }
+}
+
+
+/**
+ * Implementatio of hook_perm()
+*/
+function video_ffmpeg_helper_perm() {
+  return array('bypass automatic video conversion');
+}
 
 
 /**
  * Implementation of hook_help().
  */
-function video_ffmpeg_helper_help($section) {
-  switch ($section) {
+function video_ffmpeg_helper_help($path, $arg) {
+  switch ($path) {
     case 'admin/modules#description':
-      return t('Enable thumbnails support for video module.');
+      return t('Enable ffmpeg support for video module.');
   }
 }
 
 /**
  * Implementation of hook_menu()
  */
-function video_ffmpeg_helper_menu($may_cache) {
+function video_ffmpeg_helper_menu() {
   $items = array();
+/* TODO
+   Non menu code that was placed in hook_menu under the '!$may_cache' block
+   so that it could be run during initialization, should now be moved to hook_init.
+   Previously we called hook_init twice, once early in the bootstrap process, second
+   just after the bootstrap has finished. The first instance is now called boot
+   instead of init.
+   
+   In Drupal 6, there are now two hooks that can be used by modules to execute code
+   at the beginning of a page request. hook_boot() replaces hook_boot() in Drupal 5
+   and runs on each page request, even for cached pages. hook_boot() now only runs
+   for non-cached pages and thus can be used for code that was previously placed in
+   hook_menu() with $may_cache = FALSE:
+   
+   Dynamic menu items under a '!$may_cache' block can often be simplified
+   to remove references to arg(n) and use of '%<function-name>' to check
+   conditions. See http://drupal.org/node/103114.
+   
+   The title and description arguments should not have strings wrapped in t(),
+   because translation of these happen in a later stage in the menu system.
+*/
+    $may_cache=true;
   if ($may_cache) {
-      $items[] = array(
-      'path' => 'admin/content/video/ffmpeg_helper',
-      'title' => t('Video ffmpeg Helper'),
-      'description' => t('Administer video_ffmpeg_helper module settings'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('video_ffmpeg_helper_admin_settings'),
-      'access' => user_access('administer site configuration'),
+      $items['admin/settings/video/ffmpeg_helper'] = array(
+      'title' => 'Video ffmpeg Helper',
+      'description' => 'Administer video_ffmpeg_helper module settings',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('video_ffmpeg_helper_admin_settings'),
+      'access arguments' => array('administer site configuration'),
       'type' => MENU_NORMAL_ITEM,
     );
   }
@@ -48,23 +89,18 @@ function video_ffmpeg_helper_menu($may_cache) {
 /**
  * Validation for settings form
  */
-function video_ffmpeg_helper_admin_settings_validate($form_id, &$form_values, &$form) {
-  if ($form_values['video_ffmpeg_helper_auto_thumbnail']) {
-    if (function_exists('is_executable')) {
-      $test = 'is_executable';
-    } else {
-      $test = 'file_exists';
+function video_ffmpeg_helper_admin_settings_validate($form, &$form_state) {
+  if (variable_get('video_image_auto_thumbnail', 0)) {
+    if (!_video_ffmpeg_helper_check_exe_path($form_state['values']['video_ffmpeg_helper_ffmpeg_path'])) {
+      form_set_error('video_ffmpeg_helper_ffmpeg_path', t('Set correct path for ffmpeg'));
     }
-    if (!$test($form_values['video_ffmpeg_helper_ffmpeg_path'])) {
-      form_set_error('video_image_ffmpeg_path', t('Set correct path for thumbnailer'));
-    }
-    if (!is_numeric($form_values['video_ffmpeg_helper_auto_thumbnail_seek'])) {
+    if (!is_numeric($form_state['values']['video_ffmpeg_helper_auto_thumbnail_seek'])) {
       form_set_error('video_ffmpeg_helper_auto_thumbnail_seek', t('Seek time must be an integer'));
     }
-	$options = $form_values['video_ffmpeg_helper_thumbnailer_options'];
-	if (!strstr($options, '%videofile') || !strstr($options, '%thumbfile')) {
-	  form_set_error('video_ffmpeg_helper_thumbnailer_options', t('Thumbnail options must contain mandatory arguments %videofile and %thumbfile'));
-	}
+    $options = $form_state['values']['video_ffmpeg_helper_thumbnailer_options'];
+    if (!strstr($options, '%videofile') || !strstr($options, '%thumbfile')) {
+      form_set_error('video_ffmpeg_helper_thumbnailer_options', t('Thumbnail options must contain mandatory arguments %videofile and %thumbfile'));
+    }
   }
 }
 
@@ -73,55 +109,43 @@ function video_ffmpeg_helper_admin_settings_validate($form_id, &$form_values, &$
  * Settings form
  */
 function video_ffmpeg_helper_admin_settings() {
-  // let's execute after video_image
-  if (module_exists('video_image')) {
-    if (variable_get('video_ffmpeg_helper_auto_thumbnail', 0)) {
-      $upload_weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_image'"));
-      db_query("UPDATE {system} SET weight=".($upload_weight+1)." WHERE name='video_ffmpeg_helper'");
-    }
+  // let's execute after video_image and video_upload
+  if (module_exists('video_image') && variable_get('video_image_auto_thumbnail', 0)) {
+    $weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_image'"));
+  } else { // video_image might be disabled.. execute after video_upload
+    $weight = db_result(db_query("SELECT weight FROM {system} WHERE name='video_upload'"));
   }
-  
+  // update the weight in the system table
+  db_query("UPDATE {system} SET weight=".($weight+1)." WHERE name='video_ffmpeg_helper'");
+
   $form['video_ffmpeg_helper_ffmpeg_path'] = array(
     '#type' => 'textfield',
     '#title' => t('FFmpeg executable path'),
     '#description' => t('Set the full path to the ffmpeg executable here.'),
     '#default_value' => variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg'),
   );
-  
-  
+
+
   $form['video_ffmpeg_helper_auto_resolution'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable resolution helper'),
-    '#description' => t('Use ffmpeg Helper to automaticcally get the resolution from the video.'),
+    '#description' => t('Use ffmpeg Helper to automatically get the resolution from the video.'),
     '#default_value' => variable_get('video_ffmpeg_helper_auto_resolution', false),
   );
-  
+
   $form['video_ffmpeg_helper_auto_playtime'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable playtime helper'),
     '#description' => t('Use ffmpeg Helper to automaticcally get the playtime from the video.'),
     '#default_value' => variable_get('video_ffmpeg_helper_auto_playtime', false),
   );
-  
+
   $form['autothumb'] = array(
           '#type' => 'fieldset',
           '#title' => t('Automatic video thumbnailing'),
           '#collapsible' => TRUE,
           '#collapsed' => TRUE
       );
-  $form['autothumb']['video_ffmpeg_helper_auto_thumbnail'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Auto thumbnail for videos'),
-      '#description' => t('If set up correctly, this will auto-generate a thumbnail for each video created.'),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_thumbnail', false),
-    );
-  $form['autothumb']['video_ffmpeg_helper_auto_thumbnail_only'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Use auto-thumbnailer exclusively for video images'),
-      '#description' => t('If checked, this will disable the file upload box for the user-supplied thumbnail.  Only check this if you have checked to be sure that auto-thumbnailing works.  Auto thumbnail must be selected for this to be enabled.'),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_thumbnail_only', false),
-      '#disabled' => !variable_get('video_ffmpeg_helper_auto_thumbnail', false),
-    );
   $form['autothumb']['video_ffmpeg_helper_thumbnailer_options'] = array(
       '#type' => 'textfield',
       '#title' => t('Video thumbnailer options'),
@@ -134,12 +158,6 @@ function video_ffmpeg_helper_admin_settings() {
       '#description' => t('Time in seconds to seek into video before extracting the thumbnail'),
       '#default_value' => variable_get('video_ffmpeg_helper_auto_thumbnail_seek', 2),
     );
-  $form['autothumb']['video_ffmpeg_helper_auto_thumbnail_debug'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Debug auto-thumbnail process'),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_thumbnail_debug', false),
-    );
-  
   // automatic video conversion settings
   $form['autoconv'] = array(
           '#type' => 'fieldset',
@@ -147,10 +165,16 @@ function video_ffmpeg_helper_admin_settings() {
           '#collapsible' => TRUE,
           '#collapsed' => TRUE
       );
+  $form['autoconv']['video_ffmpeg_helper_auto_cvr_cron'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use drupal cron for autoconversion'),
+      '#description' => t('Click this if you want to execute the video_scheduler.php from the standard drupal cron. If you want to use distributed encodings you might want to disable this.'),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_cron', true),
+    );
   $form['autoconv']['video_ffmpeg_helper_auto_conversion'] = array(
       '#type' => 'checkbox',
       '#title' => t('Auto conversion for videos'),
-      '#description' => t('If set up correctly, this will auto-convert each uploaded video to the configured format.') . '<br />' . t("IMPORTANT: you will need the video_render.php correctly configured and run by cron. See README.txt for more informations."),
+      '#description' => t('If set up correctly, this will auto-convert each uploaded video to the configured format.') . '<br />' . t("IMPORTANT: you will need the video_render.php correctly configured and run by cron. See README.txt in the video_ffmpeg_helper folder for more informations."),
       '#default_value' => variable_get('video_ffmpeg_helper_auto_conversion', false),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_cvr_width'] = array(
@@ -164,24 +188,18 @@ function video_ffmpeg_helper_admin_settings() {
   $form['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Video bitrate'),
-      '#description' => t('The video bitrate in kbit/s of the converted video.'),
-      '#size' => 3,
-      '#maxlength' => 4,
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200),
+      '#description' => t('The video bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200000),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_cvr_audio_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Audio bitrate'),
-      '#description' => t('The audio bitrate in kbit/s of the converted video.'),
-      '#size' => 3,
-      '#maxlength' => 4,
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64),
-    );
-  $form['autoconv']['video_ffmpeg_helper_auto_cvr_busy_video_path'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Busy video path'),
-      '#description' => t('Provide the relative path to a video displayed when the video is being rendered.'),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_busy_video_path', 'busy.flv'),
+      '#description' => t('The audio bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
     );
   $form['autoconv']['advanced'] = array(
           '#type' => 'fieldset',
@@ -197,8 +215,8 @@ function video_ffmpeg_helper_admin_settings() {
       '<li>'.t('%convertfile (a newly created file to store the converted file)').
       '<li>'.t('%size (video resolution of the converted file)').
       '</ul>'.
-      t('For further informations refer to the !ffmpegdoc', array('!ffmpegdoc' => l(t('Official FFMpeg documentation.'), 'http://ffmpeg.mplayerhq.hu/ffmpeg-doc.html', NULL, NULL, TRUE))),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate %convertfile'),
+      t('For further informations refer to the !ffmpegdoc', array('!ffmpegdoc' => l(t('Official FFMpeg documentation.'), 'http://ffmpeg.mplayerhq.hu/ffmpeg-doc.html', array('fragment' => TRUE)))),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate -qscale 1 %convertfile'),
     );
   return system_settings_form($form);
 }
@@ -207,8 +225,10 @@ function video_ffmpeg_helper_admin_settings() {
 /**
  * Implementation of hook_form_alter()
  */
-function video_ffmpeg_helper_form_alter($form_id, &$form) {
+function video_ffmpeg_helper_form_alter(&$form, &$form_state, $form_id) {
 
+  $node = $form['#node'];
+  
   //print_r($form);
   if($form_id == 'video_node_form') {
 
@@ -216,19 +236,16 @@ function video_ffmpeg_helper_form_alter($form_id, &$form) {
       _image_check_settings();
       $form['#attributes'] = array("enctype" => "multipart/form-data");
 
-      if (variable_get('video_ffmpeg_helper_auto_thumbnail_only', false)) {
-        // delete the video image parts
-        $form['image'] = NULL;
-      }
     }
     
-    if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_convert', false)) {
-      $form['video']['videox'] = NULL;
-      $form['video']['videoy'] = NULL;
-    }
     
-    if(variable_get('video_ffmpeg_helper_auto_playtime', false)) {
-      $form['video']['playtime'] = NULL;
+    if($node->vtype == 'upload' && user_access('bypass automatic video conversion') && variable_get('video_ffmpeg_helper_auto_conversion', false)) {
+      $form['video']['video_ffmpeg_helper_convertion_bypass'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Bypass automatic video conversion'),
+        '#description' => t('Check this if you want that your video is submitted as it is, without being converted.'),
+        '#default_value' => $node->video_ffmpeg_helper_convertion_bypass, // for node previews
+      );
     }
   }
 
@@ -237,42 +254,80 @@ function video_ffmpeg_helper_form_alter($form_id, &$form) {
 
 /**
  * Implementation of hook_nodeapi()
+ *
+ * NOTE: video_ffmpeg nodeapi is executed after video_player rendering
  */
 function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
-  if($node->type == 'video') {
-    
+  if($node->type == 'video' && $node->vtype == 'upload') {
     switch ($op) {
-      case 'load': 
-        ; // for future uses
-        break;
-        
-      case 'submit':
+      case 'load':
+      // let's check if we have a valid encoded video
+        if(isset($node->serial_data['video_encoded_fid']) &&
+          is_numeric($node->serial_data['video_encoded_fid']) &&
+          $node->serial_data['video_encoded_fid'] > 0) {
+          // this video have an encoded version. let's use it insted of the original one. We can safely do this as video_ffmpeg_helper will be scheduled by Drupal after video and video_upload modules
+          $output = array();
+          $file = _video_upload_get_file($node->serial_data['video_encoded_fid']);
+          $output['current_video_rendered_file'] = $file;
+          $output['vidfile'] = file_create_url($file->filepath);
+          // set the filesize
+          $output['size'] = $file->filesize;
+          
+          return $output;
+        }
+        //print $node->serial_data['video_encoded_fid']; die;
+
         if(variable_get('video_ffmpeg_helper_auto_resolution', false) || variable_get('video_ffmpeg_helper_auto_playtime', false)) {
           _video_ffmpeg_helper_get_video_info($node);
         }
-        
         break;
-        
-      case 'insert':
+
+      case 'submit':
+        break;
+
+      case 'update':
+        /* delete the already existing batch script, we'll recreate it below */
         if(variable_get('video_ffmpeg_helper_auto_conversion', false)) {
+          db_query('DELETE FROM {video_rendering} WHERE vid = %d AND nid = %d', $node->vid, $node->nid);
+        }
+      /* FALLTHROUGH */
+      case 'insert':
+        if(variable_get('video_ffmpeg_helper_auto_conversion', false) && $node->new_video_upload_file_fid > 0 && !$node->video_ffmpeg_helper_convertion_bypass) {
           // add rendering job to queue
           _video_ffmpeg_helper_add_rendering($node);
         }
-        
+
         break;
-        
+
       case 'prepare':
         ; // for future uses
       break;
 
       case 'view':
-        ; // for future uses
+        if($teaser == FALSE) {
+          if(_video_ffmpeg_helper_is_being_processed($node)) {
+            // if the video is still being processed we display a "rendering in progress" message
+            $node->content['video_player']['#value'] = theme('video_ffmpeg_helper_inprogress', $node);
+          }
+          else if($node->serial_data['video_encoded_fid'] == -1) { // conversion failed
+            $node->content['video_player']['#value'] = theme('video_ffmpeg_helper_encoding_failed', $node);
+          }
+        }
+        //print_r($node); die;
         break;
         
+      case 'alter':
+        ; // for future uses
+      break;
+
       case 'delete':
         db_query('DELETE FROM {video_rendering} WHERE vid = %d AND nid = %d', $node->vid, $node->nid);
+        if($node->serial_data['video_encoded_fid'] > 0) {
+          $file = _video_upload_get_file($node->serial_data['video_encoded_fid']);
+          _video_upload_delete_file($file);
+        }
         break;
-        
+
     }
   }
 }
@@ -282,14 +337,29 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
  * Add a video conversion rendering process to the queue
 */
 function _video_ffmpeg_helper_add_rendering(&$node) {
-  $file = $_SESSION['video_upload_file_stored']->filepath;
+  $file = _video_upload_get_file($node->new_video_upload_file_fid);
   //print_r($node); die;
-  db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed) VALUES (%d, %d, "%s", %d, %d, %d, %d)', $node->vid, $node->nid, $file, 0, VIDEO_RENDERING_PENDING, 0, 0);
+  db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed) VALUES (%d, %d, "%s", %d, %d, %d, %d)', $node->vid, $node->nid, $file->filepath, 0, VIDEO_RENDERING_PENDING, 0, 0);
+
+  drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
   
   // let's add the rendering in progress video
   $node->vidfile = variable_get('video_ffmpeg_helper_auto_cvr_busy_video_path', 'busy.flv');
   db_query('UPDATE {video} SET vidfile = "%s" WHERE nid=%d AND vid=%d', $node->vidfile, $node->nid, $node->vid);
-  
+
+}
+
+
+/**
+ * Returns true if the video is being encoded or queeded
+*/
+function _video_ffmpeg_helper_is_being_processed($node) {
+  $result = db_query("SELECT status FROM {video_rendering} WHERE vid = %d AND nid = %d", $node->vid, $node->nid);
+  $status = db_result($result);
+  if($status == VIDEO_RENDERING_PENDING || $status == VIDEO_RENDERING_ACTIVE) { // video is still being converted
+    return TRUE;
+  }
+  return FALSE;
 }
 
 
@@ -297,62 +367,94 @@ function _video_ffmpeg_helper_add_rendering(&$node) {
 /**
  * Get some informations from the video file
 */
-function _video_ffmpeg_helper_get_video_info(&$node) {
+function _video_ffmpeg_helper_get_video_info(&$node, $value=null) {
+  static $ffmpeg_info;
+
+  if (isset($value)) {
+    $ffmpeg_info[$node->nid] = $value;
+    return;
+  }
+  
+  $fileobj = $node->new_video_upload_file ? $node->new_video_upload_file : _video_upload_get_file($node->new_video_upload_file_fid);
+
+  // check if we have some info in the cache for the given node
+  if(isset($ffmpeg_info[$fileobj->filename])) {
+    return $ffmpeg_info[$fileobj->filename];
+  }
+  
 
   // escape file name for safety
-  $file = escapeshellarg($_SESSION['video_upload_file']->filepath);
+  $file = escapeshellarg($fileobj->filepath);
   // create the full command to execute
   $command = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg') . ' -i ' . $file;
-  
-  drupal_set_message('executing' . $command);
-  
+
   //execute the command
   ob_start();
   passthru($command." 2>&1", $command_return);
   $command_output = ob_get_contents();
   ob_end_clean();
   
-  // print $command_output;
+  // cache the result for further calls
+  $ffmpeg_info[$node->nid] = $command_output;
   
-  if(variable_get('video_ffmpeg_helper_auto_resolution', false)) {
-    // get resolution
-    $pattern = '/[0-9]{2,4}x[0-9]{2,4}/';
-    preg_match_all($pattern, $command_output, $matches, PREG_PATTERN_ORDER);
-    $resolution = $matches[0][0];
-    $xy = explode("x", $resolution);
-    
-    // store resolution information to the node object
-    $node->videox = $xy[0];
-    $node->videoy = $xy[1];
-  }
-  
-  
-  if(variable_get('video_ffmpeg_helper_auto_playtime', false)) {
-    // get playtime
-    $pattern = '/[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]/';
-    preg_match_all($pattern, $command_output, $matches, PREG_PATTERN_ORDER);
-    $playtime = $matches[0][0];
-    
-    // ffmpge return lenght as 00:00:31.1 Let's get playtime from that
-    $hmsmm = explode(":", $playtime);
-    
-    $tmp = explode(".", $hmsmm[2]);
-    $seconds = $tmp[0];
-    
-    $hours = $hmsmm[0];
-    $minutes = $hmsmm[1];
-    
-    $node->playtime_seconds = $seconds + ($hours * 3600) + ($minutes * 60);
-
-  }
-  
-  //print_r($node); die;
-  
+  return $command_output;
 }
 
 
+/**
+ * Return the video resolution
+ */
+function _video_ffmpeg_helper_auto_resolution(&$node) {
+  if(!$node->new_video_upload_file && !$node->new_video_upload_file_fid) { // no new files uploaded. skipping auto resolution process
+    return null;
+  }
 
-/* Generates a thumbnail from the video file
+  if(variable_get('video_ffmpeg_helper_auto_resolution', false)) {
+
+    // call ffmpeg -i
+    $ffmpeg_output = _video_ffmpeg_helper_get_video_info($node);
+
+    // get resolution
+    $pattern = '/Video: .*, ([0-9]{2,4}x[0-9]{2,4})/';
+    preg_match_all($pattern, $ffmpeg_output, $matches, PREG_PATTERN_ORDER);
+    $resolution = $matches[1][0];
+
+    return explode("x", $resolution);
+  }
+  return null;
+}
+
+
+/**
+ * Return the playtime seconds of a video
+*/
+function _video_ffmpeg_helper_auto_playtime(&$node) {
+
+  if(variable_get('video_ffmpeg_helper_auto_playtime', false)) {
+    
+    // call ffmpeg -i
+    $ffmpeg_output = _video_ffmpeg_helper_get_video_info($node);
+    
+    // get playtime
+    $pattern = '/Duration: ([0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9])/';
+    preg_match_all($pattern, $ffmpeg_output, $matches, PREG_PATTERN_ORDER);
+    $playtime = $matches[1][0];
+
+    // ffmpeg return lenght as 00:00:31.1 Let's get playtime from that
+    $hmsmm = explode(":", $playtime);
+
+    $tmp = explode(".", $hmsmm[2]);
+    $seconds = $tmp[0];
+
+    $hours = $hmsmm[0];
+    $minutes = $hmsmm[1];
+
+    return $seconds + ($hours * 3600) + ($minutes * 60);
+  }
+}
+
+/**
+ * Generates a thumbnail from the video file
  *
  * @param $node
  *   object with node information
@@ -361,54 +463,103 @@ function _video_ffmpeg_helper_get_video_info(&$node) {
  *   a drupal file object
  */
 function _video_ffmpeg_helper_auto_thumbnail(&$node) {
-  if(empty($_SESSION['video_upload_file']) ||
-      !$_SESSION['video_upload_file']->newfile ||
-      $node->iid || $_SESSION['video_upload_file']->iid ||
-      $_SESSION['video_upload_file']->thumbnailed) {
-    if (variable_get('video_image_auto_thumbnail_debug', false)) {
-      if (empty($_SESSION['video_upload_file']))
-        drupal_set_message(t('no video has been uploaded: make sure that video_image weight is greater than video_upload weight; make sure that the video file is not too large to be uploaded.'));
-    }
-    return null;
+  if (!$node->new_video_upload_file || 
+      ($node->new_video_upload_file && count($_POST) && $_POST['new_video_upload_file_fid'])) {
+    // we have already thumbnailed this new upload file
+    return NULL;
   }
-  $debug = variable_get('video_image_auto_thumbnail_debug', false);
-  $videofile = escapeshellarg($_SESSION['video_upload_file']->filepath);
+  if (!$node->new_video_upload_file && $node->current_video_upload_file_fid) { // no new files uploaded. skipping thumnailing stuff
+    _video_image_thumbnail_debug(t('No new files to thumbnail'));
+    return NULL;
+  }
+  // gets the newly uploaded file object
+  $uploaded_file = $node->new_video_upload_file;
+
+  // are we debugging?
+  // escape the filename for safety
+  $videofile = escapeshellarg($uploaded_file->filepath);
+  // let's create a temp filename into the drupal temp directory
   $thumbfile = tempnam(file_directory_temp(), 'tnail-thumb');
-  $seek = variable_get('video_image_auto_thumbnail_seek', 2);
+  // get ffmpeg configurations
+  $seek = variable_get('video_ffmpeg_helper_auto_thumbnail_seek', 2);
   $tnail = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
   $options = preg_replace(array('/%videofile/', '/%thumbfile/', '/%seek/'), array($videofile, $thumbfile, $seek), variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'));
 
+  // executes the command
   $command = "$tnail $options";
   ob_start();
   passthru($command." 2>&1", $tnail_return);
   $tnail_output = ob_get_contents();
   ob_end_clean();
+  _video_ffmpeg_helper_get_video_info($node, $tnail_output);
 
-  if ($debug) {
-    drupal_set_message(t('Thumbnailer command: ').$command);
-    drupal_set_message(t('Thumbnailer output: ')."<pre>\n$tnail_output\n</pre>");
-  }
+  _video_image_thumbnail_debug(t('Thumbnailer command: ').$command);
+  _video_image_thumbnail_debug(t('Thumbnailer output: ')."<pre>\n$tnail_output\n</pre>");
   if (!file_exists($thumbfile)) {
-    drupal_set_message(t('video_image_auto_thumbnail: file %file does not exist', array('%file' => $thumbfile)), 'error');
+    $error_param = array(
+      '%file' => $thumbfile,
+      '%cmd' => $command,
+      '%out' => $tnail_output,
+    );
+    $error_msg = t("error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
+    // let's log this
+    watchdog('video_ffmpeg_helper',$error_msg);
+    return false;
   }
   $file = array(
-      'filename' => $_SESSION['video_upload_file']->filename . ".video-thumb.jpg",
+      'filename' => $uploaded_file->filename . ".video-thumb.jpg",
       'filemime' => 'image/jpeg',
       'filesize' => filesize($thumbfile),
       'filepath' => $thumbfile,
       'nid' => $node->nid,
       );
-  $_SESSION['video_upload_file']->thumbnailed = TRUE;
-  if ($debug) {
-    if ($tnail_return) {
-      drupal_set_message(t('Failed to thumbnail video'));
-    } else {
-      drupal_set_message(t('Successfully thumbnailed video'));
-    }
+      
+  if ($tnail_return) {
+    _video_image_thumbnail_debug(t('Failed to thumbnail video'));
+    return $false;
   }
+  _video_image_thumbnail_debug(t('Successfully thumbnailed video'));
   return (object)$file;
 }
 
+function _video_ffmpeg_helper_check_exe_path($path=NULL) {
+  if (!$path) {
+    $path = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
+  }
+  if (function_exists('is_executable')) {
+    $test = 'is_executable';
+  } else {
+    $test = 'file_exists';
+  }
+  return $test($path);
+}
+
+/**
+ * Displays a "encoding in progress message"
+*/
+function theme_video_ffmpeg_helper_inprogress($node) {
+  return '<div class="video-ffmpeg-helper-inprogress">'. t('This video is currently being processed. Please wait.') . '</div>';
+}
 
 
+/**
+ * Display an "encoding failed" message"
+*/
+function theme_video_ffmpeg_helper_encoding_failed($node) {
+  return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
+}
 
+
+/**
+ * Implementation of hook_theme().
+ */
+function video_ffmpeg_helper_theme() {
+  return array(
+    'video_ffmpeg_helper_encoding_failed' => array(
+      'arguments' => array('node' => NULL),
+    ),
+    'video_ffmpeg_helper_inprogress' => array(
+      'arguments' => array('node' => NULL),
+    ),
+  );
+}

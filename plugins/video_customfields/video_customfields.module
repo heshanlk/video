@@ -1,19 +1,20 @@
 <?php
-// $Id$
-
 /**
  * @file
  * Enable addition of custom fileds on video nodes created by video module.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
+ * porting to Drupal 6
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @todo
  */
 
 
 /**
  * Implementation of hook_help().
  */
-function video_customfields_help($section) {
-  switch ($section) {
+function video_customfields_help($path, $arg) {
+  switch ($path) {
     case 'admin/settings/modules#description':
       return t('Enable addition of custom fileds on video nodes created by video module.');
   }
@@ -30,16 +31,36 @@ function video_customfields_perm() {
 /**
  * Implementation of hook_menu().
  */
-function video_customfields_menu($may_cache) {
+function video_customfields_menu() {
   $items = array();
+/* TODO
+   Non menu code that was placed in hook_menu under the '!$may_cache' block
+   so that it could be run during initialization, should now be moved to hook_init.
+   Previously we called hook_init twice, once early in the bootstrap process, second
+   just after the bootstrap has finished. The first instance is now called boot
+   instead of init.
+   
+   In Drupal 6, there are now two hooks that can be used by modules to execute code
+   at the beginning of a page request. hook_boot() replaces hook_boot() in Drupal 5
+   and runs on each page request, even for cached pages. hook_boot() now only runs
+   for non-cached pages and thus can be used for code that was previously placed in
+   hook_menu() with $may_cache = FALSE:
+   
+   Dynamic menu items under a '!$may_cache' block can often be simplified
+   to remove references to arg(n) and use of '%<function-name>' to check
+   conditions. See http://drupal.org/node/103114.
+   
+   The title and description arguments should not have strings wrapped in t(),
+   because translation of these happen in a later stage in the menu system.
+*/
+    $may_cache=true;
   if ($may_cache) {
-    $items[] = array(
-        'path' => 'admin/content/video/customfields',
-        'title' => t('Customfields'),
-        'description' => t('Administer video_customfields module settings'),
-        'callback' => 'drupal_get_form',
-        'callback arguments' => array('video_customfields_settings_form'),
-        'access' => user_access('administer site configuration'),
+    $items['admin/content/video/customfields'] = array(
+        'title' => 'Customfields',
+        'description' => 'Administer video_customfields module settings',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('video_customfields_settings_form'),
+        'access arguments' => array('administer site configuration'),
         'type' => MENU_NORMAL_ITEM,
       );
   }
@@ -116,20 +137,20 @@ function video_customfields_settings_form() {
  * We use this to add some custom fields to the video creation form.
  * Fields will be displayed only if field title is set on settings page.
  */
-function video_customfields_form_alter($form_id, &$form) {
-  
+function video_customfields_form_alter(&$form, &$form_state, $form_id) {
+
   if($form_id == 'video_node_form' && isset($form['video']) && user_access('insert custom fields')) {
 
     //get node object from form
     $node = $form['#node'];
-    
+
     $title1 = variable_get('video_customfield1', '');
     $title2 = variable_get('video_customfield2', '');
     $title3 = variable_get('video_customfield3', '');
     $title4 = variable_get('video_customfield4', '');
     $title5 = variable_get('video_customfield5', '');
     $title6 = variable_get('video_customfield6', '');
-   
+
     //Only display the custom fields group if atleast one field has a title.
     if ($title1 . $title2 . $title3 . $title4 . $title5 . $title6 != '') {
       $form['customfields'] = array('#type' => 'fieldset', '#title' => variable_get('video_customfieldtitle', 'Custom Fields'), '#collapsible' => TRUE, '#collapsed' => variable_get('video_customgroupcollapsed', FALSE), '#weight' => -17);
@@ -245,3 +266,13 @@ function theme_video_customfields($node) {
 }
 
 
+/**
+ * Implementation of hook_theme().
+ */
+function video_customfields_theme() {
+  return array(
+    'video_customfields' => array(
+      'arguments' => array('node' => NULL),
+    ),
+  );
+}
