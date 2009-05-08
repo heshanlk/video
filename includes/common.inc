@@ -97,8 +97,8 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';
 
-  $output = theme('video_format_play', $output, t('http://www.macromedia.com/go/getflashplayer'),
-                                      t('Link to Macromedia Flash Player Download Page'),
+  $output = theme('video_format_play', $output, t('http://get.adobe.com/flashplayer/'),
+                                      t('Link to Adobe Flash Player Download Page'),
                                       t('Download latest Flash Player'));
    return $output;
 }
