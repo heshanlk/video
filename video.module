@@ -36,7 +36,7 @@ function video_help($section = 'admin/help#video') {
   switch ($section) {
     case 'admin/help#video':
       $output = '<p>' . t('The video module (4.7 or with backport patch to 4.6) allows users to post video content to their site. The emergence of portable phones with video capture capabilities has made video capture ubiquitous. Video logging, or <a href="%elink-en-wikipedia-org">vlogging</a> as a medium for personal video broadcasting has proven to be popular and is following the blogging, and podcasting phenomena\'s. Videos are useful for creative collaboration among community members. If community members can not meet in person videos of meetings are valuable for enhancing the interaction between community members.', array('%elink-en-wikipedia-org' => 'http://en.wikipedia.org/wiki/Vlog')) . '</p>';
-      $output .= '<p>' . t('The video module can be administered to flash player settings. There are a number of page and menu links which can be added to play and download video content on the site. Other configurable options include play and download counters. Multi-file downloads can also be configured under settings. There are also up to six custom fields and a group name which can be added.') . '</p>';
+      $output .= '<p>' . t('The video module can be administered to flash player settings. There are a number of page and menu links which can be added to play and download video content on the site. Other configurable options include play and download counters. Multi-file downloads can also be configured under settings.') . '</p>';
       $output .= t('<p>You can:</p>
 <ul>
 <li>Enable <em>most played videos</em>, <em>latest videos</em>, and <em>top videos</em> blocks at <a href="%admin-block">administer &gt;&gt; block</a>.</li>
@@ -771,8 +771,8 @@ function video_insert($node) {
 
   $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
-  return db_query("INSERT INTO {video} (vid, nid, vtype, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5, custom_field_6, serialized_data) VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-    $node->vid, $node->nid, $node->vtype, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data);
+  return db_query("INSERT INTO {video} (vid, nid, vtype, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, serialized_data) VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s')",
+    $node->vid, $node->nid, $node->vtype, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->serialized_data);
 }
 
 
@@ -790,8 +790,8 @@ function video_update($node) {
 
     $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
-    return db_query("UPDATE {video} SET vidfile='%s', size=%d, videox=%d, videoy=%d, video_bitrate=%d, audio_bitrate=%d, audio_sampling_rate=%d, audio_channels='%s', playtime_seconds=%d, disable_multidownload=%d, download_folder='%s', use_play_folder=%d, custom_field_1='%s', custom_field_2='%s', custom_field_3='%s', custom_field_4='%s', custom_field_5='%s', custom_field_6='%s', serialized_data='%s' WHERE vid = %d",
-         $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data, $node->vid);
+    return db_query("UPDATE {video} SET vidfile='%s', size=%d, videox=%d, videoy=%d, video_bitrate=%d, audio_bitrate=%d, audio_sampling_rate=%d, audio_channels='%s', playtime_seconds=%d, disable_multidownload=%d, download_folder='%s', use_play_folder=%d, serialized_data='%s' WHERE vid = %d",
+         $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->serialized_data, $node->vid);
   }
 }
 
@@ -1093,34 +1093,13 @@ function theme_video_player($node) {
  *   string HTML link
  */
 function theme_video_format_play($output, $url, $title, $link_text) {
+	$output = "\n<div id=\"video-player\">\n" . $output;
 	if(variable_get('video_show_help_text', TRUE)){
-    $output = "\n<div id=\"video-player\">\n" . $output;
     $output .= "<p>\n". t('Problems viewing videos?');
     $output .= "<br />\n";
     $output .= l($link_text, $url, array('title' => $title), NULL, NULL, TRUE);
-    return $output ."\n</p> \n </div>\n";
   }
-}
-
-
-/**
- * Takes an associative array of $fields with 'title' and 'body' keys and outputs the HTML.
- * This theme function allows the same HTML code to generate all the custom and metadata fields.
- *
- * @param $fields
- *   array with 'title' and 'body' keys
- *
- * @return
- *   string of content to display
- */
-function theme_video_fields($fields) {
-  $output = '';
-  $odd_even = 'odd';
-  foreach ($fields as $field) {
-    $output .= "<div class=\"$odd_even\"><b>" . check_plain($field['title']) . '</b> ' . check_plain($field['body']) . "</div>\n";
-    $odd_even = ($odd_even == 'odd') ? 'even' : 'odd'; //Always switch its value.
-  }
-  return $output;
+  return $output ."\n</p> \n </div>\n";
 }
 
 
