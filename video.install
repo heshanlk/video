@@ -24,12 +24,6 @@ function video_install() {
         download_folder varchar(255) NULL default NULL,
         disable_multidownload tinyint(1) unsigned NOT NULL default '0',
         use_play_folder tinyint(1) unsigned NOT NULL default '0',
-        custom_field_1 varchar(255) NULL default NULL,
-        custom_field_2 varchar(255) NULL default NULL,
-        custom_field_3 varchar(255) NULL default NULL,
-        custom_field_4 varchar(255) NULL default NULL,
-        custom_field_5 text NULL default NULL,
-        custom_field_6 text NULL default NULL,
         serialized_data text NULL default NULL,
         PRIMARY KEY  (vid)
       ) TYPE=MyISAM COMMENT='size is in bytes' /*!40100 DEFAULT CHARACTER SET utf8 */;");
@@ -53,12 +47,6 @@ function video_install() {
         download_folder varchar(255) NULL default NULL,
         disable_multidownload smallint NOT NULL default '0',
         use_play_folder smallint NOT NULL default '0',
-        custom_field_1 varchar(255) NULL default NULL,
-        custom_field_2 varchar(255) NULL default NULL,
-        custom_field_3 varchar(255) NULL default NULL,
-        custom_field_4 varchar(255) NULL default NULL,
-        custom_field_5 text NULL default NULL,
-        custom_field_6 text NULL default NULL,
         serialized_data text NULL default NULL,
         PRIMARY KEY  (vid)
       );");
@@ -274,4 +262,18 @@ function video_update_9() {
 function video_update_10() {
   $res[] = update_sql("UPDATE {video} SET vidfile=CONCAT('http://video.google.com/videoplay?docid=',SUBSTR(vidfile,8)) WHERE vtype='google' AND vidfile LIKE 'google:%'");
   return $res;
+}
+
+/**
+ * Update database schema by removing custom fields - #419802
+ * in the current setting conflict with the CCK
+ */
+function video_update_11() {
+  $ret[] = update_sql('ALTER TABLE {video} DROP custom_field_1 varchar(255) NULL default NULL');
+  $ret[] = update_sql('ALTER TABLE {video} DROP custom_field_2 varchar(255) NULL default NULL');
+  $ret[] = update_sql('ALTER TABLE {video} DROP custom_field_3 varchar(255) NULL default NULL');
+  $ret[] = update_sql('ALTER TABLE {video} DROP custom_field_4 varchar(255) NULL default NULL');
+  $ret[] = update_sql('ALTER TABLE {video} DROP custom_field_5 text NULL default NULL');
+  $ret[] = update_sql('ALTER TABLE {video} DROP custom_field_6 text NULL default NULL');	
+  return $ret;
 }
