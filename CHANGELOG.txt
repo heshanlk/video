@@ -1,0 +1,206 @@
+// $Id$
+
+UPGRADING FROM DRUPAL 4.7 to CVS
+--------------------------------
+
+The upgrade process is automated by the video.install file, so
+be sure you have the correct version of video.install to match
+the version of video.module you intend to use. If you downloaded
+a tarball of Video from drupal.org and over-wrote everything in
+your Video module directory, you should be fine.
+
+Run the update.php script that comes in the Drupal distribution
+  http://www.example.com/update.php
+
+
+UPGRADING FROM 4.6 OR 4.6 CVS
+-----------------------------
+
+Starting in Drupal 4.7, the video module has an automated upgrade.
+If you installed and used the stable video 4.6 release, the
+update.php script that upgrades Drupal will also update the
+video database schema. http://www.example.com/update.php
+
+If you decided to use a CVS version of Video for Drupal 4.6, you
+can still take advantage of the automated ugprade, but you will
+need to select an update version number when you run update.php.
+
+The following is a key of upgrade version numbers for Video CVS
+database schemas between the Drupal 4.6 and Drupal 4.7
+changes. When you find a database schema that matches your
+existing schema, select the corresponding update.php version
+number when you run update.php. You can get your current database
+schema by looking at the old video.mysql file you used to create
+your video table or execute the following SQL query:
+  `DESCRIBE video;`
+
+Some differences between versions are subtle, but important, so
+make sure you verify your video table is an actual fit, not just
+"close enough".
+
+VIDEO UPDATE.PHP VERSION 2
+--------------------------
+
+  CREATE TABLE video (
+    nid int(10) unsigned NOT NULL default '0',
+    vidfile text NOT NULL,
+    videox smallint(4) NOT NULL default '0',
+    videoy smallint(4) NOT NULL default '0',
+    size bigint(13) default NULL,
+    clicks int(10) unsigned NOT NULL default '0',
+    video_bitrate int(11) default NULL,
+    audio_bitrate int(11) default NULL,
+    audio_sampling_rate int(11) default NULL,
+    audio_channels enum('','stereo','mono') default NULL,
+    playtime_seconds int(11) default NULL,
+    PRIMARY KEY  (nid)
+  ) TYPE=MyISAM COMMENT='size is in bytes';
+
+
+VIDEO UPDATE.PHP VERSION 3
+--------------------------
+
+  CREATE TABLE video (
+    nid int(10) unsigned NOT NULL default '0',
+    vidfile text NOT NULL,
+    videox smallint(4) NOT NULL default '0',
+    videoy smallint(4) NOT NULL default '0',
+    size bigint(13) default NULL,
+    download_counter int(10) unsigned NOT NULL default '0',
+    play_counter int(10) unsigned NOT NULL default '0',
+    video_bitrate int(11) default NULL,
+    audio_bitrate int(11) default NULL,
+    audio_sampling_rate int(11) default NULL,
+    audio_channels enum('','5.1','stereo','mono') default NULL,
+    playtime_seconds int(11) default NULL,
+    download_folder varchar(255) NULL default NULL,
+    disable_multidownload tinyint(1) NOT NULL default '0',
+    use_play_folder tinyint(1) NOT NULL default '0',
+    custom_field_1 varchar(255) NULL default NULL,
+    custom_field_2 varchar(255) NULL default NULL,
+    custom_field_3 varchar(255) NULL default NULL,
+    custom_field_4 varchar(255) NULL default NULL,
+    custom_field_5 text NULL default NULL,
+    custom_field_6 text NULL default NULL,
+    PRIMARY KEY  (nid)
+  ) TYPE=MyISAM COMMENT='size is in bytes';
+
+
+VIDEO UPDATE.PHP VERSION 4
+--------------------------
+
+  -- $Id$
+  CREATE TABLE video (
+    nid int(10) unsigned NOT NULL default '0',
+    vidfile text NOT NULL default '',
+    videox smallint(4) unsigned NOT NULL default '0',
+    videoy smallint(4) unsigned NOT NULL default '0',
+    size bigint(13) unsigned default NULL,
+    download_counter int(10) unsigned NOT NULL default '0',
+    play_counter int(10) unsigned NOT NULL default '0',
+    video_bitrate int(11) unsigned default NULL,
+    audio_bitrate int(11) unsigned default NULL,
+    audio_sampling_rate int(11) unsigned default NULL,
+    audio_channels enum('','5.1','stereo','mono') default NULL,
+    playtime_seconds int(11) unsigned default NULL,
+    download_folder varchar(255) NULL default NULL,
+    disable_multidownload tinyint(1) unsigned NOT NULL default '0',
+    use_play_folder tinyint(1) unsigned NOT NULL default '0',
+    custom_field_1 varchar(255) NULL default NULL,
+    custom_field_2 varchar(255) NULL default NULL,
+    custom_field_3 varchar(255) NULL default NULL,
+    custom_field_4 varchar(255) NULL default NULL,
+    custom_field_5 text NULL default NULL,
+    custom_field_6 text NULL default NULL,
+    PRIMARY KEY  (nid)
+  ) TYPE=MyISAM COMMENT='size is in bytes';
+
+
+VIDEO UPDATE.PHP VERSION 5
+--------------------------
+
+  -- $Id$
+  CREATE TABLE video (
+    vid int(10) unsigned NOT NULL default '0',
+    nid int(10) unsigned NOT NULL default '0',
+    vidfile text NOT NULL default '',
+    videox smallint(4) unsigned NOT NULL default '0',
+    videoy smallint(4) unsigned NOT NULL default '0',
+    size bigint(13) unsigned default NULL,
+    download_counter int(10) unsigned NOT NULL default '0',
+    play_counter int(10) unsigned NOT NULL default '0',
+    video_bitrate int(10) unsigned default NULL,
+    audio_bitrate int(10) unsigned default NULL,
+    audio_sampling_rate int(10) unsigned default NULL,
+    audio_channels enum('','5.1','stereo','mono') default NULL,
+    playtime_seconds int(10) unsigned default NULL,
+    download_folder varchar(255) NULL default NULL,
+    disable_multidownload tinyint(1) unsigned NOT NULL default '0',
+    use_play_folder tinyint(1) unsigned NOT NULL default '0',
+    custom_field_1 varchar(255) NULL default NULL,
+    custom_field_2 varchar(255) NULL default NULL,
+    custom_field_3 varchar(255) NULL default NULL,
+    custom_field_4 varchar(255) NULL default NULL,
+    custom_field_5 text NULL default NULL,
+    custom_field_6 text NULL default NULL,
+    serialized_data text NULL default NULL,
+    PRIMARY KEY  (vid)
+  ) TYPE=MyISAM COMMENT='size is in bytes';
+
+VIDEO UPDATE.PHP VERSION 6
+--------------------------
+
+  -- $Id$
+  CREATE TABLE video (
+    vid int(10) unsigned NOT NULL default '0',
+    nid int(10) unsigned NOT NULL default '0',
+    vidfile text NOT NULL default '',
+    videox smallint(4) unsigned NOT NULL default '0',
+    videoy smallint(4) unsigned NOT NULL default '0',
+    size bigint(13) unsigned default NULL,
+    download_counter int(10) unsigned NOT NULL default '0',
+    play_counter int(10) unsigned NOT NULL default '0',
+    video_bitrate int(10) unsigned default NULL,
+    audio_bitrate int(10) unsigned default NULL,
+    audio_sampling_rate int(10) unsigned default NULL,
+    audio_channels enum('','5.1','stereo','mono') default NULL,
+    playtime_seconds int(10) unsigned default NULL,
+    download_folder varchar(255) NULL default NULL,
+    disable_multidownload tinyint(1) unsigned NOT NULL default '0',
+    use_play_folder tinyint(1) unsigned NOT NULL default '0',
+    custom_field_1 varchar(255) NULL default NULL,
+    custom_field_2 varchar(255) NULL default NULL,
+    custom_field_3 varchar(255) NULL default NULL,
+    custom_field_4 varchar(255) NULL default NULL,
+    custom_field_5 text NULL default NULL,
+    custom_field_6 text NULL default NULL,
+    serialized_data text NULL default NULL,
+    PRIMARY KEY  (vid)
+  ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+VIDEO UPDATE.PHP VERSION 11
+--------------------------
+  -- $Id$
+* Removed the custom fields plugin.
+* Added Help text display enable/disable.
+
+  CREATE TABLE video (
+    vid int(10) unsigned NOT NULL default '0',
+    nid int(10) unsigned NOT NULL default '0',
+    vidfile text NOT NULL default '',
+    videox smallint(4) unsigned NOT NULL default '0',
+    videoy smallint(4) unsigned NOT NULL default '0',
+    size bigint(13) unsigned default NULL,
+    download_counter int(10) unsigned NOT NULL default '0',
+    play_counter int(10) unsigned NOT NULL default '0',
+    video_bitrate int(10) unsigned default NULL,
+    audio_bitrate int(10) unsigned default NULL,
+    audio_sampling_rate int(10) unsigned default NULL,
+    audio_channels enum('','5.1','stereo','mono') default NULL,
+    playtime_seconds int(10) unsigned default NULL,
+    download_folder varchar(255) NULL default NULL,
+    disable_multidownload tinyint(1) unsigned NOT NULL default '0',
+    use_play_folder tinyint(1) unsigned NOT NULL default '0',
+    serialized_data text NULL default NULL,
+    PRIMARY KEY  (vid)
+  ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
