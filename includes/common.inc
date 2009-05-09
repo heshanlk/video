@@ -89,6 +89,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
   // params will be passed to both IE or not IE browsers
   $config = sprintf("config={'playerId':'player','clip':{'url':'%s'},'playlist':[{'url':'%s'}]}", $base_url . '/' . $file, $base_url . '/' . $file);
   $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
+               <param name="allowFullScreen" value="true" />
                <param name="wmode" value="transparent" />
                <param name="allowScriptAccess" value="sameDomain" />
                <param name="quality" value="high" />
