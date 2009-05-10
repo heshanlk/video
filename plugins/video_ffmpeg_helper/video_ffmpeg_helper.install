@@ -38,3 +38,11 @@ function video_ffmpeg_helper_install() {
   }
 }
 
+/**
+ * Uninstall video_ffmpeg_helper module
+ *
+ * @return array
+ */
+function video_ffmpeg_helper_uninstall() {
+  db_query('DROP TABLE {video_rendering}');
+}
