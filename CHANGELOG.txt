@@ -183,6 +183,7 @@ VIDEO UPDATE.PHP VERSION 11
   -- $Id$
 * Removed the custom fields plugin.
 * Added Help text display enable/disable.
+* Added FlowPlayer 3.0 and later support.
 
   CREATE TABLE video (
     vid int(10) unsigned NOT NULL default '0',
