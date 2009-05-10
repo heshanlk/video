@@ -703,3 +703,34 @@ function video_upload_create_node_from($filepath, $title = NULL, $body = '', $ta
   return $node;
 }
 
+/**
+ * Implementation of hook_file_download().
+ *
+ * Note that in Drupal 5, the upload.module's hook_file_download() checks its
+ * permissions for all files in the {files} table. We store our file
+ * information in {files} if private files transfers are selected and the
+ * upload.module is enabled, users will the 'view uploaded files'permission to
+ * view images.
+ */
+function video_upload_file_download($filename) {
+
+  $filepath = file_create_path($filename);
+
+  $result = db_query("SELECT f.nid, f.filename, f.filesize, f.filemime FROM {files} f WHERE f.filepath = '%s'", $filepath);
+  
+  if ($file = db_fetch_object($result)) {
+
+    $node = node_load(array('type' => 'video', 'nid' => $file->nid));
+    if ($node) {
+      if (user_access('play video')) {
+        $headers = array(
+    	  'Content-Type: '. mime_header_encode($file->filemime),
+    	  'Content-Length: '. (int) $file->filesize,
+    	  'Content-Disposition: attachment; filename='. $file->filename,
+  		  );
+  		  return $headers;
+  	  }
+  	  return -1;
+    }
+  }
+}
