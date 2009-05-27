@@ -1,14 +1,12 @@
 <?php
-
+// $Id$
 /**
- * @file
- * Enable Uploaded videos support for video module.
+ * @file video.module
  *
- * @author Fabio Varesano <fvaresano at yahoo dot it>
- * @contributor Vernon Mauery <vernon at mauery dot com>
- * porting to Drupal 6
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
+ *                              <heshanmw at gmail dot com>
  * @todo
+ * implement the help of the video upload (Implement the internal hook for the help video_upload_v_help()).
  */
 
 
@@ -17,22 +15,19 @@
 */
 function video_upload_menu() {
   $items = array();
-  $maycache = true;
-  if($maycache) {
-    $items['node/add/video/upload'] = array(
-      'title' => 'Upload',
-      'access arguments' => array('create video')
-    );
-    $items['admin/settings/video/upload'] = array(
-      'title' => 'Upload',
-      'description' => 'Configure various settings of the video upload plugin.',
-      'access arguments' => array('administer site configuration'),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('video_upload_admin_settings'),
-      'type' => MENU_NORMAL_ITEM,
-    );
-  }
 
+  $items['node/add/video/upload'] = array(
+    'title' => 'Upload',
+    'access arguments' => array('create video')
+  );
+  $items['admin/settings/video/upload'] = array(
+    'title' => 'Upload',
+    'description' => 'Configure various settings of the video upload plugin.',
+    'access arguments' => array('administer site configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_upload_admin_settings'),
+    'type' => MENU_NORMAL_ITEM,
+  );
   return $items;
 }
 
@@ -252,7 +247,8 @@ function video_upload_v_form(&$node, &$form) {
 /**
  * Implementation of hook_nodeapi()
  */
-function video_upload_nodeapi(&$node, $op) {
+function video_upload_nodeapi(&$node, $op, $teaser, $page) {
+
 
   if($node->type == 'video' && $node->vtype == 'upload') {
     switch ($op) {
@@ -262,6 +258,7 @@ function video_upload_nodeapi(&$node, $op) {
           //print_r($node);
           //exit;
         return _video_upload_load($node);
+        break;
 
       case 'prepare':
           //exit;
@@ -275,22 +272,13 @@ function video_upload_nodeapi(&$node, $op) {
 
       case 'presave':
           //exit;
-        //_video_upload_submit($node);
-        break;
-
-      case 'submit':
-         // exit;
-
-        //_video_upload_submit($node);
+        _video_upload_presave($node);
         break;
 
       case 'insert':
-          //exit;
-         //print_r($node);
-         //exit;
-        //_video_upload_submit($node);
-        //_video_upload_insert($node);
-        _video_upload_validate($node);
+
+        _video_upload_insert($node);
+        ////_video_upload_validate($node);
         break;
 
       case 'update':
@@ -318,10 +306,8 @@ function video_upload_nodeapi(&$node, $op) {
 
 
 function _video_upload_load(&$node) {
-  //print 'load';
-  //print_r($node);
-  //exit;
-  $fileBuf = db_fetch_object(db_query('SELECT fid FROM {upload} WHERE nid = %d', $node->nid));
+
+  $fileBuf = db_fetch_object(db_query('SELECT fid FROM {video_upload} WHERE nid = %d', $node->nid));
   $output = array();
   $output['video_fid'] = $fileBuf->fid;
   $file = _video_upload_get_file($output['video_fid']);
@@ -342,50 +328,9 @@ for some hints
 */
 
 function _video_upload_prepare(&$node) {
-    //print 'prepare';
-    //exit;
+
   if (!count($_POST))
     return;
-  //print 'prepare';
-  //print_r($node);
-  //exit;
-  if (is_object($node->video_upload_file)) {
-    $file_field = $node->video_upload_file;
-  } else {
-    $file_field = 'video_upload_file';
-  }
-
-/* TODO Modify the validators array to suit your needs.
-   This array is used in the revised file_save_upload */
-  $validators = array(
-    'file_validate_is_image' => array(),
-    'file_validate_image_resolution' => array('85x85'),
-    'file_validate_size' => array(30 * 1024),
-  );
-
-  if (count($_POST) && $file = file_save_upload($file_field , $validators) ){ // a file has been uploaded
-    // this is the temp directory to store files
-    $temppath = file_directory_temp() . '/video/';
-    // let's check that the directory is good
-    file_check_directory($temppath, TRUE);
-    // let's save the uploaded file to the temp directory
-    $file = file_save_upload($file, $temppath . '/' . $file->filename, FILE_EXISTS_REPLACE);
-
-    // let's store the temp file into the DB
-    $file->fid = db_last_insert_id('files','fid');
-    db_query("INSERT INTO {files} (fid, filename, filepath, filemime, filesize) VALUES (%d, '%s', '%s', '%s', %d)", $file->fid, 'video_upload_temp.'.$file->filename, $file->filepath, $file->filemime, $file->filesize);
-
-    // TODO: delete here the previous $node->new_video_upload_file
-
-    $node->new_video_upload_file = $file;
-  }
-  else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Submit') {
-    $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
-  }
-  else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Preview') {
-    $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
-
-  }
 }
 
 /**
@@ -403,7 +348,7 @@ function _video_upload_form(&$node) {
     $we_have_video = true;
   }
   else {
-    $form['new_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => 0);
+    //$form['new_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => 0);
     if($node->current_video_upload_file) { // we don't have a new file
       $form['current_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => $node->current_video_upload_file->fid);
       $form['current_video_upload_file_info'] = array('#type' => 'item', '#value' => theme('video_upload_file_info_form', $node->current_video_upload_file, $node), '#weight' => -10);
@@ -411,6 +356,7 @@ function _video_upload_form(&$node) {
       $we_have_video = true;
     }
   }
+  $form['new_video_upload_file_fid'] = array('#type' => 'hidden', '#value' => 0);
   $form['video_upload_file'] = array(
     '#type' => 'file',
     '#title' => $we_have_video ? t('Replace with') : t('Upload video file'),
@@ -427,97 +373,49 @@ function _video_upload_form(&$node) {
 /**
  * Validate video file
  */
-function _video_upload_validate(&$node) {
-  //print 'validate';
+function video_upload_v_validate(&$node) {
+  // in Drupal 6 version all file size and the type validations are done by the file API's
+}
+
+
+function _video_upload_presave(&$node) {
+  //print 'submit';
+
   //print_r($node); die;
-  //##################### PREPARE ##########################
-  
+  // ####### Prepare by moving file to the temp location and then checking the validations of fields
+
   if (is_object($node->video_upload_file)) {
     $file_field = $node->video_upload_file;
   } else {
     $file_field = 'video_upload_file';
   }
 
-/* TODO Modify the validators array to suit your needs.
-   This array is used in the revised file_save_upload 
-  $validators = array(
-    'file_validate_is_image' => array(),
-    'file_validate_image_resolution' => array('85x85'),
-    'file_validate_size' => array(30 * 1024),
-  );
-*/
-   // get extention list
+  // get extention array
   $extentions = explode(",",variable_get('video_upload_allowed_extensions', 'mov,flv,wmv'));
 
   $validators = array(
-    'file_validate_extensions' => array(variable_get('video_upload_allowed_extensions', 'mov,flv,wmv'))
+    'file_validate_extensions' => array( 'csv' ),
   );
-  // TODO : add file sixe validation
+  // TODO : add file size validation
   // 'file_validate_size' => array($limits['file_size'], $limits['user_size']),
-  
-  if (count($_POST) && $file = file_save_upload($file_field , $validators) ){ // a file has been uploaded
 
-    // this is the temp directory to store files
-    //$temppath = file_directory_temp() . '/video/';
-    // let's check that the directory is good
-    //file_check_directory($temppath, TRUE);
-    // let's save the uploaded file to the temp directory
-    //$file = file_save_upload($file, $validators, $temppath . '/' . $file->filename, FILE_EXISTS_REPLACE);
-
-    //TODO : set status value
-    //$status=0;
-    // let's store the temp file into the DB
-    //$file->fid = db_last_insert_id('files','fid');
-    //db_query("INSERT INTO {files} (fid, filename, filepath, filemime, filesize,status) VALUES (%d, '%s', '%s', '%s', %d, %d)", $file->fid, 'video_upload_temp.'.$file->filename, $file->filepath, $file->filemime, $file->filesize, $file->status);
-
-    // TODO: delete here the previous $node->new_video_upload_file
-    //print_r($file);
-    //exit;
-    $node->new_video_upload_file = $file->fid;
+  if (count($_POST) && $file = file_save_upload($file_field , array('file_validate_extensions' => array('zip')))) { // a file has been uploaded
+    $node->new_video_upload_file = $file;
     $node->new_video_upload_file_fid = $file->fid;
+      //print_r($file);
+  //exit;
   }
   else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Submit') {
     $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
   }
   else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Preview') {
     $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
-
   }
-  //print_r($node);
-  //exit;
-  //#########################################################
+  //$node->new_video_upload_file_fid = $file->fid;
 
-  if(!($node->new_file_uploaded || $node->new_video_upload_file_fid > 0 || $node->new_video_upload_file_fid > 0 || $node->current_video_upload_file_fid > 0)) { //
-    form_set_error('video_upload_file', t('You have not provided any video file. Please upload one.<br />If you uploaded a video but the system did not received it, please check that it is smaller than') . ' ' . format_size(file_upload_max_size()).'.');
-  }
-  else if($node->new_file_uploaded || $node->new_video_upload_file_fid > 0 || $node->new_video_upload_file_fid > 0){
-    if($node->new_file_uploaded) { // only if the user oploaded a new file
-      $file = $node->new_file_uploaded;
-    }
-    else {
-      $file = _video_upload_get_file($node->new_video_upload_file_fid);
-    }
+  //
 
-    // let's check file extension
-    $extensions = variable_get('video_upload_allowed_extensions', 'mov,flv,wmv');
-    $regex = '/\.('. ereg_replace(',+', '|', preg_quote($extensions)) .')$/i';
-    if (!preg_match($regex, $file->filename)) {
-      //set an error message and delete the the file
-      form_set_error('audio', t('The selected file %name can not be uploaded, because it is only possible to upload files with the following extensions: %files-allowed.', array('%name' => $file->filename, '%files-allowed' => $extensions)));
-      _video_upload_delete_file($file);
-    }
-  }
-  //call to submit function
-  //print_r($node);
-  //exit;
-  _video_upload_submit($file,$node);
-}
-
-
-function _video_upload_submit(&$file,&$node) {
-  //print 'submit';
-
-  //print_r($node); die;
+  // ####### Start Perpare to save ###############
   if($node->new_video_upload_file_fid) {
     $fid = $node->new_video_upload_file_fid;
   }
@@ -525,90 +423,31 @@ function _video_upload_submit(&$file,&$node) {
     $fid = $node->current_video_upload_file_fid;
   }
   $node->serial_data['video_fid'] = $fid;
-  _video_upload_insert($file,$node);
+  $node->vidfile =  $node->new_video_upload_file->path;
+  $node->size = $node->new_video_upload_file->filesize;
+ // _video_upload_insert($file,$node);
 }
 
-function _video_upload_insert(&$file,&$node) {
-   // global $file;
-   //print 'insert';
-   //print_r($node); die;
- // if($node->new_video_upload_file_fid && $file = _video_upload_get_file($node->new_video_upload_file_fid)) { // there is a new file uploaded (now stored on the temp path); need to store in the final directory
+function _video_upload_insert(&$node) {
+    //print "insert";
     //print_r($node);
     //exit;
+  if($node->new_video_upload_file_fid && $file = _video_upload_get_file($node->new_video_upload_file_fid)) { // there is a new file uploaded (now stored on the temp path); need to store in the final directory
+
     _video_upload_store_file($file, $node);
-  //}
+  }
 }
 
 function _video_upload_update(&$node) {
-  //##################### PREPARE ##########################
-
-  if (is_object($node->video_upload_file)) {
-    $file_field = $node->video_upload_file;
-  } else {
-    $file_field = 'video_upload_file';
-  }
-
-/* TODO Modify the validators array to suit your needs.
-   This array is used in the revised file_save_upload
-  $validators = array(
-    'file_validate_is_image' => array(),
-    'file_validate_image_resolution' => array('85x85'),
-    'file_validate_size' => array(30 * 1024),
-  );
-*/
-   // get extention list
-  $extentions = explode(",",variable_get('video_upload_allowed_extensions', 'mov,flv,wmv'));
-
-  $validators = array(
-    'file_validate_extensions' => array(variable_get('video_upload_allowed_extensions', 'mov,flv,wmv'))
-  );
-  // TODO : add file sixe validation
-  // 'file_validate_size' => array($limits['file_size'], $limits['user_size']),
-
-  if (count($_POST) && $file = file_save_upload($file_field , $validators) ){ // a file has been uploaded
-
-    // this is the temp directory to store files
-    //$temppath = file_directory_temp() . '/video/';
-    // let's check that the directory is good
-    //file_check_directory($temppath, TRUE);
-    // let's save the uploaded file to the temp directory
-    //$file = file_save_upload($file, $validators, $temppath . '/' . $file->filename, FILE_EXISTS_REPLACE);
-
-    //TODO : set status value
-    //$status=0;
-    // let's store the temp file into the DB
-    //$file->fid = db_last_insert_id('files','fid');
-    //db_query("INSERT INTO {files} (fid, filename, filepath, filemime, filesize,status) VALUES (%d, '%s', '%s', '%s', %d, %d)", $file->fid, 'video_upload_temp.'.$file->filename, $file->filepath, $file->filemime, $file->filesize, $file->status);
-
-    // TODO: delete here the previous $node->new_video_upload_file
-    //print_r($file);
-    //exit;
-    $node->new_video_upload_file = $file->fid;
-    $node->new_video_upload_file_fid = $file->fid;
-  }
-  else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Submit') {
-    $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
-  }
-  else if (($node->new_video_upload_file_fid || $_POST['new_video_upload_file_fid']) && $_POST['op'] == 'Preview') {
-    $node->new_video_upload_file = _video_upload_get_file($_POST['new_video_upload_file_fid']);
-
-  }
-  //print_r($node);
-  //exit;
-  //#########################################################
-
 
   if($node->new_video_upload_file_fid && $file = _video_upload_get_file($node->new_video_upload_file_fid)) { // there is a new file uploaded (now stored on the temp path)
     //need to store in the final directory
     //exit;
-    _video_upload_store_file($file, $node);
-    ///print_r($node);
-    //exit;
-    //$node = _video_upload_load($node);
     if($node->current_video_upload_file_fid) {
       // let's delete the old video
       _video_upload_delete_file($node->current_video_upload_file_fid);
     }
+    _video_upload_store_file($file, $node);
   }
 
 }
@@ -640,10 +479,7 @@ function _video_upload_view(&$node) {
  * Move a temp file into the final directory associating it with the node
 */
 function _video_upload_store_file(&$file, &$node) {
-    //global $file;
-  // $file->filename is video_upload_temp.realfile.ext : let's restore original filename
-//print_r($file);
-//exit;
+
   $file->filename = _video_get_original_filename($file->filename);
 
   _video_upload_get_path($file, $node);
@@ -653,7 +489,7 @@ function _video_upload_store_file(&$file, &$node) {
     // update the file db entry
     db_query("UPDATE {files} SET filename = '%s', filepath = '%s', filemime = '%s', filesize = %d WHERE fid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, $file->fid);
     // add an entry in the file_revisions table
-    db_query("INSERT INTO {upload} (fid, nid,  vid, list, description) VALUES (%d, %d, %d, %d, '%s')", $file->fid, $node->nid, $node->vid, $file->list, $file->description);
+    db_query("INSERT INTO {video_upload} (vid, nid, fid) VALUES (%d, %d, %d)", $node->vid, $node->nid, $file->fid);
     // update the file db entry
     //db_query("UPDATE {video} SET serialized_data = '%s' WHERE vid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, $file->fid);
 
@@ -712,7 +548,7 @@ function _video_upload_delete_file($file) {
   file_delete($file->path);
 
   // delete file information from database
-  db_query('DELETE FROM {upload} WHERE fid = %d', $file);
+  db_query('DELETE FROM {video_upload} WHERE fid = %d', $file);
   db_query('DELETE FROM {files} WHERE fid = %d', $file);
 }
 

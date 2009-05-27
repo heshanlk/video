@@ -1,4 +1,5 @@
 <?php
+//$Id$
 /**
  * @file
  * The video module has some hooks which should make adding

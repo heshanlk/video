@@ -1,12 +1,10 @@
 <?php
+//$Id$
 /**
- * @file
- * 
+ * @file video.module
  *
- * @author Fabio Varesano <fvaresano at yahoo dot it>
- * @contributor Vernon Mauery <vernon at mauery dot com>
- * porting to Drupal 6
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
+ *                              <heshanmw at gmail dot com>
  * @todo
  */
 /**
@@ -22,13 +20,22 @@ if (module_exists('views')) {
 
 /**
  * Help hook
- *
+ * Implementation of hook_help
  * @param $section
  *   string of the area of Drupal where help was requested
  *
  * @return
  *   string of help information
  */
+
+function video_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#video':
+      $output = '<p>'. t('The Video Module is used to create and administrator Video nodes for Drupal') .'</p>';
+      return $output;
+  }
+}
+
 /**
  * Implementation of hook_menu().
  *
@@ -39,11 +46,9 @@ if (module_exists('views')) {
  *   array of menu information
  */
 function video_menu() {
-  global $user;
-  
+  global $user;  
   $items = array();
-    $may_cache=true;
-  if ($may_cache) {
+
     $items['video'] = array(
       'title' => 'videos',
       'page callback' => 'drupal_get_form',
@@ -73,8 +78,7 @@ function video_menu() {
       'access arguments' => array('administer video'),
       'type' => MENU_NORMAL_ITEM,
     );
-  }
-  else { //If $may_cache is false.
+
     if (arg(0) == 'node' && is_numeric(arg(1))) {
       if ($node = node_load(arg(1)) and $node->type == 'video') {
 
@@ -92,7 +96,6 @@ function video_menu() {
         }
       }
     }
-  }
   return $items;
 }
 
@@ -221,7 +224,6 @@ function video_perm() {
 function video_settings_form() {
   global $base_url;
 
-
   $form = array();
   
   $form['menu'] = array(
@@ -230,7 +232,9 @@ function video_settings_form() {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE
   );
+  
   $vtypes = video_get_types_infos();
+
   if ($vtypes) { // no vtype available
     $video_types = array();
     foreach ($vtypes as $vtype => $info) {
@@ -245,6 +249,7 @@ function video_settings_form() {
         '#options' => $video_types,
       );
   }
+
   $form['menu']['video_displaydownloadmenutab'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display download menu tab'),
@@ -478,22 +483,18 @@ function video_nodeapi($node, $op, $arg) {
 function video_add() {
   global $user;
  
-
   $edit = isset($_POST['edit']) ? $_POST['edit'] : '';
 
   // If a video type has been specified, validate its existence.
 
   $vtypes = video_get_types();
-  //print_r($vtypes);
-  //  exit;
+
   if (arg(3) && in_array(arg(3), $vtypes)) { // is a valid video type
     $type = arg(3);
 
     // Initialize settings:
     module_load_include('inc', 'node', 'node.pages');
     $node = (object) array('uid' => $user->uid, 'name' => $user->name, 'type' => 'video', 'vtype' => $type);
-    //print_r($node);
-    //exit;
     $output = drupal_get_form('video_node_form', $node);
     drupal_set_title(t('Submit %name video', array('%name' => $type)));
   }
@@ -502,8 +503,6 @@ function video_add() {
     $node = (object) array('uid' => $user->uid, 'name' => $user->name, 'type' => 'video', 'vtype' => $vtypes[0]);
     module_load_include('inc', 'node', 'node.pages');
     $output = drupal_get_form('video_node_form', $node);
-    //print_r($output);
-    //exit;
     drupal_set_title(t('Submit %name video', array('%name' => $vtypes[0])));
   }
   else if ($vtype = variable_get('video_default_video_type', 0)) {
@@ -516,9 +515,6 @@ function video_add() {
   else {
     $output = video_types_page();
   }
-    //$output ="<br /><div class=\"fields\"><b>Prefs :</b>test</div>";;
-  //print_r($output);
-  //exit;
   return $output;
 }
 
@@ -537,11 +533,7 @@ function video_types_page() {
   else {
     $items = array();
     foreach ($vtypes as $vtype => $infos) {
-      $out = '<dt>'. /* TODO
-   Please manually fix the parameters on the l() or url() function on the next line.
-   Typically, this was not changed because of a function call inside an array call like
-   array('title' => t('View user profile.')).*/
-l($infos['#name'], "node/add/video/$vtype", array('title' => t('Add a !s.', array('!s' => $infos['#name'])))) .'</dt>';
+      $out = '<dt>'. l($infos['#name'], "node/add/video/$vtype", array('HTML'=>TRUE, 'attributes' => array('title' => 'Add a '. $infos['#name']))) .'</dt>';
       $out .= '<dd>'. $infos['#description'] .'</dd>';
       $items[$vtype] = $out;
     }
@@ -650,6 +642,13 @@ function video_form($node) {
       '#required' => true,
     );
   }
+  else {
+  // set an hidden field to store video resolution
+    $form['hvresolution'] = array(
+      '#type' => 'hidden',
+      '#value' => $node->videox . 'x' . $node->videoy
+    );
+  }
   
   if(!video_support_autoplaytime($node)) { // this vtype doesn't support autoplaytime
     $form['video']['playtime'] = array(
@@ -682,6 +681,18 @@ function video_form($node) {
       '#default_value' => $playtime['seconds'],
     );
   }
+  else {
+  // set an hidden field to store video length
+    $form['playtime_seconds'] = array(
+      '#type' => 'hidden',
+      '#value' => $node->playtime_seconds
+    );
+   // we need to store file size too
+   $form['hsize'] = array(
+      '#type' => 'hidden',
+      '#value' => $node->size
+    );
+  }
 
   // Get the video-type-specific bits.
   $form = module_invoke('video_' . $node->vtype, 'v_form', $node, $form);
@@ -693,49 +704,52 @@ function video_form($node) {
 /**
  * Implementation of hook_validate
  */
-function video_validate($node) {
-  
+function video_validate($node, $form = array()) {
   if(!video_support_autoresolution($node) || $node->vresolution) { // we have some resolution value
     // form api checked for good values of vresolution
     if(variable_get("video_{$node->vresolution}_value", '') == '') {
 
     }
   }
-  
+
   module_invoke('video_'.$node->vtype, 'v_validate', $node);
 
-  
 }
 
 
 /**
  * Implementation of hook submit
  */
-function video_submit(&$node) {
-  
-  if(video_support_autoresolution($node)) { // vtype support autoresolution getting
-    $xy = module_invoke('video_' . $form_state['values']['vtype'], 'v_auto_resolution', $node);
+function video_presave(&$node) {
+  if(video_support_autoresolution($node) && ($node->new_video_upload_file_fid)) { // vtype support autoresolution getting
+    $xy = module_invoke('video_' . $node->vtype, 'v_auto_resolution', $node);
     if ($xy) {
-      $form_state['values']['videox'] = $xy[0];
-      $form_state['values']['videoy'] = $xy[1];
+	  $node->videox = $xy[0];
+	  $node->videoy = $xy[1];
     }
   }
   else {
-    // we should have a good value (checked by Form API)
-    if($form_state['values']['vresolution']) {
-      $res = explode('x', variable_get('video_resolution_' . $form_state['values']['vresolution'] . '_value', ''));
-      $form_state['values']['videox'] = $res[0];
-      $form_state['values']['videoy'] = $res[1];
+    // if you have a existing value from hidden field
+    if($node->hvresolution) {
+      $res = explode('x', $node->hvresolution);
+      $node->videox = $res[0];
+      $node->videoy = $res[1];
+      $node->size = $node->hsize;
     }
-  }
-  
-  if(video_support_autoplaytime($node)) { // vtype support auto playtime
-    $form_state['values']['playtime_seconds'] = module_invoke('video_' . $form_state['values']['vtype'], 'v_auto_playtime', $node);
+    // we should have a good value (checked by Form API)
+    else {
+      $res = explode('x', variable_get('video_resolution_' . $node->vresolution . '_value', ''));
+      $node->videox = $res[0];
+      $node->videoy = $res[1];
+    }
+  }  
+
+  if(video_support_autoplaytime($node) && ($node->new_video_upload_file_fid)) { // vtype support auto playtime
+    $node->playtime_seconds = module_invoke('video_' . $node->vtype, 'v_auto_playtime', $node);
   }
   else { // vtype does not support auto_playtime
-    $form_state['values']['playtime_seconds'] += ($form_state['values']['playtime_hours'] * 3600) + ($form_state['values']['playtime_minutes'] * 60);
+    $node->playtime_seconds += ($node->playtime_hours * 3600) + ($node->playtime_minutes * 60);
   }
-  
 }
 
 /**
@@ -746,11 +760,12 @@ function video_submit(&$node) {
  *   TRUE on success, FALSE on error
  */
 function video_insert($node) {
-
+  // set the required properties of the video node
+  video_presave($node);
   $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
-  return db_query("INSERT INTO {video} (vid, nid, vtype, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5, custom_field_6, serialized_data) VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-    $node->vid, $node->nid, $node->vtype, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data);
+  return db_query("INSERT INTO {video} (vid, nid, vtype, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, serialized_data) VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s')",
+    $node->vid, $node->nid, $node->vtype, $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->serialized_data);
 }
 
 
@@ -765,10 +780,12 @@ function video_update($node) {
     return video_insert($node);
   }
   else {
+    // set the required properties of the video node
+    video_presave($node);
     $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
-    return db_query("UPDATE {video} SET vidfile='%s', size=%d, videox=%d, videoy=%d, video_bitrate=%d, audio_bitrate=%d, audio_sampling_rate=%d, audio_channels='%s', playtime_seconds=%d, disable_multidownload=%d, download_folder='%s', use_play_folder=%d, custom_field_1='%s', custom_field_2='%s', custom_field_3='%s', custom_field_4='%s', custom_field_5='%s', custom_field_6='%s', serialized_data='%s' WHERE vid = %d",
-         $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->custom_field_1, $node->custom_field_2, $node->custom_field_3, $node->custom_field_4, $node->custom_field_5, $node->custom_field_6, $node->serialized_data, $node->vid);
+    return db_query("UPDATE {video} SET vidfile='%s', size=%d, videox=%d, videoy=%d, video_bitrate=%d, audio_bitrate=%d, audio_sampling_rate=%d, audio_channels='%s', playtime_seconds=%d, disable_multidownload=%d, download_folder='%s', use_play_folder=%d, serialized_data='%s' WHERE vid = %d",
+         $node->vidfile, $node->size, $node->videox, $node->videoy, $node->video_bitrate, $node->audio_bitrate, $node->audio_sampling_rate, $node->audio_channels, $node->playtime_seconds, $node->disable_multidownload, $node->download_folder, $node->use_play_folder, $node->serialized_data, $node->vid);
   }
 }
 
@@ -790,11 +807,13 @@ function video_delete($node) {
  *   object or boolean FALSE on error
  */
 function video_load($node) {
+
   if (is_numeric($node->vid)) {
     $node = db_fetch_object(db_query("SELECT * FROM {video} WHERE vid = %d", $node->vid));
 
     // load serialized data for plug-ins
     $node->serial_data = unserialize($node->serialized_data);
+
     return $node;
   }
   else {
