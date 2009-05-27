@@ -1,5 +1,5 @@
 <?php
-
+//$Id$
 /**
  * @file
  * Provide some api for use ffmpeg. Simplify video nodes creation.
@@ -405,9 +405,6 @@ function _video_ffmpeg_helper_get_video_info(&$node, $value=null) {
  * Return the video resolution
  */
 function _video_ffmpeg_helper_auto_resolution(&$node) {
-  if(!$node->new_video_upload_file && !$node->new_video_upload_file_fid) { // no new files uploaded. skipping auto resolution process
-    return null;
-  }
 
   if(variable_get('video_ffmpeg_helper_auto_resolution', false)) {
 
