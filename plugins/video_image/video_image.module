@@ -1,13 +1,12 @@
 <?php
-
+// $Id$
 /**
- * @file
- * Enable image support for video module.
+ * @file video_image.module
  *
- * @author Fabio Varesano <fvaresano at yahoo dot it>
- * porting to Drupal 6
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
+ *                              <heshanmw at gmail dot com>
  * @todo
+ * implement the help of the video upload (Implement the internal hook for the help video_upload_v_help()).
  */
 
 
@@ -179,6 +178,7 @@ function video_image_form_alter(&$form, &$form_state, $form_id) {
 function video_image_nodeapi(&$node, $op, $teaser) {
     //print_r($op);
     //exit;
+    //db_query("INSERT INTO {op} (id, name) VALUES (%d, '%s')", NULL, $op);
   if($node->type == 'video') {
     switch ($op) {
       case 'load':
@@ -192,7 +192,7 @@ function video_image_nodeapi(&$node, $op, $teaser) {
 
       case 'presave':
           //exit;
-        _video_image_submit($node);
+        _video_image_presave($node);
         break;
 
       case 'view':
@@ -273,11 +273,9 @@ function _video_image_prepare(&$node) {
   }
 }
 
-function _video_image_submit(&$node) {
-    //print_r($node);
-    //exit;
-    // ############# PREPARE #######################
-    // ------------- MOVED -------------------------
+function _video_image_presave(&$node) {
+
+  // ############# PREPARE #######################
   if (count($_POST)) {
 
   $validators = array(
@@ -295,19 +293,7 @@ function _video_image_submit(&$node) {
   }
 
   if ($field_name) {
-      /*
-      if($node->iid){
 
-      // Remove all the existing images.
-      $result = db_query("SELECT f.fid, f.filepath FROM {image} i INNER JOIN {files} f ON i.fid = f.fid WHERE i.nid = %d", $node->iid);
-      while ($file = db_fetch_object($result)) {
-        file_delete(file_create_path($file->filepath));
-        db_query("DELETE FROM {files} WHERE fid = %d", $file->fid);
-      }
-      //db_query("DELETE FROM {image} WHERE nid = %d", $node->iid);
-      }
-       * 
-       */
     $node->tempimage = _video_image_temp_image_store($field_name);
     $node->new_image = TRUE;
     //print_r($node);
@@ -430,8 +416,11 @@ function _video_image_thumbnail_debug($msg) {
 }
 
 function _video_image_temp_image_store(&$file) {
+    // Update the node to reflect the actual filename, it may have been changed
+
   $image = new stdClass();
   $image->images[IMAGE_ORIGINAL] = $file->filepath;
+  //using image module
   $image->images =_image_build_derivatives($image);
   $image->type = 'image';
   $image->uid = 1;
@@ -451,11 +440,12 @@ function _video_image_temp_image_store(&$file) {
       // save the images in the files table
       foreach ($image->images as $l => $f) {
         $info = image_get_info($f);
-        $file->fid = db_last_insert_id('files','fid');
-        if($l=="_original"){
+        $original_path = $node->images[IMAGE_ORIGINAL];
+          if (file_move($file->filepath, _image_filename($original_path, $size))) {
+           $file->fid = db_last_insert_id('files','fid');
             db_query("INSERT INTO {files} (fid, filename, filepath, filemime, filesize) VALUES (%d, '%s', '%s', '%s', '%s')",
                 $fid, "video_image_temp.$l", $f, $info['mime_type'], $info['file_size']);
-        }
+          }
         $image->fids[$l] = $file->fid;
       }
     }

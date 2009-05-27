@@ -1,3 +1,4 @@
+;$Id$
 name = URL Video
 description = Enable URL video support for Video module.
 dependencies[] = video

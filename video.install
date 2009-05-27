@@ -1,40 +1,50 @@
 <?php
+// $Id$
+/**
+ * @file
+ * Provide installation functions for video.module .
+ *
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
+ *                              <heshanmw at gmail dot com>
+ * @todo
+ */
+
 /**
  * Implementation of hook_schema().
  */
 function video_schema() {
   $schema['video'] = array(
-    'description' => t('TODO'),
+    'description' => t('Store video files informations'),
     'fields' => array(
       'vid' => array(
-        'description' => t('TODO'),
+        'description' => t('Prmary Key: {video}.vid of the video node'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
       'nid' => array(
-        'description' => t('TODO'),
+        'description' => t('Node id, index to the {node}.nid'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-      ),
+      ),      
       'vtype' => array(
-        'description' => t('TODO'),
+        'description' => t('The type of the video'),
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
         'default' => '',
       ),
       'vidfile' => array(
-        'description' => t('TODO'),
+        'description' => t('Video file name / path'),
         'type' => 'text',
-        'not null' => TRUE,
+        'not null' => FALSE,
         'default' => '',
       ),
       'videox' => array(
-        'description' => t('TODO'),
+        'description' => t('resolution : x'),
         'type' => 'int',
         'size' => 'small',
         'unsigned' => TRUE,
@@ -42,7 +52,7 @@ function video_schema() {
         'default' => 0,
       ),
       'videoy' => array(
-        'description' => t('TODO'),
+        'description' => t('resolution : y'),
         'type' => 'int',
         'size' => 'small',
         'unsigned' => TRUE,
@@ -50,63 +60,63 @@ function video_schema() {
         'default' => 0,
       ),
       'size' => array(
-        'description' => t('TODO'),
+        'description' => t('size of the video file'),
         'type' => 'int',
         'size' => 'big',
         'unsigned' => TRUE,
         'not null' => FALSE,
       ),
       'download_counter' => array(
-        'description' => t('TODO'),
+        'description' => t('No. of downloads of the video'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
       'play_counter' => array(
-        'description' => t('TODO'),
+        'description' => t('No. of play times per video'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
       'video_bitrate' => array(
-        'description' => t('TODO'),
+        'description' => t('Bit rate of the video'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
       ),
       'audio_bitrate' => array(
-        'description' => t('TODO'),
+        'description' => t('Bit rate of the audio'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
       ),
       'audio_sampling_rate' => array(
-        'description' => t('TODO'),
+        'description' => t('Sampling rate of the video'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
       ),
       'audio_channels' => array(
-        'description' => t('TODO'),
-        'type' => 'unknown',
+        'description' => t('Chenells of the audio'),
+        'type' => 'text',
         'not null' => FALSE,
       ),
       'playtime_seconds' => array(
-        'description' => t('TODO'),
+        'description' => t('Play time of the video'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
       ),
       'download_folder' => array(
-        'description' => t('TODO'),
+        'description' => t('download folder'),
         'type' => 'varchar',
         'length' => 255,
         'not null' => FALSE,
       ),
       'disable_multidownload' => array(
-        'description' => t('TODO'),
+        'description' => t('enable/disable multi download'),
         'type' => 'int',
         'size' => 'tiny',
         'unsigned' => TRUE,
@@ -114,52 +124,21 @@ function video_schema() {
         'default' => 0,
       ),
       'use_play_folder' => array(
-        'description' => t('TODO'),
+        'description' => t('use play folder'),
         'type' => 'int',
         'size' => 'tiny',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-      'custom_field_1' => array(
-        'description' => t('TODO'),
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-      'custom_field_2' => array(
-        'description' => t('TODO'),
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-      'custom_field_3' => array(
-        'description' => t('TODO'),
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-      'custom_field_4' => array(
-        'description' => t('TODO'),
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-      'custom_field_5' => array(
-        'description' => t('TODO'),
-        'type' => 'text',
-        'not null' => FALSE,
-      ),
-      'custom_field_6' => array(
-        'description' => t('TODO'),
-        'type' => 'text',
-        'not null' => FALSE,
-      ),
       'serialized_data' => array(
-        'description' => t('TODO'),
+        'description' => t('Informations related to the videos'),
         'type' => 'text',
         'not null' => FALSE,
       ),
+    ),
+     'indexes' => array(
+     'nid' => array('nid'),
     ),
     'primary key' => array('vid'),
   );
@@ -167,140 +146,26 @@ function video_schema() {
   return $schema;
 }
 
-// ex: set syntax=php tabstop=2 expandtab shiftwidth=2 softtabstop=2:
-
+/**
+ * Implementation of hook_install().
+ */
 function video_install() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      db_query("CREATE TABLE {video} (
-        vid int(10) unsigned NOT NULL default '0',
-        nid int(10) unsigned NOT NULL default '0',
-        vtype varchar(32) NOT NULL default '',
-        vidfile text NOT NULL default '',
-        videox smallint(4) unsigned NOT NULL default '0',
-        videoy smallint(4) unsigned NOT NULL default '0',
-        size bigint(13) unsigned default NULL,
-        download_counter int(10) unsigned NOT NULL default '0',
-        play_counter int(10) unsigned NOT NULL default '0',
-        video_bitrate int(10) unsigned default NULL,
-        audio_bitrate int(10) unsigned default NULL,
-        audio_sampling_rate int(10) unsigned default NULL,
-        audio_channels enum('','5.1','stereo','mono') default NULL,
-        playtime_seconds int(10) unsigned default NULL,
-        download_folder varchar(255) NULL default NULL,
-        disable_multidownload tinyint(1) unsigned NOT NULL default '0',
-        use_play_folder tinyint(1) unsigned NOT NULL default '0',
-        custom_field_1 varchar(255) NULL default NULL,
-        custom_field_2 varchar(255) NULL default NULL,
-        custom_field_3 varchar(255) NULL default NULL,
-        custom_field_4 varchar(255) NULL default NULL,
-        custom_field_5 text NULL default NULL,
-        custom_field_6 text NULL default NULL,
-        serialized_data text NULL default NULL,
-        PRIMARY KEY  (vid)
-      ) TYPE=MyISAM COMMENT='size is in bytes' /*!40100 DEFAULT CHARACTER SET utf8 */;");
-      break;
-    case 'pgsql':
-      db_query("CREATE TABLE {video} (
-        vid integer NOT NULL default '0',
-        nid integer NOT NULL default '0',
-        vtype varchar(32) NOT NULL default '',
-        vidfile text NOT NULL default '',
-        videox smallint NOT NULL default '0',
-        videoy smallint NOT NULL default '0',
-        size bigint default NULL,
-        download_counter integer NOT NULL default '0',
-        play_counter integer NOT NULL default '0',
-        video_bitrate integer default NULL,
-        audio_bitrate integer default NULL,
-        audio_sampling_rate integer default NULL,
-        audio_channels varchar(10) default NULL,
-        playtime_seconds integer default NULL,
-        download_folder varchar(255) NULL default NULL,
-        disable_multidownload smallint NOT NULL default '0',
-        use_play_folder smallint NOT NULL default '0',
-        custom_field_1 varchar(255) NULL default NULL,
-        custom_field_2 varchar(255) NULL default NULL,
-        custom_field_3 varchar(255) NULL default NULL,
-        custom_field_4 varchar(255) NULL default NULL,
-        custom_field_5 text NULL default NULL,
-        custom_field_6 text NULL default NULL,
-        serialized_data text NULL default NULL,
-        PRIMARY KEY  (vid)
-      );");
-
-  }
+	drupal_install_schema('video');
   
   // default values for some variables use for resolution stuff
-  variable_set('video_resolution_1_name', '4:3 - Television');
-  variable_set('video_resolution_1_value', '400x300');
-  variable_set('video_resolution_2_name', '16:9 - Widescreen');
-  variable_set('video_resolution_2_value', '400x226');
+  variable_set('video_resolution_1_name', '16:9 - Widescreen');
+  variable_set('video_resolution_1_value', '400x226');
+  variable_set('video_resolution_2_name', '4:3 - Television');
+  variable_set('video_resolution_2_value', '400x300');
 }
 
 /**
- * Add audio details
- *
- * @return array
+ * Implementation of hook_uninstall().
  */
-/**
- * Rename counter, add custom fields, for video.module version 1.9
- *
- * @return array
- */
-/**
- * Add unsigned to all int fields
- *
- * @return array
- */
-/**
- * Start of Drupal 4.7 support in video.module issue #40005, version 1.25
- * updated revisions, db schema, forms api, form validation, permissions, added .swf and image support
- *
- * @return array
- */
-/**
- * Add the vtype field for video module subtypes
- *
- * @return array
- */
-function _video_update_6_get_vtype($node) {
-  $file_type = '';
-  $vidfile = $node->vidfile;
-  //If the filename doesn't contain a ".", "/", or "\" and is exactly 11 characters then consider it a youtube video ID.
-  if (!strpos($vidfile, '.') and !strpos($vidfile, '/') and !strpos($vidfile, '\\') and strlen($vidfile) == 11) {
-    $file_type = 'youtube';
-  }
-  else if (strpos($vidfile, 'google:') === 0) {
-    $file_type = 'google';
-  }
-  else if(db_result(db_query("SELECT count(fid) FROM {files} WHERE nid=%d", $node->nid)) > 0) {
-    $file_type = 'upload';
-  }
-  else if ($vidfile != '' ) { // enable absolute urls and relative paths
-    $file_type = 'url';
-  }
-  else {
-    drupal_set_message(t('Could not determine video type of node %nid', array('%nid' => $node->nid)), 'error');
-  }
-  return $file_type;
+function video_uninstall() {
+  drupal_uninstall_schema('video');
+  variable_del('video_resolution_1_name');
+  variable_del('video_resolution_1_value');
+  variable_del('video_resolution_2_name');
+  variable_del('video_resolution_2_value');
 }
-
-/**
- * Set vtype for all the videos
-*/
-/**
- * Set default values of resolutions
-*/
-/**
- * Video_upload changes from relying on files table to locate
- * video file to saving it in serialized_data as video_fid
-*/
-/**
- * Update the vidfile for youtube videos so they will work again
- */
-/**
- * Update vidfile for google videos -- they play, but they are not editable
- * in the current form because validation fails upon submit
- */

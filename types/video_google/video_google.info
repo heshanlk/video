@@ -1,5 +1,7 @@
+;$Id$
 name = Google Video
 description = Enable Google video support for Video module.
 dependencies[] = video
 package = "Video"
 core = 6.x
+

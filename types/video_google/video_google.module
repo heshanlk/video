@@ -1,4 +1,5 @@
 <?php
+//$Id$
 /**
  * @file
  * Enable Google Video support for video module.
