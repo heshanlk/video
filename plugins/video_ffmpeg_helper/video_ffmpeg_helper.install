@@ -30,13 +30,6 @@ function video_ffmpeg_helper_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'fid' => array(
-        'description' => t('FIle id, index to the {files}.fid'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
       'origfile' => array(
         'description' => t('original file path'),
         'type' => 'text',
@@ -71,7 +64,6 @@ function video_ffmpeg_helper_schema() {
       ),
     ),
     'indexes' => array(
-    'fid' => array('fid'),
     'nid' => array('nid'),
     ),
     'primary key' => array('vid'),

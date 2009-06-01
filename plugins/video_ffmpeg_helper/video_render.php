@@ -19,9 +19,8 @@
 /**
  * video_scheduler.php configuration
 */
-
 // set to the ffmpeg executable
-define('VIDEO_RENDERING_FFMPEG_PATH', '/usr/bin/ffmpeg');
+define('VIDEO_RENDERING_FFMPEG_PATH', '/home2/heidisof/bin/./ffmpeg');
 
 // set to the temp file path.
 //IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
@@ -53,7 +52,8 @@ if (isset($_SERVER['argv'][3])) {
   $_SERVER['HTTP_HOST'] = $url['host'];
 }
 
-module_load_include('/includes/bootstrap.inc', 'video_render', 'includes/bootstrap');
+include_once('./includes/bootstrap.inc');
+//module_load_include('/includes/bootstrap.inc', 'video_render', 'includes/bootstrap');
 // disable error reporting for bootstrap process
 error_reporting(E_ERROR);
 // let's bootstrap: we will be able to use drupal apis
@@ -89,7 +89,7 @@ function video_render_main() {
   _video_render_job_change_status($nid, $vid, VIDEO_RENDERING_ACTIVE);
   // load the job object
   $job = _video_render_load_job($nid, $vid, VIDEO_RENDERING_ACTIVE);
-
+  
   if($job == NULL) {
     watchdog('video_render', 'video_render.php has been called with an invalid job resource. exiting.');
     die;
@@ -130,11 +130,14 @@ function video_render_main() {
     $dest_dir = dirname($job->origfile) . '/';
 
     if (file_copy($file, $dest_dir)) {
-      $file->fid = db_next_id('{files}_fid');
+      //$file->fid = db_next_id('{files}_fid');
       //print_r($file);
-      db_query("INSERT INTO {files} (fid, nid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, $job->nid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
+      db_query("INSERT INTO {files} (fid, uid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
+      
+      // to know other modules of fid
+      $file->fid = db_last_insert_id('files', 'fid');
 
-      db_query("INSERT INTO {upload} (fid, vid, list, description) VALUES (%d, %d, %d, '%s')", $file->fid, $job->vid, $file->list, $file->description);
+      db_query("INSERT INTO {video_upload} (vid, nid, fid) VALUES (%d, %d, %d)", $job->vid, $job->vid, $file->fid);
 
       // update the video table
       db_query('UPDATE {video} SET vidfile = "%s", videox = %d, videoy = %d WHERE nid=%d AND vid=%d', "", $job->calculatedx, $job->calculatedy, $job->nid, $job->vid);

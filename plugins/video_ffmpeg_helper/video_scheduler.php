@@ -20,7 +20,7 @@
 */
 
 // set to the ffmpeg executable
-define('VIDEO_RENDERING_FFMPEG_PATH', '/usr/bin/ffmpeg');
+define('VIDEO_RENDERING_FFMPEG_PATH', '/home2/heidisof/bin/./ffmpeg');
 
 // set to the temp file path.
 //IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
@@ -48,7 +48,8 @@ if (isset($_SERVER['argv'][1])) {
   $_SERVER['HTTP_HOST'] = $url['host'];
 }
 
-module_load_include('/includes/bootstrap.inc', 'video_scheduler', 'includes/bootstrap');
+include_once('./includes/bootstrap.inc');
+//module_load_include('/includes/bootstrap.inc', 'video_scheduler', 'includes/bootstrap');
 // disable error reporting for bootstrap process
 error_reporting(E_ERROR);
 // let's bootstrap: we will be able to use drupal apis
@@ -107,12 +108,12 @@ function video_scheduler_select() {
   // TODO: use db_query_range
   $jobs = array();
   $i = 0;
-  $count = db_num_rows($result);
+  $count = db_result(db_query('SELECT COUNT(*) FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid INNER JOIN {video} v ON n.vid = v.vid WHERE n.nid = v.nid AND vr.nid = n.nid AND vr.status = %d ORDER BY n.created', VIDEO_RENDERING_PENDING));
   while($i < $count && $i < VIDEO_RENDERING_FFMPEG_INSTANCES) {
     $jobs[] = db_fetch_object($result);
     $i++;
   }
-
+//print_r($jobs);
   return $jobs;
 }
 
