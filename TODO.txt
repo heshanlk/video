@@ -3,9 +3,5 @@
 TODO LIST
 ---------
 
-- Upload feature - http://drupal.org/node/26978
-- Add mp4 support - http://drupal.org/node/26505
-- Thumbnails - http://drupal.org/node/31784
-- Work on XHTML compliance - http://drupal.org/node/30953
-- Director/Flash (.dcr/.dir and .swf) - http://drupal.org/node/30100
-- Your suggestions here - http://drupal.org/node/add/project_issue/video
+- Video AJax Upload
+- FlowPlayer's subtitles (add subtitles to video nodes)
