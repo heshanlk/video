@@ -80,7 +80,7 @@ function video_scheduler_main() {
     }
   }
   else {
-    watchdog('video_scheduler', 'no video conversion jobs to schedule.');
+    watchdog('video_scheduler', 'no video conversion jobs to schedule.', array(), WATCHDOG_DEBUG);
   }
 }
 

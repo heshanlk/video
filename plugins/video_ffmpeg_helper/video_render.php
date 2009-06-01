@@ -54,6 +54,7 @@ if (isset($_SERVER['argv'][3])) {
 
 include_once('./includes/bootstrap.inc');
 //module_load_include('/includes/bootstrap.inc', 'video_render', 'includes/bootstrap');
+//
 // disable error reporting for bootstrap process
 error_reporting(E_ERROR);
 // let's bootstrap: we will be able to use drupal apis

@@ -360,7 +360,6 @@ function _video_ffmpeg_helper_get_video_info(&$node, $value=null) {
     return $ffmpeg_info[$fileobj->filename];
   }
   
-
   // escape file name for safety
   $file = escapeshellarg($fileobj->filepath);
   // create the full command to execute
