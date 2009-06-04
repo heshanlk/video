@@ -399,7 +399,7 @@ function _video_upload_presave(&$node) {
   // TODO : add file size validation
   // 'file_validate_size' => array($limits['file_size'], $limits['user_size']),
 
-  if (count($_POST) && $file = file_save_upload($file_field , array('file_validate_extensions' => array('zip')))) { // a file has been uploaded
+  if (count($_POST) && $file = file_save_upload($file_field , array('file_validate_extensions' => array('mov flv wmv')))) { // a file has been uploaded
     $node->new_video_upload_file = $file;
     $node->new_video_upload_file_fid = $file->fid;
       //print_r($file);
