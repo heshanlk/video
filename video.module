@@ -160,8 +160,6 @@ function video_link($type, $node = NULL) {
   }
   return array();
 }
-
-
 /**
  * Displays a Drupal page containing recently added videos
  *
@@ -169,6 +167,16 @@ function video_link($type, $node = NULL) {
  *   string HTML output
  */
 function video_page() {
+    theme('video_page', NULL);
+}
+
+/**
+ * Displays a Drupal page containing recently added videos
+ *
+ * @return
+ *   string HTML output
+ */
+function theme_video_page() {
   $output = '';
   if (arg(1) != 'help') { //We are not reading help so output a list of recent video nodes.
     $result = pager_query(db_rewrite_sql("SELECT n.nid, n.created FROM {node} n WHERE n.type = 'video' AND n.status = 1 ORDER BY n.created DESC"), variable_get('default_nodes_main', 10));
@@ -182,7 +190,7 @@ function video_page() {
       'title' => variable_get('site_name', 'drupal') . ' ' . t('videos'),
       'href' => url('video/feed/')));
 
-    $output .= '<br />' . theme('feed_icon', url('video/feed'));
+    $output .= '<br />' . theme('feed_icon', url('video/feed'), t('Syndicate'));
   }
   return $output;
 }
@@ -200,7 +208,7 @@ function video_feed() {
     'link' => url('video', array('absolute' => TRUE))
   );
 
-  $result = db_query('SELECT n.nid FROM {node} n WHERE n.type = "video" AND n.status = 1 ORDER BY n.created DESC');
+  $result = db_fetch_object(db_query('SELECT n.nid FROM {node} n WHERE n.type = "video" AND n.status = 1 ORDER BY n.created DESC'));
   node_feed($result, $channel);
 }
 
@@ -1413,7 +1421,10 @@ function _video_scale_video(&$node) {
  */
 function video_theme() {
   return array(
-    'video_fields' => array(
+    'video_page' => array(
+      'arguments' => array(),
+    ),
+   'video_fields' => array(
       'arguments' => array('fields' => NULL),
     ),
     'video_format_play' => array(
