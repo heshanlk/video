@@ -133,7 +133,7 @@ function video_render_main() {
     if (file_copy($file, $dest_dir)) {
       //$file->fid = db_next_id('{files}_fid');
       //print_r($file);
-      db_query("INSERT INTO {files} (fid, uid, filename, filepath, filemime, filesize) VALUES (%d, %d, '%s', '%s', '%s', %d)", $file->fid, $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize);
+      db_query("INSERT INTO {files} (fid, uid, filename, filepath, filemime, filesize, status) VALUES (%d, %d, '%s', '%s', '%s', %d, %d)", $file->fid, $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize, 1);
       
       // to know other modules of fid
       $file->fid = db_last_insert_id('files', 'fid');
