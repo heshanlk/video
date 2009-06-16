@@ -1,6 +1,8 @@
 FFMPEG Video.module helper
 ==========================
 
+See : http://video.heidisoft.com/docs/users-guide-26
+
 This helper module facilitates uploading new videos using the video module. It
 features a batch processing queue for videos to be transcoded and automatic
 thumbnail generation.
