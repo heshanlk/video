@@ -487,7 +487,7 @@ function _video_upload_store_file(&$file, &$node) {
   if (file_move($file, file_directory_path())) { // file moved successfully
 
     // update the file db entry
-    db_query("UPDATE {files} SET filename = '%s', filepath = '%s', filemime = '%s', filesize = %d WHERE fid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, $file->fid);
+    db_query("UPDATE {files} SET filename = '%s', filepath = '%s', filemime = '%s', filesize = %d, status = %d WHERE fid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, 1, $file->fid);
     // add an entry in the file_revisions table
     db_query("INSERT INTO {video_upload} (vid, nid, fid) VALUES (%d, %d, %d)", $node->vid, $node->nid, $file->fid);
     // update the file db entry
