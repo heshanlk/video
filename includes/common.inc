@@ -88,17 +88,19 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
+  $config = sprintf("config={'playerId':'player','clip':{'url':'%s'},'playlist':[{'url':'%s'}]}", $base_url . '/' . $file, $base_url . '/' . $file);
   $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
+               <param name="allowFullScreen" value="true" />
                <param name="wmode" value="transparent" />
                <param name="allowScriptAccess" value="sameDomain" />
                <param name="quality" value="high" />
-               <param name="flashvars" value="config={baseURL:\''. $base_url .'\',videoFile:\''. $file .'\',autoPlay:true,bufferLength:5}" />' . "\n"
+               <param name="flashvars" value="' . $config . '" />'
   . _video_get_parameters($node) .
   '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>';
 
-  $output = theme('video_format_play', $output, t('http://www.macromedia.com/go/getflashplayer'),
-                                      t('Link to Macromedia Flash Player Download Page'),
+  $output = theme('video_format_play', $output, t('http://get.adobe.com/flashplayer/'),
+                                      t('Link to Adobe Flash Player Download Page'),
                                       t('Download latest Flash Player'));
    return $output;
 }
