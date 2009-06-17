@@ -485,9 +485,12 @@ function _video_upload_store_file(&$file, &$node) {
   _video_upload_get_path($file, $node);
 
   if (file_move($file, file_directory_path())) { // file moved successfully
-
+    if(variable_get('video_ffmpeg_helper_auto_conversion', false))
+      $status = 0; // ffmpeg will use this as source, so let drupal delete the file later
+    else
+      $status = 1; // ffmpeg will not be called, this video file will play as-is
     // update the file db entry
-    db_query("UPDATE {files} SET filename = '%s', filepath = '%s', filemime = '%s', filesize = %d, status = %d WHERE fid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, 1, $file->fid);
+    db_query("UPDATE {files} SET filename = '%s', filepath = '%s', filemime = '%s', filesize = %d, status = %d WHERE fid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, $status, $file->fid);
     // add an entry in the file_revisions table
     db_query("INSERT INTO {video_upload} (vid, nid, fid) VALUES (%d, %d, %d)", $node->vid, $node->nid, $file->fid);
     // update the file db entry
