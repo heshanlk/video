@@ -798,10 +798,11 @@ function video_update($node) {
   else {
     // set the required properties of the video node
     video_presave($node);
-    // kjh: make sure to save the encoded_fid
-    if ($node->new_video_upload_file_fid == 0 && $node->video_encoded_fid) {
-	  $node->serial_data['video_encoded_fid'] = $node->video_encoded_fid;
-    }
+    
+  // GMM: make sure to save the encoded_fid
+  if (!isset($node->serial_data['video_encoded_fid']) && $node->video_encoded_fid) {
+    $node->serial_data['video_encoded_fid'] = $node->video_encoded_fid;
+  }
 
     $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
