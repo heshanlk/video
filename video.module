@@ -636,6 +636,14 @@ function video_form($node) {
     '#type' => 'hidden',
     '#value' => $node->vtype
   );
+  
+  // kjh: set an hidden field to store encoded fid
+  if ($node->serial_data && isset($node->serial_data['video_encoded_fid'])) {
+      $form['video_encoded_fid'] = array(
+		'#type' => 'hidden',
+		'#value' => $node->serial_data['video_encoded_fid']
+		);
+  }
 
   $form['video'] = array('#type' => 'fieldset', '#title' => t('Video Information'), '#weight' => -19);
   
@@ -790,6 +798,11 @@ function video_update($node) {
   else {
     // set the required properties of the video node
     video_presave($node);
+    // kjh: make sure to save the encoded_fid
+    if ($node->new_video_upload_file_fid == 0 && $node->video_encoded_fid) {
+	  $node->serial_data['video_encoded_fid'] = $node->video_encoded_fid;
+    }
+
     $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
     return db_query("UPDATE {video} SET vidfile='%s', size=%d, videox=%d, videoy=%d, video_bitrate=%d, audio_bitrate=%d, audio_sampling_rate=%d, audio_channels='%s', playtime_seconds=%d, disable_multidownload=%d, download_folder='%s', use_play_folder=%d, serialized_data='%s' WHERE vid = %d",
