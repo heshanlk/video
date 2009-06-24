@@ -152,7 +152,7 @@ function video_ffmpeg_helper_admin_settings() {
   $form['autoconv']['video_ffmpeg_helper_auto_conversion'] = array(
       '#type' => 'checkbox',
       '#title' => t('Auto conversion for videos'),
-      '#description' => t('If set up correctly, this will auto-convert each uploaded video to the configured format.') . '<br />' . t("IMPORTANT: you will need the video_render.php correctly configured and run by cron. See README.txt in the video_ffmpeg_helper folder for more informations."),
+      '#description' => t('If set up correctly, this will auto-convert each uploaded video to the configured format.') . '<br />' . t("IMPORTANT: you will need the video_render.php correctly configured and run by cron. See README.txt in the video_ffmpeg_helper folder or <a title='User Guide' href='http://video.heidisoft.com/docs/users-guide-26'>click here</a> for more informations."),
       '#default_value' => variable_get('video_ffmpeg_helper_auto_conversion', false),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_cvr_width'] = array(
