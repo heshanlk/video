@@ -317,7 +317,7 @@ function video_settings_form() {
   $form['counters'] = array(
     '#type' => 'fieldset',
     '#title' => t('Statistics counters'),
-    '#description' => t('To allow users to view counters visit: ') . l(t('access control'), 'admin/access'),
+    '#description' => t('To allow users to view counters visit: ') . l(t('access control'), 'admin/user/permissions'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE
   );
