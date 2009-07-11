@@ -282,14 +282,20 @@ function video_settings_form() {
     '#default_value' => variable_get('video_displayfilesize', 1),
     '#description' => t('Toggle the display of the filesize for a video.')
   );
-  
+  $form['menu']['video_autoplay'] = array(
+  '#type' => 'checkbox',
+    '#title' => t('Automatically start video on page load'),
+    '#default_value' => variable_get('video_autoplay', TRUE),
+    '#description' => t('Start the video when the page and video loads')
+  );
+
   $form['resolutions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Video resolutions'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE
   );
-  
+    
   $form['resolutions']["video_resolution_width"] = array(
     '#type' => 'textfield',
     '#title' => t("Default width"),
