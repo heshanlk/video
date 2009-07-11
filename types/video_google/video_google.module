@@ -15,15 +15,12 @@
  * Implementation of hook_menu
 */
 function video_google_menu() {
-  $items = array();
-  $maycache=true;
-  if($maycache) {
+    $items = array();
     $items['node/add/video/google'] = array(
       'title' => 'Google',
       'access arguments' => array('create video')
     );
-  }
-  return $items;
+    return $items;
 }
 
 
