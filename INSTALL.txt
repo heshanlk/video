@@ -7,6 +7,7 @@ Optional:
   video_image module require image module to be activated.
 
 
+
 INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 -------------------------------------
 
