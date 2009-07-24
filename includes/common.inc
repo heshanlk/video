@@ -7,6 +7,7 @@
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  * porting to Drupal 6
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo
  */
 
@@ -88,7 +89,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
-  $config = sprintf("config={'playerId':'player','clip':{'url':'%s'},'playlist':[{'url':'%s'}]}", $base_url . '/' . $file, $base_url . '/' . $file);
+  $config = sprintf("config={'playerId':'player','clip':{'url':'%s'},'playlist':[{'url':'%s','autoPlay':%s}]}", $base_url . '/' . $file, $base_url . '/' . $file, (variable_get('video_autoplay', TRUE) ? 'true' : 'false'));
   $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
                <param name="allowFullScreen" value="true" />
                <param name="wmode" value="transparent" />
@@ -246,7 +247,7 @@ data="'. $url .'">
 
   // params will be passed to both IE or not IE browsers
    $output .= '<param name="src" value="'. $url .'" />
-              <param name="AUTOPLAY" value="'.variable_get('video_autoplay', TRUE) ? 'true' : 'false'.'" />
+              <param name="AUTOPLAY" value="'.(variable_get('video_autoplay', TRUE) ? 'true' : 'false').'" />
               <param name="KIOSKMODE" value="false" />' . "\n"
    . _video_get_parameters($node) .
    '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
@@ -298,7 +299,7 @@ classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
    $output .= '<param name="src" value="'. $url .'" />
               <param name="_ExtentX" value="7276" />
               <param name="" value="3307" />
-              <param name="AUTOSTART" value="'.variable_get('video_autoplay', TRUE) ? 'true' : 'false'.'" />
+              <param name="AUTOSTART" value="'.(variable_get('video_autoplay', TRUE) ? 'true' : 'false').'" />
               <param name="SHUFFLE" value="0" />
               <param name="PREFETCH" value="0" />
               <param name="NOLABELS" value="0" />
@@ -351,7 +352,7 @@ classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
               <param name="URL" value="'.$url.'" />
               <param name="animationatStart" value="true" />
               <param name="transparentatStart" value="true" />
-              <param name="autoStart" value="'.variable_get('video_autoplay', TRUE) ? 'true' : 'false'.'" />
+              <param name="autoStart" value="'.(variable_get('video_autoplay', TRUE) ? 'true' : 'false').'" />
               <param name="showControls" value="true" />
               <param name="loop" value="true" />'
    . _video_get_parameters($node) .
