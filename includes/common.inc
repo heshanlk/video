@@ -360,9 +360,14 @@ classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
 </object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
 
 
-  $output = theme('video_format_play', $output, t('http://windowsupdate.microsoft.com/'),
-                                      t('Link to Windows Update'),
-                                      t('Download latest Windows Media Player'));
+  $output = "\n<div id=\"video-player\">\n" . $output;
+  $output .= "<p>\n". t('Problems viewing videos?');
+  $output .= "<br />\n";
+  $output .= l(t('Download latest Windows Media Player'), t('http://windowsupdate.microsoft.com/'), array('attributes' => array('title' => t('Link to Windows Update')), 'absolute' => TRUE));
+  //GMM: add link to Windows Media Player plug-in for Firefox browsers
+    $output .= "<br />\n";
+    $output .= l(t('Download the plug-in for Firefox'), t('http://support.mozilla.com/en-US/kb/Using+the+Windows+Media+Player+plugin+with+Firefox'), array('attributes' => array('title' => t('Link to Firefox Plug-in')), 'absolute' => TRUE));
+  $output .= "\n</p> \n </div>\n";
   return $output;
 }
 

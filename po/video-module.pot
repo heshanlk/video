@@ -671,6 +671,18 @@ msgstr ""
 msgid "Download latest Windows Media Player"
 msgstr ""
 
+#: common.inc:0
+msgid "http://support.mozilla.com/en-US/kb/Using+the+Windows+Media+Player+plugin+with+Firefox"
+msgstr ""
+
+#: common.inc:0
+msgid "Link to Firefox Plug-in"
+msgstr ""
+
+#: common.inc:0
+msgid "Download the plug-in for Firefox"
+msgstr ""
+
 #: video.module:1343
 msgid "http://www.google.com/support/youtube"
 msgstr ""
