@@ -19,11 +19,5 @@ Please submit bugs/features/support requests at:
   http://drupal.org/node/add/project_issue/video
 
 Maintainers:
-  Fabio Varesano: fvaresano at yahoo dot it
-  David Norman:   deekayen (at) deekayen [dot-} net
-  Luke Last:      luke [at] lukelast dot com
-  Vernon Mauery:  vernon at mauery dot com
   Glen Marianko:  twitter@demoforum, glenm at demoforum dot com
-
-Porting to Drupal 6
-Heshan Wanigasooriya :heshan@heidisoft.com,heshanmw@gmail.com
+	Heshan Wanigasooriya :heshan@heidisoft.com, heshanmw at gmail dot com
