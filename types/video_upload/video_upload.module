@@ -510,7 +510,9 @@ function _video_upload_store_file(&$file, &$node) {
     // update the file db entry
     //GMM: Remove the serialized encoded fid information in case we're replacing an already encoded video
       if (isset($node->serial_data['video_encoded_fid'])) {
-	  $node->serial_data['video_encoded_fid'] = 0;
+	  //GMM: set rendered video to delete by Drupal cron
+            db_query('UPDATE {files} SET status = %d WHERE fid = %d', FILE_STATUS_TEMPORARY, $node->serial_data['video_encoded_fid']);
+          $node->serial_data['video_encoded_fid'] = 0;
           db_query("UPDATE {video} SET serialized_data = '%s' WHERE vid = %d", serialize($node->serial_data), $node->vid);
       }
   }
