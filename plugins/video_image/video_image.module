@@ -501,9 +501,11 @@ function _video_image_temp_image_load($fids) {
  *   Returns whether we should promote thumbnails or not
  */
 function _video_image_promote_thumbnails() {
-  $settings_override = variable_get('video_image_promote_thumbnail', NULL);
+  $settings_override = variable_get('video_image_promote_thumbnail', NULL); 
   if ($settings_override === NULL) {
-    $node_options = variable_get('node_options_image', array('status', 'promote'));
+    //GMM: Don't default to "promote" if no video or Image option specified
+    //confusing to n00bs seeing two nodes promoted for every video node
+      $node_options = variable_get('node_options_image', array());
     return in_array('promote', $node_options);
   }
   return $settings_override;
