@@ -3,7 +3,10 @@ $Id$
 FILE TYPE INFORMATIONS
 --------------------------
 
-Video.module for Drupal 4.7 supports multiple video formats.
+See : http://video.heidisoft.com/features
+
+
+Video.module for Drupal supports multiple video formats.
 
 .mov, .wmv, .asf, .rm, .3gp, .mp4, .swf, .dir, .dcr
   These files type are supported out the box.
