@@ -15,7 +15,7 @@ Install instructions
 1. Activate the video_ffmpeg_helper module
 2. Setup it's advanced options to meet your needs
 3. Move (or symlink) video_render.php and video_scheduler.php into your Drupal root
-4. Edit the first line of those files to meet your needs
+4. Edit the first "Configuration" code lines of those files to meet your needs (IMPORTANT: path to ffmpeg executable on your server)
 5. Check permissions of the files and folders (/tmp/video and files/* must be writable by the webserver or the user executling the cron job)
 6. You now have two options to execute the video_scheduler.php script:
 

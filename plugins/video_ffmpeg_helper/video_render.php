@@ -12,6 +12,7 @@
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  * porting to Drupal 6
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo
  */
 
@@ -19,15 +20,12 @@
 /**
  * video_scheduler.php configuration
 */
-// set to the ffmpeg executable
-define('VIDEO_RENDERING_FFMPEG_PATH', '/home2/heidisof/bin/./ffmpeg');
+// set path to the ffmpeg executable
+define('VIDEO_RENDERING_FFMPEG_PATH', '/usr/bin/ffmpeg');
 
 // set to the temp file path.
 //IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
 define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video');
-
-// number of conversion jobs active at the same time
-define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 
 // nice value to append at the beginning of the command
 define('VIDEO_RENDERING_NICE', 'nice -n 19');
@@ -133,7 +131,8 @@ function video_render_main() {
     if (file_copy($file, $dest_dir)) {
       //$file->fid = db_next_id('{files}_fid');
       //print_r($file);
-      db_query("INSERT INTO {files} (fid, uid, filename, filepath, filemime, filesize, status) VALUES (%d, %d, '%s', '%s', '%s', %d, %d)", $file->fid, $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize, 1);
+      //GMM: fixed added timestamp column for completeness (otherwise 0), D6 FILE_STATUS
+      db_query("INSERT INTO {files} (fid, uid, filename, filepath, filemime, filesize, status, timestamp) VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d)", $file->fid, $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize, FILE_STATUS_PERMANENT, time());
       
       // to know other modules of fid
       $file->fid = db_last_insert_id('files', 'fid');

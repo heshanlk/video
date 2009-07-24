@@ -19,13 +19,6 @@
  * video_scheduler.php configuration
 */
 
-// set to the ffmpeg executable
-define('VIDEO_RENDERING_FFMPEG_PATH', '/home2/heidisof/bin/./ffmpeg');
-
-// set to the temp file path.
-//IMPORTANT: the user who runs this script must have permissions to create files there. If this is not the case the default php temporary folder will be used.
-define('VIDEO_RENDERING_TEMP_PATH', '/tmp/video');
-
 // number of conversion jobs active at the same time
 define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 
