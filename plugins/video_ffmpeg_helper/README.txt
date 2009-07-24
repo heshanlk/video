@@ -20,7 +20,10 @@ Install instructions
 6. You now have two options to execute the video_scheduler.php script:
 
   6.1 (default) Enable the execution of video_scheduler.php using standard drupal cron.
-  
+      GMM: 07/23/2009 Note: ** Do not use this method if your Apache server is running with suPHP **
+           As of this writing, suPHP will cause the Drupal cron to loop infinitely and no video 
+           will be rendered. In this case crontab should be used instead of Drupal cron!
+
   6.2 Schedule the execution of video_scheduler.php using unix cron
 
     The crontab should look something like this:

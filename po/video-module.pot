@@ -1131,6 +1131,14 @@ msgstr ""
 msgid "video_image"
 msgstr ""
 
+#: types/video_upload/video_upload.module:0
+msgid "encoded"
+msgstr ""
+
+#: types/video_upload/video_upload.module:0
+msgid "Auto-encoded to @ext"
+msgstr ""
+
 #: plugins/video_multidownload/video_multidownload.module:18
 msgid "Enable multiple file download in video module."
 msgstr ""

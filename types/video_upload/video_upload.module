@@ -5,8 +5,9 @@
  *
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
  *                              <heshanmw at gmail dot com>
- * @todo
- * implement the help of the video upload (Implement the internal hook for the help video_upload_v_help()).
+ * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
+ * @todo implement the help of the video upload (Implement the internal hook for the help video_upload_v_help()).
+ * @todo GMM: video upload allowed extensions broken, all uploads allowed
  */
 
 
@@ -311,6 +312,13 @@ function _video_upload_load(&$node) {
   $output = array();
   $output['video_fid'] = $fileBuf->fid;
   $file = _video_upload_get_file($output['video_fid']);
+  //GMM: If original file is deleted from {files} refer to the encoded file
+    if($node->serial_data['video_encoded_fid'])
+	$node->encoded_video_upload_file = _video_upload_get_file($node->serial_data['video_encoded_fid']);
+    if(!$file) {
+	$output['video_fid'] = $node->serial_data['video_encoded_fid'];
+	$file = $node->encoded_video_upload_file;
+    }
   $output['current_video_upload_file'] = $file;
   $output['vidfile'] = file_create_url($file->filepath);
   // set the filesize
@@ -423,7 +431,8 @@ function _video_upload_presave(&$node) {
     $fid = $node->current_video_upload_file_fid;
   }
   $node->serial_data['video_fid'] = $fid;
-  $node->vidfile =  $node->new_video_upload_file->path;
+  //GMM: corrected reference from >path to >filepath
+  $node->vidfile =  $node->new_video_upload_file->filepath;
   $node->size = $node->new_video_upload_file->filesize;
  // _video_upload_insert($file,$node);
 }
@@ -459,11 +468,13 @@ function _video_upload_delete(&$node) {
   //print 'delete';
 
   // delete file
-  file_delete($node->current_video_upload_file->path);
+  // file_delete($node->current_video_upload_file->path);
 
   // delete file information from database
-  db_query('DELETE FROM {upload} WHERE fid = %d', $node->current_video_upload_file->fid);
-  db_query('DELETE FROM {files} WHERE fid = %d', $node->current_video_upload_file->fid);
+  db_query('DELETE FROM {video_upload} WHERE fid = %d', $node->current_video_upload_file->fid);
+  //GMM: set original file to be deleted by Drupal cron file garbage collection
+    db_query('UPDATE {files} SET status = %d WHERE fid = %d', FILE_STATUS_TEMPORARY, $node->current_video_upload_file->fid);
+  //db_query('DELETE FROM {files} WHERE fid = %d', $node->current_video_upload_file->fid);
 }
 
 
@@ -485,17 +496,23 @@ function _video_upload_store_file(&$file, &$node) {
   _video_upload_get_path($file, $node);
 
   if (file_move($file, file_directory_path())) { // file moved successfully
-    if(variable_get('video_ffmpeg_helper_auto_conversion', false))
-      $status = 0; // ffmpeg will use this as source, so let drupal delete the file later
+  //GMM: Set uploaded file as permanent if no ffmpeg conversion
+    if(variable_get('video_ffmpeg_helper_auto_conversion', false) && !$node->video_ffmpeg_helper_convertion_bypass )
+      $status = FILE_STATUS_TEMPORARY; // ffmpeg will use file as source, so let drupal delete the file later
     else
-      $status = 1; // ffmpeg will not be called, this video file will play as-is
+      $status = FILE_STATUS_PERMANENT; // ffmpeg will not be called, this video file will play as-is
     // update the file db entry
     db_query("UPDATE {files} SET filename = '%s', filepath = '%s', filemime = '%s', filesize = %d, status = %d WHERE fid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, $status, $file->fid);
+    //GMM: delete previous revision, if there was one
+      db_query("DELETE FROM {video_upload} WHERE vid = %d AND nid = %d",$node->vid, $node->nid);
     // add an entry in the file_revisions table
     db_query("INSERT INTO {video_upload} (vid, nid, fid) VALUES (%d, %d, %d)", $node->vid, $node->nid, $file->fid);
     // update the file db entry
-    //db_query("UPDATE {video} SET serialized_data = '%s' WHERE vid = %d", $file->filename, $file->filepath, $file->filemime, $file->filesize, $file->fid);
-
+    //GMM: Remove the serialized encoded fid information in case we're replacing an already encoded video
+      if (isset($node->serial_data['video_encoded_fid'])) {
+	  $node->serial_data['video_encoded_fid'] = 0;
+          db_query("UPDATE {video} SET serialized_data = '%s' WHERE vid = %d", serialize($node->serial_data), $node->vid);
+      }
   }
   else {
     drupal_set_message(t('An error occurred during file saving. Your video file has not been stored.'), 'error');
@@ -533,7 +550,7 @@ function _video_upload_get_file($fid) {
   static $files = array();
 
   if (!$fid) {
-    return null;
+    return NULL;
   }
   if (!isset($files[$fid])) {
     $files[$fid] = db_fetch_object(db_query('SELECT * from {files} WHERE fid = %d', $fid));
@@ -545,14 +562,16 @@ function _video_upload_get_file($fid) {
 /**
  * Delete a file
 */
-function _video_upload_delete_file($file) {
+function _video_upload_delete_file($fid) {
 
-   // delete file
-  file_delete($file->path);
-
+  //GMM: delete file if one requested
+  if($fid) {
+    //GMM: file_delete($file);
   // delete file information from database
-  db_query('DELETE FROM {video_upload} WHERE fid = %d', $file);
-  db_query('DELETE FROM {files} WHERE fid = %d', $file);
+    db_query('DELETE FROM {video_upload} WHERE fid = %d', $fid);
+    //GMM: set original file to be deleted by Drupal cron file garbage collection
+    db_query('UPDATE {files} SET status = %d WHERE fid = %d', FILE_STATUS_TEMPORARY, $fid);
+  }
 }
 
 
@@ -560,10 +579,15 @@ function _video_upload_delete_file($file) {
  * Display informations about already uploaded file
  */
 function theme_video_upload_file_info_form($file, $node) {
-  // create array containing uploaded file informations
-  $items = array(
-  '<b>'. t('file name') .':</b> ' . _video_get_original_filename(basename($file->filename)), // do not display parent folders
-  '<b>'. t('file size') .':</b> ' . format_size($file->filesize),
+//GMM: let user know we're showing uploaded video stats
+  if($node->serial_data['video_encoded_fid']) {
+	$ext = split ("\.", basename($node->encoded_video_upload_file->filename));
+	$encoded = $ext[count($ext)-1];
+  }
+// create array containing uploaded file informations
+$items = array(
+  '<b>'. t('file name') .':</b> ' . _video_get_original_filename(basename($file->filename)) . ($encoded ? '&nbsp;&nbsp;('.t('Auto-encoded to @ext', array("@ext" => strtoupper($encoded))).')' : '' ), // do not display parent folders
+  '<b>'. t('file size') .':</b> ' . format_size($file->filesize) . ($node->serial_data['video_encoded_fid']&&$node->serial_data['video_encoded_fid']!=$file->fid ? '&nbsp;&nbsp;('.format_size($node->encoded_video_upload_file->filesize).' '.t('encoded').')' : '') ,
   );
 
   // create information list

@@ -7,6 +7,7 @@
  * @author Fabio Varesano <fvaresano at yahoo dot it>
  * porting to Drupal 6
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo
  */
 
@@ -44,6 +45,8 @@ function video_image_menu() {
 /**
  * Implementation of hook_perm
  */
+//GMM: define positions in perm array to reference later (without misspellings :)
+  define('OVERRIDE_IMAGE', 0);
 function video_image_perm() {
   $array = array('override autothumbnailing using uploaded image');
   return $array;
@@ -152,9 +155,9 @@ function video_image_form_alter(&$form, &$form_state, $form_id) {
     }
 
     $auto_thumbable = video_image_is_autothumbable($node);
-
-    if(!$auto_thumbable || user_access('override autothumnailing using uploaded images')) { 
-      // let's be sure that image directories are ready
+    //GMM: fix permission misspelling
+      $perm=video_image_perm();
+    if(!$auto_thumbable || user_access($perm[OVERRIDE_IMAGE])) {       // let's be sure that image directories are ready
       if (function_exists('_image_check_settings')) {
         _image_check_settings();
       }
@@ -328,8 +331,13 @@ function _video_image_submit(&$node) {
     $image = _video_image_temp_image_load(array_values($node->tempimage['fids']));
     //print_r($image);
     //exit;
-    db_query("DELETE FROM {files} WHERE fid in (%s)",
-            implode(',', array_values($node->tempimage['fids'])));
+
+    //GMM: This DELETE query causes the uploaded video file to disappear
+    //     especially when using ffmpeg to convert the video - no need to kill the
+    //     tempimage, since its status is 0 in {files} Drupal cron will nix it
+    //db_query("DELETE FROM {files} WHERE fid in (%s)",
+    //        implode(',', array_values($node->tempimage['fids'])));
+
     // initialize standard node fields
     //print_r($image);
     //exit;
@@ -348,7 +356,10 @@ function _video_image_submit(&$node) {
       $oldimage->images = $image->images;
 
       // delete the old images?
-      $oldimage->new_image = 1;
+      //GMM: Fix to use the proper variable to trigger current Image module to rebuild derivative images
+      //     Tested against Image 6.x-1.0-aplha4
+        //  $oldimage->new_image = 1;
+        $oldimage->new_file = true;
       node_save($oldimage);
       $node->iid = $oldimage->nid;
       $node->serial_data['iid'] = $node->iid;
