@@ -8,6 +8,8 @@
  * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo implement the help of the video upload (Implement the internal hook for the help video_upload_v_help()).
  * @todo GMM: video upload allowed extensions broken, all uploads allowed
+ * Ajax based upload
+ * Progress bar on upload
  */
 
 

@@ -6,8 +6,7 @@
  * TODO: Support AJAX Uploads :-)
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * porting to Drupal 6
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
  * @todo
 */
 

@@ -21,6 +21,7 @@ Please submit bugs/features/support requests at:
   http://drupal.org/node/add/project_issue/video
 	http://video.heidisoft.com/contact
 
-Maintainers:
-  Glen Marianko:  twitter@demoforum, glenm at demoforum dot com
-	Heshan Wanigasooriya :heshan@heidisoft.com, heshanmw at gmail dot com
+Maintainers
+-----------
+  Glen Marianko:  twitter at demoforum, glenm at demoforum dot com
+	Heshan Wanigasooriya :heshan at heidisoft dot com, heshanmw at gmail dot com

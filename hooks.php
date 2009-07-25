@@ -18,7 +18,6 @@
  * module video_something and place it under your video module plugins folder.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * porting to Drupal 6
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
  * @todo
  */
