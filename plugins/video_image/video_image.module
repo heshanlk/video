@@ -5,10 +5,14 @@
  * Enable image support for video module.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * porting to Drupal 6
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
  * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo
+ * 1. Add jQuery support
+ * 2. Add styles to thumbnail
+ * 3. Add imagecache support
+ * 4. Overlay a play button
+ * 5. Capturing video support (To get set of captured thumbnails with time)
  */
 
 
@@ -46,7 +50,7 @@ function video_image_menu() {
  * Implementation of hook_perm
  */
 //GMM: define positions in perm array to reference later (without misspellings :)
-  define('OVERRIDE_IMAGE', 0);
+define('OVERRIDE_IMAGE', 0);
 function video_image_perm() {
   $array = array('override autothumbnailing using uploaded image');
   return $array;

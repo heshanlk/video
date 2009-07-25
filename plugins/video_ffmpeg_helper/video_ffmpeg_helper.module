@@ -5,9 +5,9 @@
  * Provide some api for use ffmpeg. Simplify video nodes creation.
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * porting to Drupal 6
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
  * @todo
+ * 1. Remove modules and user existing ffmpeg wrapper module
  */
 
 /**

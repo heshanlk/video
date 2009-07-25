@@ -10,7 +10,6 @@
  * "php video_render.php nid vid http://example.org/drupal/"
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * porting to Drupal 6
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
  * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo

@@ -5,8 +5,7 @@
 *
 * @return
 *   array - Enables support in the video module for views integration
-* porting to Drupal 6
-* @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+* @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
 * @todo
 **/
 
