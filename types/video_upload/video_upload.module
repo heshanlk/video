@@ -401,7 +401,7 @@ function _video_upload_presave(&$node) {
   }
 
   // get extention array
-  $extentions = explode(",",variable_get('video_upload_allowed_extensions', 'mov,flv,wmv'));
+  $extensions = explode(",",variable_get('video_upload_allowed_extensions', 'mov,flv,wmv'));
 
   $validators = array(
     'file_validate_extensions' => array( 'csv' ),
@@ -409,7 +409,9 @@ function _video_upload_presave(&$node) {
   // TODO : add file size validation
   // 'file_validate_size' => array($limits['file_size'], $limits['user_size']),
 
-  if (count($_POST) && $file = file_save_upload($file_field , array('file_validate_extensions' => array('mov flv wmv')))) { // a file has been uploaded
+
+  //GMM: Fix hard-coded allowed extensions
+  if (count($_POST) && $file = file_save_upload($file_field , array('file_validate_extensions' => array(implode(" ",$extensions))))) { // a file has been uploaded
     $node->new_video_upload_file = $file;
     $node->new_video_upload_file_fid = $file->fid;
       //print_r($file);

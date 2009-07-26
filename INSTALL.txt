@@ -22,6 +22,10 @@ INSTALL INSTRUCTIONS FOR VIDEO.MODULE
   * If you are upgrading from a previous version of the video module,
     go to admin -> modules and choose "Save".  This will flush the
     views cache to ensure you can see the views.
+  * If you previously configured the video ffmpeg helper sub-module,
+    re-copy and re-edit the video_render.php and video_scheduler.php from
+    the folder modules/video/plugins/video_ffmpeg_helper to the root
+    of your web site.
   * Go to admin -> views.  You will see a default view supplied for
     video.  You can also create a new one by choosing "Add."  In the
     "Fields" section, you should see selections for "Video: (node info)".
