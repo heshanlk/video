@@ -27,104 +27,124 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: views_video.inc:26
-msgid "Video: Play count"
+#: video.views.inc:26
+msgid "Play count"
 msgstr ""
 
-#: views_video.inc:28
+#: video.views.inc:28
 msgid "This will display the number of times this has been played."
 msgstr ""
 
-#: views_video.inc:31
-msgid "Video: Download count"
+#: video.views.inc:31
+msgid "Download count"
 msgstr ""
 
-#: views_video.inc:33
+#: video.views.inc:33
 msgid "This will display the number of times this has been downloaded."
 msgstr ""
 
-#: views_video.inc:36
-msgid "Video: Length"
+#: video.views.inc:36
+msgid "Length"
 msgstr ""
 
-#: views_video.inc:39
+#: video.views.inc:39
 msgid "This will display the play length of the video."
 msgstr ""
 
-#: views_video.inc:42
-msgid "Video: Download link"
+#: video.views.inc:42
+msgid "Download link"
 msgstr ""
 
-#: views_video.inc:46
+#: video.views.inc:46
 msgid "This will display a download link if the node allows it."
 msgstr ""
 
-#: views_video.inc:49
-msgid "Video: Play link"
+#: video.views.inc:49
+msgid "Play link"
 msgstr ""
 
-#: views_video.inc:53
+#: video.views.inc:53
 msgid "This will display a play link if the node allows it."
 msgstr ""
 
-#: views_video.inc:56
-msgid "Video: Width (x)"
+#: video.views.inc:56
+msgid "Width (x)"
 msgstr ""
 
-#: views_video.inc:58
+#: video.views.inc:58
 msgid "This will display the width (x) of the video"
 msgstr ""
 
-#: views_video.inc:61
-msgid "Video: Height (y)"
+#: video.views.inc:61
+msgid "Height (y)"
 msgstr ""
 
-#: views_video.inc:63
+#: video.views.inc:63
 msgid "This will display the height (y) of the video"
 msgstr ""
 
-#: views_video.inc:71
-msgid "Video: Thumbnail"
+#: video.views.inc:71 video_views_handler_field_image.inc:38
+msgid "Thumbnail"
 msgstr ""
 
-#: views_video.inc:75
+#: video.views.inc:75
 msgid "This will display the thumbnail image for the video."
 msgstr ""
 
-#: views_video.inc:95
+#: video.views.inc:95
 msgid "Shows all recent video activity (table format)"
 msgstr ""
 
-#: views_video.inc:99
+#: video.views.inc:99
 msgid "Recent video activity"
 msgstr ""
 
-#: views_video.inc:104
+#: video.views.inc:104
 msgid "There is no recent video activity"
 msgstr ""
 
-#: views_video.inc:116 video.module:461
+#: video.views.inc:116 video.module:461
 msgid "Title"
 msgstr ""
 
-#: views_video.inc:123
+#: video.views.inc:123
 msgid "Last Updated"
 msgstr ""
 
-#: views_video.inc:131
+#: video.views.inc:131
 msgid "Author"
 msgstr ""
 
-#: views_video.inc:136
+#: video.views.inc:136
 msgid "Preview / Play"
 msgstr ""
 
-#: views_video.inc:170
+#: video.views.inc:170
 msgid "Download"
 msgstr ""
 
-#: views_video.inc:179
+#: video.views.inc:179
 msgid "Play"
+msgstr ""
+
+#: video_views_handler_field_image.inc:35
+msgid "Show image as"
+msgstr ""
+
+#: video_views_handler_field_image.inc:39
+msgid "Preview"
+msgstr ""
+
+#: video_views_handler_field_image.inc:44
+msgid "Link image to video"
+msgstr ""
+
+#: video_views_handler_field_playtime_seconds.inc:34
+msgid "Show playtime as"
+msgstr ""
+
+#: video_views_handler_field_playtime_seconds.inc:37
+msgid "Hour:min:sec"
 msgstr ""
 
 #: video.module:30
@@ -515,7 +535,7 @@ msgstr ""
 msgid "Integer of minutes."
 msgstr ""
 
-#: video.module:534
+#: video.module:534 video_views_handler_field_playtime_seconds.inc:38
 msgid "Seconds"
 msgstr ""
 
@@ -675,11 +695,11 @@ msgstr ""
 msgid "http://support.mozilla.com/en-US/kb/Using+the+Windows+Media+Player+plugin+with+Firefox"
 msgstr ""
 
-#: common.inc:0
+#: common.inc:367
 msgid "Link to Firefox Plug-in"
 msgstr ""
 
-#: common.inc:0
+#: common.inc:367
 msgid "Download the plug-in for Firefox"
 msgstr ""
 

@@ -5,15 +5,37 @@
  *
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
  *                              <heshanmw at gmail dot com>
+ * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo
  */
-/**
- * Let's include views logic if views module is enabled
-*/
-if (module_exists('views')) {
-  module_load_include('inc', 'video', 'views_video');
+
+/** GMM: Views 2
+ *  Implementation of hook_views_api()
+ */
+function video_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'video').'/includes',
+    );
 }
 
+/**
+ *  Implementation of hook_views_handlers()
+ */
+function video_views_handlers() {
+  return array(
+    'info' => array(
+      'path' => drupal_get_path('module', 'video').'/includes',
+      ),
+    'handlers' => array(
+      'video_views_handler_field_playtime_seconds' => array('parent' => 'views_handler_field'),
+      'video_views_handler_field_download' => array('parent' => 'views_handler_field'),
+      'video_views_handler_field_play' => array('parent' => 'views_handler_field'),
+      'video_views_handler_field_image' => array('parent' => 'views_handler_field'),
+
+      ),
+    );
+} 
 /********************************************************************
  * General Hooks
  ********************************************************************/

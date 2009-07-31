@@ -8,12 +8,8 @@
  * porting to Drupal 6
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
  * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
- * @todo
+ * @todo   Configure default players by video filetype (user configurable?)
  */
-
-
-
-
 
 /**
  * Get the object for the suitable player for the parameter resource
@@ -23,10 +19,9 @@ function _video_common_get_player($node) {
     case 'divx':
       return theme('video_play_divx', $node);
     case 'mov':
-    case 'mp4':
     case '3gp':
     case '3g2':
-    case 'mpg':
+    case 'mp4':
       return theme('video_play_quicktime', $node);
     case 'rm':
       return theme('video_play_realmedia', $node);
@@ -40,7 +35,9 @@ function _video_common_get_player($node) {
     case 'asf':
     case 'wmv':
     case 'avi':
-      return theme('video_play_windowsmedia', $node);
+    case 'mpg':
+    case 'mpeg':
+     return theme('video_play_windowsmedia', $node);
     case 'ogg':
       return theme('video_play_ogg_theora', $node);
     case 'youtube':
@@ -246,9 +243,11 @@ data="'. $url .'">
 <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
+  //GMM: kioskmode enabled so users don't bypass download security video through player
    $output .= '<param name="src" value="'. $url .'" />
               <param name="AUTOPLAY" value="'.(variable_get('video_autoplay', TRUE) ? 'true' : 'false').'" />
-              <param name="KIOSKMODE" value="false" />' . "\n"
+              <param name="KIOSKMODE" value="true" />
+              <param name="CONTROLLER" value="true" />' . "\n"
    . _video_get_parameters($node) .
    '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
 </object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
