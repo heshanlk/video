@@ -25,7 +25,8 @@ function _video_common_get_player($node) {
       return theme('video_play_quicktime', $node);
     case 'rm':
       return theme('video_play_realmedia', $node);
-    case 'flv':
+    case 'f4v':
+    case 'flv': // flowplayer also supprts MP4, H.264 (.extension?)
       return theme('video_play_flash', $node);
     case 'swf':
       return theme('video_play_swf', $node);
