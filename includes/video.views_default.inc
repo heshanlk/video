@@ -17,8 +17,9 @@
 **/
 function video_views_default_views() {
     $views = array();
-
+    //GMM: Set view->disabled to TRUE after pasting new export
     // view definition (Views 2)
+
     $view = new view;
     $view->name = 'video_tracker';
     $view->description = 'Shows all recent video activity (table format)';
@@ -51,7 +52,7 @@ function video_views_default_views() {
         'label' => 'Author',
       ),
       'playtime_seconds' => array(
-        'label' => 'Play time',
+        'label' => 'Length',
         'alter' => array(
           'alter_text' => 0,
           'text' => '',
@@ -69,6 +70,7 @@ function video_views_default_views() {
           'strip_tags' => 0,
           'html' => 0,
         ),
+        'time_type' => 'hms',
         'exclude' => 0,
         'id' => 'playtime_seconds',
         'table' => 'video',
@@ -84,12 +86,15 @@ function video_views_default_views() {
     ));
     $handler->override_option('sorts', array(
       'changed' => array(
-        'order' => 'ASC',
+        'order' => 'DESC',
         'granularity' => 'second',
         'id' => 'changed',
         'table' => 'node',
         'field' => 'changed',
         'relationship' => 'none',
+        'override' => array(
+          'button' => 'Override',
+        ),
       ),
     ));
     $handler->override_option('filters', array(
@@ -126,18 +131,39 @@ function video_views_default_views() {
     $handler->override_option('use_pager', TRUE);
     $handler->override_option('style_plugin', 'table');
     $handler->override_option('style_options', array(
-      'columns' => array(),
-      'default' => 'changed',
+      'grouping' => '',
+      'override' => 1,
+      'sticky' => 0,
+      'order' => 'desc',
+      'columns' => array(
+        'title' => 'title',
+        'changed' => 'changed',
+        'name' => 'name',
+        'playtime_seconds' => 'playtime_seconds',
+        'video_image' => 'video_image',
+      ),
       'info' => array(
         'title' => array(
-          'sortable' => TRUE,
+          'sortable' => 1,
+          'separator' => '',
         ),
         'changed' => array(
-          'sortable' => TRUE,
+          'sortable' => 1,
+          'separator' => '',
+        ),
+        'name' => array(
+          'sortable' => 1,
+          'separator' => '',
+        ),
+        'playtime_seconds' => array(
+          'sortable' => 1,
+          'separator' => '',
+        ),
+        'video_image' => array(
+          'separator' => '',
         ),
       ),
-      'override' => FALSE,
-      'order' => 'asc',
+      'default' => 'changed',
     ));
     $handler = $view->new_display('page', 'Page', 'page_1');
     $handler->override_option('path', 'video/tracker');
