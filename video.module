@@ -499,7 +499,7 @@ function video_nodeapi($node, $op, $arg) {
         // work around for http://drupal.org/node/157709
         static $been_here = FALSE;
         if (! $been_here) {
-          $mrss['namespace'] = array('xmlns:media="http://search.yahoo.com/mrss/"');
+          $mrss['namespace'] = array('xmlns:media' => 'http://video.search.yahoo.com/mrss');
           $been_here = TRUE;
         }
       }
