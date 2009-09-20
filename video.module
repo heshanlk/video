@@ -15,7 +15,7 @@
 function video_views_api() {
   return array(
     'api' => 2,
-    'path' => drupal_get_path('module', 'video').'/includes',
+    'path' => drupal_get_path('module', 'video').'/views',
     );
 }
 
@@ -25,7 +25,7 @@ function video_views_api() {
 function video_views_handlers() {
   return array(
     'info' => array(
-      'path' => drupal_get_path('module', 'video').'/includes',
+      'path' => drupal_get_path('module', 'video').'/views',
       ),
     'handlers' => array(
       'video_views_handler_field_playtime_seconds' => array('parent' => 'views_handler_field'),
@@ -35,7 +35,8 @@ function video_views_handlers() {
 
       ),
     );
-} 
+}
+
 /********************************************************************
  * General Hooks
  ********************************************************************/
