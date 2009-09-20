@@ -5,8 +5,7 @@
  * Add some common functions for the various video types supported
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * porting to Drupal 6
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com><heshanmw at gmail dot com>
  * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo   Configure default players by video filetype (user configurable?)
  */
