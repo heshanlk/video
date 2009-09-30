@@ -9,6 +9,10 @@
  * @todo
  */
 
+// the id in the select field for manually assign resolution values. See functions below.
+define("VIDEO_MANUALLY_SET_VIDEO_RESOLUTION_SELECT_ID", 30);
+
+
 /** GMM: Views 2
  *  Implementation of hook_views_api()
  */
@@ -242,7 +246,7 @@ function video_feed() {
  *   array of permissions
  */
 function video_perm() {
-  $array = array('create video', 'access video', 'administer video', 'play video', 'download video', 'view play counter', 'view download counter', 'edit own video', 'edit all video nodes');
+  $array = array('create video', 'access video', 'administer video', 'play video', 'download video', 'view play counter', 'view download counter', 'edit own video', 'edit all video nodes', 'manually set video resolution');
   return $array;
 }
 
@@ -323,7 +327,7 @@ function video_settings_form() {
     '#type' => 'textfield',
     '#title' => t("Default width"),
     '#default_value' => variable_get("video_resolution_width", 400),
-    '#description' => t('The width which will be used to scale video during playing. This let all videos on the website look the same')
+    '#description' => t('The width which will be used to scale video during playing. This let all videos on the website look the same. <strong>NOTE:</strong> You can disable video scaling making this field blank.')
   );
   
   $i = 1;
@@ -677,15 +681,46 @@ function video_form($node) {
   $form['video'] = array('#type' => 'fieldset', '#title' => t('Video Information'), '#weight' => -19);
   
   if(!video_support_autoresolution($node)) { // this vtype doesn't support autoresolution
+
+    $selected_option = _video_get_resolution_selected_option($node);
+
     // let's display the resolution selection
     $form['video']['vresolution'] = array(
-      '#type' => 'select',
-      '#title' => t('Resolution'),
-      '#description' => t("Select the approriate resolution (aspect ratio) for your video.<br />If you don't know what to choose then the default value will probably be ok for you."),
-      '#options' => _video_get_resolution_options(),
-      '#default_value' => _video_get_resolution_selected_option($node),
-      '#required' => true,
+        '#type' => 'select',
+        '#title' => t('Resolution'),
+        '#description' => t("Select the approriate resolution (aspect ratio) for your video.<br />If you don't know what to choose then the default value will probably be ok for you."),
+        '#options' => _video_get_resolution_options(),
+        '#default_value' => $selected_option,
+        '#required' => true,
     );
+
+    // manual resolution form logic
+    $form['video']['manual_resolution'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Manual resolution'),
+    );
+
+    $is_manually_set = ($selected_option == VIDEO_MANUALLY_SET_VIDEO_RESOLUTION_SELECT_ID);
+    $width = ($is_manually_set ? $node->videox : NULL);
+    $height = ($is_manually_set ? $node->videoy : NULL);;
+
+    $form['video']['manual_resolution']['manual_resolution_width'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Width'),
+        '#size' => 4,
+        '#maxlength' => 4,
+        '#default_value' => $width,
+        '#description' => t('Video width expressed in pixels.'),
+    );
+    $form['video']['manual_resolution']['manual_resolution_height'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Height'),
+        '#size' => 4,
+        '#maxlength' => 4,
+        '#default_value' => $height,
+        '#description' => t('Video height expressed in pixels.'),
+    );
+
   }
   else {
   // set an hidden field to store video resolution
@@ -783,9 +818,15 @@ function video_presave(&$node) {
     }
     // we should have a good value (checked by Form API)
     else {
-      $res = explode('x', variable_get('video_resolution_' . $node->vresolution . '_value', ''));
-      $node->videox = $res[0];
-      $node->videoy = $res[1];
+      if($node->vresolution < VIDEO_MANUALLY_SET_VIDEO_RESOLUTION_SELECT_ID) {
+        $res = explode('x', variable_get('video_resolution_' . $node->vresolution . '_value', ''));
+        $node->videox = $res[0];
+        $node->videoy = $res[1];
+      }
+      else if($node->vresolution == VIDEO_MANUALLY_SET_VIDEO_RESOLUTION_SELECT_ID) { // this is a manually set video resolution
+        $node->videox = $node->manual_resolution_width;
+        $node->videoy = $node->manual_resolution_height;
+      }
     }
   }  
 
@@ -1419,6 +1460,12 @@ function _video_get_resolution_options() {
     }
     $i++;
   }
+
+  if(user_access('manually set video resolution')) {
+    // to manually insert resolution values
+    $options[VIDEO_MANUALLY_SET_VIDEO_RESOLUTION_SELECT_ID] = t("manually set ");
+  }
+
   return $options;
 }
 
@@ -1427,6 +1474,11 @@ function _video_get_resolution_options() {
  * Get the selected resolution id from the videox and videoy fields
 */
 function _video_get_resolution_selected_option($node) {
+
+  if(!isset($node->nid)) { // do not assign a default value if we are creating a new node
+    return NULL;
+  }
+
   $value = $node->videox . "x" . $node->videoy;
 
   $i = 1;
@@ -1437,6 +1489,11 @@ function _video_get_resolution_selected_option($node) {
     
     $i++;
   }
+  // we did not find the value in the presets fields
+  // let's consider it as a manually set resolution (if the user have permissions)
+  if(user_access('manually set video resolution')) {
+    return VIDEO_MANUALLY_SET_VIDEO_RESOLUTION_SELECT_ID;
+  }
 }
 
 /**
@@ -1445,7 +1502,18 @@ function _video_get_resolution_selected_option($node) {
 function _video_scale_video(&$node) {
   $def_width = (int) variable_get("video_resolution_width", 400);
 
-  if (!$node->videox || !$node->videoy) {
+  if($def_width <= 0) { // video scaling has been disabled
+    if (!$node->videox || !$node->videoy) { // we shouldn't have videox or videoy null.. but this is just in case for safety
+      $node->video_scaled_x = 400;
+      $node->video_scaled_y = 300;
+    } else {
+      $node->video_scaled_x = $node->videox;
+      $node->video_scaled_y = $node->videoy;
+    }
+    return;
+  }
+
+  if (!$node->videox || !$node->videoy) { // we shouldn't have videox or videoy null.. but this is just in case for safety
     $height = $def_width * 3 / 4;
   } else {
     $height = $def_width * ($node->videoy / $node->videox); // do you remember proportions?? :-)
