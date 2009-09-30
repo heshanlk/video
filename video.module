@@ -902,7 +902,8 @@ function video_view(&$node, $teaser = FALSE, $page = FALSE) {
       $node->content['video_player'] = array('#value' => $output, '#weight' => -1);
     }
   }
-
+//  print_r($node);
+//  exit;
   return $node;
 }
 
