@@ -467,9 +467,14 @@ function _video_image_temp_image_store(&$file) {
       foreach ($image->images as $l => $f) {
         $info = image_get_info($f);
         $file->fid = db_last_insert_id('files','fid');
-        if($l=="_original"){
+        if($l=="_original") { // #556546 by linuxbox
+          if ($fid) {
             db_query("INSERT INTO {files} (fid, filename, filepath, filemime, filesize) VALUES (%d, '%s', '%s', '%s', '%s')",
                 $fid, "video_image_temp.$l", $f, $info['mime_type'], $info['file_size']);
+          } else {
+            db_query("INSERT INTO {files} (filename, filepath, filemime, filesize) VALUES ('%s', '%s', '%s', '%s')",
+                "video_image_temp.$l", $f, $info['mime_type'], $info['file_size']);
+          }
         }
         $image->fids[$l] = $file->fid;
       }
