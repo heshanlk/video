@@ -10,7 +10,7 @@
  * "php video_render.php nid vid http://example.org/drupal/"
  *
  * @author Fabio Varesano <fvaresano at yahoo dot it>
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw@gmail.com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com , heshanmw at gmail dot com>
  * @author Glen Marianko Twitter@demoforum <glenm at demoforum dot com>
  * @todo
  */
@@ -131,7 +131,11 @@ function video_render_main() {
       //$file->fid = db_next_id('{files}_fid');
       //print_r($file);
       //GMM: fixed added timestamp column for completeness (otherwise 0), D6 FILE_STATUS
-      db_query("INSERT INTO {files} (fid, uid, filename, filepath, filemime, filesize, status, timestamp) VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d)", $file->fid, $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize, FILE_STATUS_PERMANENT, time());
+      if (!$file->fid) {
+        db_query("INSERT INTO {files} (uid, filename, filepath, filemime, filesize, status, timestamp) VALUES (%d, '%s', '%s', '%s', %d, %d, %d)", $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize, FILE_STATUS_PERMANENT, time());
+      } else {
+        db_query("INSERT INTO {files} (fid, uid, filename, filepath, filemime, filesize, status, timestamp) VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d)", $file->fid, $job->uid, $file->filename, $file->filepath, $file->filemime, $file->filesize, FILE_STATUS_PERMANENT, time());
+      }
       
       // to know other modules of fid
       $file->fid = db_last_insert_id('files', 'fid');
