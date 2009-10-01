@@ -292,6 +292,13 @@ function video_settings_form() {
     '#description' => t('Toggle display of menu tab to download video from the node page.')
   );
 
+ $form['menu']['video_in_teaser'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display video in node teaser'),
+    '#default_value' => variable_get('video_in_teaser', FALSE),
+    '#description' => t('Display the video in the node teaser. For instance, when shown on the front page feed')
+  );
+
  $form['menu']['video_show_help_text'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show help text below video'),
@@ -937,7 +944,7 @@ function video_view(&$node, $teaser = FALSE, $page = FALSE) {
   $node->teaser = theme('video_teaser', $node, $teaser, $page);
 
   // if we are viewing the page, run the body through the theme
-  if ($page) {
+  if ($page ||  variable_get('video_in_teaser', FALSE)) {
     $output = '';
     if (user_access('play video')) {
       $node->content['video_player'] = array('#value' => theme('video_player', $node), '#weight' => -1);
