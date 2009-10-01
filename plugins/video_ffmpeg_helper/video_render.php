@@ -143,7 +143,7 @@ function video_render_main() {
       db_query("INSERT INTO {video_upload} (vid, nid, fid) VALUES (%d, %d, %d)", $job->vid, $job->vid, $file->fid);
 
       // update the video table
-      db_query('UPDATE {video} SET vidfile = "%s", videox = %d, videoy = %d WHERE nid=%d AND vid=%d', "", $job->calculatedx, $job->calculatedy, $job->nid, $job->vid);
+      db_query('UPDATE {video} SET vidfile = \'%s\', videox = %d, videoy = %d WHERE nid=%d AND vid=%d', "", $job->calculatedx, $job->calculatedy, $job->nid, $job->vid);
 
       // update the video_encoded_fid in video serial data
       _video_render_set_video_encoded_fid($job->nid, $job->vid, $file->fid);

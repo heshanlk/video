@@ -317,13 +317,13 @@ function video_ffmpeg_helper_nodeapi(&$node, $op, $teaser) {
 function _video_ffmpeg_helper_add_rendering(&$node) {
   $file = _video_upload_get_file($node->new_video_upload_file_fid);
   //print_r($node); die;
-  db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed) VALUES (%d, %d, "%s", %d, %d, %d, %d)', $node->vid, $node->nid, $file->filepath, 0, VIDEO_RENDERING_PENDING, 0, 0);
+  db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed) VALUES (%d, %d, \'%s\', %d, %d, %d, %d)', $node->vid, $node->nid, $file->filepath, 0, VIDEO_RENDERING_PENDING, 0, 0);
 
   drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
   
   // let's add the rendering in progress video
   $node->vidfile = variable_get('video_ffmpeg_helper_auto_cvr_busy_video_path', 'busy.flv');
-  db_query('UPDATE {video} SET vidfile = "%s" WHERE nid=%d AND vid=%d', $node->vidfile, $node->nid, $node->vid);
+  db_query('UPDATE {video} SET vidfile = \'%s\' WHERE nid=%d AND vid=%d', $node->vidfile, $node->nid, $node->vid);
 
 }
 
