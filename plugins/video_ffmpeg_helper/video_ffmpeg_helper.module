@@ -147,13 +147,13 @@ function video_ffmpeg_helper_admin_settings() {
       '#type' => 'checkbox',
       '#title' => t('Use drupal cron for autoconversion'),
       '#description' => t('Click this if you want to execute the video_scheduler.php from the standard drupal cron. If you want to use distributed encodings you might want to disable this.'),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_cron', true),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_cron', FALSE),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_conversion'] = array(
       '#type' => 'checkbox',
       '#title' => t('Auto conversion for videos'),
       '#description' => t('If set up correctly, this will auto-convert each uploaded video to the configured format.') . '<br />' . t("IMPORTANT: you will need the video_render.php correctly configured and run by cron. See README.txt in the video_ffmpeg_helper folder or <a title='User Guide' href='http://video.heidisoft.com/docs/users-guide-26'>click here</a> for more informations."),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_conversion', false),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_conversion', TRUE),
     );
   $form['autoconv']['video_ffmpeg_helper_auto_cvr_width'] = array(
       '#type' => 'textfield',
