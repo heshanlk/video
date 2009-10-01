@@ -291,6 +291,14 @@ function video_settings_form() {
     '#default_value' => variable_get('video_displaydownloadmenutab', 1),
     '#description' => t('Toggle display of menu tab to download video from the node page.')
   );
+
+ $form['menu']['video_show_help_text'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show help text below video'),
+    '#default_value' => variable_get('video_show_help_text', TRUE),
+    '#description' => t('Enabling this may help users play the video.')
+  );
+
   $form['menu']['video_displaydownloadlink'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display download link'),
@@ -1186,10 +1194,13 @@ function theme_video_player($node) {
  */
 function theme_video_format_play($output, $url, $title, $link_text) {
   $output = "\n<div id=\"video-player\">\n" . $output;
-  $output .= "<p>\n". t('Problems viewing videos?');
-  $output .= "<br />\n";
-  $output .= l($link_text, $url, array('attributes' => array('title' => $title), 'absolute' => TRUE));
-  return $output ."\n</p> \n </div>\n";
+  if(variable_get('video_show_help_text', TRUE)){
+    $output .= "<p>\n". t('Problems viewing videos?');
+    $output .= "<br />\n";
+    $output .= l($link_text, $url, array('attributes' => array('title' => $title), 'absolute' => TRUE));
+    $output .= "\n</p> \n ";
+  }
+  return $output ."</div>\n";
 }
 
 
