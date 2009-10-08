@@ -64,43 +64,55 @@ function _video_common_get_player($node) {
  *   string of content to display
  */
 function theme_video_play_flash($node) {
-  $loader_location = variable_get('video_flvplayerloader', 'FlowPlayer.swf');
+
 
   $url = _video_get_fileurl($node->vidfile);
   $file = basename($url);
   $base_url = substr($url, 0, strrpos($url, '/'));
-
   $height = $node->video_scaled_y + 24; // add commands height
 
-  // this will be executed by not Internet Explorer browsers
-  $output = '<!--[if !IE]> <-->
-<object type="application/x-shockwave-flash" width="'. $node->video_scaled_x .'" height="'. $height .'"
-data="'. url() . check_plain($loader_location) .'">
-<!--> <![endif]-->' . "\n";
+  if (variable_get('video_flowplayer_module', FALSE) && module_exists('flowplayer')) {
+    //$video = theme('flowplayer', 'http://player-e7.simplecdn.net/flowplayer.flv');
+    $output = theme('flowplayer', array(
+      'clip' => array(
+        'url' => $base_url . '/' . $file,
+        'autoPlay' => variable_get('video_autoplay', TRUE) ? TRUE : FALSE, // Turn autoplay on/off
+      ),
+    ));
+  }
+  else {
+    $loader_location = variable_get('video_flvplayerloader', 'FlowPlayer.swf');
 
-  // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-shockwave-flash" width="'. $node->video_scaled_x .'" height="'. $height .'"
-classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
-<![endif]-->' . "\n";
+    // this will be executed by not Internet Explorer browsers
+    $output = '<!--[if !IE]> <-->
+      <object type="application/x-shockwave-flash" width="'. $node->video_scaled_x .'" height="'. $height .'"
+      data="'. url() . check_plain($loader_location) .'">
+      <!--> <![endif]-->' . "\n";
 
-  // params will be passed to both IE or not IE browsers
-  $config = sprintf("config={'playerId':'player','clip':{'url':'%s'},'playlist':[{'url':'%s','autoPlay':%s}]}", $base_url . '/' . $file, $base_url . '/' . $file, (variable_get('video_autoplay', TRUE) ? 'true' : 'false'));
-  $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
+    // this will be executed by Internet Explorer
+    $output .= '<!--[if IE]>
+      <object type="application/x-shockwave-flash" width="'. $node->video_scaled_x .'" height="'. $height .'"
+      classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+      codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+      <![endif]-->' . "\n";
+
+    // params will be passed to both IE or not IE browsers
+    $config = sprintf("config={'playerId':'player','clip':{'url':'%s'},'playlist':[{'url':'%s','autoPlay':%s}]}", $base_url . '/' . $file, $base_url . '/' . $file, (variable_get('video_autoplay', TRUE) ? TRUE : FALSE));
+    $output .= '<param name="movie" value="' . url() . check_plain($loader_location) . '" />
                <param name="allowFullScreen" value="true" />
                <param name="wmode" value="transparent" />
                <param name="allowScriptAccess" value="sameDomain" />
                <param name="quality" value="high" />
                <param name="flashvars" value="' . $config . '" />'
-  . _video_get_parameters($node) .
-  '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
+        . _video_get_parameters($node) .
+        '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+      </object>';
 
-  $output = theme('video_format_play', $output, t('http://get.adobe.com/flashplayer/'),
-                                      t('Link to Adobe Flash Player Download Page'),
-                                      t('Download latest Flash Player'));
-   return $output;
+    $output = theme('video_format_play', $output, t('http://get.adobe.com/flashplayer/'),
+        t('Link to Adobe Flash Player Download Page'),
+        t('Download latest Flash Player'));
+  }
+  return $output;
 }
 
 /**
@@ -245,7 +257,7 @@ data="'. $url .'">
   // params will be passed to both IE or not IE browsers
   //GMM: kioskmode enabled so users don't bypass download security video through player
    $output .= '<param name="src" value="'. $url .'" />
-              <param name="AUTOPLAY" value="'.(variable_get('video_autoplay', TRUE) ? 'true' : 'false').'" />
+              <param name="AUTOPLAY" value="'.(variable_get('video_autoplay', TRUE) ? TRUE : FALSE).'" />
               <param name="KIOSKMODE" value="true" />
               <param name="CONTROLLER" value="true" />' . "\n"
    . _video_get_parameters($node) .

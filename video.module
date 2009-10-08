@@ -381,19 +381,28 @@ function video_settings_form() {
     '#default_value' => variable_get('video_downloadcounter', 1),
     '#description' => t('Counts a hit everytime someone downloads a video.')
   );
-    
+    // Flash Settings
   $form['flash'] = array(
     '#type' => 'fieldset',
     '#title' => t('Flash settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE
   );
+  // check flowplayer commercial module is in active
+  $form['flash']['video_flowplayer_module'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use flowplayer module'),
+    '#default_value' => variable_get('video_flowplayer_module', FALSE) && module_exists('flowplayer'),
+    '#description' => t('You can use flowplayer module. <a href="@link">Download flowplayer module.</a> This is currently recommended for you.', array('@link'=>url('http://drupal.org/project/flowplayer'))),
+    '#disabled' => module_exists('flowplayer')?FALSE:TRUE
+  );
   $form['flash']['video_flvplayerloader'] = array(
     '#type' => 'textfield',
     '#title' => t('Filename of Flash loader'),
     '#default_value' => variable_get('video_flvplayerloader', 'FlowPlayer.swf'),
-    '#description' => t('The name of the Shockwave file that manages loading the FLV movie. This is relative to the website root.')
+    '#description' => t('The name of the Shockwave file that manages loading the FLV movie. This is relative to the website root. This settings will override if flowplayer module is installed and enabled. Mainly we focus by this settings to add custom flv player support to the video module See includes/common.inc theme_video_play_flash() for further developments.')
   );
+
   $form['ogg'] = array(
     '#type' => 'fieldset',
     '#title' => t('Ogg Theora settings'),
@@ -427,6 +436,11 @@ function video_settings_form() {
 function video_settings_form_validate($form, &$form_state){
   //print_r($form_state['values']); die;
   
+  if($form_state['values']['video_flowplayer_module']){
+    if(!module_exists('flowplayer'))
+    form_set_error("video_flowplayer_module", t('You have not installed flowplayer module. <a href="@link">Download and install flowplayer module.</a>', array('@link'=>url('http://drupal.org/project/flowplayer'))));
+  }
+
   // if admin set a name for a resolution he also have to set its value
   while($i <= 4) {
     if($form_state['values']["video_resolution_{$i}_name"] != '' && $form_state['values']["video_resolution_{$i}_value"] == '') {
