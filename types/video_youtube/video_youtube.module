@@ -203,7 +203,8 @@ function _video_apiclient_youtube_request($method, $args = array(), $cacheable =
 */
 function _video_apiclient_youtube_get_thumbnail_url($id) {
   $response = _video_apiclient_youtube_request('youtube.videos.get_details', array('video_id' => $id));
-  
+  print_r($response);
+  exit;
   if(isset($response['THUMBNAIL_URL'][0]) && $response['THUMBNAIL_URL'][0] != '') {
    return $response['THUMBNAIL_URL'][0];
   }
