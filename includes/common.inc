@@ -14,7 +14,8 @@
  * Get the object for the suitable player for the parameter resource
 */
 function _video_common_get_player($node) {
-  switch (_video_get_filetype($node->vidfile)) {
+  $op = ($node->vtype == "upload")?  _video_get_filetype($node->vidfile) : $node->vtype;
+  switch ($op) {
     case 'divx':
       return theme('video_play_divx', $node);
     case 'mov':
@@ -64,8 +65,6 @@ function _video_common_get_player($node) {
  *   string of content to display
  */
 function theme_video_play_flash($node) {
-
-
   $url = _video_get_fileurl($node->vidfile);
   $file = basename($url);
   $base_url = substr($url, 0, strrpos($url, '/'));
@@ -440,3 +439,47 @@ function theme_video_play_ogg_theora($node) {
   return $output;
 }
 
+/**
+ * Play videos hosted on youtube.com
+ * Allows users to host videos on youtube.com and then use the video ID to post it in the module.
+ * In the future it could also use the youtube developer API to get info and comments of the video.
+ *
+ * @param $node
+ *   object with node information
+ *
+ * @return
+ *   string of content to display
+ */
+function theme_video_play_youtube($node) {
+  $width = ($node->video_scaled_x ? $node->video_scaled_x : '425');
+  $height = ($node->video_scaled_y ? $node->video_scaled_y : '350');
+
+  $id = _video_youtube_get_id(check_plain($node->vidfile));
+
+  // related video setting
+  $rel = variable_get('video_youtube_related', false) ? '1' : '0';
+
+  // this will be executed by not Internet Explorer browsers
+  $output = '<!--[if !IE]> <-->
+<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
+data="http://www.youtube.com/v/' . $id . '&rel='.$rel.'">
+<!--> <![endif]-->' . "\n";
+
+  // this will be executed by Internet Explorer
+  $output .= '<!--[if IE]>
+<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
+classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+<![endif]-->' . "\n";
+
+  // params will be passed to both IE or not IE browsers
+  $output .= '<param name="movie" value="http://www.youtube.com/v/' . $id . '&rel='.$rel.'" />' . "\n"
+      . '<param name="wmode" value="transparent" />' . "\n"
+      . _video_get_parameters($node) .
+      '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+</object>';
+
+
+  $output = theme('video_format_play', $output, t('http://www.google.com/support/youtube'), t('Link to youtube.com'), t('youtube.com'));
+  return $output;
+}

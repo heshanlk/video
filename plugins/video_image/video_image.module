@@ -159,22 +159,39 @@ function video_image_form_alter(&$form, &$form_state, $form_id) {
     }
 
     $auto_thumbable = video_image_is_autothumbable($node);
+    //echo ''.$auto_thumbable;
     //GMM: fix permission misspelling
-      $perm=video_image_perm();
-    if(!$auto_thumbable || user_access($perm[OVERRIDE_IMAGE])) {       // let's be sure that image directories are ready
+    // TODO : set correct permission
+    $perm = video_image_perm();
+    if(!$auto_thumbable || user_access($perm[OVERRIDE_IMAGE])) {// let's be sure that image directories are ready
       if (function_exists('_image_check_settings')) {
         _image_check_settings();
       }
       // needed for uploading
-      $form['#attributes'] = array("enctype" => "multipart/form-data");
+      $form['#attributes'] = array(
+        "enctype" => "multipart/form-data"
+      );
 
+      $form['image'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Image thumbnails'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#weight' => -17,
+        '#description' => t('Upload an image to be used as the thumbnail for this video.')
+      );
 
-      $form['image'] = array('#type' => 'fieldset', '#title' => t('Image thumbnails'), '#collapsible' => TRUE, '#collapsed' => TRUE, '#weight' => -17, '#description' => t('Upload an image to be used as the thumbnail for this video.'));
-
-      $form['image']['image'] = array('#type' => 'file', '#title' => t('Image'));
+      $form['image']['image'] = array(
+        '#type' => 'file',
+        '#title' => t('Image')
+      );
     }
     if ($node->nid && $auto_thumbable) {
-      $form['regenerate_thumbnail'] = array('#type' => 'checkbox', '#title' => t('Auto regenerate thumbnail'), '#default_value' => 0);
+      $form['regenerate_thumbnail'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Auto regenerate thumbnail'),
+        '#default_value' => 0
+      );
     }
   }
 }
@@ -199,7 +216,7 @@ function video_image_nodeapi(&$node, $op, $teaser) {
 
       case 'presave':
           //exit;
-        _video_image_submit($node);
+        _video_image_presave($node);
         break;
 
       case 'view':
@@ -254,13 +271,10 @@ function _video_image_load(&$node) {
 
 function _video_image_prepare(&$node) {
   // let's check that we have a valid image
-  //print_r($node);
-  //exit;
   if (count($_POST)) {
-
-  $validators = array(
-    'file_validate_is_image' => array()
-  );
+    $validators = array(
+      'file_validate_is_image' => array()
+    );
 
     $field_name = file_save_upload('image', $validators);
     if (!$field_name && video_image_is_autothumbable($node)) {
@@ -280,16 +294,15 @@ function _video_image_prepare(&$node) {
   }
 }
 
-function _video_image_submit(&$node) {
+function _video_image_presave(&$node) {
     //print_r($node);
     //exit;
     // ############# PREPARE #######################
     // ------------- MOVED -------------------------
   if (count($_POST)) {
-
-  $validators = array(
-    'file_validate_is_image' => array()
-  );
+    $validators = array(
+      'file_validate_is_image' => array()
+    );
 
     $field_name = file_save_upload('image', $validators);
     if (!$field_name && video_image_is_autothumbable($node)) {
@@ -363,7 +376,7 @@ function _video_image_submit(&$node) {
       //GMM: Fix to use the proper variable to trigger current Image module to rebuild derivative images
       //     Tested against Image 6.x-1.0-aplha4
         //  $oldimage->new_image = 1;
-        $oldimage->new_file = true;
+      $oldimage->new_file = true;
       node_save($oldimage);
       $node->iid = $oldimage->nid;
       $node->serial_data['iid'] = $node->iid;

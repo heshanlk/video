@@ -1109,8 +1109,8 @@ function video_block_list($delta = 0) {
  */
 function video_download($node) {
   // $node as been loaded by video_menu
-  print_r($node);
-  exit;
+  //print_r($node);
+  //exit;
   if ($node) {
     if (video_support_download($node) && _video_allow_download($node)) { //Make sure the video type is not youtube before downloading.
       _video_download_goto($node);

@@ -739,38 +739,38 @@ function video_upload_create_node_from($filepath, $title = NULL, $body = '', $ta
  */
 function video_upload_theme() {
   return array(
-    'video_upload_busy' => array(
-      'arguments' => array(),
-    ),
-    'video_upload_file_info_form' => array(
-      'arguments' => array('file' => NULL,'node' => NULL),
-    ),
-    'video_upload_get_script' => array(
-      'arguments' => array(),
-    ),
-        'video_play_dcr' => array(
-      'arguments' => array('node' => NULL),
-    ),
-        'video_play_divx' => array(
-      'arguments' => array('node' => NULL),
-    ),
-        'video_play_flash' => array(
-      'arguments' => array('node' => NULL),
-    ),
-        'video_play_ogg_theora' => array(
-      'arguments' => array('node' => NULL),
-    ),
-        'video_play_quicktime' => array(
-      'arguments' => array('node' => NULL),
-    ),
-       'video_play_realmedia' => array(
-      'arguments' => array('node' => NULL),
-    ),
-      'video_play_swf' => array(
-      'arguments' => array('node' => NULL),
-    ),
-      'video_play_windowsmedia' => array(
-      'arguments' => array('node' => NULL),
-    ),
+  'video_upload_busy' => array(
+  'arguments' => array(),
+  ),
+  'video_upload_file_info_form' => array(
+  'arguments' => array('file' => NULL,'node' => NULL),
+  ),
+  'video_upload_get_script' => array(
+  'arguments' => array(),
+  ),
+  'video_play_dcr' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_divx' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_flash' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_ogg_theora' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_quicktime' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_realmedia' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_swf' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_windowsmedia' => array(
+  'arguments' => array('node' => NULL),
+  ),
   );
 }
