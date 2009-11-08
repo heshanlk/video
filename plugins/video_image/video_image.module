@@ -308,6 +308,9 @@ function _video_image_presave(&$node) {
     if (!$field_name && video_image_is_autothumbable($node)) {
       _video_image_thumbnail_debug(t('video_image_nodeapi: prepare: ready to thumbnail video'));
       $field_name = module_invoke('video_' . $node->vtype, 'v_auto_thumbnail', $node);
+//      echo 'ok';
+//      print_r($field_name);
+//      exit;
       if ($field_name === false && count($_POST)) {
         drupal_set_message(t('The thumbnailing process of your video failed for some reason. Video thumbnail will not be available.'), 'error');
      }
@@ -330,9 +333,10 @@ function _video_image_presave(&$node) {
        */
     $node->tempimage = _video_image_temp_image_store($field_name);
     $node->new_image = TRUE;
-    //print_r($node);
-    //die;
-  } else if (is_array($_POST['tempimage']) && ($_POST['op'] == 'Preview' || $_POST['op'] == 'Submit')) {
+//    print_r($node);
+//    die;
+  }
+  else if (is_array($_POST['tempimage']) && ($_POST['op'] == 'Preview' || $_POST['op'] == 'Submit')) {
         //print_r($node);
   //exit;
     $node->tempimage = (array)_video_image_temp_image_load(array_values($_POST['tempimage']['fids']));
@@ -356,8 +360,8 @@ function _video_image_presave(&$node) {
     //        implode(',', array_values($node->tempimage['fids'])));
 
     // initialize standard node fields
-    //print_r($image);
-    //exit;
+//    print_r($image);
+//    exit;
     $image->uid = $node->uid;
     $image->created = time();
     $image->title = t('Video thumbnail for !title', array('!title' => $node->title));
@@ -380,7 +384,8 @@ function _video_image_presave(&$node) {
       node_save($oldimage);
       $node->iid = $oldimage->nid;
       $node->serial_data['iid'] = $node->iid;
-    } else {
+    }
+    else {
       node_save($image);
       
       //print_r($image);
@@ -480,11 +485,12 @@ function _video_image_temp_image_store(&$file) {
       foreach ($image->images as $l => $f) {
         $info = image_get_info($f);
         $file->fid = db_last_insert_id('files','fid');
-        if($l=="_original") { // #556546 by linuxbox
+        if($l == "_original") { // #556546 by linuxbox
           if ($fid) {
             db_query("INSERT INTO {files} (fid, filename, filepath, filemime, filesize) VALUES (%d, '%s', '%s', '%s', '%s')",
                 $fid, "video_image_temp.$l", $f, $info['mime_type'], $info['file_size']);
-          } else {
+          }
+          else {
             db_query("INSERT INTO {files} (filename, filepath, filemime, filesize) VALUES ('%s', '%s', '%s', '%s')",
                 "video_image_temp.$l", $f, $info['mime_type'], $info['file_size']);
           }
@@ -553,8 +559,11 @@ function _video_image_publish_thumbnails() {
  * Create an image file object from a given image url
 */
 function _video_image_get_thumb_file_object($thumbnail_url, $id) {
-  
-  if($thumbnail_url && $thumbnail_url != '' && $image = image_gd_open($thumbnail_url, 'jpeg')) {
+//  echo $thumbnail_url;
+//  exit;
+  //if($thumbnail_url && $thumbnail_url != '' && $image = image_gd_open($thumbnail_url, 'jpeg')) {
+  if($thumbnail_url && $thumbnail_url != '' && $image = image_toolkit_invoke('open', array($thumbnail_url, 'jpeg'))) {
+    //image_toolkit_invoke('open', array($back_image, $info['extension']));
     // save image to temp directory for processing
     $location = file_directory_temp() .'/'. $id .'.jpg';
     image_gd_close($image, $location, 'jpeg');

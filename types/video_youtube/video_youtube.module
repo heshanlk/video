@@ -150,6 +150,9 @@ function video_youtube_v_validate($node) {
     // we have a good URL. Let's check that the video is available on Youtube and that it is embeddable.
     // the approach used here is to return errors only if Youtube explicitely says "an error has occurred"
       $id = _video_youtube_get_id($node->vidfile);
+      //test
+      //$video_entry = _video_apiclient_youtube_video_entry($id);
+
     // jlampton changed the youtube validation url
     //$response = _video_apiclient_youtube_request('gdata.youtube.com/feeds/api/videos', array('video_id' => $id));
     //    if(isset($response['ERROR'])) {
@@ -218,23 +221,26 @@ function video_youtube_v_auto_thumbnail($node) {
   if (count($_POST)) {
     if ($_POST['vidfile'] == $node->vidfile) {
       _video_image_thumbnail_debug(t('No new video to thumbnail'));
-      return NULL;
+      //return NULL;
     }
     if ($_POST['tempimage']['fids']['_original']) {
       _video_image_thumbnail_debug(t('Video already thumbnailed'));
-      return NULL;
+      //return NULL;
     }
     $vidfile = $_POST['vidfile'];
-  } else {
+  }
+  else {
     $vidfile = $node->vidfile;
   }
 
   //get the video id
   $id = _video_youtube_get_id($vidfile);
   // get thumbnail url
-  $thumbnail_url = _video_apiclient_youtube_get_thumbnail_url($id);
-
-  return _video_image_get_thumb_file_object($thumbnail_url, $id);
+  //$thumbnail_url = _video_apiclient_youtube_get_thumbnail_url($id);
+  $thumbnail_url = 'http://img.youtube.com/vi/'.$id.'/2.jpg ';
+  $img = _video_image_get_thumb_file_object($thumbnail_url, $id);
+  //return _video_image_get_thumb_file_object($thumbnail_url, $id);
+  return $img;
 }
 
 

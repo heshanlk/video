@@ -10,25 +10,132 @@
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
  * @todo
  */
- 
-function _video_apiclient_youtube_video_entry($id, $cacheable = TRUE) {
-  _video_apiclient_youtube_init('youtube');
-  //initialize Gdata lib
-  $yt = new Zend_Gdata_YouTube();
-  // set API version
-  $yt->setMajorProtocolVersion(2);
-  // if it's a cachable request, try to load a cached value
-  if ($cacheable) {
-    if ($cache = cache_get($id, 'cache')) {
-      return unserialize($cache->data);
+
+// Upload token url.
+define('VIDEO_UPLOAD_GDATA_TOKEN_UPLOAD_URL', 'http://gdata.youtube.com/action/GetUploadToken');
+
+// Note the different schemes for categories and developer tags.
+define('VIDEO_UPLOAD_GDATA_CATEGORIES_SCHEME', 'http://gdata.youtube.com/schemas/2007/categories.cat');
+define('VIDEO_UPLOAD_GDATA_DEVELOPER_TAG_SCHEME', 'http://gdata.youtube.com/schemas/2007/developertags.cat');
+
+// Authentication url.
+define('VIDEO_UPLOAD_GDATA_AUTHENTICATE_URL', 'https://www.google.com/youtube/accounts/ClientLogin');
+
+
+ /**
+ * Authenticate YouTube user account.
+ */
+function _video_upload_gdata_authenticate_youtube() {
+  // Username.
+  // $username = variable_get('video_upload_youtube_username', FALSE);
+  $username = 'heshanmw';
+  if (!$username) {
+    watchdog('video_upload', 'No YouTube username set', array(), WATCHDOG_ERROR);
+  }
+
+  // Password.
+  // $password = variable_get('video_upload_youtube_password', FALSE);
+  $password = 'chicagobulls';
+  if (!$password) {
+    watchdog('video_upload', 'No YouTube password set', array(), WATCHDOG_ERROR);
+  }
+
+  if (!$username || !$password) {
+    drupal_set_message(t('YouTube Uploads not currently available'), 'error');
+    return FALSE;
+  }
+
+  if (_video_apiclient_youtube_init('authenticate')) {
+    try {
+      $http_client = Zend_Gdata_ClientLogin::getHttpClient(
+      $username, // username
+      $password, // password
+      $service = 'youtube',
+      $client = NULL,
+      $source = 'drupal',
+      $loginToken = NULL,
+      $loginCaptcha = NULL,
+      VIDEO_UPLOAD_GDATA_AUTHENTICATE_URL
+      );
+    }
+    catch (Zend_Gdata_App_AuthException $authEx) {
+      drupal_set_message(t('YouTube uploads currently unavailable'), 'error');
+      watchdog('video_upload', 'Authentication error for YouTube Account', array(), WATCHDOG_ERROR);
+      return FALSE;
+    }
+    catch (Zend_Gdata_App_HttpException $e) {
+      drupal_set_message(t('YouTube uploads currently unavailable'), 'error');
+      watchdog('video_upload', 'Authentication error for YouTube Account: %error', array('%error' => $e->getMessage()), WATCHDOG_ERROR);
+      return FALSE;
     }
   }
-  //get video entried
-  $videoEntry = $yt->getVideoEntry($id);
-  // save a cacheable result for future use
-  if ($cacheable) {
-    cache_set($id, serialize($videoEntry), 'cache', time() + 3600);
+  else {
+    return FALSE;
   }
+
+  // Pass developer key.
+  // $developer_key = variable_get('video_upload_youtube_developer_key', FALSE);
+  $developer_key = variable_get('video_youtube_api_key', '');
+  if (!$developer_key) {
+    watchdog('video_upload', 'No developer key set', array(), WATCHDOG_ERROR);
+    drupal_set_message(t('YouTube Uploads not currently available'), 'error');
+    return FALSE;
+  }
+  $http_client->setHeaders('X-GData-Key', 'key=' . $developer_key);
+
+  return $http_client;
+}
+
+/*
+ *  Create a Zend YouTube object.
+ * @param mixed $http_client
+ *   Either a boolean (if FALSE, an un-authenticated connection is
+ *   made), or an authentication object.
+ * @return object Zend YouTube object
+ */
+function _video_apiclient_youtube_gdata($http_client = NULL) {
+  _video_apiclient_youtube_init('youtube');
+  try {
+    $yt = new Zend_Gdata_YouTube($http_client);
+    // Set API version to 2.0.
+    $yt->setMajorProtocolVersion(2);
+  }
+  catch (Zend_Gdata_App_HttpException $e) {
+    watchdog('youtube_video', 'Authentication error while creating a YouTube connection object: %error', array('%error' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  return $yt;
+}
+
+function _video_apiclient_youtube_video_entry($id, $cacheable = TRUE) {
+  //_video_apiclient_youtube_init('youtube');
+  // Get new http authentication.
+  $http_client = _video_upload_gdata_authenticate_youtube();
+  //initialize Gdata lib
+  $yt = _video_apiclient_youtube_gdata($http_client);
+  //$yt = new Zend_Gdata_YouTube($http_client);
+  // set API version
+  //$yt->setMajorProtocolVersion(2);
+  // if it's a cachable request, try to load a cached value
+//  if ($cacheable) {
+//    if ($cache = cache_get($id, 'cache')) {
+//      return unserialize($cache->data);
+//    }
+//  }
+  try{
+    //get video entried
+    $videoEntry = $yt->getVideoEntry($id);
+    watchdog('youtube_video', $videoEntry->getVideoDuration().$videoEntry->getVideoId().$videoEntry->getVideoTitle());
+//    print_r($videoEntry);
+//    exit;
+  }
+  catch (Zend_Gdata_App_HttpException $e){
+    watchdog('youtube_video', 'Authentication error while receiving YouTube connection object: %error', array('%error' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  // save a cacheable result for future use
+//  if ($cacheable) {
+//    cache_set($id, serialize($videoEntry), 'cache', time() + 3600);
+//  }
+  return $videoEntry;
 }
 
 /**
@@ -36,8 +143,9 @@ function _video_apiclient_youtube_video_entry($id, $cacheable = TRUE) {
  */
 function _video_apiclient_youtube_init($op) {
   // Include Zend loader class.
+  _video_upload_gdata_set_include_path();
   //TODO :  move Zend to the library folder
-  if (@include_once('youtube/Zend/Loader.php')) {
+  if (@include_once('Zend/Loader.php')) {
     switch ($op) {
     case 'authenticate' :
       Zend_Loader::loadClass('Zend_Gdata_ClientLogin');
@@ -53,6 +161,18 @@ function _video_apiclient_youtube_init($op) {
   }
 }
 
+/**
+ * Set include path for Zend GData client libraries, which should be
+ * installed locally in the module directory.
+ */
+function _video_upload_gdata_set_include_path() {
+  // Include path must be modified.
+  static $path;
+  if (!$path) {
+    $path = get_include_path();
+    set_include_path($path . PATH_SEPARATOR . drupal_get_path('module', 'video') . '/includes/youtube');
+  }
+}
 
 /**
  * When an include file requires to read an xml to receive information, such as for thumbnails,

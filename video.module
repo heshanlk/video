@@ -829,7 +829,7 @@ function video_validate($node, $form = array()) {
 /**
  * Implementation of hook submit
  */
-function video_presave(&$node) {
+function video_submit(&$node) {
   if(video_support_autoresolution($node) && ($node->new_video_upload_file_fid)) { // vtype support autoresolution getting
     $xy = module_invoke('video_' . $node->vtype, 'v_auto_resolution', $node);
     if ($xy) {
@@ -876,7 +876,7 @@ function video_presave(&$node) {
  */
 function video_insert($node) {
   // set the required properties of the video node
-  video_presave($node);
+//  video_presave($node);
   $node->serialized_data = serialize($node->serial_data); //Serialize the data for insertion into the database.
 
   return db_query("INSERT INTO {video} (vid, nid, vtype, vidfile, size, videox, videoy, video_bitrate, audio_bitrate, audio_sampling_rate, audio_channels, playtime_seconds, disable_multidownload, download_folder, use_play_folder, serialized_data) VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s')",
