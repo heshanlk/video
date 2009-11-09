@@ -348,7 +348,8 @@ function _video_image_presave(&$node) {
   if ($node->regenerate_thumbnail) {
     _video_image_regenerate_thumbnail($node);
   }
-  if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['_original']) {
+  //if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['_original']) {
+   if (is_array($node->tempimage['fids']) && $node->tempimage['fids']['thumbnail']) {
     $image = _video_image_temp_image_load(array_values($node->tempimage['fids']));
     //print_r($image);
     //exit;
