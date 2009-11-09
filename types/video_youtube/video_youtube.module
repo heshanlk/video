@@ -220,7 +220,7 @@ function _video_apiclient_youtube_get_thumbnail_url($id) {
 function video_youtube_v_auto_thumbnail($node) {
   if (count($_POST)) {
     if ($_POST['vidfile'] == $node->vidfile) {
-      _video_image_thumbnail_debug(t('No new video to thumbnail'));
+      //_video_image_thumbnail_debug(t('No new video to thumbnail'));
       //return NULL;
     }
     if ($_POST['tempimage']['fids']['_original']) {
