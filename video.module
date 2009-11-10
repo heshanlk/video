@@ -896,7 +896,7 @@ function video_update($node) {
   }
   else {
     // set the required properties of the video node
-    video_presave($node);
+    //video_presave($node);
     
   // GMM: make sure to save the encoded_fid
   if (!isset($node->serial_data['video_encoded_fid']) && $node->video_encoded_fid) {
