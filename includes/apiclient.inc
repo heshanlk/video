@@ -107,9 +107,10 @@ function _video_apiclient_youtube_gdata($http_client = NULL) {
 }
 
 function _video_apiclient_youtube_video_entry($id, $cacheable = TRUE) {
+  return TRUE;
   //_video_apiclient_youtube_init('youtube');
   // Get new http authentication.
-  $http_client = _video_upload_gdata_authenticate_youtube();
+  //$http_client = _video_upload_gdata_authenticate_youtube();
   //initialize Gdata lib
   $yt = _video_apiclient_youtube_gdata($http_client);
   //$yt = new Zend_Gdata_YouTube($http_client);
