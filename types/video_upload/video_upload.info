@@ -1,7 +1,9 @@
 ; $Id$
-name = Upload Video
-description = Enable Uploaded video support for Video module.
-dependencies[] = video
-dependencies[] = token
-package = "Video"
+name = video_upload
+description = handle video upload for video module using filefield and CCK.
 core = 6.x
+dependencies[] = content
+dependencies[] = filefield
+dependencies[] = video
+package = "Video"
+
