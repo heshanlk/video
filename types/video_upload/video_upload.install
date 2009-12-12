@@ -6,22 +6,22 @@
  */
 function video_upload_install() {
   drupal_load('module', 'content');
-  content_notify('install', 'video');
+  content_notify('install', 'video_upload');
 }
 
 function video_upload_uninstall() {
   drupal_load('module', 'content');
-  content_notify('uninstall', 'video');
+  content_notify('uninstall', 'video_upload');
 }
 
 function video_upload_enable() {
   drupal_load('module', 'content');
-  content_notify('enable', 'video');
+  content_notify('enable', 'video_upload');
 }
 
 function video_upload_disable() {
   drupal_load('module', 'content');
-  content_notify('disable', 'video');
+  content_notify('disable', 'video_upload');
 }
 
 /**
