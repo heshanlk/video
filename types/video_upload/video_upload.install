@@ -1,65 +1,35 @@
 <?php
-//$Id$
-/**
- * @file
- * Provide installation functions for video_upload.module .
- *
- * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
- *                              <heshanmw at gmail dot com>
- * @todo
- */
-
-/**
- * Implementation of hook_schema().
- */
-function video_upload_schema() {
-  $schema['video_upload'] = array(
-    'description' => t('Store video upload files'),
-    'fields' => array(
-      'vid' => array(
-        'description' => t('video id : primary key'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'nid' => array(
-        'description' => t('Node id : index of the  {node}.nid'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'fid' => array(
-        'description' => t('FIle id, index to the {files}.fid'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-    ),
-    'indexes' => array(
-    'fid' => array('fid'),
-    'nid' => array('nid'),
-    ),
-    'primary key' => array('vid'),
-  );
-
-  return $schema;
-}
+// $Id$
 
 /**
  * Implementation of hook_install().
  */
 function video_upload_install() {
-  // Create tables.
-  drupal_install_schema('video_upload');
-  // add video_upload_allowed_extensions variable mpeg, avi, wmv etc
+  drupal_load('module', 'content');
+  content_notify('install', 'video');
+}
+
+function video_upload_uninstall() {
+  drupal_load('module', 'content');
+  content_notify('uninstall', 'video');
+}
+
+function video_upload_enable() {
+  drupal_load('module', 'content');
+  content_notify('enable', 'video');
+}
+
+function video_upload_disable() {
+  drupal_load('module', 'content');
+  content_notify('disable', 'video');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implementation of hook_update_last_removed().
  */
-function video_upload_uninstall() {
-  drupal_uninstall_schema('video_upload');
+function video_upload_update_last_removed() {
+  // video_upload has later updates than this in the Drupal 5 version, however
+  // they deal with changing formatters that are not necessary for a successful
+  // upgrade to Drupal 6. Update 2 is as far as we really need.
+  return 2;
 }
