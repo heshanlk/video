@@ -3,13 +3,13 @@
 
 /**
  * @file
- * hook_file and video_upload file functions.
+ * hook_file and uploadfield file functions.
  */
 
 /**
  * Implementation of hook_file_insert().
  */
-function video_upload_file_insert($file) {
+function uploadfield_file_insert($file) {
   // Currently empty. Thumbnails are now generated on preview.
 }
 
@@ -18,16 +18,16 @@ function video_upload_file_insert($file) {
  *
  * Delete the admin thumbnail when the original is deleted.
  */
-function video_upload_file_delete($file) {
-  if (video_upload_file_is_image($file)) {
-    file_delete(video_upload_file_admin_thumb_path($file, FALSE));
+function uploadfield_file_delete($file) {
+  if (uploadfield_file_is_image($file)) {
+    file_delete(uploadfield_file_admin_thumb_path($file, FALSE));
   }
 }
 
 /**
  * Simple utility function to check if a file is an image.
  */
-function video_upload_file_is_image($file) {
+function uploadfield_file_is_image($file) {
   return TRUE;
   //TODO : add file validations
   $file = (object)$file;
@@ -37,13 +37,13 @@ function video_upload_file_is_image($file) {
 /**
  * Given a file, return the path the image thumbnail used while editing.
  */
-function video_upload_file_admin_thumb_path($file, $create_thumb = TRUE) {
+function uploadfield_file_admin_thumb_path($file, $create_thumb = TRUE) {
   $file = (object)$file;
   $short_path = preg_replace('/^' . preg_quote(file_directory_path(), '/') . '/', '', $file->filepath);
-  $filepath = file_directory_path() . '/video_upload_thumbs' . $short_path;
+  $filepath = file_directory_path() . '/uploadfield_thumbs' . $short_path;
 
   if ($create_thumb) {
-    video_upload_create_admin_thumb($file->filepath, $filepath);
+    uploadfield_create_admin_thumb($file->filepath, $filepath);
   }
 
   return $filepath;
@@ -52,13 +52,13 @@ function video_upload_file_admin_thumb_path($file, $create_thumb = TRUE) {
 /**
  * Create a thumbnail to be shown while editing an image.
  */
-function video_upload_create_admin_thumb($source, $destination) {
+function uploadfield_create_admin_thumb($source, $destination) {
   if (!is_file($source)) {
     return FALSE;
   }
 
   $info = image_get_info($source);
-  $size = explode('x', variable_get('video_upload_thumb_size', '100x100'));
+  $size = explode('x', variable_get('uploadfield_thumb_size', '100x100'));
 
   // Check if the destination image needs to be regenerated to match a new size.
   if (is_file($destination)) {

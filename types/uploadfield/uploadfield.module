@@ -3,22 +3,22 @@
 
 /**
  * @file
- * video_upload core hooks and menu callbacks.
+ * uploadfield core hooks and menu callbacks.
  */
 
-include_once dirname(__FILE__) . '/video_upload_file.inc';
-include_once dirname(__FILE__) . '/video_upload_widget.inc';
+include_once dirname(__FILE__) . '/uploadfield_file.inc';
+include_once dirname(__FILE__) . '/uploadfield_widget.inc';
 
 /**
  * Implementation of hook_init().
  *
  * Load required includes.
  */
-function video_upload_init() {
-  // If FileField is not available, immediately disable video_upload.
+function uploadfield_init() {
+  // If FileField is not available, immediately disable uploadfield.
   if (!module_exists('filefield')) {
-    module_disable(array('video_upload'));
-    drupal_set_message(t('The video_upload module has been disabled. The <a href="http://drupal.org/project/filefield">FileField module</a> needs to be installed for it to work properly.'));
+    module_disable(array('uploadfield'));
+    drupal_set_message(t('The uploadfield module has been disabled. The <a href="http://drupal.org/project/filefield">FileField module</a> needs to be installed for it to work properly.'));
     return;
   }
 }
@@ -26,49 +26,49 @@ function video_upload_init() {
 /**
  * Implementation of hook_theme().
  */
-function video_upload_theme() {
+function uploadfield_theme() {
   return array(
-    // Theme an image uploaded to video_upload with alt and title.
+    // Theme an image uploaded to uploadfield with alt and title.
     // TODO: Switch to core theme image if possible.
-    'video_upload_image' => array(
+    'uploadfield_image' => array(
       'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
     ),
-    // Theme an video_upload field item. It calls imagefied_image with the proper
+    // Theme an uploadfield field item. It calls imagefied_image with the proper
     // item properties as arguments.
-    'video_upload_item' => array(
+    'uploadfield_item' => array(
       'arguments' => array('item' => NULL),
     ),
-    // video_upload_widget form element type theme function.
-    'video_upload_widget' => array(
+    // uploadfield_widget form element type theme function.
+    'uploadfield_widget' => array(
       'arguments' => array('element' => NULL),
-      'file' => 'video_upload_widget.inc',
+      'file' => 'uploadfield_widget.inc',
     ),
-    // Use to generate a preview (admin view) of an video_upload item for use in
+    // Use to generate a preview (admin view) of an uploadfield item for use in
     // field item forms and filefield widgets. Invoked by filefield_widget_process.
-    'video_upload_widget_preview' => array(
+    'uploadfield_widget_preview' => array(
       'arguments' => array('item' => NULL),
     ),
     // Theme function for the field item elements. allows you to place children
     // within the context of the parent.
-    'video_upload_widget_item' => array(
+    'uploadfield_widget_item' => array(
       'arguments' => array('element' => NULL),
     ),
-    // Generates and img tag to the admin thumbnail of an video_upload upload.
-    'video_upload_admin_thumbnail' => array(
+    // Generates and img tag to the admin thumbnail of an uploadfield upload.
+    'uploadfield_admin_thumbnail' => array(
       'arguments' => array('item' => NULL),
     ),
-    // video_upload formatter theme functions.
-    'video_upload_formatter_video_plain' => array(
+    // uploadfield formatter theme functions.
+    'uploadfield_formatter_video_plain' => array(
       'arguments' => array('element' => NULL),
-      'file' => 'video_upload_formatter.inc',
+      'file' => 'uploadfield_formatter.inc',
     ),
-    'video_upload_formatter_video_nodelink' => array(
+    'uploadfield_formatter_video_nodelink' => array(
       'arguments' => array('element' => NULL),
-      'file' => 'video_upload_formatter.inc',
+      'file' => 'uploadfield_formatter.inc',
     ),
-    'video_upload_formatter_video_imagelink' => array(
+    'uploadfield_formatter_video_imagelink' => array(
       'arguments' => array('element' => NULL),
-      'file' => 'video_upload_formatter.inc',
+      'file' => 'uploadfield_formatter.inc',
     ),
   );
 }
@@ -76,17 +76,17 @@ function video_upload_theme() {
 /**
  * Implementation of hook_elements().
  */
-function video_upload_elements() {
+function uploadfield_elements() {
   $elements = array();
 
-  // An video_upload is really just a FileField with extra processing.
+  // An uploadfield is really just a FileField with extra processing.
   $filefield_elements = module_invoke('filefield', 'elements');
-  $elements['video_upload_widget'] = $filefield_elements['filefield_widget'];
-  $elements['video_upload_widget']['#process'][] = 'video_upload_widget_process';
-  $elements['video_upload_widget']['#element_validate'][] = 'video_upload_widget_validate';
+  $elements['uploadfield_widget'] = $filefield_elements['filefield_widget'];
+  $elements['uploadfield_widget']['#process'][] = 'uploadfield_widget_process';
+  $elements['uploadfield_widget']['#element_validate'][] = 'uploadfield_widget_validate';
 
-  // video_upload needs a separate value callback to save its alt and title texts.
-  $elements['video_upload_widget']['#value_callback'] = 'video_upload_widget_value';
+  // uploadfield needs a separate value callback to save its alt and title texts.
+  $elements['uploadfield_widget']['#value_callback'] = 'uploadfield_widget_value';
 
   return $elements;
 }
@@ -94,10 +94,10 @@ function video_upload_elements() {
 /**
  * Implementation of hook_file_download.
  */
-function video_upload_file_download($filepath) {
+function uploadfield_file_download($filepath) {
   // Return headers for admin thumbnails if private files are enabled.
-  if (strpos($filepath, 'video_upload_thumbs') !== FALSE) {
-    $original_path = str_replace('video_upload_thumbs/', '', $filepath);
+  if (strpos($filepath, 'uploadfield_thumbs') !== FALSE) {
+    $original_path = str_replace('uploadfield_thumbs/', '', $filepath);
     $original_full_path = file_create_path($original_path);
     $thumb_full_path = file_create_path($filepath);
 
@@ -114,7 +114,7 @@ function video_upload_file_download($filepath) {
   }
 
   // Return headers for default images.
-  if (strpos($filepath, 'video_upload_default_images') !== FALSE) {
+  if (strpos($filepath, 'uploadfield_default_images') !== FALSE) {
     $full_path = file_create_path($filepath);
     if ($info = getimagesize($full_path)) {
       return array(
@@ -128,10 +128,10 @@ function video_upload_file_download($filepath) {
 /**
  * Implementation of CCK's hook_widget_info().
  */
-function video_upload_widget_info() {
-  $module_path = drupal_get_path('module', 'video_upload');
+function uploadfield_widget_info() {
+  $module_path = drupal_get_path('module', 'uploadfield');
   return array(
-    'video_upload_widget' => array(
+    'uploadfield_widget' => array(
       'label' => t('Video'),
       'field types' => array('filefield'),
       'multiple values' => CONTENT_HANDLE_CORE,
@@ -144,14 +144,14 @@ function video_upload_widget_info() {
 /**
  * Implementation of CCK's hook_widget_settings().
  */
-function video_upload_widget_settings($op, $widget) {
+function uploadfield_widget_settings($op, $widget) {
   switch ($op) {
     case 'form':
-      return video_upload_widget_settings_form($widget);
+      return uploadfield_widget_settings_form($widget);
     case 'validate':
-      return video_upload_widget_settings_validate($widget);
+      return uploadfield_widget_settings_validate($widget);
     case 'save':
-      return video_upload_widget_settings_save($widget);
+      return uploadfield_widget_settings_save($widget);
   }
 }
 
@@ -160,7 +160,7 @@ function video_upload_widget_settings($op, $widget) {
  *
  * Assign default properties to item and delegate to FileField.
  */
-function video_upload_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+function uploadfield_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   // Add default values to items.
   // TODO: use CCK's default value callback.
   if (empty($items[$delta])) {
@@ -171,8 +171,8 @@ function video_upload_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   // Note that FileField needs to modify $form by reference.
   $element = filefield_widget($form, $form_state, $field, $items, $delta);
 
-  // Add video_upload specific validators.
-//  $element['#upload_validators'] = array_merge($element['#upload_validators'], video_upload_widget_upload_validators($field));
+  // Add uploadfield specific validators.
+//  $element['#upload_validators'] = array_merge($element['#upload_validators'], uploadfield_widget_upload_validators($field));
 
   return $element;
 }
@@ -186,7 +186,7 @@ function video_upload_widget(&$form, &$form_state, $field, $items, $delta = 0) {
  *   An array suitable for passing to file_save_upload() or the file field
  *   element's '#upload_validators' property.
  */
-function video_upload_widget_upload_validators($field) {
+function uploadfield_widget_upload_validators($field) {
   $validators = array();
 
   // Ensure that only web images are supported.
@@ -214,8 +214,8 @@ function video_upload_widget_upload_validators($field) {
 /**
  * Implementation of CCK's hook_field_formatter_info().
  */
-function video_upload_field_formatter_info() {
-  $module_path = drupal_get_path('module', 'video_upload');
+function uploadfield_field_formatter_info() {
+  $module_path = drupal_get_path('module', 'uploadfield');
   $formatters = array(
     'video_plain' => array(
       'label' => t('Video'),
@@ -239,7 +239,7 @@ function video_upload_field_formatter_info() {
 /**
  * Implementation of CCK's hook_default_value().
  */
-function video_upload_default_value(&$form, &$form_state, $field, $delta) {
+function uploadfield_default_value(&$form, &$form_state, $field, $delta) {
   return filefield_default_value($form, $form_state, $field, $delta);
 }
 
@@ -248,19 +248,19 @@ function video_upload_default_value(&$form, &$form_state, $field, $delta) {
  *
  * Modify the add new field form to make "Image" the default formatter.
  */
-function video_upload_form_content_field_overview_form_alter(&$form, &$form_state) {
-  $form['#submit'][] = 'video_upload_form_content_field_overview_submit';
+function uploadfield_form_content_field_overview_form_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'uploadfield_form_content_field_overview_submit';
 }
 
 /**
  * Submit handler to set a new field's formatter to "video_plain".
  */
-function video_upload_form_content_field_overview_submit(&$form, &$form_state) {
+function uploadfield_form_content_field_overview_submit(&$form, &$form_state) {
   if (isset($form_state['fields_added']['_add_new_field']) && isset($form['#type_name'])) {
     $new_field = $form_state['fields_added']['_add_new_field'];
     $node_type = $form['#type_name'];
     $field = content_fields($new_field, $node_type);
-    if ($field['widget']['module'] == 'video_upload') {
+    if ($field['widget']['module'] == 'uploadfield') {
       foreach ($field['display_settings'] as $display_type => $display_settings) {
         if ($field['display_settings'][$display_type]['format'] == 'default') {
           $field['display_settings'][$display_type]['format'] = 'video_plain';
@@ -274,9 +274,9 @@ function video_upload_form_content_field_overview_submit(&$form, &$form_state) {
 /**
  * @defgroup "Theme Callbacks"
  * @{
- * @see video_upload_theme().
+ * @see uploadfield_theme().
  */
-function theme_video_upload_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
+function theme_uploadfield_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   $file = (array)$file;
   if (!is_file($file['filepath'])) {
     return '<!-- File not found: '. $file['filepath'] .' -->';
@@ -315,23 +315,23 @@ function theme_video_upload_image($file, $alt = '', $title = '', $attributes = N
   return '<img '. $attributes .' />';
 }
 
-function theme_video_upload_item($item) {
-  return theme('video_upload_image', $item, $item['alt'], $item['title']);
+function theme_uploadfield_item($item) {
+  return theme('uploadfield_image', $item, $item['alt'], $item['title']);
 }
 
-function theme_video_upload_widget_preview($item = NULL) {
-  return '<div class="video_upload-preview">' . theme('video_upload_admin_thumbnail', $item) . '</div>';
+function theme_uploadfield_widget_preview($item = NULL) {
+  return '<div class="uploadfield-preview">' . theme('uploadfield_admin_thumbnail', $item) . '</div>';
 }
 
-function theme_video_upload_widget_item($element) {
+function theme_uploadfield_widget_item($element) {
   return theme('filefield_widget_item', $element);
 }
 
-function theme_video_upload_admin_thumbnail($item = NULL) {
+function theme_uploadfield_admin_thumbnail($item = NULL) {
   if (is_null($item) || empty($item['filepath'])) {
     return '<!-- link to default admin thumb -->';
   }
-  $thumb_path = video_upload_file_admin_thumb_path($item);
+  $thumb_path = uploadfield_file_admin_thumb_path($item);
   return '<img src="'. file_create_url($thumb_path) .'" title="' . check_plain($item['filename']) . '" />';
 }
 /**

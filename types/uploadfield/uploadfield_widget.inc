@@ -3,13 +3,13 @@
  
 /**
  * @file
- * video_upload widget hooks and callbacks.
+ * uploadfield widget hooks and callbacks.
  */
 
 /**
  * Implementation of CCK's hook_widget_settings($op = 'form').
  */
-function video_upload_widget_settings_form($widget) {
+function uploadfield_widget_settings_form($widget) {
   $form = module_invoke('filefield', 'widget_settings', 'form', $widget);
 
   if ($form['file_extensions']['#default_value'] == 'txt') {
@@ -40,7 +40,7 @@ function video_upload_widget_settings_form($widget) {
   $form['default'] = array(
     '#type' => 'fieldset',
     '#title' => t('Default video image'),
-    '#element_validate' => array('_video_upload_widget_settings_default_validate'),
+    '#element_validate' => array('_uploadfield_widget_settings_default_validate'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#weight' => 10
@@ -57,7 +57,7 @@ function video_upload_widget_settings_form($widget) {
   if (!empty($widget['default_image'])) {
     $form['default']['default_image_thumbnail'] = array(
       '#type' => 'markup',
-      '#value' => theme('video_upload_image', $widget['default_image'], '', '', array('width' => '150'), FALSE),
+      '#value' => theme('uploadfield_image', $widget['default_image'], '', '', array('width' => '150'), FALSE),
     );
   }
   $form['default']['default_image_upload'] = array(
@@ -77,14 +77,14 @@ function video_upload_widget_settings_form($widget) {
 }
 
 /**
- * Element specific validation for video_upload default value.
+ * Element specific validation for uploadfield default value.
  *
- * Validated in a separate function from video_upload_field() to get access
+ * Validated in a separate function from uploadfield_field() to get access
  * to the $form_state variable.
  */
-function _video_upload_widget_settings_default_validate($element, &$form_state) {
+function _uploadfield_widget_settings_default_validate($element, &$form_state) {
   // Verify the destination exists
-  $destination = file_directory_path() .'/video_upload_default_images';
+  $destination = file_directory_path() .'/uploadfield_default_images';
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('default_image', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
@@ -117,7 +117,7 @@ function _video_upload_widget_settings_default_validate($element, &$form_state) 
 /**
  * Implementation of CCK's hook_widget_settings($op = 'validate').
  */
-function video_upload_widget_settings_validate($widget) {
+function uploadfield_widget_settings_validate($widget) {
   // Check that only web images are specified in the callback.
   $extensions = array_filter(explode(' ', $widget['file_extensions']));
   $web_extensions = array('mp4', 'mpeg', 'mpg', 'wmv', 'avi');
@@ -136,7 +136,7 @@ function video_upload_widget_settings_validate($widget) {
 /**
  * Implementation of CCK's hook_widget_settings($op = 'save').
  */
-function video_upload_widget_settings_save($widget) {
+function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
   return array_merge($filefield_settings, array('max_resolution', 'min_resolution', 'alt',  'custom_alt', 'title', 'custom_title', 'title_type', 'default_image', 'use_default_image'));
 }
@@ -144,7 +144,7 @@ function video_upload_widget_settings_save($widget) {
 /**
  * Element #value_callback function.
  */
-function video_upload_widget_value($element, $edit = FALSE) {
+function uploadfield_widget_value($element, $edit = FALSE) {
   $item = filefield_widget_value($element, $edit);
   if ($edit) {
     $item['alt'] = isset($edit['alt']) ? $edit['alt'] : '';
@@ -160,14 +160,14 @@ function video_upload_widget_value($element, $edit = FALSE) {
 /**
  * Element #process callback function.
  */
-function video_upload_widget_process($element, $edit, &$form_state, $form) {
+function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
 
-  $element['#theme'] = 'video_upload_widget_item';
+  $element['#theme'] = 'uploadfield_widget_item';
 
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
-    $element['preview']['#value'] = theme('video_upload_widget_preview', $element['#value']);
+    $element['preview']['#value'] = theme('uploadfield_widget_preview', $element['#value']);
   }
 
   // Check if using the default alt text and replace tokens.
@@ -180,8 +180,8 @@ function video_upload_widget_process($element, $edit, &$form_state, $form) {
     '#type' => $field['widget']['custom_alt'] ? 'textfield' : 'value',
     '#default_value' => $default_alt ? $field['widget']['alt'] : $file['data']['alt'],
     '#description' => t('This text will be used by screen readers, search engines, or when the image cannot be loaded.'),
-    '#maxlength' => variable_get('video_upload_alt_length', 80), // See http://www.gawds.org/show.php?contentid=28.
-    '#attributes' => array('class' => 'video_upload-text'),
+    '#maxlength' => variable_get('uploadfield_alt_length', 80), // See http://www.gawds.org/show.php?contentid=28.
+    '#attributes' => array('class' => 'uploadfield-text'),
   );
   // #value must be hard-coded if #type = 'value'.
   if ($default_alt) {
@@ -207,8 +207,8 @@ function video_upload_widget_process($element, $edit, &$form_state, $form) {
     '#title' => t('Title'),
     '#default_value' => $default_title ? $field['widget']['title'] : $file['data']['title'],
     '#description' => t('The title is used as a tool tip when the user hovers the mouse over the image.'),
-    '#maxlength' => variable_get('video_upload_title_length', 500),
-    '#attributes' => array('class' => 'video_upload-text'),
+    '#maxlength' => variable_get('uploadfield_title_length', 500),
+    '#attributes' => array('class' => 'uploadfield-text'),
   );
   // #value must be hard-coded if #type = 'value'.
   if ($default_title) {
@@ -221,7 +221,7 @@ function video_upload_widget_process($element, $edit, &$form_state, $form) {
 /**
  * FormAPI theme function. Theme the output of an image field.
  */
-function theme_video_upload_widget($element) {
-  drupal_add_css(drupal_get_path('module', 'video_upload') .'/video_upload.css');
+function theme_uploadfield_widget($element) {
+  drupal_add_css(drupal_get_path('module', 'uploadfield') .'/uploadfield.css');
   return theme('form_element', $element, $element['#children']);
 }
