@@ -16,30 +16,10 @@ function uploadfield_widget_settings_form($widget) {
     $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv';
   }
 
-  $form['default_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Default video player width'),
-    '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
-    '#size' => 15,
-    '#maxlength' => 10,
-    '#description' => t('The width of the video player.'),
-    '#weight' => 2.1,
-  );
-  $form['min_resolution'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Minimum resolution for Video Images'),
-    '#default_value' => !empty($widget['min_resolution']) ? $widget['min_resolution'] : '100x100',
-    '#size' => 15,
-    '#maxlength' => 10,
-    '#description' =>
-    t('The minimum allowed image size expressed as WIDTHxHEIGHT (e.g. 640x480). Set to 0 for no restriction. If an image that is smaller than these dimensions is uploaded it will be rejected.'),
-    '#weight' => 2.2,
-  );
-
   // Default image settings.
   $form['default'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Default video image'),
+    '#title' => t('Default Video Thumbnail'),
     '#element_validate' => array('_uploadfield_widget_settings_default_validate'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
@@ -49,9 +29,9 @@ function uploadfield_widget_settings_form($widget) {
   // Present a video image of the current default image.
   $form['default']['use_default_image'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Use default image'),
+    '#title' => t('Use default video thumbnail'),
     '#default_value' =>  TRUE,
-    '#description' => t('When an video image is not uploaded, show a default image on display.'),
+    '#description' => t('Choose a image as a video thumbnail.'),
   );
 
   if (!empty($widget['default_image'])) {
@@ -63,7 +43,7 @@ function uploadfield_widget_settings_form($widget) {
   $form['default']['default_image_upload'] = array(
     '#type'  => 'file',
     '#title' => t('Upload image'),
-    '#description' => t('Choose a image that will be used as default.'),
+    '#description' => t('Choose a image that will be used as default video thumbnail.'),
   );
 
   // We set this value on 'validate' so we can get CCK to add it
@@ -161,6 +141,8 @@ function uploadfield_widget_value($element, $edit = FALSE) {
  * Element #process callback function.
  */
 function uploadfield_widget_process($element, $edit, &$form_state, $form) {
+  print_r(content_fields($element['#field_name'], $element['#type_name']));
+//  exit;
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
 
@@ -214,6 +196,9 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   if ($default_title) {
     $element['data']['title']['#value'] = $field['widget']['title'];
   }
+
+  $element['data']['title']['#value'] = 'Title';
+  $element['data']['alt']['#value'] = 'alt';
 
   return $element;
 }
