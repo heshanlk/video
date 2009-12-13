@@ -1,6 +1,7 @@
 ;$Id$
+
 name = Video
 description = Allows video nodes.
 package = "Video"
+dependencies[] = content
 core = 6.x
-
