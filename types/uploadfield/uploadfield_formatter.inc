@@ -7,7 +7,7 @@
  */
 
 //include common player file
-module_load_include('inc', 'video', '/includes/common'); 
+
 
 /**
  *
@@ -15,20 +15,24 @@ module_load_include('inc', 'video', '/includes/common');
  * @return <type> 
  */
 function theme_uploadfield_formatter_video_plain($element) {
-//  print_r($element);
+//  print_r($field = content_fields($element['#field_name'], $element['#type_name']););
   // Inside a view $element may contain null data. In that case, just return.
+  module_load_include('inc', 'video', '/includes/common');
+
   if (empty($element['#item']['fid'])) {
     return '';
   }
 
-  $field = content_fields($element['#field_name']);
-  $item = $element['#item'];
+  return _video_common_get_player($element);
 
-  $item['data']['alt'] = isset($item['data']['alt']) ? $item['data']['alt'] : '';
-  $item['data']['title'] = isset($item['data']['title']) ? $item['data']['title'] : NULL;
-
-  $class = 'uploadfield uploadfield-'. $field['field_name'];
-  return  theme('uploadfield_image', $item, $item['data']['alt'], $item['data']['title'], array('class' => $class));
+//  $field = content_fields($element['#field_name']);
+//  $item = $element['#item'];
+//
+//  $item['data']['alt'] = isset($item['data']['alt']) ? $item['data']['alt'] : '';
+//  $item['data']['title'] = isset($item['data']['title']) ? $item['data']['title'] : NULL;
+//
+//  $class = 'uploadfield uploadfield-'. $field['field_name'];
+//  return  theme('uploadfield_image', $item, $item['data']['alt'], $item['data']['title'], array('class' => $class));
 }
 
 
@@ -39,6 +43,7 @@ function theme_uploadfield_formatter_video_plain($element) {
  */
  
 function theme_uploadfield_formatter_video_nodelink($element) {
+  $field = content_fields($element['#field_name'], $element['#type_name']);
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) {
     return '';

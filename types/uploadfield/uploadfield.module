@@ -15,7 +15,7 @@ include_once dirname(__FILE__) . '/uploadfield_widget.inc';
  * Load required includes.
  */
 function uploadfield_init() {
-  // If FileField is not available, immediately disable uploadfield.
+// If FileField is not available, immediately disable uploadfield.
   if (!module_exists('filefield')) {
     module_disable(array('uploadfield'));
     drupal_set_message(t('The uploadfield module has been disabled. The <a href="http://drupal.org/project/filefield">FileField module</a> needs to be installed for it to work properly.'));
@@ -28,48 +28,77 @@ function uploadfield_init() {
  */
 function uploadfield_theme() {
   return array(
-    // Theme an image uploaded to uploadfield with alt and title.
-    // TODO: Switch to core theme image if possible.
-    'uploadfield_image' => array(
-      'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
-    ),
-    // Theme an uploadfield field item. It calls imagefied_image with the proper
-    // item properties as arguments.
-    'uploadfield_item' => array(
-      'arguments' => array('item' => NULL),
-    ),
-    // uploadfield_widget form element type theme function.
-    'uploadfield_widget' => array(
-      'arguments' => array('element' => NULL),
-      'file' => 'uploadfield_widget.inc',
-    ),
-    // Use to generate a preview (admin view) of an uploadfield item for use in
-    // field item forms and filefield widgets. Invoked by filefield_widget_process.
-    'uploadfield_widget_preview' => array(
-      'arguments' => array('item' => NULL),
-    ),
-    // Theme function for the field item elements. allows you to place children
-    // within the context of the parent.
-    'uploadfield_widget_item' => array(
-      'arguments' => array('element' => NULL),
-    ),
-    // Generates and img tag to the admin thumbnail of an uploadfield upload.
-    'uploadfield_admin_thumbnail' => array(
-      'arguments' => array('item' => NULL),
-    ),
-    // uploadfield formatter theme functions.
-    'uploadfield_formatter_video_plain' => array(
-      'arguments' => array('element' => NULL),
-      'file' => 'uploadfield_formatter.inc',
-    ),
-    'uploadfield_formatter_video_nodelink' => array(
-      'arguments' => array('element' => NULL),
-      'file' => 'uploadfield_formatter.inc',
-    ),
-    'uploadfield_formatter_video_imagelink' => array(
-      'arguments' => array('element' => NULL),
-      'file' => 'uploadfield_formatter.inc',
-    ),
+  // Theme an image uploaded to uploadfield with alt and title.
+  // TODO: Switch to core theme image if possible.
+  'uploadfield_image' => array(
+  'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
+  ),
+  // Theme an uploadfield field item. It calls imagefied_image with the proper
+  // item properties as arguments.
+  'uploadfield_item' => array(
+  'arguments' => array('item' => NULL),
+  ),
+  // uploadfield_widget form element type theme function.
+  'uploadfield_widget' => array(
+  'arguments' => array('element' => NULL),
+  'file' => 'uploadfield_widget.inc',
+  ),
+  // Use to generate a preview (admin view) of an uploadfield item for use in
+  // field item forms and filefield widgets. Invoked by filefield_widget_process.
+  'uploadfield_widget_preview' => array(
+  'arguments' => array('item' => NULL),
+  ),
+  // Theme function for the field item elements. allows you to place children
+  // within the context of the parent.
+  'uploadfield_widget_item' => array(
+  'arguments' => array('element' => NULL),
+  ),
+  // Generates and img tag to the admin thumbnail of an uploadfield upload.
+  'uploadfield_admin_thumbnail' => array(
+  'arguments' => array('item' => NULL),
+  ),
+  // uploadfield formatter theme functions.
+  'uploadfield_formatter_video_plain' => array(
+  'arguments' => array('element' => NULL),
+  'file' => 'uploadfield_formatter.inc',
+  ),
+  'uploadfield_formatter_video_nodelink' => array(
+  'arguments' => array('element' => NULL),
+  'file' => 'uploadfield_formatter.inc',
+  ),
+  'uploadfield_formatter_video_imagelink' => array(
+  'arguments' => array('element' => NULL),
+  'file' => 'uploadfield_formatter.inc',
+  ),
+  
+  //from includes/common.inc
+  'video_format_play' => array(
+  'arguments' => array('output' => NULL,'url' => NULL,'title' => NULL,'link_text' => NULL),
+  ),
+  'video_play_dcr' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_divx' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_flash' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_ogg_theora' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_quicktime' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_realmedia' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_swf' => array(
+  'arguments' => array('node' => NULL),
+  ),
+  'video_play_windowsmedia' => array(
+  'arguments' => array('node' => NULL),
+  ),
   );
 }
 
@@ -95,7 +124,7 @@ function uploadfield_elements() {
  * Implementation of hook_file_download.
  */
 function uploadfield_file_download($filepath) {
-  // Return headers for admin thumbnails if private files are enabled.
+// Return headers for admin thumbnails if private files are enabled.
   if (strpos($filepath, 'uploadfield_thumbs') !== FALSE) {
     $original_path = str_replace('uploadfield_thumbs/', '', $filepath);
     $original_full_path = file_create_path($original_path);
@@ -107,8 +136,8 @@ function uploadfield_file_download($filepath) {
     $access = ($status == 0 || module_invoke_all('file_download', $original_path));
     if ($access && $info = getimagesize($thumb_full_path)) {
       return array(
-        'Content-Type: ' . $info['mime'],
-        'Content-Length: ' . filesize($thumb_full_path)
+      'Content-Type: ' . $info['mime'],
+      'Content-Length: ' . filesize($thumb_full_path)
       );
     }
   }
@@ -118,8 +147,8 @@ function uploadfield_file_download($filepath) {
     $full_path = file_create_path($filepath);
     if ($info = getimagesize($full_path)) {
       return array(
-        'Content-Type: ' . $info['mime'],
-        'Content-Length: ' . filesize($full_path)
+      'Content-Type: ' . $info['mime'],
+      'Content-Length: ' . filesize($full_path)
       );
     }
   }
@@ -131,13 +160,13 @@ function uploadfield_file_download($filepath) {
 function uploadfield_widget_info() {
   $module_path = drupal_get_path('module', 'uploadfield');
   return array(
-    'uploadfield_widget' => array(
-      'label' => t('Video'),
-      'field types' => array('filefield'),
-      'multiple values' => CONTENT_HANDLE_CORE,
-      'callbacks' => array('default value' => CONTENT_CALLBACK_CUSTOM),
-      'description' => t('An edit widget for video files, including video thumbnails and transcoding to flash.'),
-    ),
+  'uploadfield_widget' => array(
+  'label' => t('Video'),
+  'field types' => array('filefield'),
+  'multiple values' => CONTENT_HANDLE_CORE,
+  'callbacks' => array('default value' => CONTENT_CALLBACK_CUSTOM),
+  'description' => t('An edit widget for video files, including video thumbnails and transcoding to flash.'),
+  ),
   );
 }
 
@@ -161,18 +190,18 @@ function uploadfield_widget_settings($op, $widget) {
  * Assign default properties to item and delegate to FileField.
  */
 function uploadfield_widget(&$form, &$form_state, $field, $items, $delta = 0) {
-  // Add default values to items.
-  // TODO: use CCK's default value callback.
+// Add default values to items.
+// TODO: use CCK's default value callback.
   if (empty($items[$delta])) {
     $items[$delta] = array('alt' => '', 'title' => '');
   }
-  
+
   // Start with the FileField widget as a basic start.
   // Note that FileField needs to modify $form by reference.
   $element = filefield_widget($form, $form_state, $field, $items, $delta);
 
   // Add uploadfield specific validators.
-//  $element['#upload_validators'] = array_merge($element['#upload_validators'], uploadfield_widget_upload_validators($field));
+  //  $element['#upload_validators'] = array_merge($element['#upload_validators'], uploadfield_widget_upload_validators($field));
 
   return $element;
 }
@@ -198,13 +227,13 @@ function uploadfield_widget_upload_validators($field) {
   $validators['filefield_validate_extensions'][0] = implode(' ', array_intersect($extensions, $web_extensions));
 
   // Add the image validator as a basic safety check.
-//  $validators['filefield_validate_is_image'] = array();
+  //  $validators['filefield_validate_is_image'] = array();
 
   // Add validators for resolutions.
   if (!empty($field['widget']['max_resolution']) || !empty($field['widget']['min_resolution'])) {
     $validators['filefield_validate_image_resolution'] = array(
-      $field['widget']['max_resolution'],
-      $field['widget']['min_resolution'],
+        $field['widget']['max_resolution'],
+        $field['widget']['min_resolution'],
     );
   }
 
@@ -217,21 +246,21 @@ function uploadfield_widget_upload_validators($field) {
 function uploadfield_field_formatter_info() {
   $module_path = drupal_get_path('module', 'uploadfield');
   $formatters = array(
-    'video_plain' => array(
-      'label' => t('Video'),
+      'video_plain' => array(
+      'label' => t('Video node'),
       'field types' => array('filefield'),
       'description' => t('Displays video files with player embeded.'),
-    ),
-    'video_nodelink' => array(
-      'label' => t('Video Thumb linked to node'),
+      ),
+      'video_nodelink' => array(
+      'label' => t('Video Thumbnail linked to Video node'),
       'field types' => array('filefield'),
       'description' => t('Displays video thumb files then the video node.'),
-    ),
-    'video_imagelink' => array(
-      'label' => t('Video Thumb to file'),
+      ),
+      'video_imagelink' => array(
+      'label' => t('Video Thumbnail linked to video file download'),
       'field types' => array('filefield'),
       'description' => t('Displays video files in their original size.'),
-    ),
+      ),
   );
   return $formatters;
 }
@@ -283,7 +312,7 @@ function theme_uploadfield_image($file, $alt = '', $title = '', $attributes = NU
   }
 
   if ($getsize) {
-    // Use cached width and height if available.
+  // Use cached width and height if available.
     if (!empty($file['data']['width']) && !empty($file['data']['height'])) {
       $attributes['width']  = $file['data']['width'];
       $attributes['height'] = $file['data']['height'];
