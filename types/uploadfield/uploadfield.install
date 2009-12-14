@@ -23,13 +23,3 @@ function uploadfield_disable() {
   drupal_load('module', 'content');
   content_notify('disable', 'uploadfield');
 }
-
-/**
- * Implementation of hook_update_last_removed().
- */
-function uploadfield_update_last_removed() {
-  // uploadfield has later updates than this in the Drupal 5 version, however
-  // they deal with changing formatters that are not necessary for a successful
-  // upgrade to Drupal 6. Update 2 is as far as we really need.
-  return 2;
-}
