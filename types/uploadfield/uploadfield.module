@@ -166,7 +166,7 @@ function uploadfield_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   if (empty($items[$delta])) {
     $items[$delta] = array('alt' => '', 'title' => '');
   }
-
+  
   // Start with the FileField widget as a basic start.
   // Note that FileField needs to modify $form by reference.
   $element = filefield_widget($form, $form_state, $field, $items, $delta);

@@ -27,7 +27,7 @@ function uploadfield_widget_settings_form($widget) {
   );
 
   // Present a video image of the current default image.
-  $form['default']['use_default_image'] = array(
+  $form['default']['use_default_thumb'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use default video thumbnail'),
     '#default_value' =>  TRUE,
@@ -118,7 +118,7 @@ function uploadfield_widget_settings_validate($widget) {
  */
 function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
-  return array_merge($filefield_settings, array('max_resolution', 'min_resolution', 'alt',  'custom_alt', 'title', 'custom_title', 'title_type', 'default_image', 'use_default_image'));
+  return array_merge($filefield_settings, array('default_image', 'use_default_thumb'));
 }
 
 /**
@@ -129,10 +129,12 @@ function uploadfield_widget_value($element, $edit = FALSE) {
   if ($edit) {
     $item['alt'] = isset($edit['alt']) ? $edit['alt'] : '';
     $item['title'] = isset($edit['title']) ? $edit['title'] : '';
+    $item['default_image'] = isset($edit['default_image']['fid']) ? $edit['default_image']['fid'] : 'novalue';
   }
   else {
     $item['alt'] = '';
     $item['title'] = '';
+    $item['default_image'] = 'noval';
   }
   return $item;
 }
@@ -141,8 +143,6 @@ function uploadfield_widget_value($element, $edit = FALSE) {
  * Element #process callback function.
  */
 function uploadfield_widget_process($element, $edit, &$form_state, $form) {
-  print_r(content_fields($element['#field_name'], $element['#type_name']));
-//  exit;
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
 
@@ -153,53 +153,12 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   }
 
   // Check if using the default alt text and replace tokens.
-  $default_alt = (!$field['widget']['custom_alt'] || (empty($file['status']) && empty($file['data']['alt'])));
-  if ($default_alt && function_exists('token_replace')) {
-    $field['widget']['alt'] = empty($field['widget']['alt']) ? '' : token_replace($field['widget']['alt'], 'user', $GLOBALS['user']);
-  }
-  $element['data']['alt'] = array(
-    '#title' => t('Alternate Text'),
-    '#type' => $field['widget']['custom_alt'] ? 'textfield' : 'value',
-    '#default_value' => $default_alt ? $field['widget']['alt'] : $file['data']['alt'],
-    '#description' => t('This text will be used by screen readers, search engines, or when the image cannot be loaded.'),
-    '#maxlength' => variable_get('uploadfield_alt_length', 80), // See http://www.gawds.org/show.php?contentid=28.
-    '#attributes' => array('class' => 'uploadfield-text'),
-  );
+  $default_thumb = ($field['widget']['use_default_thumb']);
   // #value must be hard-coded if #type = 'value'.
-  if ($default_alt) {
-    $element['data']['alt']['#value'] = $field['widget']['alt'];
+  if ($default_thumb) {
+    $element['data']['default_image']['#value'] = $field['widget']['default_image']['fid'];
   }
-
-  // Check if using the default title and replace tokens.
-  $default_title = (!$field['widget']['custom_title'] || (empty($file['status']) && empty($file['data']['title'])));
-  if ($default_title && function_exists('token_replace')) {
-    $field['widget']['title'] = empty($field['widget']['title']) ? '' : token_replace($field['widget']['title'], 'user', $GLOBALS['user']);
-  }
-
-  // If the custom title is enabled, input type defaults to textfield.
-  if (!empty($field['widget']['custom_title'])) {
-    $title_type = !empty($field['widget']['title_type']) ? $field['widget']['title_type'] : 'textfield';
-  }
-  else {
-    $title_type = 'value';
-  }
-
-  $element['data']['title'] = array(
-    '#type' => $title_type,
-    '#title' => t('Title'),
-    '#default_value' => $default_title ? $field['widget']['title'] : $file['data']['title'],
-    '#description' => t('The title is used as a tool tip when the user hovers the mouse over the image.'),
-    '#maxlength' => variable_get('uploadfield_title_length', 500),
-    '#attributes' => array('class' => 'uploadfield-text'),
-  );
-  // #value must be hard-coded if #type = 'value'.
-  if ($default_title) {
-    $element['data']['title']['#value'] = $field['widget']['title'];
-  }
-
-  $element['data']['title']['#value'] = 'Title';
-  $element['data']['alt']['#value'] = 'alt';
-
+//  $element['data']['default_image']['#value'] = $field['widget']['default_image']['fid'];
   return $element;
 }
 
