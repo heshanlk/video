@@ -6,6 +6,9 @@
  * uploadfield formatter hooks and callbacks.
  */
 
+//include common player file
+module_load_include('inc', 'video', '/includes/common'); 
+
 /**
  *
  * @param <type> $element

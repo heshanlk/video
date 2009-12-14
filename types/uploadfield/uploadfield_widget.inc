@@ -27,20 +27,22 @@ function uploadfield_widget_settings_form($widget) {
   );
 
   // Present a video image of the current default image.
-  $form['default']['use_default_thumb'] = array(
+  $form['default']['use_default_video_thumb'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use default video thumbnail'),
     '#default_value' =>  TRUE,
     '#description' => t('Choose a image as a video thumbnail.'),
   );
 
-  if (!empty($widget['default_image'])) {
-    $form['default']['default_image_thumbnail'] = array(
+  if (!empty($widget['default_video_thumb'])) {
+    $form['default']['default_video_thumbnail'] = array(
       '#type' => 'markup',
-      '#value' => theme('uploadfield_image', $widget['default_image'], '', '', array('width' => '150'), FALSE),
+      '#value' => theme('uploadfield_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
+      '#prefix' => '<div class="video_thumbnail">',
+      '#suffix' => '</div>'
     );
   }
-  $form['default']['default_image_upload'] = array(
+  $form['default']['default_video_thumb_upload'] = array(
     '#type'  => 'file',
     '#title' => t('Upload image'),
     '#description' => t('Choose a image that will be used as default video thumbnail.'),
@@ -48,9 +50,9 @@ function uploadfield_widget_settings_form($widget) {
 
   // We set this value on 'validate' so we can get CCK to add it
   // as a standard field setting.
-  $form['default_image'] = array(
+  $form['default_video_thumb'] = array(
     '#type' => 'value',
-    '#value' => $widget['default_image'],
+    '#value' => $widget['default_video_thumb'],
   );
 
   return $form;
@@ -64,9 +66,9 @@ function uploadfield_widget_settings_form($widget) {
  */
 function _uploadfield_widget_settings_default_validate($element, &$form_state) {
   // Verify the destination exists
-  $destination = file_directory_path() .'/uploadfield_default_images';
+  $destination = file_directory_path() .'/default_video_thumb';
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
-    form_set_error('default_image', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
+    form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
   }
 
@@ -75,13 +77,13 @@ function _uploadfield_widget_settings_default_validate($element, &$form_state) {
   );
 
   // We save the upload here because we can't know the correct path until the file is saved.
-  if (!$file = file_save_upload('default_image_upload', $validators, $destination)) {
+  if (!$file = file_save_upload('default_video_thumb_upload', $validators, $destination)) {
     // No upload to save we hope... or file_save_upload() reported an error on its own.
     return;
   }
 
   // Remove old image (if any) & clean up database.
-  $old_default = $form_state['values']['default_image'];
+  $old_default = $form_state['values']['default_video_thumb'];
   if (!empty($old_default['fid'])) {
     if (file_delete(file_create_path($old_default['filepath']))) {
       db_query('DELETE FROM {files} WHERE fid=%d', $old_default['fid']);
@@ -91,7 +93,7 @@ function _uploadfield_widget_settings_default_validate($element, &$form_state) {
   // Make the file permanent and store it in the form.
   file_set_status($file, FILE_STATUS_PERMANENT);
   $file->timestamp = time();
-  $form_state['values']['default_image'] = (array)$file;
+  $form_state['values']['default_video_thumb'] = (array)$file;
  }
 
 /**
@@ -118,7 +120,7 @@ function uploadfield_widget_settings_validate($widget) {
  */
 function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
-  return array_merge($filefield_settings, array('default_image', 'use_default_thumb'));
+  return array_merge($filefield_settings, array('default_video_thumb', 'use_default_video_thumb'));
 }
 
 /**
@@ -129,12 +131,12 @@ function uploadfield_widget_value($element, $edit = FALSE) {
   if ($edit) {
     $item['alt'] = isset($edit['alt']) ? $edit['alt'] : '';
     $item['title'] = isset($edit['title']) ? $edit['title'] : '';
-    $item['default_image'] = isset($edit['default_image']['fid']) ? $edit['default_image']['fid'] : 'novalue';
+    $item['default_video_thumb'] = isset($edit['default_video_thumb']['fid']) ? $edit['default_video_thumb']['fid'] : 'novalue';
   }
   else {
     $item['alt'] = '';
     $item['title'] = '';
-    $item['default_image'] = 'noval';
+    $item['default_video_thumb'] = '';
   }
   return $item;
 }
@@ -143,22 +145,37 @@ function uploadfield_widget_value($element, $edit = FALSE) {
  * Element #process callback function.
  */
 function uploadfield_widget_process($element, $edit, &$form_state, $form) {
+  // TODO : get play duration/ image thumbnails
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
-
-  $element['#theme'] = 'uploadfield_widget_item';
+//  print_r($field['widget']);
+//  exit;
+  $element['#theme'] = 'imagefield_widget_item';
 
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
-    $element['preview']['#value'] = theme('uploadfield_widget_preview', $element['#value']);
+    //TODO : implement preview video
+    $element['preview']['#suffix'] = '<div class="video_thumbnail">' . 
+    theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
+    '</div>';
   }
 
-  // Check if using the default alt text and replace tokens.
-  $default_thumb = ($field['widget']['use_default_thumb']);
-  // #value must be hard-coded if #type = 'value'.
-  if ($default_thumb) {
-    $element['data']['default_image']['#value'] = $field['widget']['default_image']['fid'];
+  // default image default_image
+  // use default thumb
+  // TODO : extend permission to override node wise thumbnail
+  $default_vid_thumb = $field['widget']['use_default_video_thumb'];
+  if ($default_vid_thumb) {
+    //
   }
-//  $element['data']['default_image']['#value'] = $field['widget']['default_image']['fid'];
+  else {
+    
+  }
+  $element['data']['use_default_video_thumb'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use Default Video Thumbnail'),
+    '#default_value' => FALSE,
+    '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
+  );
+
   return $element;
 }
 
