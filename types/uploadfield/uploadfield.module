@@ -263,11 +263,11 @@ function uploadfield_field_formatter_info() {
       'field types' => array('filefield'),
       'description' => t('Displays video thumb files then the video node.'),
       ),
-      'video_imagelink' => array(
-      'label' => t('Video Thumbnail linked to video file download'),
-      'field types' => array('filefield'),
-      'description' => t('Displays video files in their original size.'),
-      ),
+//      'video_imagelink' => array(
+//      'label' => t('Video Thumbnail linked to video file download'),
+//      'field types' => array('filefield'),
+//      'description' => t('Displays video files in their original size.'),
+//      ),
   );
   return $formatters;
 }
@@ -314,6 +314,7 @@ function uploadfield_form_content_field_overview_submit(&$form, &$form_state) {
  */
 function theme_uploadfield_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   $file = (array)$file;
+//  return $file['filepath'];
   if (!is_file($file['filepath'])) {
     return '<!-- File not found: '. $file['filepath'] .' -->';
   }
@@ -344,7 +345,7 @@ function theme_uploadfield_image($file, $alt = '', $title = '', $attributes = NU
     $query_character = (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PRIVATE && variable_get('clean_url', '0') == '0') ? '&' : '?';
     $query_string = $query_character . $file['timestamp'];
   }
-
+  
   $url = file_create_url($file['filepath']) . $query_string;
   $attributes['src'] = $url;
   $attributes = drupal_attributes($attributes);
@@ -377,3 +378,12 @@ function theme_uploadfield_widget_video_thumb($item = NULL) {
 /**
  * @} End defgroup "Theme Callbacks".
  */
+
+ /**
+  * Implementing video module API
+  * hook_v_perm()
+  */
+
+ function uploadfield_v_perm(){
+  return array('use default thumbnail');
+ }

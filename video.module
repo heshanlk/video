@@ -5,3 +5,11 @@
  * @file video.module
  * 
  */
+
+ /**
+ * Implementation of hook_perm().
+ */
+
+function video_perm() {
+  return module_invoke_all('v_perm');
+}

@@ -16,6 +16,31 @@ function uploadfield_widget_settings_form($widget) {
     $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv';
   }
 
+  // Default video player settings.
+  $form['player'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Default Video Player'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 10
+  );
+
+  $form['player']['use_custom_width'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Users can overriede default player width'),
+    '#default_value' =>   $widget['use_custom_width'],
+    '#description' => t('Choose custom values for video player width when upload files.'),
+  );
+
+  $form['player']['default_width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default video width'),
+    '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
+    '#size' => 15,
+    '#maxlength' => 10,
+    '#description' => t('Default player width in px.'),
+  );
+
   // Default image settings.
   $form['default'] = array(
     '#type' => 'fieldset',
@@ -30,8 +55,8 @@ function uploadfield_widget_settings_form($widget) {
   $form['default']['use_default_video_thumb'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use default video thumbnail'),
-    '#default_value' =>  TRUE,
-    '#description' => t('Choose a image as a video thumbnail.'),
+    '#default_value' =>   $widget['use_default_video_thumb'],
+    '#description' => t('Choose this image as default video thumbnail.'),
   );
 
   if (!empty($widget['default_video_thumb'])) {
@@ -44,7 +69,7 @@ function uploadfield_widget_settings_form($widget) {
   }
   $form['default']['default_video_thumb_upload'] = array(
     '#type'  => 'file',
-    '#title' => t('Upload image'),
+    '#title' => empty($widget['default_video_thumb']) ? t('Upload video thumbnail') :  t('Replace video thumbnail with'),
     '#description' => t('Choose a image that will be used as default video thumbnail.'),
   );
 
@@ -108,9 +133,9 @@ function uploadfield_widget_settings_validate($widget) {
   }
 
   // Check that set resolutions are valid.
-  foreach (array('min_resolution', 'max_resolution') as $resolution) {
-    if (!empty($widget[$resolution]) && !preg_match('/^[0-9]+x[0-9]+$/', $widget[$resolution])) {
-      form_set_error($resolution, t('Please specify a resolution in the format WIDTHxHEIGHT (e.g. 640x480).'));
+  foreach (array('default_width') as $numerics) {
+    if (!empty($widget[$numerics]) && !preg_match('/^[0-9]+$/', $widget[$numerics])) {
+      form_set_error($numerics, t('Please specify default width in integers only (e.g. 640).'));
     }
   }
 }
@@ -120,7 +145,7 @@ function uploadfield_widget_settings_validate($widget) {
  */
 function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
-  return array_merge($filefield_settings, array('default_video_thumb', 'use_default_video_thumb'));
+  return array_merge($filefield_settings, array('default_video_thumb', 'use_default_video_thumb', 'use_custom_width', 'default_width'));
 }
 
 /**
@@ -159,22 +184,48 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     '</div>';
   }
 
+  // Check if using the default width and replace tokens.
+  $default_width = (!$field['widget']['use_custom_width'] || (empty($file['status']) && empty($file['data']['default_width'])));
+  $element['data']['default_width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default Width for Player'),
+    '#default_value' => $default_width ? $field['widget']['default_width'] : $file['data']['default_width'],
+    '#description' => t('Set player width(in pix) here, make sure your video have good resolution to fix on larger values.'),
+    '#maxlength' => 5,
+    '#attributes' => array('class' => 'video-width-text'),
+  );
+//  echo $field['widget']['default_width'];
+  // #value must be hard-coded if #type = 'value'.
+  if ($default_width) {
+    $element['data']['default_width']['#value'] = $field['widget']['default_width'];
+  }
+
+
   // default image default_image
   // use default thumb
   // TODO : extend permission to override node wise thumbnail
-  $default_vid_thumb = $field['widget']['use_default_video_thumb'];
-  if ($default_vid_thumb) {
-    //
+  $default_vid_thumb = (!$field['widget']['use_default_video_thumb'] || (empty($file['status']) && empty($file['data']['use_default_video_thumb'])));
+  // user access for default thumbnail
+//  echo $file['data']['use_default_video_thumb'];
+  if (user_access('use default thumbnail')) {
+    $element['data']['use_default_video_thumb'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use Default Video Thumbnail'),
+      '#default_value' => $default_title ? $file['data']['use_default_video_thumb'] : $file['data']['use_default_video_thumb'],
+      '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
+    );
   }
-  else {
+
+//bypass auto conversion
+    $element['data']['bypass_autoconversion'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Bypass auto conversion'),
+      '#default_value' => $file['data']['bypass_autoconversion'] ? $file['data']['bypass_autoconversion'] : FALSE,
+      '#description' => t('This will bypass your auto conversion of videos.'),
+    );
+
     
-  }
-  $element['data']['use_default_video_thumb'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use Default Video Thumbnail'),
-    '#default_value' => FALSE,
-    '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
-  );
+
 
   return $element;
 }
