@@ -187,23 +187,17 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
         '</div>';
   }
-
   // Check if using the default width and replace tokens.
   $default_width = user_access('override player width');
     $element['data']['width'] = array(
         '#type' => $default_width ? 'textfield' : 'value',
         '#title' => t('Width for Player'),
-        '#default_value' => $default_width ? $field['widget']['default_width'] : $file['data']['default_width'],
+        '#value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
         '#description' => t('Set player width(in pix) here, make sure your video have good resolution to fix on larger values.'),
         '#size' => 15,
         '#maxlength' => 5,
         '#attributes' => array('class' => 'video-width-text'),
     );
-    //  echo $field['widget']['default_width'];
-    // #value must be hard-coded if #type = 'value'.
-    if ($default_width) {
-      $element['data']['width']['#value'] = $field['widget']['default_width'];
-    }
 
   // default image default_image
   // use default thumb
@@ -215,7 +209,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     $element['data']['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
         '#title' => t('Use Default Video Thumbnail'),
-        '#value' => !empty($file['data']['use_default_video_thumb']) ? TRUE : $file['data']['use_default_video_thumb'],
+        '#value' => empty($file['data']['use_default_video_thumb']) ? TRUE : $file['data']['use_default_video_thumb'],
         '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
     );
   }
