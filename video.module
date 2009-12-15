@@ -11,5 +11,7 @@
  */
 
 function video_perm() {
+  //bypass conversion video
+  //'override player width'
   return module_invoke_all('v_perm');
 }

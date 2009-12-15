@@ -79,6 +79,9 @@ function _video_get_filetype($vidfile) {
  *   string of content to display
  */
 function theme_video_play_flash($element) {
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
+  $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
 
   $video = file_create_url($element['#item']['filepath']);
 //  echo file_create_url($element['#item']['filepath']);
