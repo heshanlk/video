@@ -80,8 +80,8 @@ function _video_get_filetype($vidfile) {
  */
 function theme_video_play_flash($element) {
 
-  $video = base_path() . $element['#item']['filepath'];
-  //echo file_create_path($video);
+  $video = file_create_url($element['#item']['filepath']);
+//  echo file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -119,7 +119,7 @@ function theme_video_play_flash($element) {
  */
 function theme_video_play_swf($element) {
 
-  $video = base_path() . $element['#item']['filepath'];
+  $video = file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -164,7 +164,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#ve
 
 function theme_video_play_dcr($element) {
 
-  $video = base_path() . $element['#item']['filepath'];
+  $video = file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -207,7 +207,7 @@ codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#vers
  */
 function theme_video_play_divx($element) {
 //Increase the height to accommodate the player controls on the bottom.
-  $video = base_path() . $element['#item']['filepath'];
+  $video = file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -245,7 +245,7 @@ function theme_video_play_divx($element) {
  */
 function theme_video_play_quicktime($element) {
 //Increase the height to accommodate the player controls on the bottom.
-  $video = base_path() . $element['#item']['filepath'];
+  $video = file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -301,7 +301,7 @@ data="'. $video .'">
 function theme_video_play_realmedia($element) {
 // Real's embeded player includes the controls
 // in the height
-  $video = base_path() . $element['#item']['filepath'];
+  $video = file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -356,7 +356,7 @@ classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
  */
 function theme_video_play_windowsmedia($element) {
 // Windows Media's embeded player includes the controls in the height
-  $video = base_path() . $element['#item']['filepath'];
+  $video = file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -413,7 +413,7 @@ function theme_video_play_ogg_theora($element) {
   global $base_url;
   $cortado_location = variable_get('video_cortado', $base_url . '/cortado.jar');
   //$url = _video_get_fileurl($node->vidfile);
-  $video = base_path() . $element['#item']['filepath'];
+  $video = file_create_url($element['#item']['filepath']);
 
   $width = ($node->video_scaled_x ? $node->video_scaled_x : '425');
   $height = ($node->video_scaled_y ? $node->video_scaled_y : '350');

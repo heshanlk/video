@@ -50,7 +50,8 @@ function theme_uploadfield_formatter_video_nodelink($element) {
   }
 
   $node = $element['#node'];
-  $imagetag = theme('uploadfield_formatter_video_plain', $element);
+//  $imagetag = theme('uploadfield_formatter_video_plain', $element);
+  $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
   $class = 'uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
   return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 }

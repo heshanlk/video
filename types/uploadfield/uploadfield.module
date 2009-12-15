@@ -15,7 +15,9 @@ include_once dirname(__FILE__) . '/uploadfield_widget.inc';
  * Load required includes.
  */
 function uploadfield_init() {
-// If FileField is not available, immediately disable uploadfield.
+// add CSS file
+  drupal_add_css(drupal_get_path('module', 'video') .'/types/uploadfield/uploadfield.css');
+  // If FileField is not available, immediately disable uploadfield.
   if (!module_exists('filefield')) {
     module_disable(array('uploadfield'));
     drupal_set_message(t('The uploadfield module has been disabled. The <a href="http://drupal.org/project/filefield">FileField module</a> needs to be installed for it to work properly.'));
@@ -57,6 +59,11 @@ function uploadfield_theme() {
   'uploadfield_admin_thumbnail' => array(
   'arguments' => array('item' => NULL),
   ),
+  // Generates and img tag to the video thumbnails.
+  'uploadfield_widget_video_thumb' => array(
+  'arguments' => array('item' => NULL),
+  ),
+
   // uploadfield formatter theme functions.
   'uploadfield_formatter_video_plain' => array(
   'arguments' => array('element' => NULL),
@@ -70,7 +77,7 @@ function uploadfield_theme() {
   'arguments' => array('element' => NULL),
   'file' => 'uploadfield_formatter.inc',
   ),
-  
+
   //from includes/common.inc
   'video_format_play' => array(
   'arguments' => array('output' => NULL,'url' => NULL,'title' => NULL,'link_text' => NULL),
@@ -362,6 +369,10 @@ function theme_uploadfield_admin_thumbnail($item = NULL) {
   }
   $thumb_path = uploadfield_file_admin_thumb_path($item);
   return '<img src="'. file_create_url($thumb_path) .'" title="' . check_plain($item['filename']) . '" />';
+}
+
+function theme_uploadfield_widget_video_thumb($item = NULL) {
+  return '<div class="uploadfield-video-thumb">' . theme('uploadfield_image', $item, '', '', '', FALSE) . '</div>';
 }
 /**
  * @} End defgroup "Theme Callbacks".
