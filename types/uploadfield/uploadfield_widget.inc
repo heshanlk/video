@@ -149,7 +149,7 @@ function uploadfield_widget_settings_validate($widget) {
  */
 function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
-  return array_merge($filefield_settings, array('default_video_thumb', 'use_default_video_thumb', 'use_custom_width', 'default_width'));
+  return array_merge($filefield_settings, array('default_video_thumb', 'default_width', 'default_resolution'));
 }
 
 /**
@@ -215,7 +215,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     $element['data']['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
         '#title' => t('Use Default Video Thumbnail'),
-        '#value' => empty($file['data']['use_default_video_thumb']) ? 1 : $file['data']['use_default_video_thumb'],
+        '#value' => !empty($file['data']['use_default_video_thumb']) ? TRUE : $file['data']['use_default_video_thumb'],
         '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
     );
   }
