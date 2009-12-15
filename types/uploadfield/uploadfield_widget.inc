@@ -215,7 +215,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     $element['data']['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
         '#title' => t('Use Default Video Thumbnail'),
-        '#default_value' => empty($file['data']['use_default_video_thumb']) ? 1 : $file['data']['use_default_video_thumb'],
+        '#value' => empty($file['data']['use_default_video_thumb']) ? 1 : $file['data']['use_default_video_thumb'],
         '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
     );
   }
@@ -225,7 +225,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     $element['data']['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
-        '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
+        '#value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
         '#description' => t('This will bypass your auto conversion of videos.'),
     );
   }
