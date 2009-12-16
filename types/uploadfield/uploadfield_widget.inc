@@ -94,7 +94,7 @@ function _uploadfield_widget_settings_default_validate($element, &$form_state) {
     return;
   }
 
-  $validators = array(
+  $validators = array (
       'file_validate_is_image' => array(),
   );
 
@@ -189,15 +189,15 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   }
   // Check if using the default width and replace tokens.
   $default_width = user_access('override player width');
-    $element['data']['width'] = array(
-        '#type' => $default_width ? 'textfield' : 'value',
-        '#title' => t('Width for Player'),
-        '#value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
-        '#description' => t('Set player width(in pix) here, make sure your video have good resolution to fix on larger values.'),
-        '#size' => 15,
-        '#maxlength' => 5,
-        '#attributes' => array('class' => 'video-width-text'),
-    );
+  $element['data']['width'] = array(
+      '#type' => $default_width ? 'textfield' : 'value',
+      '#title' => t('Width for Player'),
+      '#value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
+      '#description' => t('Set player width(in pix) here, make sure your video have good resolution to fix on larger values.'),
+      '#size' => 15,
+      '#maxlength' => 5,
+      '#attributes' => array('class' => 'video-width-text'),
+  );
 
   // default image default_image
   // use default thumb
@@ -205,11 +205,11 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   //  $default_vid_thumb = (!$field['widget']['use_default_video_thumb'] || (empty($file['status']) && empty($file['data']['use_default_video_thumb'])));
   // user access for default thumbnail
   //  echo $file['data']['use_default_video_thumb'];
-  if (user_access('use default thumbnail')) {
+  if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
     $element['data']['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
         '#title' => t('Use Default Video Thumbnail'),
-        '#value' => empty($file['data']['use_default_video_thumb']) ? TRUE : $file['data']['use_default_video_thumb'],
+        '#default_value' => empty($file['data']['use_default_video_thumb']) ? FALSE : $file['data']['use_default_video_thumb'],
         '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
     );
   }
@@ -219,10 +219,26 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     $element['data']['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
-        '#value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
+        '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
         '#description' => t('This will bypass your auto conversion of videos.'),
     );
   }
+
+  //Create video thubs and save in a directory then we can get thumbnails from it using folder read
+  $element['data']['video_thumb'] = array(
+      '#type' => 'radios',
+      '#title' => t('Video Thumbnails'),
+      '#options' => array(
+        1=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
+        2=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
+        3=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
+        4=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
+        5=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
+      ),
+      '#default_value' => 1,
+      '#description' => t('Pleaes choose a thumbnail from above'),
+      '#attributes' => array('class' => 'video-thumb-selection'),
+  );
 
   return $element;
 }

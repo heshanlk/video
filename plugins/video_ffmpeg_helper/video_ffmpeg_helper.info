@@ -2,7 +2,7 @@
 name = Video ffmpeg Helper
 description = Provide apis for ffmpeg. Simplify video nodes creation.
 dependencies[] = video
-dependencies[] = video_upload
+dependencies[] = uploadfiled
 package = "Video"
 core = 6.x
 

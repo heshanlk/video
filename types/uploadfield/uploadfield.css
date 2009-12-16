@@ -28,3 +28,11 @@
 .video-width-text {
   width:10px;
 }
+
+.video-thumb-selection{
+  
+}
+
+.video-thumb-selection label{
+  float:left;
+}

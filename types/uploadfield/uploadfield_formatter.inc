@@ -52,7 +52,7 @@ function theme_uploadfield_formatter_video_nodelink($element) {
   //  exit;
   $node = $element['#node'];
   //  $imagetag = theme('uploadfield_formatter_video_plain', $element);
- echo  $use_default_img = $element['#item']['data']['use_default_video_thumb'];
+ $use_default_img = $element['#item']['data']['use_default_video_thumb'];
   if($use_default_img) {
     $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
     $class = 'uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
