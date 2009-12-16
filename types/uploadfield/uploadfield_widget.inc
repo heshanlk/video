@@ -211,6 +211,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         '#title' => t('Use Default Video Thumbnail'),
         '#default_value' => empty($file['data']['use_default_video_thumb']) ? FALSE : $file['data']['use_default_video_thumb'],
         '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
+        '#weight' => 10
     );
   }
 
@@ -235,9 +236,10 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         4=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
         5=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
       ),
-      '#default_value' => 1,
+      '#default_value' => 3,
       '#description' => t('Pleaes choose a thumbnail from above'),
       '#attributes' => array('class' => 'video-thumb-selection'),
+      '#weight' => 10
   );
 
   return $element;
