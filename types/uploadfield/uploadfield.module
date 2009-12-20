@@ -402,10 +402,11 @@ function video_upload_v_help() {
  /**
  * Implements the hook_v_auto_thumnail
 */
-function uploadfield_v_auto_thumbnail(&$node) {
+function uploadfield_v_auto_thumbnail($vidfile) {
   // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
-  if(module_exists('video_ffmpeg_helper')) {
-    return _video_ffmpeg_helper_auto_thumbnail($node);
+  module_load_include('inc', 'video', '/plugins/video_image/video_thumb');
+  if(module_hook('video_thumb', 'auto_thumbnail')) {
+    return video_thumb_auto_thumbnail($vidfile);
   }
   return false;
 }
@@ -414,10 +415,11 @@ function uploadfield_v_auto_thumbnail(&$node) {
 /**
  * Implements the hook_v_auto_resolution
 */
-function uploadfield_v_auto_resolution(&$node) {
-  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
-  if(module_exists('video_ffmpeg_helper')) {
-    return _video_ffmpeg_helper_auto_resolution($node);
+function uploadfield_v_auto_resolution($vidfile) {
+  //TODO : add dynamic converter selector
+  module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
+  if(module_hook('ffmpeg', 'auto_playtime')) {
+    return ffmpeg_auto_playtime($vidfile);
   }
   return false;
 }
@@ -426,10 +428,29 @@ function uploadfield_v_auto_resolution(&$node) {
 /**
  * Implements the hook_v_auto_resolution
 */
-function uploadfield_v_auto_playtime(&$node) {
-  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
-  if(module_exists('video_ffmpeg_helper')) {
-    return _video_ffmpeg_helper_auto_playtime($node);
+function uploadfield_v_auto_playtime($vidfile) {
+  //TODO : add dynamic converter selector
+  module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
+  if(module_hook('ffmpeg', 'auto_playtime')) {
+    return ffmpeg_auto_playtime($vidfile);
   }
   return false;
+}
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function uploadfield_nodeapi(&$node, $op, $teaser) {
+//  watchdog('uploadfield', $op . ' - called');
+//  print_r();
+//    switch ($op) {
+//      case 'load':
+//          //exit;
+//        return _video_image_load($node);
+//
+//      case 'prepare':
+//          //exit;
+//        _video_image_prepare($node);
+//        break;
+//    }
 }

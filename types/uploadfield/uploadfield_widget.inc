@@ -174,6 +174,9 @@ function uploadfield_widget_value($element, $edit = FALSE) {
  * Element #process callback function.
  */
 function uploadfield_widget_process($element, $edit, &$form_state, $form) {
+//  print_r($element['#value']);
+//  exit;
+//   watchdog("cdn2 xmlrpc", "Received status information for video with token: " . $video_token, WATCHDOG_NOTICE);
 // TODO : get play duration/ image thumbnails
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
@@ -182,17 +185,19 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   $element['#theme'] = 'uploadfield_widget_item';
 
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
-  //TODO : implement preview video
-    $element['preview']['#prefix'] = '<div class="video_thumbnail">';
-    $element['preview']['#suffix'] = theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
+  //TODO : implement preview video play
+  //    $element['preview']['#prefix'] = '<div class="video_thumbnail">';
+    $element['preview']['#suffix'] = '<div class="video_thumbnail">' .
+        theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
         '</div>';
+  //        watchdog('uploadfield', 'nofile data');
   }
 
-//  $element['data'] = array (
-//      '#type' => 'fieldset',
-//      '#title' => t('Video Data'),
-//      '#attributes' => array('class' => 'video-data'),
-//  );
+  //  $element['data'] = array (
+  //      '#type' => 'fieldset',
+  //      '#title' => t('Video Data'),
+  //      '#attributes' => array('class' => 'video-data'),
+  //  );
 
   // Check if using the default width and replace tokens.
   $default_width = user_access('override player width');
@@ -206,22 +211,6 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       '#attributes' => array('class' => 'video-width-text'),
   );
 
-  // default image default_image
-  // use default thumb
-  // TODO : extend permission to override node wise thumbnail
-  //  $default_vid_thumb = (!$field['widget']['use_default_video_thumb'] || (empty($file['status']) && empty($file['data']['use_default_video_thumb'])));
-  // user access for default thumbnail
-  //  echo $file['data']['use_default_video_thumb'];
-  if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
-    $element['data']['use_default_video_thumb'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Use Default Video Thumbnail'),
-        '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : FALSE,
-        '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
-        '#weight' => 10,
-        '#attributes' => array('class' => 'video-default-thumbnail'),
-    );
-  }
 
   //bypass auto conversion
   if (user_access('bypass conversion video')) {
@@ -235,28 +224,53 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   }
 
   //Create video thubs and save in a directory then we can get thumbnails from it using folder read
+
+  // only in preview mode and then create thumbnails
+  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
+//    module_load_include('inc', 'video', '/plugins/video_thumb');
+//    module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
+    $thumbs = uploadfield_v_auto_thumbnail($file);
+    foreach($thumbs as $id => $img) {
+      $thumbss[] = theme('uploadfield_image', $img->filepath, '', '', array('width' => '50'), FALSE);
+    }
+    
+  }
+
+
+
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
       '#title' => t('Video Thumbnails'),
-      '#options' => array(
-        1=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
-        2=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
-        3=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
-        4=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
-        5=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
-      ),
+      '#options' => $thumbss,
       '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : 3,
-      '#description' => t('Pleaes choose a thumbnail from above'),
-      '#attributes' => array('class' => 'video-thumb-selection'),
+      //      '#description' => t('Pleaes choose a thumbnail from above'),
+      //      '#attributes' => array('class' => 'video-thumb-selection'),
       '#weight' => 10,
       '#attributes' => array('class' => 'video-thumbnails'),
   );
+
+  // default image default_image
+  // use default thumb
+  // TODO : extend permission to override node wise thumbnail
+  //  $default_vid_thumb = (!$field['widget']['use_default_video_thumb'] || (empty($file['status']) && empty($file['data']['use_default_video_thumb'])));
+  // user access for default thumbnail
+  //  echo $file['data']['use_default_video_thumb'];
+  if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
+    $element['data']['use_default_video_thumb'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Override Video Thumbnail with Default'),
+        '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : FALSE,
+        '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
+        '#weight' => 9,
+        '#attributes' => array('class' => 'video-default-thumbnail'),
+    );
+  }
 
   return $element;
 }
 
 /**
- * FormAPI theme function. Theme the output of an image field.
+ * FormAPI theme function. Theme the output of an video upload field.
  */
 function theme_uploadfield_widget($element) {
   drupal_add_css(drupal_get_path('module', 'uploadfield') .'/uploadfield.css');

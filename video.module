@@ -16,10 +16,13 @@ function video_perm() {
   return module_invoke_all('v_perm');
 }
 
+/**
+ * Implementation of hook_menu().
+ */
 function video_menu() {
   $items = array();
   $items['admin/settings/video'] = array(
-    'title' => 'video Settings',
+    'title' => 'Video',
     'description' => 'Configure different aspects of the video module and its plugins',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_admin_settings'),
@@ -28,4 +31,32 @@ function video_menu() {
   );
   return $items;
 
+}
+
+/**
+ * Implementation a autothumbnail hook().
+ */
+
+function video_auto_thumbnail() {
+//bypass conversion video
+//'override player width'
+  return module_invoke_all('v_auto_thumbnail');
+}
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function video_nodeapi(&$node, $op, $teaser) {
+//  watchdog('video', $op . ' - called');
+//  print_r();
+//    switch ($op) {
+//      case 'load':
+//          //exit;
+//        return _video_image_load($node);
+//
+//      case 'prepare':
+//          //exit;
+//        _video_image_prepare($node);
+//        break;
+//    }
 }

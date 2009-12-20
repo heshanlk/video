@@ -1,12 +1,26 @@
 /* $Id$ */
 
-.filefield-element .uploadfield-preview {
+.filefield-element .filefield-file-info, .video_thumbnail {
+  min-width: 100px;
+  min-height: 100px;
+}
+
+.filefield-element .imagefield-preview {
+  min-width: 100px;
+  min-height: 100px;
+}
+
+.filefield-element .imagefield-text {
+  max-width: 40em; /* Reflect the maxlength of the ALT attribute (80 characters). */
 }
 
 .filefield-element .uploadfield-text {
+  max-width: 40em;
 }
 
 .video_thumbnail {
+  min-width: 100px;
+  min-height: 100px;
 }
 
 .uploadfield {
@@ -34,5 +48,26 @@
 }
 
 .video-thumb-selection .form-item {
+  
+}
+
+.video-thumbnails{
+/*  display : block;*/
+}
+.video-thumbnails .form-item{
+  float:left;
+  margin-right:10px;
+  max-width:30%;
+  padding-right:10px;
+}
+
+.video-bypass-auto-conversion{
+
+}
+.video-default-thumbnail{
+  
+}
+
+.video-data{
   
 }
