@@ -387,3 +387,49 @@ function theme_uploadfield_widget_video_thumb($item = NULL) {
  function uploadfield_v_perm(){
   return array('use default thumbnail');
  }
+
+/**
+ * Implementation of hook_v_help
+*/
+function video_upload_v_help() {
+
+  $help = array();
+  $help['upload']['data'] = '<b>' . t('Upload support') . '</b>';
+  $help['upload']['children'] = array(t('You can upload a video file from your computer to this website.'));
+
+  return $help;
+}
+ /**
+ * Implements the hook_v_auto_thumnail
+*/
+function uploadfield_v_auto_thumbnail(&$node) {
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    return _video_ffmpeg_helper_auto_thumbnail($node);
+  }
+  return false;
+}
+
+
+/**
+ * Implements the hook_v_auto_resolution
+*/
+function uploadfield_v_auto_resolution(&$node) {
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    return _video_ffmpeg_helper_auto_resolution($node);
+  }
+  return false;
+}
+
+
+/**
+ * Implements the hook_v_auto_resolution
+*/
+function uploadfield_v_auto_playtime(&$node) {
+  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+  if(module_exists('video_ffmpeg_helper')) {
+    return _video_ffmpeg_helper_auto_playtime($node);
+  }
+  return false;
+}
