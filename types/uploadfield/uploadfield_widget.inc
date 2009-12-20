@@ -179,14 +179,21 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   //  print_r($field['widget']);
   //  exit;
-  $element['#theme'] = 'imagefield_widget_item';
+  $element['#theme'] = 'uploadfield_widget_item';
 
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
   //TODO : implement preview video
-    $element['preview']['#suffix'] = '<div class="video_thumbnail">' .
-        theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
+    $element['preview']['#prefix'] = '<div class="video_thumbnail">';
+    $element['preview']['#suffix'] = theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
         '</div>';
   }
+
+//  $element['data'] = array (
+//      '#type' => 'fieldset',
+//      '#title' => t('Video Data'),
+//      '#attributes' => array('class' => 'video-data'),
+//  );
+
   // Check if using the default width and replace tokens.
   $default_width = user_access('override player width');
   $element['data']['width'] = array(
@@ -209,9 +216,10 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     $element['data']['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
         '#title' => t('Use Default Video Thumbnail'),
-        '#default_value' => empty($file['data']['use_default_video_thumb']) ? FALSE : $file['data']['use_default_video_thumb'],
+        '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : FALSE,
         '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
-        '#weight' => 10
+        '#weight' => 10,
+        '#attributes' => array('class' => 'video-default-thumbnail'),
     );
   }
 
@@ -222,6 +230,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         '#title' => t('Bypass auto conversion'),
         '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
         '#description' => t('This will bypass your auto conversion of videos.'),
+        '#attributes' => array('class' => 'video-bypass-auto-conversion'),
     );
   }
 
@@ -236,10 +245,11 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         4=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
         5=> theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '50'), FALSE),
       ),
-      '#default_value' => 3,
+      '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : 3,
       '#description' => t('Pleaes choose a thumbnail from above'),
       '#attributes' => array('class' => 'video-thumb-selection'),
-      '#weight' => 10
+      '#weight' => 10,
+      '#attributes' => array('class' => 'video-thumbnails'),
   );
 
   return $element;
