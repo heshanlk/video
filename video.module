@@ -1,17 +1,31 @@
 <?php
 //$Id$
 /**
- * 
+ *
  * @file video.module
- * 
+ *
  */
 
- /**
+/**
  * Implementation of hook_perm().
  */
 
 function video_perm() {
-  //bypass conversion video
-  //'override player width'
+//bypass conversion video
+//'override player width'
   return module_invoke_all('v_perm');
+}
+
+function video_menu() {
+  $items = array();
+  $items['admin/settings/video'] = array(
+    'title' => 'video Settings',
+    'description' => 'Configure different aspects of the video module and its plugins',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_admin_settings'),
+    'file' => 'video.admin.inc',
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+
 }
