@@ -124,9 +124,18 @@ function _uploadfield_widget_settings_default_validate($element, &$form_state) {
 function uploadfield_widget_settings_validate($widget) {
 // Check that only web images are specified in the callback.
   $extensions = array_filter(explode(' ', $widget['file_extensions']));
-  $web_extensions = array('mp4', 'mpeg', 'mpg', 'wmv', 'avi', 'flv');
+  $web_extensions = array(
+    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
+    'divx', //divx
+    'rm', // realplayer
+    'flv', 'f4v', //flash player
+    'swf', // swf player
+    'dir', 'dcr', // dcr player
+    'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
+    'ogg' // ogg theora
+  );
   if (count(array_diff($extensions, $web_extensions))) {
-    form_set_error('file_extensions', t('Only web-standard videos (mp4, mpeg, mpg, wmv and avi) are supported through the image widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
+    form_set_error('file_extensions', t('Only web-standard videos (mp4, mpeg, mpg, wmv and avi) are supported through the video widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
   }
 
   // Check that set resolutions are valid.

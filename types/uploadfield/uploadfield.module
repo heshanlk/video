@@ -226,7 +226,16 @@ function uploadfield_widget_upload_validators($field) {
   $validators = array();
 
   // Ensure that only web images are supported.
-  $web_extensions = array('mp4', 'mpeg', 'mpg', 'wmv', 'avi');
+    $web_extensions = array(
+    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
+    'divx', //divx
+    'rm', // realplayer
+    'flv', 'f4v', //flash player
+    'swf', // swf player
+    'dir', 'dcr', // dcr player
+    'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
+    'ogg' // ogg theora
+  );
   $extensions = array_filter(explode(' ', $field['widget']['file_extensions']));
   if (empty($extensions)) {
     $extensions = $web_extensions;
