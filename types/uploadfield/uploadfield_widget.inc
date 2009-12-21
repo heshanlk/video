@@ -21,7 +21,7 @@ function uploadfield_widget_settings_form($widget) {
       '#type' => 'fieldset',
       '#title' => t('Video Player Settings'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => FALSE,
       '#weight' => 9
   );
 
@@ -50,7 +50,7 @@ function uploadfield_widget_settings_form($widget) {
       '#title' => t('Video Thumbnail Settings'),
       '#element_validate' => array('_uploadfield_widget_settings_default_validate'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => FALSE,
       '#weight' => 10
   );
 
@@ -88,7 +88,7 @@ function uploadfield_widget_settings_form($widget) {
  */
 function _uploadfield_widget_settings_default_validate($element, &$form_state) {
 // Verify the destination exists
-  $destination = file_directory_path() .'/default_video_thumb';
+  $destination = file_directory_path() .'/video_thumb';
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
@@ -183,8 +183,6 @@ function uploadfield_widget_value($element, $edit = FALSE) {
  * Element #process callback function.
  */
 function uploadfield_widget_process($element, $edit, &$form_state, $form) {
-//  print_r($element['#value']);
-//  exit;
 //   watchdog("cdn2 xmlrpc", "Received status information for video with token: " . $video_token, WATCHDOG_NOTICE);
 // TODO : get play duration/ image thumbnails
   $file = $element['#value'];
@@ -235,25 +233,30 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   //Create video thubs and save in a directory then we can get thumbnails from it using folder read
 
   // only in preview mode and then create thumbnails
-  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
+  if (isset($element['preview'])) {
+    watchdog("video", "preview called");
 //    module_load_include('inc', 'video', '/plugins/video_thumb');
 //    module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
     $thumbs = uploadfield_v_auto_thumbnail($file);
-    foreach($thumbs as $id => $img) {
-      $thumbss[] = theme('uploadfield_image', $img->filepath, '', '', array('width' => '50'), FALSE);
+    foreach($thumbs as $fid => $img) {
+//      echo theme('uploadfield_image', file_create_url($img->filepath), '', '', array('width' => '50'), FALSE);
+      $thumbss[$fid] = theme('uploadfield_image', $img, '', '', array('width' => '50'), FALSE);
     }
-    
+//
+//    if(!empty($file['data']['video_thumb'])){
+//      $fid = $file['data']['video_thumb'];
+//      $fileid  = $thumbss[$fid];
+////    // set permanent value for vide thumbs
+//      file_set_status($fileid, FILE_STATUS_PERMANENT);
+//    }
   }
-
-
-
+//exit;
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
       '#title' => t('Video Thumbnails'),
       '#options' => $thumbss,
       '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : 3,
       //      '#description' => t('Pleaes choose a thumbnail from above'),
-      //      '#attributes' => array('class' => 'video-thumb-selection'),
       '#weight' => 10,
       '#attributes' => array('class' => 'video-thumbnails'),
   );

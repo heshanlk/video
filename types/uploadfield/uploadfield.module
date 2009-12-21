@@ -246,12 +246,12 @@ function uploadfield_widget_upload_validators($field) {
   //  $validators['filefield_validate_is_image'] = array();
 
   // Add validators for resolutions.
-  if (!empty($field['widget']['max_resolution']) || !empty($field['widget']['min_resolution'])) {
-    $validators['filefield_validate_image_resolution'] = array(
-        $field['widget']['max_resolution'],
-        $field['widget']['min_resolution'],
-    );
-  }
+//  if (!empty($field['widget']['max_resolution']) || !empty($field['widget']['min_resolution'])) {
+//    $validators['filefield_validate_image_resolution'] = array(
+//        $field['widget']['max_resolution'],
+//        $field['widget']['min_resolution'],
+//    );
+//  }
 
   return $validators;
 }
@@ -413,7 +413,7 @@ function video_upload_v_help() {
 */
 function uploadfield_v_auto_thumbnail($vidfile) {
   // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
-  module_load_include('inc', 'video', '/plugins/video_image/video_thumb');
+  module_load_include('inc', 'video', '/plugins/video_thumb/video_thumb');
   if(module_hook('video_thumb', 'auto_thumbnail')) {
     return video_thumb_auto_thumbnail($vidfile);
   }
@@ -451,7 +451,8 @@ function uploadfield_v_auto_playtime($vidfile) {
  */
 function uploadfield_nodeapi(&$node, $op, $teaser) {
 //  watchdog('uploadfield', $op . ' - called');
-//  print_r();
+//  print_r($node);
+//  exit;
 //    switch ($op) {
 //      case 'load':
 //          //exit;

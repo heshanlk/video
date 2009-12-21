@@ -40,7 +40,7 @@ function uploadfield_file_is_image($file) {
 function uploadfield_file_admin_thumb_path($file, $create_thumb = TRUE) {
   $file = (object)$file;
   $short_path = preg_replace('/^' . preg_quote(file_directory_path(), '/') . '/', '', $file->filepath);
-  $filepath = file_directory_path() . '/uploadfield_thumbs' . $short_path;
+  $filepath = file_directory_path() . '/video_thumb' . $short_path;
 
   if ($create_thumb) {
     uploadfield_create_admin_thumb($file->filepath, $filepath);
