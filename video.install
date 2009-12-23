@@ -1,0 +1,85 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Provide installation functions for video.module .
+ *
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
+ *                              <heshanmw at gmail dot com>
+ * @todo
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function video_schema() {
+  $schema['video_rendering'] = array(
+    'description' => t('Store video transcoding queue'),
+    'fields' => array(
+      'vid' => array(
+        'description' => t('video id : primary key'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'nid' => array(
+        'description' => t('Node id : index of the  {node}.nid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'origfile' => array(
+        'description' => t('original file path'),
+        'type' => 'text',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'pid' => array(
+        'description' => t('Pid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => t('status of the transcoding'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'started' => array(
+        'description' => t('Started transcodings'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => t('Transcoding completed'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+    'nid' => array('nid'),
+    ),
+    'primary key' => array('vid'),
+  );
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function video_install() {
+	drupal_install_schema('video');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function video_uninstall() {
+  drupal_uninstall_schema('video');
+}
