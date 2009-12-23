@@ -24,6 +24,7 @@ function video_thumb_process_api(&$element) {
       }
     }
   }
+
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
       '#title' => t('Video Thumbnails'),
@@ -33,6 +34,11 @@ function video_thumb_process_api(&$element) {
       '#weight' => 10,
       '#attributes' => array('class' => 'video-thumbnails'),
   );
+
+//  if(!empty($file['data']['video_thumb'])){
+//    $element['data']['video_thumb']['#value'] = $default_thumb;
+//  }
+
 
   // default image default_image
   // use default thumb
