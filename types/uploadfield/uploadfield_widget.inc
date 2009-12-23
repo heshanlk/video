@@ -13,7 +13,7 @@ function uploadfield_widget_settings_form($widget) {
   $form = module_invoke('filefield', 'widget_settings', 'form', $widget);
 
   if ($form['file_extensions']['#default_value'] == 'txt') {
-    $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv';
+    $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv flv';
   }
 
   // Default video player settings.
@@ -81,7 +81,6 @@ function uploadfield_widget_settings_form($widget) {
   $form['plugings'] = array(
       '#type' => 'fieldset',
       '#title' => t('Video Advanced Settings'),
-      '#element_validate' => array('_uploadfield_widget_settings_default_validate'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#weight' => 10
@@ -90,13 +89,13 @@ function uploadfield_widget_settings_form($widget) {
       '#type' => 'checkbox',
       '#title' => t('Enable auto conversion video'),
       '#description' => t('Use ffmpeg(Default) to automaticcally convert videos to FLV, Please make sure to configure convertor settings.'),
-      '#default_value' => variable_get('autoconversion', TRUE),
+      '#default_value' => $widget['autoconversion'],
   );
   $form['plugings']['autothumbnail'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable auto thumbnail video'),
       '#description' => t('Use ffmpeg(Default) to automaticcally thumbnails, Please make sure to configure convertor settings.'),
-      '#default_value' => variable_get('autothumbnail', TRUE),
+      '#default_value' => $widget['autothumbnail'],
   );
 
 

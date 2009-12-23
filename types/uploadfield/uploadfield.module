@@ -439,58 +439,47 @@ function uploadfield_v_auto_playtime($vidfile) {
  * Implementation of hook_v_video()
  */
 function uploadfield_v_video($op, &$element) {
-//  echo $op;
   global $user;
   switch ($op) {
     case 'insert':
     case 'update':
-    //          print_r($element['#value']);
-    //          exit;
     // TODO : need to add validation on just submit scenario
-      $update = NULL;
-      $vidfile = $element['#value'];
-//      print_r($vidfile);
-      $vid = $vidfile['fid'];
-      $vid_path = $vidfile['data']['video_thumb'];
-      $vid_dir = explode('/', $vid_path);
-      $vid_name = $vid_dir[count($vid_dir) - 1];
+      $field = content_fields($element['#field_name'], $element['#type_name']);
+      if($field['widget']['autothumbnail']) {
+        $update = NULL;
+        $vidfile = $element['#value'];
+        $vid = $vidfile['fid'];
+        $vid_path = $vidfile['data']['video_thumb'];
+        $vid_dir = explode('/', $vid_path);
+        $vid_name = $vid_dir[count($vid_dir) - 1];
 
-      $file = new stdClass();
-      $file->uid      = $user->uid;
-      $file->status   = FILE_STATUS_PERMANENT;
-      $file->filename = $vid_name;
-      $file->filepath = $vid_path;
-      $file->filemime = file_get_mimetype($vid_name);
-      $file->filesize = filesize($vid_path);
-      $file->timestamp = time();
-//      echo $vidfile['data']['video_thumb'];
-//print_r($element['#default_value']);
-//exit;
-//      exit;
-//      echo empty($vidfile['data']['video_thumb_fid']);
-      if($op == 'update'){
-        $old_fid = $element['#default_value']['data']['video_thumb_fid'];
-        $update = 'fid';
-        $file->fid = $old_fid;
+        $file = new stdClass();
+        $file->uid      = $user->uid;
+        $file->status   = FILE_STATUS_PERMANENT;
+        $file->filename = $vid_name;
+        $file->filepath = $vid_path;
+        $file->filemime = file_get_mimetype($vid_name);
+        $file->filesize = filesize($vid_path);
+        $file->timestamp = time();
+
+        if($op == 'update') {
+          $old_fid = $element['#default_value']['data']['video_thumb_fid'];
+          $update = 'fid';
+          $file->fid = $old_fid;
+        }
+        drupal_write_record ('files', $file, $update);
+        // get fid if and only if insert
+        if($op == 'insert')
+          $file->fid = db_last_insert_id('files', 'fid');
+        // add file id to the data
+        $element['data']['video_thumb_fid'] = array (
+            '#type'=> 'value',
+            '#value' => $file->fid
+        );
       }
-      drupal_write_record ('files', $file, $update);
-      // get fid if and only if insert
-      if($op == 'insert')
-      $file->fid = db_last_insert_id('files', 'fid');
-      // add file id to the data
-      $element['data']['video_thumb_fid'] = array (
-          '#type'=> 'value',
-          '#value' => $file->fid
-      );
-//      // delete old thumbs
-//      $old_fid->fid = $vidfile['data']['video_thumb_fid'];
-//      // cron will delete file
-//      if($old_fid->fid != $file->fid)
-//        file_set_status($old_fid, FILE_STATUS_TEMPORARY);
-
       break;
     case 'delete':
-      //delete thumbnails
+    //delete thumbnails
       break;
     case 'thumbs':
       module_load_include('inc', 'video', '/plugins/video_thumb/video_thumb');
