@@ -55,20 +55,84 @@ function video_admin_settings() {
       '#description' => t('Start the video when the page and video loads')
   );
 
-  $form['ffmpeg'] = array(
+  $form['autothumb'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Advanced Configurations'),
+      '#title' => t('Automatic video thumbnailing'),
       '#collapsible' => TRUE,
-      '#collapsed' => FALSE
+      '#collapsed' => TRUE
+  );
+  $form['autothumb']['video_thumb_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to Video Thumbnails'),
+      '#description' => t('Path to save video thumbanils extracted from video'),
+      '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
+  );
+  $form['autothumb']['no_of_video_thumbs'] = array(
+      '#type' => 'textfield',
+      '#title' => t('No of thumbnails'),
+      '#description' => t('No of thumbnails extracting from video'),
+      '#default_value' => variable_get('no_of_video_thumbs', 5),
+  );
+  $form['autothumb']['advanced'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+  );
+  $form['autothumb']['advanced']['video_ffmpeg_thumbnailer_options'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video thumbnailer options'),
+      '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ').'<ol><li>'.t('%videofile (the video file to thumbnail)').'<li>'.t('%thumbfile (a newly created temporary file to overwrite with the thumbnail)').'</ol>'.t('Only the first two are mandatory.  For example, older versions of ffmpeg should use something like: !old While newer versions should use something like: !new', array('!old' => "<div>-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile</div>", '!new' => '<div>-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile</div>')),
+      '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'),
+  );
+  
+  // automatic video conversion settings
+  $form['autoconv'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Automatic video conversion'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+  );
+  $form['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video bitrate'),
+      '#description' => t('The video bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200000),
+  );
+  $form['autoconv']['video_ffmpeg_helper_auto_cvr_audio_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Audio bitrate'),
+      '#description' => t('The audio bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
+  );
+  $form['autoconv']['advanced'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+  );
+  $form['autoconv']['advanced']['video_ffmpeg_helper_auto_cvr_options'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video converter options'),
+      '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ul>'.
+      '<li>'.t('%videofile (the video file to convert)').
+      '<li>'.t('%convertfile (a newly created file to store the converted file)').
+      '<li>'.t('%size (video resolution of the converted file)').
+      '</ul>'.
+      t('For further informations refer to the !ffmpegdoc', array('!ffmpegdoc' => l(t('Official FFMpeg documentation.'), 'http://ffmpeg.mplayerhq.hu/ffmpeg-doc.html', array('fragment' => TRUE)))),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate -qscale 1 %convertfile'),
   );
 
-  
 
 
-variable_get('video_thumb_path', 'video_thumbs');
-variable_get('no_of_video_thumbs', 5);
-variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
-variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile');
+  variable_get('video_thumb_path', 'video_thumbs');
+  variable_get('no_of_video_thumbs', 5);
+  variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
+  variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile');
 
   return system_settings_form($form);
 }
@@ -84,4 +148,16 @@ variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -
 function video_admin_settings_validate($form, &$form_state) {
   ; // for future use
 }
+
+/**
+ * Ensure that specified convertor is included.
+ */
+function _video_transcoder( $gateway) {
+  $path = drupal_get_path('module', 'video') . 'plugins';
+  $files = file_scan_directory($path, '^'. $gateway .'\.inc$');
+  foreach ($files as $filename => $file) {
+    include_once($filename);
+  }
+}
+
 ?>

@@ -482,7 +482,7 @@ function uploadfield_v_video($op, &$element) {
     //delete thumbnails
       break;
     case 'thumbs':
-      module_load_include('inc', 'video', '/plugins/video_thumb/video_thumb');
+      include_once dirname(__FILE__) . '/uploadfield_thumb.inc';
       //create thumbs and display
       video_auto_thumb_process_api($element);
       break;

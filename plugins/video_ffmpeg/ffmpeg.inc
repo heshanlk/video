@@ -230,7 +230,7 @@ function ffmpeg_auto_thumbnail($vidfile) {
     //skip files already exists, this will save ffmpeg traffic
     if (!is_file($thumbfile)) {
       $tnail = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
-      $options = preg_replace(array('/%videofile/', '/%thumbfile/', '/%seek/'), array($videofile, $thumbfile, $seek), variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'));
+      $options = preg_replace(array('/%videofile/', '/%thumbfile/', '/%seek/'), array($videofile, $thumbfile, $seek), variable_get('video_ffmpeg_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'));
       //    $options = preg_replace(array('/%videofile/', '/%tmp/', '/%id/', '/%interval/'), array($videofile, $tmp, $i, ($duration/$count)), variable_get('video_image_thumbnailer_options', '-ss %id*%interval -i %videofile -vframes 1 %thumbfile'));
       //  ffmpeg -ss $i*$interval -i intro.mov -vframes 1 -s 320x240 thumb_$i.jpg
       //ffmpeg -i superstunt_8uiarzrh.mp4 -r 0.1 -ss 00:00:5 -f image2 img/images%02d.png
