@@ -1,5 +1,5 @@
 ; $Id$
-name = Upload Video
+name = Video Upload
 description = handle video upload for video module using filefield and CCK.
 core = 6.x
 dependencies[] = content

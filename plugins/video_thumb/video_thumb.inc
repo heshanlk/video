@@ -11,7 +11,7 @@
 
 
 function video_thumb_auto_thumbnail($vidfile) {
-  module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
+  module_load_include('inc', 'video', '/plugins/video_ffmpeg/ffmpeg');
   if(module_hook('ffmpeg', 'auto_thumbnail')) {
     return ffmpeg_auto_thumbnail($vidfile);
   }

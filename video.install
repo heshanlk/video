@@ -29,7 +29,7 @@ function video_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-      ),      
+      ),
       'vtype' => array(
         'description' => t('The type of the video'),
         'type' => 'varchar',
@@ -151,12 +151,12 @@ function video_schema() {
  */
 function video_install() {
 	drupal_install_schema('video');
-  
-  // default values for some variables use for resolution stuff
-  variable_set('video_resolution_1_name', '16:9 - Widescreen');
-  variable_set('video_resolution_1_value', '400x226');
-  variable_set('video_resolution_2_name', '4:3 - Television');
-  variable_set('video_resolution_2_value', '400x300');
+//
+//  // default values for some variables use for resolution stuff
+//  variable_set('video_resolution_1_name', '16:9 - Widescreen');
+//  variable_set('video_resolution_1_value', '400x226');
+//  variable_set('video_resolution_2_name', '4:3 - Television');
+//  variable_set('video_resolution_2_value', '400x300');
 }
 
 /**
@@ -164,8 +164,8 @@ function video_install() {
  */
 function video_uninstall() {
   drupal_uninstall_schema('video');
-  variable_del('video_resolution_1_name');
-  variable_del('video_resolution_1_value');
-  variable_del('video_resolution_2_name');
-  variable_del('video_resolution_2_value');
+//  variable_del('video_resolution_1_name');
+//  variable_del('video_resolution_1_value');
+//  variable_del('video_resolution_2_name');
+//  variable_del('video_resolution_2_value');
 }

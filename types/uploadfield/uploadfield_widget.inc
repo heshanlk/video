@@ -166,18 +166,18 @@ function uploadfield_widget_settings_save($widget) {
  */
 function uploadfield_widget_value($element, $edit = FALSE) {
   $item = filefield_widget_value($element, $edit);
-//  print_r($edit);
-//  exit;
-//  if ($edit) {
-//    $item['alt'] = isset($edit['alt']) ? $edit['alt'] : '';
-//    $item['title'] = isset($edit['title']) ? $edit['title'] : '';
-//    $item['video_thumb_fid'] = isset($edit['default_video_thumb']['fid']) ? $edit['default_video_thumb']['fid'] : 'novalue';
-//  }
-//  else {
-//    $item['alt'] = '';
-//    $item['title'] = '';
-//    $item['default_video_thumb'] = '';
-//  }
+  //  print_r($edit);
+  //  exit;
+  //  if ($edit) {
+  //    $item['alt'] = isset($edit['alt']) ? $edit['alt'] : '';
+  //    $item['title'] = isset($edit['title']) ? $edit['title'] : '';
+  //    $item['video_thumb_fid'] = isset($edit['default_video_thumb']['fid']) ? $edit['default_video_thumb']['fid'] : 'novalue';
+  //  }
+  //  else {
+  //    $item['alt'] = '';
+  //    $item['title'] = '';
+  //    $item['default_video_thumb'] = '';
+  //  }
   return $item;
 }
 
@@ -242,14 +242,18 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   //    module_load_include('inc', 'video', '/plugins/video_thumb');
   //    module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
     $thumbs = uploadfield_v_auto_thumbnail($file);
+//    print_r($file);
+    exit;
     //get default image as a random value
     $default_thumb = '';
     $rnd_img = rand(1, variable_get('no_of_video_thumbs', 5));
     $default_thumb = $thumbs[$rnd_img]->filepath;
 
-    foreach($thumbs as $fid => $img) {
-    //      echo theme('uploadfield_image', file_create_url($img->filepath), '', '', array('width' => '50'), FALSE);
-      $thumbss[$img->filepath] = theme('uploadfield_image', $img, '', '', array('width' => '50'), FALSE);
+    if(is_array($thumbs)) {
+      foreach($thumbs as $fid => $img) {
+      //      echo theme('uploadfield_image', file_create_url($img->filepath), '', '', array('width' => '50'), FALSE);
+        $thumbss[$img->filepath] = theme('uploadfield_image', $img, '', '', array('width' => '50'), FALSE);
+      }
     }
   //
   //    if(!empty($file['data']['video_thumb'])){
@@ -269,15 +273,15 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       '#attributes' => array('class' => 'video-thumbnails'),
   );
 
-//  $use_default_thumb = (empty($file['status']) && empty($file['data']['title']));
-//  if($use_default_thumb) {
-//    $element['data']['video_thumb']['#value'] = $default_thumb;
-//  }
+  //  $use_default_thumb = (empty($file['status']) && empty($file['data']['title']));
+  //  if($use_default_thumb) {
+  //    $element['data']['video_thumb']['#value'] = $default_thumb;
+  //  }
 
-//  $element['data']['video_thumb_old_fid'] = array (
-//      '#type'=> 'value',
-//      '#value' => $file['data']['video_thumb_old_fid'],
-//  );
+  //  $element['data']['video_thumb_old_fid'] = array (
+  //      '#type'=> 'value',
+  //      '#value' => $file['data']['video_thumb_old_fid'],
+  //  );
 
   // default image default_image
   // use default thumb

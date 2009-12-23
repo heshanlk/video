@@ -197,6 +197,7 @@ function ffmpeg_auto_playtime($file) {
  *   a drupal file object
  */
 function ffmpeg_auto_thumbnail($vidfile) {
+//  print_r($vidfile);
 // copy the newly uploaded file object
   global $user;
   $uploaded_file = $vidfile;
