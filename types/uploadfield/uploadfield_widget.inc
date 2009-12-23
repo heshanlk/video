@@ -21,7 +21,7 @@ function uploadfield_widget_settings_form($widget) {
       '#type' => 'fieldset',
       '#title' => t('Video Player Settings'),
       '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
+      '#collapsed' => TRUE,
       '#weight' => 9
   );
 
@@ -76,6 +76,29 @@ function uploadfield_widget_settings_form($widget) {
       '#type' => 'value',
       '#value' => $widget['default_video_thumb'],
   );
+
+  // Default image settings.
+  $form['plugings'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Video Advanced Settings'),
+      '#element_validate' => array('_uploadfield_widget_settings_default_validate'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#weight' => 10
+  );
+  $form['plugings']['autoconversion'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable auto conversion video'),
+      '#description' => t('Use ffmpeg(Default) to automaticcally convert videos to FLV, Please make sure to configure convertor settings.'),
+      '#default_value' => variable_get('autoconversion', TRUE),
+  );
+  $form['plugings']['autothumbnail'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable auto thumbnail video'),
+      '#description' => t('Use ffmpeg(Default) to automaticcally thumbnails, Please make sure to configure convertor settings.'),
+      '#default_value' => variable_get('autothumbnail', TRUE),
+  );
+
 
   return $form;
 }
@@ -135,7 +158,7 @@ function uploadfield_widget_settings_validate($widget) {
       'ogg' // ogg theora
   );
   if (count(array_diff($extensions, $web_extensions))) {
-    form_set_error('file_extensions', t('Only web-standard videos (mp4, mpeg, mpg, wmv and avi) are supported through the video widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
+    form_set_error('file_extensions', t('Only web-standard videos are supported through the video widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
   }
 
   // Check that set video resolutions are valid.
@@ -151,6 +174,7 @@ function uploadfield_widget_settings_validate($widget) {
       form_set_error($resolution, t('Please specify a resolution in the format WIDTH:HEIGHT (e.g. 16:9).'));
     }
   }
+// Check for convertor is installed
 }
 
 /**
@@ -158,7 +182,7 @@ function uploadfield_widget_settings_validate($widget) {
  */
 function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
-  return array_merge($filefield_settings, array('default_video_thumb', 'default_width', 'default_resolution'));
+  return array_merge($filefield_settings, array('default_video_thumb', 'default_width', 'default_resolution', 'autoconversion', 'autothumbnail'));
 }
 
 /**
@@ -192,8 +216,9 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
 
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
   //TODO : implement preview video play
+    $tml_thumb = !empty($file['data']['video_thumb']) ? array('filepath' => $file['data']['video_thumb']) : $field['widget']['default_video_thumb'];
     $element['preview']['#suffix'] = '<div class="video_thumbnail">' .
-        theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
+        theme('uploadfield_image', $tml_thumb, '', '', array('width' => '150'), FALSE) .
         '</div>';
   }
 
@@ -222,9 +247,24 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   }
 
   //Create video thubs and save in a directory then we can get thumbnails from it using folder read
-
+  
   // only in preview mode and then create thumbnails
-  video_module_invoke('thumbs', $element);
+  if($field['widget']['autothumbnail']) {
+    video_module_invoke('thumbs', $element);
+  }
+  // default image default_image
+  // use default thumb
+  // TODO : extend permission to override node wise thumbnail
+  if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
+    $element['data']['use_default_video_thumb'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Override Video Thumbnail with Default'),
+        '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : FALSE,
+        '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
+        '#weight' => 9,
+        '#attributes' => array('class' => 'video-default-thumbnail'),
+    );
+  }
 
   // creating Update/Insert/Delete API
   // TODO : use if any better solution than this with filefield

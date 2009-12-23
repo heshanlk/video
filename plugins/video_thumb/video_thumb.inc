@@ -8,12 +8,12 @@
  * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
  */
 
-function video_thumb_process_api(&$element) {
+function video_auto_thumb_process_api (&$element) {
   //developed for ffmpeg support
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   if (isset($element['preview']) && $file['fid'] != 0) {
-    // TODO : change this to use any transcode to generate thumbnails
+  // TODO : change this to use any transcode to generate thumbnails
     module_load_include('inc', 'video', '/plugins/video_ffmpeg/ffmpeg');
     $thumbs = ffmpeg_auto_thumbnail($file);
 
@@ -27,7 +27,7 @@ function video_thumb_process_api(&$element) {
       }
     }
   }
-  
+
 
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
@@ -43,18 +43,4 @@ function video_thumb_process_api(&$element) {
 //    $element['data']['video_thumb']['#value'] = $default_thumb;
 //  }
 
-
-  // default image default_image
-  // use default thumb
-  // TODO : extend permission to override node wise thumbnail
-  if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
-    $element['data']['use_default_video_thumb'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Override Video Thumbnail with Default'),
-        '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : FALSE,
-        '#description' => t('If you want to use default image instead of using actual thumbnail of video then check.'),
-        '#weight' => 9,
-        '#attributes' => array('class' => 'video-default-thumbnail'),
-    );
-  }
  }
