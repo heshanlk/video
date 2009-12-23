@@ -189,14 +189,14 @@ function ffmpeg_auto_playtime($file) {
 
 /**
  * Generates a thumbnail from the video file
+ * Implementing hook_auto_thumbnail on inc
  *
- * @param $node
- *   object with node information
+ * @param $vidfile
+ *   object with element information
  *
  * @return
- *   a drupal file object
+ *   a drupal file objects
  */
- 
 function ffmpeg_auto_thumbnail($vidfile) {
   global $user;
   $uploaded_file = $vidfile;

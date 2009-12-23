@@ -484,7 +484,7 @@ function uploadfield_v_video($op, &$element) {
     case 'thumbs':
       include_once dirname(__FILE__) . '/uploadfield_thumb.inc';
       //create thumbs and display
-      video_auto_thumb_process_api($element);
+      video_auto_thumb_process($element);
       break;
   }
 }
