@@ -10,7 +10,7 @@
  * Implementation of hook_file_insert().
  */
 function uploadfield_file_insert($file) {
-  // Currently empty. Thumbnails are now generated on preview.
+// Currently empty. Thumbnails are now generated on preview.
 }
 
 /**
@@ -19,10 +19,34 @@ function uploadfield_file_insert($file) {
  * Delete the admin thumbnail when the original is deleted.
  */
 function uploadfield_file_delete($file) {
-//  if (uploadfield_file_is_image($file)) {
-//    file_delete(uploadfield_file_admin_thumb_path($file, FALSE));
+// delete thumb from files
+//  file_set_status($file->data['video_thumb_fid'], FILE_STATUS_TEMPORARY);
+  db_query('DELETE FROM {files} WHERE fid = %d', $file->data['video_thumb_fid']);
+
+  // delete thums directory
+  $thumbs_path = variable_get('video_thumb_path', 'video_thumbs');
+  //files will save in files/video_thumbs/#fileId folder
+  $tmp = file_directory_path(). '/' . $thumbs_path . '/' . $file->fid . '/';
+  //  rmdir($tmp);
+  _file_delete_tree($tmp);
+//  if(@rmdir($tmp)) {
 //  }
-  // TODO : delete video thumbs
+}
+
+
+// delete dir and its content
+function _file_delete_tree($current_dir) {
+  if($dir = @opendir($current_dir)) {
+    while (($f = readdir($dir)) !== false) {
+      if($f > '0' and filetype($current_dir.$f) == "file") {
+        file_delete($current_dir.$f);
+      } elseif($f > '0' and filetype($current_dir.$f) == "dir") {
+        _file_delete_tree($current_dir.$f."\\");
+      }
+    }
+    closedir($dir);
+    rmdir($current_dir);
+  }
 }
 
 /**
@@ -90,7 +114,7 @@ function uploadfield_create_admin_thumb($source, $destination) {
     file_copy($source, $destination);
   }
   elseif (image_get_toolkit() && @image_scale($source, $destination, $size[0], $size[1])) {
-    // Set permissions. This is done for us when using file_copy().
+  // Set permissions. This is done for us when using file_copy().
     @chmod($destination, 0664);
   }
   else {
