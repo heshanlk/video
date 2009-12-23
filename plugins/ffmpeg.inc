@@ -267,6 +267,12 @@ function ffmpeg_auto_thumbnail($vidfile) {
   return $files;
 }
 
+/**
+ * Implementing hook_chcek_exepath() on inc
+ * To check the the path is executable or not
+ * @param <type> path to check
+ * @return bool TRUE/FALSE
+ */
 function ffmpeg_check_exe_path($path=NULL) {
   if (!$path) {
     $path = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
