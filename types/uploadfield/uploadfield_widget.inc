@@ -269,10 +269,10 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       '#attributes' => array('class' => 'video-thumbnails'),
   );
 
-  $use_default_thumb = (empty($file['status']) && empty($file['data']['title']));
-  if($use_default_thumb) {
-    $element['data']['video_thumb']['#value'] = $default_thumb;
-  }
+//  $use_default_thumb = (empty($file['status']) && empty($file['data']['title']));
+//  if($use_default_thumb) {
+//    $element['data']['video_thumb']['#value'] = $default_thumb;
+//  }
 
 //  $element['data']['video_thumb_old_fid'] = array (
 //      '#type'=> 'value',
