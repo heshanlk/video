@@ -14,7 +14,7 @@ function video_auto_thumb_process_api (&$element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   if (isset($element['preview']) && $file['fid'] != 0) {
   // TODO : change this to use any transcode to generate thumbnails
-    module_load_include('inc', 'video', '/plugins/video_ffmpeg/ffmpeg');
+    module_load_include('inc', 'video', '/plugins/ffmpeg');
     $thumbs = ffmpeg_auto_thumbnail($file);
 
     $default_thumb = '';
