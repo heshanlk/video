@@ -17,12 +17,12 @@ function video_admin_settings() {
 
   $form = array();
 
-  $form['menu'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('General Behavior'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE
-  );
+//  $form['menu'] = array(
+//      '#type' => 'fieldset',
+//      '#title' => t('General Behavior'),
+//      '#collapsible' => TRUE,
+//      '#collapsed' => FALSE
+//  );
 
   //  $form['menu']['video_displaydownloadmenutab'] = array(
   //    '#type' => 'checkbox',
@@ -36,47 +36,47 @@ function video_admin_settings() {
   //    '#default_value' => variable_get('video_displaydownloadlink', 1),
   //    '#description' => t('Toggle display of "download" link (below the node content in most themes).')
   //  );
-  $form['menu']['video_displayplaytime'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Display playtime'),
-      '#default_value' => variable_get('video_displayplaytime', 1),
-      '#description' => t('Toggle the display of the playtime for a video.')
-  );
-  $form['menu']['video_displayfilesize'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Display filesize'),
-      '#default_value' => variable_get('video_displayfilesize', 1),
-      '#description' => t('Toggle the display of the filesize for a video.')
-  );
-  $form['menu']['video_autoplay'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Automatically start video on page load'),
-      '#default_value' => variable_get('video_autoplay', TRUE),
-      '#description' => t('Start the video when the page and video loads')
-  );
+//  $form['menu']['video_displayplaytime'] = array(
+//      '#type' => 'checkbox',
+//      '#title' => t('Display playtime'),
+//      '#default_value' => variable_get('video_displayplaytime', 1),
+//      '#description' => t('Toggle the display of the playtime for a video.')
+//  );
+//  $form['menu']['video_displayfilesize'] = array(
+//      '#type' => 'checkbox',
+//      '#title' => t('Display filesize'),
+//      '#default_value' => variable_get('video_displayfilesize', 1),
+//      '#description' => t('Toggle the display of the filesize for a video.')
+//  );
+//  $form['menu']['video_autoplay'] = array(
+//      '#type' => 'checkbox',
+//      '#title' => t('Automatically start video on page load'),
+//      '#default_value' => variable_get('video_autoplay', TRUE),
+//      '#description' => t('Start the video when the page and video loads')
+//  );
 
   //
   $gateways = _video_transcoder_types();
-//  print_r($gateways);
-//  $gateway_options = array();
-//  foreach( $gateways as $gateway) {
-//    $obj = new stdClass();
-//    $obj->option = array($gateway => _smsgateway_invoke( 'name', $gateway));
-//    $gateway_options[] = $obj;
-//  }
+  //  print_r($gateways);
+  //  $gateway_options = array();
+  //  foreach( $gateways as $gateway) {
+  //    $obj = new stdClass();
+  //    $obj->option = array($gateway => _smsgateway_invoke( 'name', $gateway));
+  //    $gateway_options[] = $obj;
+  //  }
 
-  
+
   $form['conv'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Video Plugins'),
+      '#title' => t('Video Additions'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE
   );
-  
-  $form['conv']['convertor'] = array(
+
+  $form['conv']['vid_convertor'] = array(
       '#type' => 'radios',
       '#title' => t('Video transcoder'),
-      '#default_value' => variable_get('convertor', 'ffmpeg'),
+      '#default_value' => variable_get('vid_convertor', 'ffmpeg'),
       '#options' => $gateways,
       '#description' => t('Video transcoder will help you to video conversion and automatic thumbnail generaion.')
   );
@@ -89,31 +89,31 @@ function video_admin_settings() {
 
 
   //auto thumb videos
-  $form['autothumb'] = array(
+  $form['conv']['autothumb'] = array(
       '#type' => 'fieldset',
       '#title' => t('Automatic video thumbnailing'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE
   );
-  $form['autothumb']['video_thumb_path'] = array(
+  $form['conv']['autothumb']['video_thumb_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to Video Thumbnails'),
       '#description' => t('Path to save video thumbanils extracted from video'),
       '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
   );
-  $form['autothumb']['no_of_video_thumbs'] = array(
+  $form['conv']['autothumb']['no_of_video_thumbs'] = array(
       '#type' => 'textfield',
       '#title' => t('No of thumbnails'),
       '#description' => t('No of thumbnails extracting from video'),
       '#default_value' => variable_get('no_of_video_thumbs', 5),
   );
-  $form['autothumb']['advanced'] = array(
+  $form['conv']['autothumb']['advanced'] = array(
       '#type' => 'fieldset',
       '#title' => t('Advanced settings'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE
   );
-  $form['autothumb']['advanced']['video_ffmpeg_thumbnailer_options'] = array(
+  $form['conv']['autothumb']['advanced']['video_ffmpeg_thumbnailer_options'] = array(
       '#type' => 'textfield',
       '#title' => t('Video thumbnailer options'),
       '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ').'<ol><li>'.t('%videofile (the video file to thumbnail)').'<li>'.t('%thumbfile (a newly created temporary file to overwrite with the thumbnail)').'</ol>'.t('Only the first two are mandatory.  For example, older versions of ffmpeg should use something like: !old While newer versions should use something like: !new', array('!old' => "<div>-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile</div>", '!new' => '<div>-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile</div>')),
@@ -122,13 +122,13 @@ function video_admin_settings() {
 
 
   // automatic video conversion settings
-  $form['autoconv'] = array(
+  $form['conv']['autoconv'] = array(
       '#type' => 'fieldset',
       '#title' => t('Automatic video conversion'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE
   );
-  $form['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
+  $form['conv']['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Video bitrate'),
       '#description' => t('The video bitrate in bit/s of the converted video.'),
@@ -136,7 +136,7 @@ function video_admin_settings() {
       '#maxlength' => 10,
       '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200000),
   );
-  $form['autoconv']['video_ffmpeg_helper_auto_cvr_audio_bitrate'] = array(
+  $form['conv']['autoconv']['video_ffmpeg_helper_auto_cvr_audio_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Audio bitrate'),
       '#description' => t('The audio bitrate in bit/s of the converted video.'),
@@ -144,13 +144,13 @@ function video_admin_settings() {
       '#maxlength' => 10,
       '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
   );
-  $form['autoconv']['advanced'] = array(
+  $form['conv']['autoconv']['advanced'] = array(
       '#type' => 'fieldset',
       '#title' => t('Advanced settings'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE
   );
-  $form['autoconv']['advanced']['video_ffmpeg_helper_auto_cvr_options'] = array(
+  $form['conv']['autoconv']['advanced']['video_ffmpeg_helper_auto_cvr_options'] = array(
       '#type' => 'textfield',
       '#title' => t('Video converter options'),
       '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ul>'.
@@ -173,7 +173,17 @@ function video_admin_settings() {
  *
  */
 function video_admin_settings_validate($form, &$form_state) {
-  ; // for future use
+    $function = variable_get('vid_convertor', 'ffmpeg') . '_check_exe_path';
+    if (function_exists($function)) {
+      $executable = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
+      if(!$function($executable)){
+        form_set_error('video_transcoder_path', t('Please specify correct executable path to Transcoder.'));
+      }
+    }
+    else {
+      form_set_error('vid_convertor', t('Transcoder <b>'. variable_get('vid_convertor', 'ffmpeg').'</b> not implemented properly.'));
+    }
+    
 }
 
 /**
