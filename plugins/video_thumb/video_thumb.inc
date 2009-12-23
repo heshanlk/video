@@ -5,7 +5,7 @@
  * @file
  * Enable image support for video module.
  *
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
  */
 
 function video_auto_thumb_process_api (&$element) {

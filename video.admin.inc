@@ -54,6 +54,17 @@ function video_admin_settings() {
       '#default_value' => variable_get('video_autoplay', TRUE),
       '#description' => t('Start the video when the page and video loads')
   );
+
+  $form['ffmpeg'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced Configurations'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE
+  );
+
+  
+
+
 variable_get('video_thumb_path', 'video_thumbs');
 variable_get('no_of_video_thumbs', 5);
 variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');

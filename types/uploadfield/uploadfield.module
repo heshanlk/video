@@ -495,7 +495,7 @@ function uploadfield_v_video($op, &$element) {
     case 'thumbs':
       module_load_include('inc', 'video', '/plugins/video_thumb/video_thumb');
       //create thumbs and display
-      video_thumb_process_api($element);
+      video_auto_thumb_process_api($element);
       break;
   }
 }

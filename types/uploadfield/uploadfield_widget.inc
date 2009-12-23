@@ -234,7 +234,10 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       '#attributes' => array('class' => 'video-width-text'),
   );
 
-
+  // only in preview mode and then create thumbnails
+  if($field['widget']['autoconversion']) {
+    video_module_invoke('convert', $element);
+  }
   //bypass auto conversion
   if (user_access('bypass conversion video')) {
     $element['data']['bypass_autoconversion'] = array(
@@ -247,14 +250,12 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   }
 
   //Create video thubs and save in a directory then we can get thumbnails from it using folder read
-  
+
   // only in preview mode and then create thumbnails
   if($field['widget']['autothumbnail']) {
     video_module_invoke('thumbs', $element);
   }
   // default image default_image
-  // use default thumb
-  // TODO : extend permission to override node wise thumbnail
   if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
     $element['data']['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
@@ -265,6 +266,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         '#attributes' => array('class' => 'video-default-thumbnail'),
     );
   }
+
 
   // creating Update/Insert/Delete API
   // TODO : use if any better solution than this with filefield
