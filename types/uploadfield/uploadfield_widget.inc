@@ -237,15 +237,15 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   if($field['widget']['autoconversion']) {
     video_module_invoke('convert', $element);
     //bypass auto conversion
-    if (user_access('bypass conversion video')) {
-      $element['data']['bypass_autoconversion'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Bypass auto conversion'),
-          '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
-          '#description' => t('This will bypass your auto conversion of videos.'),
-          '#attributes' => array('class' => 'video-bypass-auto-conversion'),
-      );
-    }
+//    if (user_access('bypass conversion video')) {
+//      $element['data']['bypass_autoconversion'] = array(
+//          '#type' => 'checkbox',
+//          '#title' => t('Bypass auto conversion'),
+//          '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
+//          '#description' => t('This will bypass your auto conversion of videos.'),
+//          '#attributes' => array('class' => 'video-bypass-auto-conversion'),
+//      );
+//    }
   }
 
   //Create video thubs and save in a directory then we can get thumbnails from it using folder read

@@ -8,9 +8,7 @@
  * "php video_scheduler.php http://example.com/" or
  * "php video_scheduler.php http://example.org/drupal/"
  *
- * @author Fabio Varesano <fvaresano at yahoo dot it>
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
- * @todo
  */
 
 
