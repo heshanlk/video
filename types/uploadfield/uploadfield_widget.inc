@@ -185,30 +185,17 @@ function uploadfield_widget_value($element, $edit = FALSE) {
  * Element #process callback function.
  */
 function uploadfield_widget_process($element, $edit, &$form_state, $form) {
-//  print_r($element);
-//  exit;
-//   watchdog("cdn2 xmlrpc", "Received status information for video with token: " . $video_token, WATCHDOG_NOTICE);
 // TODO : get play duration/ image thumbnails
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
-  //  print_r($field['widget']);
-  //  exit;
   $element['#theme'] = 'uploadfield_widget_item';
 
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
   //TODO : implement preview video play
-  //    $element['preview']['#prefix'] = '<div class="video_thumbnail">';
-    $element['preview']['#suffix'] = '<div class="video_thumbnail">' .
+         $element['preview']['#suffix'] = '<div class="video_thumbnail">' .
         theme('uploadfield_image', $field['widget']['default_video_thumb'], '', '', array('width' => '150'), FALSE) .
         '</div>';
-  //        watchdog('uploadfield', 'nofile data');
-  }
-
-  //  $element['data'] = array (
-  //      '#type' => 'fieldset',
-  //      '#title' => t('Video Data'),
-  //      '#attributes' => array('class' => 'video-data'),
-  //  );
+   }
 
   // Check if using the default width and replace tokens.
   $default_width = user_access('override player width');
@@ -238,31 +225,17 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
 
   // only in preview mode and then create thumbnails
   if (isset($element['preview']) && $file['fid'] != 0) {
-  //    watchdog("video", "preview called");
-  //    module_load_include('inc', 'video', '/plugins/video_thumb');
-  //    module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
-    $thumbs = uploadfield_v_auto_thumbnail($file);
-//    print_r($file);
-    exit;
-    //get default image as a random value
+     $thumbs = uploadfield_v_auto_thumbnail($file);
     $default_thumb = '';
     $rnd_img = rand(1, variable_get('no_of_video_thumbs', 5));
     $default_thumb = $thumbs[$rnd_img]->filepath;
 
     if(is_array($thumbs)) {
       foreach($thumbs as $fid => $img) {
-      //      echo theme('uploadfield_image', file_create_url($img->filepath), '', '', array('width' => '50'), FALSE);
-        $thumbss[$img->filepath] = theme('uploadfield_image', $img, '', '', array('width' => '50'), FALSE);
+         $thumbss[$img->filepath] = theme('uploadfield_image', $img, '', '', array('width' => '50'), FALSE);
       }
     }
-  //
-  //    if(!empty($file['data']['video_thumb'])){
-  //      $fid = $file['data']['video_thumb'];
-  //      $fileid  = $thumbss[$fid];
-  ////    // set permanent value for vide thumbs
-  //      file_set_status($fileid, FILE_STATUS_PERMANENT);
-  //    }
-  }
+   }
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
       '#title' => t('Video Thumbnails'),
@@ -273,23 +246,10 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       '#attributes' => array('class' => 'video-thumbnails'),
   );
 
-  //  $use_default_thumb = (empty($file['status']) && empty($file['data']['title']));
-  //  if($use_default_thumb) {
-  //    $element['data']['video_thumb']['#value'] = $default_thumb;
-  //  }
-
-  //  $element['data']['video_thumb_old_fid'] = array (
-  //      '#type'=> 'value',
-  //      '#value' => $file['data']['video_thumb_old_fid'],
-  //  );
-
   // default image default_image
   // use default thumb
   // TODO : extend permission to override node wise thumbnail
-  //  $default_vid_thumb = (!$field['widget']['use_default_video_thumb'] || (empty($file['status']) && empty($file['data']['use_default_video_thumb'])));
-  // user access for default thumbnail
-  //  echo $file['data']['use_default_video_thumb'];
-  if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
+   if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {
     $element['data']['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
         '#title' => t('Override Video Thumbnail with Default'),
