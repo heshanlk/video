@@ -54,6 +54,10 @@ function video_admin_settings() {
       '#default_value' => variable_get('video_autoplay', TRUE),
       '#description' => t('Start the video when the page and video loads')
   );
+variable_get('video_thumb_path', 'video_thumbs');
+variable_get('no_of_video_thumbs', 5);
+variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
+variable_get('video_image_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile');
 
   return system_settings_form($form);
 }

@@ -60,3 +60,18 @@ function video_nodeapi(&$node, $op, $teaser) {
 //        break;
 //    }
 }
+
+/**
+ * Invokes hook_v_video() in every module.
+ *
+ * We cannot use module_invoke() for this, because the arguments need to
+ * be passed by reference.
+ */
+function video_module_invoke($type, &$array) {
+  foreach (module_list() as $module) {
+    $function = $module .'_v_video';
+    if (function_exists($function)) {
+      $function($type, $array);
+    }
+  }
+}

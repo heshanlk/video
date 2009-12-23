@@ -125,20 +125,20 @@ function uploadfield_widget_settings_validate($widget) {
 // Check that only web images are specified in the callback.
   $extensions = array_filter(explode(' ', $widget['file_extensions']));
   $web_extensions = array(
-    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
-    'divx', //divx
-    'rm', // realplayer
-    'flv', 'f4v', //flash player
-    'swf', // swf player
-    'dir', 'dcr', // dcr player
-    'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
-    'ogg' // ogg theora
+      'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
+      'divx', //divx
+      'rm', // realplayer
+      'flv', 'f4v', //flash player
+      'swf', // swf player
+      'dir', 'dcr', // dcr player
+      'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
+      'ogg' // ogg theora
   );
   if (count(array_diff($extensions, $web_extensions))) {
     form_set_error('file_extensions', t('Only web-standard videos (mp4, mpeg, mpg, wmv and avi) are supported through the video widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
   }
 
-  // Check that set resolutions are valid.
+  // Check that set video resolutions are valid.
   foreach (array('default_width') as $numerics) {
     if (!empty($widget[$numerics]) && !preg_match('/^[0-9]+$/', $widget[$numerics])) {
       form_set_error($numerics, t('Please specify default width in integers only (e.g. 640).'));
@@ -166,16 +166,18 @@ function uploadfield_widget_settings_save($widget) {
  */
 function uploadfield_widget_value($element, $edit = FALSE) {
   $item = filefield_widget_value($element, $edit);
-  if ($edit) {
-    $item['alt'] = isset($edit['alt']) ? $edit['alt'] : '';
-    $item['title'] = isset($edit['title']) ? $edit['title'] : '';
-    $item['default_video_thumb'] = isset($edit['default_video_thumb']['fid']) ? $edit['default_video_thumb']['fid'] : 'novalue';
-  }
-  else {
-    $item['alt'] = '';
-    $item['title'] = '';
-    $item['default_video_thumb'] = '';
-  }
+//  print_r($edit);
+//  exit;
+//  if ($edit) {
+//    $item['alt'] = isset($edit['alt']) ? $edit['alt'] : '';
+//    $item['title'] = isset($edit['title']) ? $edit['title'] : '';
+//    $item['video_thumb_fid'] = isset($edit['default_video_thumb']['fid']) ? $edit['default_video_thumb']['fid'] : 'novalue';
+//  }
+//  else {
+//    $item['alt'] = '';
+//    $item['title'] = '';
+//    $item['default_video_thumb'] = '';
+//  }
   return $item;
 }
 
@@ -183,6 +185,8 @@ function uploadfield_widget_value($element, $edit = FALSE) {
  * Element #process callback function.
  */
 function uploadfield_widget_process($element, $edit, &$form_state, $form) {
+//  print_r($element);
+//  exit;
 //   watchdog("cdn2 xmlrpc", "Received status information for video with token: " . $video_token, WATCHDOG_NOTICE);
 // TODO : get play duration/ image thumbnails
   $file = $element['#value'];
@@ -233,33 +237,47 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   //Create video thubs and save in a directory then we can get thumbnails from it using folder read
 
   // only in preview mode and then create thumbnails
-  if (isset($element['preview'])) {
-    watchdog("video", "preview called");
-//    module_load_include('inc', 'video', '/plugins/video_thumb');
-//    module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
+  if (isset($element['preview']) && $file['fid'] != 0) {
+  //    watchdog("video", "preview called");
+  //    module_load_include('inc', 'video', '/plugins/video_thumb');
+  //    module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
     $thumbs = uploadfield_v_auto_thumbnail($file);
+    //get default image as a random value
+    $default_thumb = '';
+    $rnd_img = rand(1, variable_get('no_of_video_thumbs', 5));
+    $default_thumb = $thumbs[$rnd_img]->filepath;
+
     foreach($thumbs as $fid => $img) {
-//      echo theme('uploadfield_image', file_create_url($img->filepath), '', '', array('width' => '50'), FALSE);
-      $thumbss[$fid] = theme('uploadfield_image', $img, '', '', array('width' => '50'), FALSE);
+    //      echo theme('uploadfield_image', file_create_url($img->filepath), '', '', array('width' => '50'), FALSE);
+      $thumbss[$img->filepath] = theme('uploadfield_image', $img, '', '', array('width' => '50'), FALSE);
     }
-//
-//    if(!empty($file['data']['video_thumb'])){
-//      $fid = $file['data']['video_thumb'];
-//      $fileid  = $thumbss[$fid];
-////    // set permanent value for vide thumbs
-//      file_set_status($fileid, FILE_STATUS_PERMANENT);
-//    }
+  //
+  //    if(!empty($file['data']['video_thumb'])){
+  //      $fid = $file['data']['video_thumb'];
+  //      $fileid  = $thumbss[$fid];
+  ////    // set permanent value for vide thumbs
+  //      file_set_status($fileid, FILE_STATUS_PERMANENT);
+  //    }
   }
-//exit;
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
       '#title' => t('Video Thumbnails'),
       '#options' => $thumbss,
-      '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : 3,
+      '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
       //      '#description' => t('Pleaes choose a thumbnail from above'),
       '#weight' => 10,
       '#attributes' => array('class' => 'video-thumbnails'),
   );
+
+  $use_default_thumb = (empty($file['status']) && empty($file['data']['title']));
+  if($use_default_thumb) {
+    $element['data']['video_thumb']['#value'] = $default_thumb;
+  }
+
+//  $element['data']['video_thumb_old_fid'] = array (
+//      '#type'=> 'value',
+//      '#value' => $file['data']['video_thumb_old_fid'],
+//  );
 
   // default image default_image
   // use default thumb
@@ -276,6 +294,30 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         '#weight' => 9,
         '#attributes' => array('class' => 'video-default-thumbnail'),
     );
+  }
+
+  // creating Update/Insert/Delete API
+  // TODO : use if any better solution than this with filefield
+  // hook_v_video()
+  if($form_state['submitted'] == 1) {
+    switch($form_state['values']['op']) {
+      case 'Save':
+      // update
+        if(!empty($form_state['values']['nid'])) {
+          video_module_invoke('update', $element);
+        }
+        // insert
+        else {
+          video_module_invoke('insert', $element);
+        }
+        break;
+      case 'Preview':
+      //        module_invoke_all('v_preview');
+        break;
+      case 'Delete':
+        video_module_invoke('delete', $element);
+        break;
+    }
   }
 
   return $element;

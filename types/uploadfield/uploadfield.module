@@ -226,15 +226,15 @@ function uploadfield_widget_upload_validators($field) {
   $validators = array();
 
   // Ensure that only web images are supported.
-    $web_extensions = array(
-    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
-    'divx', //divx
-    'rm', // realplayer
-    'flv', 'f4v', //flash player
-    'swf', // swf player
-    'dir', 'dcr', // dcr player
-    'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
-    'ogg' // ogg theora
+  $web_extensions = array(
+      'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
+      'divx', //divx
+      'rm', // realplayer
+      'flv', 'f4v', //flash player
+      'swf', // swf player
+      'dir', 'dcr', // dcr player
+      'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
+      'ogg' // ogg theora
   );
   $extensions = array_filter(explode(' ', $field['widget']['file_extensions']));
   if (empty($extensions)) {
@@ -246,12 +246,12 @@ function uploadfield_widget_upload_validators($field) {
   //  $validators['filefield_validate_is_image'] = array();
 
   // Add validators for resolutions.
-//  if (!empty($field['widget']['max_resolution']) || !empty($field['widget']['min_resolution'])) {
-//    $validators['filefield_validate_image_resolution'] = array(
-//        $field['widget']['max_resolution'],
-//        $field['widget']['min_resolution'],
-//    );
-//  }
+  //  if (!empty($field['widget']['max_resolution']) || !empty($field['widget']['min_resolution'])) {
+  //    $validators['filefield_validate_image_resolution'] = array(
+  //        $field['widget']['max_resolution'],
+  //        $field['widget']['min_resolution'],
+  //    );
+  //  }
 
   return $validators;
 }
@@ -272,11 +272,11 @@ function uploadfield_field_formatter_info() {
       'field types' => array('filefield'),
       'description' => t('Displays video thumb files then the video node.'),
       ),
-//      'video_imagelink' => array(
-//      'label' => t('Video Thumbnail linked to video file download'),
-//      'field types' => array('filefield'),
-//      'description' => t('Displays video files in their original size.'),
-//      ),
+      //      'video_imagelink' => array(
+      //      'label' => t('Video Thumbnail linked to video file download'),
+      //      'field types' => array('filefield'),
+      //      'description' => t('Displays video files in their original size.'),
+      //      ),
   );
   return $formatters;
 }
@@ -323,7 +323,7 @@ function uploadfield_form_content_field_overview_submit(&$form, &$form_state) {
  */
 function theme_uploadfield_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   $file = (array)$file;
-//  return $file['filepath'];
+  //  return $file['filepath'];
   if (!is_file($file['filepath'])) {
     return '<!-- File not found: '. $file['filepath'] .' -->';
   }
@@ -354,7 +354,7 @@ function theme_uploadfield_image($file, $alt = '', $title = '', $attributes = NU
     $query_character = (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PRIVATE && variable_get('clean_url', '0') == '0') ? '&' : '?';
     $query_string = $query_character . $file['timestamp'];
   }
-  
+
   $url = file_create_url($file['filepath']) . $query_string;
   $attributes['src'] = $url;
   $attributes = drupal_attributes($attributes);
@@ -388,18 +388,18 @@ function theme_uploadfield_widget_video_thumb($item = NULL) {
  * @} End defgroup "Theme Callbacks".
  */
 
- /**
-  * Implementing video module API
-  * hook_v_perm()
-  */
+/**
+ * Implementing video module API
+ * hook_v_perm()
+ */
 
- function uploadfield_v_perm(){
+function uploadfield_v_perm() {
   return array('use default thumbnail');
- }
+}
 
 /**
  * Implementation of hook_v_help
-*/
+ */
 function video_upload_v_help() {
 
   $help = array();
@@ -408,11 +408,11 @@ function video_upload_v_help() {
 
   return $help;
 }
- /**
+/**
  * Implements the hook_v_auto_thumnail
-*/
+ */
 function uploadfield_v_auto_thumbnail($vidfile) {
-  // as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
+// as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
   module_load_include('inc', 'video', '/plugins/video_thumb/video_thumb');
   if(module_hook('video_thumb', 'auto_thumbnail')) {
     return video_thumb_auto_thumbnail($vidfile);
@@ -423,9 +423,9 @@ function uploadfield_v_auto_thumbnail($vidfile) {
 
 /**
  * Implements the hook_v_auto_resolution
-*/
+ */
 function uploadfield_v_auto_resolution($vidfile) {
-  //TODO : add dynamic converter selector
+//TODO : add dynamic converter selector
   module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
   if(module_hook('ffmpeg', 'auto_playtime')) {
     return ffmpeg_auto_playtime($vidfile);
@@ -436,9 +436,9 @@ function uploadfield_v_auto_resolution($vidfile) {
 
 /**
  * Implements the hook_v_auto_resolution
-*/
+ */
 function uploadfield_v_auto_playtime($vidfile) {
-  //TODO : add dynamic converter selector
+//TODO : add dynamic converter selector
   module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
   if(module_hook('ffmpeg', 'auto_playtime')) {
     return ffmpeg_auto_playtime($vidfile);
@@ -447,20 +447,60 @@ function uploadfield_v_auto_playtime($vidfile) {
 }
 
 /**
- * Implementation of hook_nodeapi()
+ * Implementation of hook_v_video()
  */
-function uploadfield_nodeapi(&$node, $op, $teaser) {
-//  watchdog('uploadfield', $op . ' - called');
-//  print_r($node);
-//  exit;
-//    switch ($op) {
-//      case 'load':
-//          //exit;
-//        return _video_image_load($node);
-//
-//      case 'prepare':
-//          //exit;
-//        _video_image_prepare($node);
-//        break;
-//    }
+function uploadfield_v_video($op, &$element) {
+//  echo $op;
+  global $user;
+  switch ($op) {
+    case 'insert':
+    case 'update':
+    //          print_r($element['#value']);
+    //          exit;
+    // TODO : need to add validation on just submit scenario
+      $update = NULL;
+      $vidfile = $element['#value'];
+//      print_r($vidfile);
+      $vid = $vidfile['fid'];
+      $vid_path = $vidfile['data']['video_thumb'];
+      $vid_dir = explode('/', $vid_path);
+      $vid_name = $vid_dir[count($vid_dir) - 1];
+
+      $file = new stdClass();
+      $file->uid      = $user->uid;
+      $file->status   = FILE_STATUS_PERMANENT;
+      $file->filename = $vid_name;
+      $file->filepath = $vid_path;
+      $file->filemime = file_get_mimetype($vid_name);
+      $file->filesize = filesize($vid_path);
+      $file->timestamp = time();
+//      echo $vidfile['data']['video_thumb'];
+//print_r($element['#default_value']);
+//exit;
+//      exit;
+//      echo empty($vidfile['data']['video_thumb_fid']);
+      if($op == 'update'){
+        $old_fid = $element['#default_value']['data']['video_thumb_fid'];
+        $update = 'fid';
+        $file->fid = $old_fid;
+      }
+      drupal_write_record ('files', $file, $update);
+      // get fid if and only if insert
+      if($op == 'insert')
+      $file->fid = db_last_insert_id('files', 'fid');
+      // add file id to the data
+      $element['data']['video_thumb_fid'] = array (
+          '#type'=> 'value',
+          '#value' => $file->fid
+      );
+//      // delete old thumbs
+//      $old_fid->fid = $vidfile['data']['video_thumb_fid'];
+//      // cron will delete file
+//      if($old_fid->fid != $file->fid)
+//        file_set_status($old_fid, FILE_STATUS_TEMPORARY);
+
+      break;
+    case 'delete':
+      break;
+  }
 }
