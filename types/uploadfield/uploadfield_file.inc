@@ -19,9 +19,9 @@ function uploadfield_file_insert($file) {
  * Delete the admin thumbnail when the original is deleted.
  */
 function uploadfield_file_delete($file) {
-  if (uploadfield_file_is_image($file)) {
-    file_delete(uploadfield_file_admin_thumb_path($file, FALSE));
-  }
+//  if (uploadfield_file_is_image($file)) {
+//    file_delete(uploadfield_file_admin_thumb_path($file, FALSE));
+//  }
   // TODO : delete video thumbs
 }
 
@@ -29,7 +29,7 @@ function uploadfield_file_delete($file) {
  * Simple utility function to check if a file is an image.
  */
 function uploadfield_file_is_image($file) {
-//  return TRUE;
+  return TRUE;
   //TODO : add file validations
   $file = (object)$file;
   return in_array($file->filemime, array('image/jpg', 'image/pjpeg', 'image/jpeg', 'image/png', 'image/gif'));

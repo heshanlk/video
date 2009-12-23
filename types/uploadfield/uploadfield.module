@@ -408,17 +408,6 @@ function video_upload_v_help() {
 
   return $help;
 }
-/**
- * Implements the hook_v_auto_thumnail
- */
-function uploadfield_v_auto_thumbnail($vidfile) {
-// as we rely on ffmpeg_helper, let's check if we have video_ffmpeg_helper_installed
-  module_load_include('inc', 'video', '/plugins/video_thumb/video_thumb');
-  if(module_hook('video_thumb', 'auto_thumbnail')) {
-    return video_thumb_auto_thumbnail($vidfile);
-  }
-  return false;
-}
 
 
 /**
@@ -501,6 +490,12 @@ function uploadfield_v_video($op, &$element) {
 
       break;
     case 'delete':
+      //delete thumbnails
+      break;
+    case 'thumbs':
+      module_load_include('inc', 'video', '/plugins/video_thumb/video_thumb');
+      //create thumbs and display
+      video_thumb_process_api($element);
       break;
   }
 }
