@@ -66,8 +66,8 @@ function video_ffmpeg_helper_menu() {
  */
 function video_ffmpeg_helper_admin_settings_validate($form, &$form_state) {
   if (variable_get('video_image_auto_thumbnail', 0)) {
-    if (!_video_ffmpeg_helper_check_exe_path($form_state['values']['video_ffmpeg_helper_ffmpeg_path'])) {
-      form_set_error('video_ffmpeg_helper_ffmpeg_path', t('Set correct path for ffmpeg'));
+    if (!_video_ffmpeg_helper_check_exe_path($form_state['values']['video_transcoder_path'])) {
+      form_set_error('video_transcoder_path', t('Set correct path for ffmpeg'));
     }
     if (!is_numeric($form_state['values']['video_ffmpeg_helper_auto_thumbnail_seek'])) {
       form_set_error('video_ffmpeg_helper_auto_thumbnail_seek', t('Seek time must be an integer'));
@@ -121,7 +121,7 @@ function ffmpeg_get_video_info($vidfile) {
   // escape file name for safety
   $file = escapeshellarg($vidfile['filepath']);
   // create the full command to execute
-  $command = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg') . ' -i ' . $file;
+  $command = variable_get('video_transcoder_path', '/usr/bin/ffmpeg') . ' -i ' . $file;
 
   //execute the command
   ob_start();
@@ -229,7 +229,7 @@ function ffmpeg_auto_thumbnail($vidfile) {
     $thumbfile = $tmp . "/video-thumb-for-$fid-$i.png";
     //skip files already exists, this will save ffmpeg traffic
     if (!is_file($thumbfile)) {
-      $tnail = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
+      $tnail = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
       $options = preg_replace(array('/%videofile/', '/%thumbfile/', '/%seek/'), array($videofile, $thumbfile, $seek), variable_get('video_ffmpeg_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'));
       //    $options = preg_replace(array('/%videofile/', '/%tmp/', '/%id/', '/%interval/'), array($videofile, $tmp, $i, ($duration/$count)), variable_get('video_image_thumbnailer_options', '-ss %id*%interval -i %videofile -vframes 1 %thumbfile'));
       //  ffmpeg -ss $i*$interval -i intro.mov -vframes 1 -s 320x240 thumb_$i.jpg
@@ -269,7 +269,7 @@ function ffmpeg_auto_thumbnail($vidfile) {
 
 function ffmpeg_check_exe_path($path=NULL) {
   if (!$path) {
-    $path = variable_get('video_ffmpeg_helper_ffmpeg_path', '/usr/bin/ffmpeg');
+    $path = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
   }
   if (function_exists('is_executable')) {
     $test = 'is_executable';
