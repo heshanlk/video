@@ -27,6 +27,7 @@ function video_thumb_process_api(&$element) {
       }
     }
   }
+  
 
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
