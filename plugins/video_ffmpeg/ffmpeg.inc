@@ -197,8 +197,6 @@ function ffmpeg_auto_playtime($file) {
  *   a drupal file object
  */
 function ffmpeg_auto_thumbnail($vidfile) {
-//  print_r($vidfile);
-// copy the newly uploaded file object
   global $user;
   $uploaded_file = $vidfile;
   $fid = $uploaded_file["fid"];
@@ -206,9 +204,6 @@ function ffmpeg_auto_thumbnail($vidfile) {
   // are we debugging?
   // escape the filename for safety
   $videofile = escapeshellarg($uploaded_file['filepath']);
-  // let's create a temp filename into the drupal temp directory
-  //  $thumbfile = tempnam(file_directory_temp(), 'tnail-thumb');
-
   $thumb_path = variable_get('video_thumb_path', 'video_thumbs');
   //files will save in files/video_thumbs/#fileId folder
   $tmp = file_directory_path(). '/' . $thumb_path . '/' . $fid;
@@ -224,8 +219,6 @@ function ffmpeg_auto_thumbnail($vidfile) {
       field_file_check_directory($full_path, FILE_CREATE_DIRECTORY);
     }
   }
-
-
   $count = variable_get('no_of_video_thumbs', 5);
   $duration = ffmpeg_auto_playtime($vidfile);
   $files = NULL;
@@ -247,10 +240,6 @@ function ffmpeg_auto_thumbnail($vidfile) {
       passthru($command." 2>&1", $tnail_return);
       $tnail_output = ob_get_contents();
       ob_end_clean();
-      //    ffmpeg_get_video_info($node, $tnail_output);
-
-      //  _video_image_thumbnail_debug(t('Thumbnailer command: ').$command);
-      //  _video_image_thumbnail_debug(t('Thumbnailer output: ')."<pre>\n$tnail_output\n</pre>");
       if (!file_exists($thumbfile)) {
         $error_param = array(
             '%file' => $thumbfile,
@@ -260,20 +249,8 @@ function ffmpeg_auto_thumbnail($vidfile) {
         $error_msg = t("error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
         // let's log this
         watchdog('video_ffmpeg',$error_msg);
-      //return false;
-      }
-      if ($tnail_return) {
-      //    _video_image_thumbnail_debug(t('Failed to thumbnail video'));
-      //return $false;
       }
     }
-    //    new stdClass();
-    //    'filename' -> "video-thumb-for-$fid-$i.jpg",
-    //    'filemime' -> 'image/jpeg',
-    //    'filesize' => filesize($thumbfile),
-    //    'filepath' => $thumbfile,
-    //    'uid' => $user->uid,
-    //    );
     // Begin building file object.
     //TODO : use file_munge_filename()
     $file = new stdClass();
@@ -284,11 +261,6 @@ function ffmpeg_auto_thumbnail($vidfile) {
     $file->filemime = file_get_mimetype("video-thumb-for-$fid-$i.png");
     $file->filesize = filesize($thumbfile);
     $file->timestamp = time();
-    //    drupal_write_record('files', $file);
-    //    print_r(db_last_insert_id('files', 'fid'));
-    //    $file = file_save($file);
-    //  _video_image_thumbnail_debug(t('Successfully thumbnailed video'));
-    //    $files[db_last_insert_id('files', 'fid')] = $file;
     $files[] = $file;
   }
   return $files;
