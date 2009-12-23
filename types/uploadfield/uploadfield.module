@@ -486,5 +486,10 @@ function uploadfield_v_video($op, &$element) {
       //create thumbs and display
       video_auto_thumb_process($element);
       break;
+    case 'convert':
+      include_once dirname(__FILE__) . '/uploadfield_convert.inc';
+      //create FLV file
+      video_auto_transcode_process($element);
+      break;
   }
 }

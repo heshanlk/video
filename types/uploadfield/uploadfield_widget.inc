@@ -213,7 +213,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $element['#theme'] = 'uploadfield_widget_item';
 
-  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
+  if (isset($element['preview']) && $file['fid'] != 0) {
   //TODO : implement preview video play
     $tml_thumb = !empty($file['data']['video_thumb']) ? array('filepath' => $file['data']['video_thumb']) : $field['widget']['default_video_thumb'];
     $element['preview']['#suffix'] = '<div class="video_thumbnail">' .

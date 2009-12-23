@@ -8,8 +8,10 @@
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
  */
 
-function video_auto_transcode_process (&$element) {
-
-
-
+function video_auto_transcode_process(&$element) {
+  $file = $element['#value'];
+  $element['data']['old_vid'] = array(
+      '#type' => 'value',
+      '#value' => $file['fid']
+    );
  }
