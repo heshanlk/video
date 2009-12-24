@@ -52,8 +52,8 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
       $old_fid = $element['#default_value']['fid'];
       $serialized_data = array('old_file' => $old_fid);
       if($old_fid != $fid) {
-        $nid = _video_get_nid_by_video_token($content_types[0], $old_fid);
-        db_query('DELETE FROM {video_rendering} WHERE origfile = %d', $old_fid);
+//        $nid = _video_get_nid_by_video_token($content_types[0], $old_fid);
+        db_query('DELETE FROM {video_rendering} WHERE fid = %d', $old_fid);
         db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data)
           VALUES (%d, %d, %d, %d, %d, \'%s\')',
             $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data));
