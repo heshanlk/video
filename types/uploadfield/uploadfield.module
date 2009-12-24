@@ -415,7 +415,7 @@ function video_upload_v_help() {
  */
 function uploadfield_v_auto_resolution($vidfile) {
 //TODO : add dynamic converter selector
-  module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
+  module_load_include('inc', 'video', '/plugins/ffmpeg');
   if(module_hook('ffmpeg', 'auto_playtime')) {
     return ffmpeg_auto_playtime($vidfile);
   }
@@ -428,7 +428,7 @@ function uploadfield_v_auto_resolution($vidfile) {
  */
 function uploadfield_v_auto_playtime($vidfile) {
 //TODO : add dynamic converter selector
-  module_load_include('inc', 'video', '/plugins/video_transcode/ffmpeg');
+  module_load_include('inc', 'video', '/plugins/ffmpeg');
   if(module_hook('ffmpeg', 'auto_playtime')) {
     return ffmpeg_auto_playtime($vidfile);
   }

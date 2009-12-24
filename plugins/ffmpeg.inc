@@ -298,7 +298,77 @@ function video_ffmpeg_helper_theme() {
   );
 }
 
-function video_ffmpeg_helper_v_convert() {
+/**
+ * Implementing hook_auto_convert();
+ * @param <type> $job
+ */
+function ffmpeg_auto_convert(&$job) {
+  $videofile = escapeshellarg($job->filepath); // escape file name for safety
+  $convfile = tempnam(file_directory_temp(), 'video-rendering');
+  $audiobitrate = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64);
+  $videobitrate = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200);
+  $size = _video_render_get_size($job->filepath);
+  $converter = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
+  
+  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'),
+      array($videofile, $convfile, $audiobitrate, $size, $videobitrate),
+      variable_get('video_ffmpeg_helper_auto_cvr_options',
+      '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate -qscale 1 %convertfile'));
 
+  // set to the converted file output
+  $job->convfile = $convfile;
+
+  $command = VIDEO_RENDERING_NICE . " $converter $options";
+
+  //print('executing ' . $command); die;
+  watchdog('video_render', 'executing: ' . $command);
+
+  //execute the command
+  ob_start();
+  passthru($command." 2>&1", $command_return);
+  $command_output = ob_get_contents();
+  ob_end_clean();
+
+  //print $command_output;
+
+  if (!file_exists($job->convfile) || !filesize($job->convfile)) {
+    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output, WATCHDOG_ERROR);
+  //    _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
+  //    _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
+  }
+  else {
+    $file_name = basename($job->filename . ".flv");
+    $file = new stdClass();
+    $file->uid      = $job->uid;
+    $file->status   = FILE_STATUS_PERMANENT;
+    $file->filename = basename($file_name);
+    $file->filepath = $job->convfile;
+    $file->filemime = file_get_mimetype($file_name);
+    $file->filesize = filesize($thumbfile);
+    $file->timestamp = time();
+    $job['converted'] = $file;
+  }
 }
 
+
+/**
+ * Calculate the converted video size basing on the width set on administration.
+ * Aspect ration is maintained.
+ */
+function _video_render_get_size(&$job) {
+  $def_width = variable_get('video_ffmpeg_helper_auto_cvr_width', 400);
+
+  $height = $def_width * ($job->videoy / $job->videox); // do you remember proportions?? :-)
+
+
+  $height = round($height);
+  // add one if odd
+  if($height % 2) {
+    $height++;
+  }
+
+  $job->calculatedx = $def_width;
+  $job->calculatedy = $height;
+
+  return $def_width . 'x' . $height;
+}

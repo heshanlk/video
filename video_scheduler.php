@@ -50,7 +50,7 @@ error_reporting(E_ALL);
 
 
 // allow execution only from the command line!
-if(empty($_SERVER['REQUEST_METHOD'])) {
+if(!empty($_SERVER['REQUEST_METHOD'])) {
   video_scheduler_main();
 }
 else {
@@ -81,7 +81,7 @@ function video_scheduler_main() {
  */
 function video_scheduler_start($job) {
   $url = (isset($_SERVER['argv'][1])) ? escapeshellarg($_SERVER['argv'][1]) : '';
-  exec("php video_render.php $job->nid $job->vid $url > /dev/null &");
+  exec("php video_render.php $job->fid $url > /dev/null &");
 }
 
 
@@ -93,26 +93,32 @@ function video_scheduler_start($job) {
 function video_scheduler_select() {
 // load node and its file object
   module_load_include('inc', 'uploadfield', '/uploadfield_convert');
-
-  // TODO: order jobs by priority
-
-  // TODO: use db_query_range
   $jobs = array();
   $i = 0;
-  //  $count = db_result(db_query('SELECT COUNT(*) FROM {video_rendering} vr INNER JOIN {files} f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d ORDER BY f.timestamp', VIDEO_RENDERING_PENDING));
-  //  while($i < $count && $i < VIDEO_RENDERING_FFMPEG_INSTANCES) {
-  // this uses file sort, remove it for large file conversions
-  $result = db_query_range('SELECT f.fid FROM {video_rendering} vr INNER JOIN {files}
-      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d ORDER BY f.timestamp',
-      VIDEO_RENDERING_PENDING, 0, VIDEO_RENDERING_FFMPEG_INSTANCES);
-
-  $jobs = db_fetch_object($result);
-  print_r($jobs);
-  exit;
-  //    $i++;
-  //  }
-  //print_r($jobs);
+  $result = db_query_range('SELECT f.fid, f.filepath, f.filesize, f.filename FROM {video_rendering} vr INNER JOIN {files}
+      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d AND f.status = %d ORDER BY f.timestamp',
+      VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, VIDEO_RENDERING_FFMPEG_INSTANCES);
+  while($job = db_fetch_object($result)) {
+  //    $content_types = _video_get_content_types();
+  //    $content_type = $content_types;
+  //    $nid = _video_get_nid_by_video_token($content_type[0], $job->fid);
+  //    print_r($nid);
+  //    $node = node_load(array('nid' => $nid->nid));
+  //    print_r($node);
+    $jobs[] = $job;
+  }
+//  print_r($jobs);
+//  exit;
   return $jobs;
 }
+
+/**
+ * load file object
+ */
+//function _video_filde_load(){
+//  return db_fetch_object(db_query('SELECT f.fid FROM {video_rendering} vr INNER JOIN {files}
+//      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d ORDER BY f.timestamp',
+//      VIDEO_RENDERING_PENDING, 0, VIDEO_RENDERING_FFMPEG_INSTANCES));
+//}
 
 ?>

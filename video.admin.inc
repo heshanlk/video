@@ -17,12 +17,12 @@ function video_admin_settings() {
 
   $form = array();
 
-//  $form['menu'] = array(
-//      '#type' => 'fieldset',
-//      '#title' => t('General Behavior'),
-//      '#collapsible' => TRUE,
-//      '#collapsed' => FALSE
-//  );
+  $form['menu'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('General Behavior'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE
+  );
 
   //  $form['menu']['video_displaydownloadmenutab'] = array(
   //    '#type' => 'checkbox',
@@ -48,12 +48,12 @@ function video_admin_settings() {
 //      '#default_value' => variable_get('video_displayfilesize', 1),
 //      '#description' => t('Toggle the display of the filesize for a video.')
 //  );
-//  $form['menu']['video_autoplay'] = array(
-//      '#type' => 'checkbox',
-//      '#title' => t('Automatically start video on page load'),
-//      '#default_value' => variable_get('video_autoplay', TRUE),
-//      '#description' => t('Start the video when the page and video loads')
-//  );
+  $form['menu']['video_autoplay'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Automatically start video on page load'),
+      '#default_value' => variable_get('video_autoplay', TRUE),
+      '#description' => t('Start the video when the page and video loads')
+  );
 
   //
   $gateways = _video_transcoder_types();
