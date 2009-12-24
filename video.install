@@ -16,21 +16,7 @@ function video_schema() {
   $schema['video_rendering'] = array(
     'description' => t('Store video transcoding queue'),
     'fields' => array(
-      'vid' => array(
-        'description' => t('video id : primary key'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'nid' => array(
-        'description' => t('Node id : index of the  {node}.nid'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'origfile' => array(
+      'fid' => array(
         'description' => t('original file id'),
         'type' => 'int',
         'unsigned' => TRUE,
@@ -63,11 +49,17 @@ function video_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+        'serialized_data' => array(
+        'description' => t('Informations related to the videos'),
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+
     ),
     'indexes' => array(
-    'nid' => array('nid'),
+    'status' => array('status'),
     ),
-    'primary key' => array('vid'),
+    'primary key' => array('fid'),
   );
 
   return $schema;
