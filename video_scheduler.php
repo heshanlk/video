@@ -3,19 +3,19 @@
 /**
  * @file
  * Implement video rendering scheduling.
- * If you are not using sites/default/settings.php as your settings file,  
+ * If you are not using sites/default/settings.php as your settings file,
  * add an optional parameter for the drupal site url:
  * "php video_scheduler.php http://example.com/" or
  * "php video_scheduler.php http://example.org/drupal/"
  *
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
- * 
+ *
  */
 
 
 /**
  * video_scheduler.php configuration
-*/
+ */
 
 // number of conversion jobs active at the same time
 define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
@@ -23,11 +23,11 @@ define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 /**
  * video_scheduler.php configuration ends.
  * DO NOT EDIT BELOW THIS LINE
-*/
+ */
 
 /**
  * Define some constants
-*/
+ */
 define('VIDEO_RENDERING_PENDING', 1);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
@@ -62,9 +62,9 @@ else {
 
 /**
  * Main for video_scheduler.php
-*/
+ */
 function video_scheduler_main() {
-
+//  echo 'ok';
   if($jobs = video_scheduler_select()) {
     foreach ($jobs as $job) {
       video_scheduler_start($job);
@@ -78,7 +78,7 @@ function video_scheduler_main() {
 
 /**
  * Starts rendering for a job
-*/
+ */
 function video_scheduler_start($job) {
   $url = (isset($_SERVER['argv'][1])) ? escapeshellarg($_SERVER['argv'][1]) : '';
   exec("php video_render.php $job->nid $job->vid $url > /dev/null &");
@@ -89,22 +89,29 @@ function video_scheduler_start($job) {
  * Select VIDEO_RENDERING_FFMPEG_INSTANCES jobs from the queue
  *
  * @return an array containing jobs
-*/
+ */
 function video_scheduler_select() {
-
-  $result = db_query('SELECT * FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid WHERE vr.nid = n.nid AND vr.status = %d ORDER BY n.created', VIDEO_RENDERING_PENDING);
+// load node and its file object
+  module_load_include('inc', 'uploadfield', '/uploadfield_convert');
 
   // TODO: order jobs by priority
 
   // TODO: use db_query_range
   $jobs = array();
   $i = 0;
-  $count = db_result(db_query('SELECT COUNT(*) FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid WHERE vr.nid = n.nid AND vr.status = %d', VIDEO_RENDERING_PENDING));
-  while($i < $count && $i < VIDEO_RENDERING_FFMPEG_INSTANCES) {
-    $jobs[] = db_fetch_object($result);
-    $i++;
-  }
-//print_r($jobs);
+  //  $count = db_result(db_query('SELECT COUNT(*) FROM {video_rendering} vr INNER JOIN {files} f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d ORDER BY f.timestamp', VIDEO_RENDERING_PENDING));
+  //  while($i < $count && $i < VIDEO_RENDERING_FFMPEG_INSTANCES) {
+  // this uses file sort, remove it for large file conversions
+  $result = db_query_range('SELECT f.fid FROM {video_rendering} vr INNER JOIN {files}
+      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d ORDER BY f.timestamp',
+      VIDEO_RENDERING_PENDING, 0, VIDEO_RENDERING_FFMPEG_INSTANCES);
+
+  $jobs = db_fetch_object($result);
+  print_r($jobs);
+  exit;
+  //    $i++;
+  //  }
+  //print_r($jobs);
   return $jobs;
 }
 
