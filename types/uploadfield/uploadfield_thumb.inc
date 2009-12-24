@@ -11,7 +11,7 @@
 function video_auto_thumb_process (&$element) {
 //developed for ffmpeg support
   $file = $element['#value'];
-  $field = content_fields($element['#field_name'], $element['#type_name']);
+//  $field = content_fields($element['#field_name'], $element['#type_name']);
   if (isset($element['preview']) && $file['fid'] != 0) {
   // TODO : change this to use any transcode to generate thumbnails
     $transcoder = variable_get('vid_convertor', 'ffmpeg');
@@ -35,7 +35,6 @@ function video_auto_thumb_process (&$element) {
     }
   }
 
-
   $element['data']['video_thumb'] = array(
       '#type' => 'radios',
       '#title' => t('Video Thumbnails'),
@@ -45,9 +44,4 @@ function video_auto_thumb_process (&$element) {
       '#weight' => 10,
       '#attributes' => array('class' => 'video-thumbnails'),
   );
-
-//  if(!empty($file['data']['video_thumb'])){
-//    $element['data']['video_thumb']['#value'] = $default_thumb;
-//  }
-
  }

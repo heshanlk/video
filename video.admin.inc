@@ -128,6 +128,20 @@ function video_admin_settings() {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE
   );
+  $form['conv']['autoconv']['video_ffmpeg_width'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Destination video Width'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_width', 640),
+  );
+  $form['conv']['autoconv']['video_ffmpeg_height'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Destination video height'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_height', 360),
+  );
   $form['conv']['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Video bitrate'),

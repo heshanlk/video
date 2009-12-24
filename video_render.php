@@ -83,6 +83,7 @@ function video_render_main() {
   $job = _video_render_get_converted_file($job);
   $file = $job['converted'];
   $tmpfile = $file->filepath;
+  
   // the above no more works as token supports - use dirname
   $dest_dir = dirname($job->filepath) . '/';
 
@@ -145,24 +146,4 @@ function _video_render_load_job($fid, $status) {
 function _video_render_job_change_status($fid, $status) {
   $result = db_query('UPDATE {video_rendering} SET status = %d WHERE fid = %d ', $status, $fid);
 }
-
-/**
- * Set the video_encoded_fid in the video table
- * We store -1 as video_encoded_fid if the encoding failed
- */
-function _video_render_set_video_encoded_fid($nid, $vid, $encoded_fid) {
-  db_lock_table('video');
-  $node = db_fetch_object(db_query("SELECT serialized_data FROM {video} WHERE nid = %d AND vid = %d", $nid, $vid));
-  $node->serial_data = unserialize($node->serialized_data);
-  //GMM: save fid of previously encoded file
-  $old_fid = $node->serial_data['video_encoded_fid'];
-  $node->serial_data['video_encoded_fid'] = $encoded_fid;
-  $node->serialized_data = serialize($node->serial_data);
-  db_query("UPDATE {video} SET serialized_data = '%s' WHERE nid = %d AND vid = %d", $node->serialized_data, $nid, $vid);
-  db_unlock_tables();
-  // GMM: update status on previously encoded fid to 0 so drupal will delete
-  if($old_fid > 0)
-    db_query("UPDATE {files} SET status = %d WHERE fid = %d", 0, $old_fid);
-}
-
 ?>

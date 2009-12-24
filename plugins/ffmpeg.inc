@@ -307,7 +307,7 @@ function ffmpeg_auto_convert(&$job) {
   $convfile = tempnam(file_directory_temp(), 'video-rendering');
   $audiobitrate = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64);
   $videobitrate = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200);
-  $size = _video_render_get_size($job->filepath);
+  $size = _video_render_get_size();
   $converter = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
   
   $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'),
@@ -355,20 +355,14 @@ function ffmpeg_auto_convert(&$job) {
  * Calculate the converted video size basing on the width set on administration.
  * Aspect ration is maintained.
  */
-function _video_render_get_size(&$job) {
-  $def_width = variable_get('video_ffmpeg_helper_auto_cvr_width', 400);
+function _video_render_get_size() {
+//      $content_types = _video_get_content_types();
+//      $content_type = $content_types;
+//      $nid = _video_get_nid_by_video_token($content_type[0], $job->fid);
+////      print_r($nid);
+//      $node = node_load(array('nid' => $nid->nid));
+//      print_r($node);
 
-  $height = $def_width * ($job->videoy / $job->videox); // do you remember proportions?? :-)
 
-
-  $height = round($height);
-  // add one if odd
-  if($height % 2) {
-    $height++;
-  }
-
-  $job->calculatedx = $def_width;
-  $job->calculatedy = $height;
-
-  return $def_width . 'x' . $height;
+  return variable_get('video_ffmpeg_width', 640) . 'x' . variable_get('video_ffmpeg_height', 360);
 }

@@ -34,10 +34,19 @@ function video_auto_transcode_process(&$element) {
  */
 function video_auto_transcode_add_to_queue(&$element, $op) {
   $file = $element['#value'];
+
+  //load cck instace settings
+//  $field = content_fields($element['#field_name'], $element['#type_name']);
+//  $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
+//  $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
+
+//  $serialized_data = array('resolution' =>$field['widget']['default_resolution'], 'width' => $element['#item']['data']['width']);
+
   $fid = $file['fid'];
+
   switch($op) {
     case 'insert':
-       db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed)
+      db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed)
           VALUES (%d, %d, %d, %d, %d)',
           $fid, 0, VIDEO_RENDERING_PENDING, 0, 0);
       drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
@@ -45,12 +54,13 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
 
     case 'update':
       $old_fid = $element['#default_value']['fid'];
-      $serialized_data = array('old_file' => $old_fid);
+      $serialized_data ['old_file'] = $old_fid;
       if($old_fid != $fid) {
         db_query('DELETE FROM {video_rendering} WHERE fid = %d', $old_fid);
         db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data)
           VALUES (%d, %d, %d, %d, %d, \'%s\')',
             $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data));
+        drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
       }
       break;
   }

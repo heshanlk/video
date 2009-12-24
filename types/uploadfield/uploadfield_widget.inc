@@ -273,8 +273,8 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   if($form_state['submitted'] == 1) {
     switch($form_state['values']['op']) {
       case 'Save':
-//          print_r($form);
-//  exit;
+      //          print_r($form);
+      //  exit;
       // update
         if(!empty($form_state['values']['nid'])) {
           video_module_invoke('update', $element);
