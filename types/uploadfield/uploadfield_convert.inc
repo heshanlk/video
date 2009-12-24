@@ -34,30 +34,34 @@ function video_auto_transcode_process(&$element) {
  */
 function video_auto_transcode_add_to_queue(&$element, $op) {
   $file = $element['#value'];
-  $fid = $file['fid'];
+
   //TODO : add strong handler to work with multiple content types
   $content_types = _video_get_content_types();
   $content_type = $content_types;
   //  print_r($content_type);
   //  exit;
   //  foreach ($content_types as $content_type) {
-  $nid = _video_get_nid_by_video_token($content_types[0], $fid);
+
   //    watchdog('video_upload', $nid . 'nid is');
   //    $query = "SELECT id FROM {cdn2_videos} WHERE nid = %d";
   //    $result = db_result(db_query($query, $nid));
   //  }
   switch($op) {
     case 'insert':
+      $fid = $file['fid'];
+      $nid = _video_get_nid_by_video_token($content_types[0], $fid);
       db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed)
           VALUES (%d, %d, \'%s\', %d, %d, %d, %d)',
           $nid->nid, $nid->nid, $fid, 0, VIDEO_RENDERING_PENDING, 0, 0);
       drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
       break;
     case 'update':
-      db_query('DELETE FROM {video_rendering} WHERE origfile = %d', $fid);
-      db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed)
-          VALUES (%d, %d, \'%s\', %d, %d, %d, %d)',
-          $nid->nid, $nid->nid, $fid, 0, VIDEO_RENDERING_PENDING, 0, 0);
+      $old_fid = $element['#default_value']['fid'];
+      $fid = $file['fid'];
+      //update if only change the file
+      if($old_fid != $fid) {
+        db_query('UPDATE {video_rendering} SET fid = %d, status = %d WHERE origfile = %d', $fid, VIDEO_RENDERING_PENDING, $old_fid);
+      }
       break;
   }
 }
