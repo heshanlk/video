@@ -108,7 +108,7 @@ function theme_video_play_flash($element) {
   );
   }
   else {
-    $output='<p><a href="http://drupal.org/project/flowplayer/" title="FlowPlayer Module">FlowPlayer Module</a> must be enabled in order to play .flv videos.</p>';
+    $output='<p>FlowPlayer Modulemust be enabled in order to play .flv videos.</p>';
   }
   return $output;
 }
