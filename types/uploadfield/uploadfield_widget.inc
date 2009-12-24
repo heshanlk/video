@@ -88,7 +88,7 @@ function uploadfield_widget_settings_form($widget) {
   $form['plugings']['autoconversion'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable auto conversion video'),
-      '#description' => t('Use ffmpeg(Default) to automaticcally convert videos to FLV, Please make sure to configure convertor settings.'),
+      '#description' => t('Use ffmpeg(Default) to automaticcally convert videos to web compatible types eg. FLV, Please make sure to configure convertor settings.'),
       '#default_value' => $widget['autoconversion'],
   );
   $form['plugings']['autothumbnail'] = array(

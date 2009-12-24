@@ -27,4 +27,14 @@ function video_auto_transcode_process(&$element) {
 //      '#type' => 'value',
 //      '#value' => VIDEO_RENDERING_PENDING
 //    );
- }
+}
+
+/**
+ * Add a video conversion rendering process to the queue
+ */
+function video_auto_transcode_add_to_queue(&$node) {
+  db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed)
+      VALUES (%d, %d, \'%s\', %d, %d, %d, %d)',
+      $node->vid, $node->nid, $file->filepath, 0, VIDEO_RENDERING_PENDING, 0, 0);
+  drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
+}
