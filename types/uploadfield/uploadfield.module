@@ -168,12 +168,12 @@ function uploadfield_widget_info() {
   $module_path = drupal_get_path('module', 'uploadfield');
   return array(
   'uploadfield_widget' => array(
-  'label' => t('Video'),
-  'field types' => array('filefield'),
-  'multiple values' => CONTENT_HANDLE_CORE,
-  'callbacks' => array('default value' => CONTENT_CALLBACK_CUSTOM),
-  'description' => t('An edit widget for video files, including video thumbnails and transcoding to flash.'),
-  ),
+      'label' => t('Video'),
+      'field types' => array('filefield'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array('default value' => CONTENT_CALLBACK_CUSTOM),
+      'description' => t('An edit widget for video files, including video thumbnails and transcoding to flash.'),
+    ),
   );
 }
 
@@ -445,6 +445,7 @@ function uploadfield_v_video($op, &$element) {
     case 'update':
     // TODO : need to add validation on just submit scenario
       $field = content_fields($element['#field_name'], $element['#type_name']);
+      // auto thumbnailing
       if($field['widget']['autothumbnail']) {
         $update = NULL;
         $vidfile = $element['#value'];
@@ -476,6 +477,14 @@ function uploadfield_v_video($op, &$element) {
             '#type'=> 'value',
             '#value' => $file->fid
         );
+      }
+      
+      // auto covnersion
+      if($field['widget']['autoconversion']) {
+
+//          print_r($element);
+//          exit;
+//        video_auto_transcode_add_to_queue(&$node);
       }
       break;
     case 'delete':

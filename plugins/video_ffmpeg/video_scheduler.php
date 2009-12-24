@@ -108,7 +108,4 @@ function video_scheduler_select() {
   return $jobs;
 }
 
-
-
-
 ?>
