@@ -18,13 +18,13 @@ define('VIDEO_RENDERING_COMPLETE', 10);
 define('VIDEO_RENDERING_FAILED', 20);
 
 function video_auto_transcode_process(&$element) {
-  $file = $element['#value'];
-  $element['data']['old_vid'] = array(
-      '#type' => 'value',
-      '#value' => $file['fid']
-    );
-  $element['data']['vid_transcode_status'] = array(
-      '#type' => 'value',
-      '#value' => VIDEO_RENDERING_PENDING
-    );
+//  $file = $element['#value'];
+//  $element['data']['old_vid'] = array(
+//      '#type' => 'value',
+//      '#value' => $file['fid']
+//    );
+//  $element['data']['vid_transcode_status'] = array(
+//      '#type' => 'value',
+//      '#value' => VIDEO_RENDERING_PENDING
+//    );
  }
