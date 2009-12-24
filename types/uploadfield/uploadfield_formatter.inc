@@ -23,8 +23,20 @@ function theme_uploadfield_formatter_video_plain($element) {
     return '';
   }
 
-  return _video_common_get_player($element);
+  $result = db_query('SELECT vr.status FROM {video_rendering} vr INNER JOIN {files}
+      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND f.status = %d AND f.fid = %d',
+      FILE_STATUS_PERMANENT, $fid);
+  $status = db_fetch_object($result);
 
+  if($status->status == VIDEO_RENDERING_ACTIVE || $status->status == VIDEO_RENDERING_PENDING) {
+    return theme('video_inprogress');
+  }
+  else if ($status->status == VIDEO_RENDERING_FAILED) {
+    return theme('video_encoding_failed');
+  }
+  else {
+    return _video_common_get_player($element);
+  }
 //  $field = content_fields($element['#field_name']);
 //  $item = $element['#item'];
 //
@@ -83,4 +95,29 @@ function theme_uploadfield_formatter_video_imagelink($element) {
   $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
   $class = 'uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
   return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
+}
+
+/**
+ * Displays a "encoding in progress message"
+ */
+function theme_video_inprogress() {
+  return '<div class="video-ffmpeg-helper-inprogress">'. t('This video is currently being processed. Please wait.') . '</div>';
+}
+
+
+/**
+ * Display an "encoding failed" message"
+ */
+function theme_video_encoding_failed() {
+  return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
+}
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function video_ffmpeg_helper_theme() {
+  return array(
+
+  );
 }

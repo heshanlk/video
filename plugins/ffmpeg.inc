@@ -269,36 +269,6 @@ function ffmpeg_check_exe_path($path=NULL) {
 }
 
 /**
- * Displays a "encoding in progress message"
- */
-function theme_video_ffmpeg_helper_inprogress($node) {
-  return '<div class="video-ffmpeg-helper-inprogress">'. t('This video is currently being processed. Please wait.') . '</div>';
-}
-
-
-/**
- * Display an "encoding failed" message"
- */
-function theme_video_ffmpeg_helper_encoding_failed($node) {
-  return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
-}
-
-
-/**
- * Implementation of hook_theme().
- */
-function video_ffmpeg_helper_theme() {
-  return array(
-  'video_ffmpeg_helper_encoding_failed' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_ffmpeg_helper_inprogress' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  );
-}
-
-/**
  * Implementing hook_auto_convert();
  * @param <type> $job
  */

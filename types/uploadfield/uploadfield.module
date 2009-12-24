@@ -106,6 +106,12 @@ function uploadfield_theme() {
   'video_play_windowsmedia' => array(
   'arguments' => array('node' => NULL),
   ),
+  'video_encoding_failed' => array(
+  'arguments' => array(),
+  ),
+  'video_inprogress' => array(
+  'arguments' => array(),
+  ),
   );
 }
 
