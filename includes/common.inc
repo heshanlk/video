@@ -7,6 +7,7 @@
  * @todo   Configure default players by video filetype (user configurable?)
  */
 
+
 /**
  * Get the object for the suitable player for the parameter resource
  */
