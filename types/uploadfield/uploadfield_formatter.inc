@@ -8,7 +8,13 @@
 
 //include common player file
 
-
+/**
+ * Define some constants
+ */
+define('VIDEO_RENDERING_PENDING', 1);
+define('VIDEO_RENDERING_ACTIVE', 5);
+define('VIDEO_RENDERING_COMPLETE', 10);
+define('VIDEO_RENDERING_FAILED', 20);
 /**
  *
  * @param <type> $element
@@ -22,12 +28,12 @@ function theme_uploadfield_formatter_video_plain($element) {
   if (empty($element['#item']['fid'])) {
     return '';
   }
-
+//print_r($element['#item']['fid']);
   $result = db_query('SELECT vr.status FROM {video_rendering} vr INNER JOIN {files}
       f ON vr.fid = f.fid WHERE vr.fid = f.fid AND f.status = %d AND f.fid = %d',
-      FILE_STATUS_PERMANENT, $fid);
+      FILE_STATUS_PERMANENT, $element['#item']['fid']);
   $status = db_fetch_object($result);
-
+//  print_r($status);
   if($status->status == VIDEO_RENDERING_ACTIVE || $status->status == VIDEO_RENDERING_PENDING) {
     return theme('video_inprogress');
   }

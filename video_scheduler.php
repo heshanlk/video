@@ -50,7 +50,7 @@ error_reporting(E_ALL);
 
 
 // allow execution only from the command line!
-if(!empty($_SERVER['REQUEST_METHOD'])) {
+if(empty($_SERVER['REQUEST_METHOD'])) {
   video_scheduler_main();
 }
 else {
