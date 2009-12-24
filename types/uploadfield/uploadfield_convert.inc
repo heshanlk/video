@@ -32,18 +32,34 @@ function video_auto_transcode_process(&$element) {
 /**
  * Add a video conversion rendering process to the queue
  */
-function video_auto_transcode_add_to_queue(&$node) {
+function video_auto_transcode_add_to_queue(&$element, $op) {
+  $file = $element['#value'];
+  $fid = $file['fid'];
+  //TODO : add strong handler to work with multiple content types
   $content_types = _video_get_content_types();
-  foreach ($content_types as $content_type) {
-    $nid = _video_get_nid_by_video_token($content_type, $video_token);
-    $query = "SELECT id FROM {cdn2_videos} WHERE nid = %d";
-    $result = db_result(db_query($query, $nid));
+  $content_type = $content_types;
+  //  print_r($content_type);
+  //  exit;
+  //  foreach ($content_types as $content_type) {
+  $nid = _video_get_nid_by_video_token($content_types[0], $fid);
+  //    watchdog('video_upload', $nid . 'nid is');
+  //    $query = "SELECT id FROM {cdn2_videos} WHERE nid = %d";
+  //    $result = db_result(db_query($query, $nid));
+  //  }
+  switch($op) {
+    case 'insert':
+      db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed)
+          VALUES (%d, %d, \'%s\', %d, %d, %d, %d)',
+          $nid->nid, $nid->nid, $fid, 0, VIDEO_RENDERING_PENDING, 0, 0);
+      drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
+      break;
+    case 'update':
+      db_query('DELETE FROM {video_rendering} WHERE origfile = %d', $fid);
+      db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed)
+          VALUES (%d, %d, \'%s\', %d, %d, %d, %d)',
+          $nid->nid, $nid->nid, $fid, 0, VIDEO_RENDERING_PENDING, 0, 0);
+      break;
   }
-  
-  db_query('INSERT INTO {video_rendering} (vid, nid, origfile, pid, status, started, completed)
-      VALUES (%d, %d, \'%s\', %d, %d, %d, %d)',
-      $node->vid, $node->nid, $file->filepath, 0, VIDEO_RENDERING_PENDING, 0, 0);
-  drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
 }
 
 function _video_get_content_types() {
@@ -73,10 +89,15 @@ function _video_get_field_by_content_type($content_type) {
   }
 }
 
-function _video_get_nid_by_video_token($content_type, $video_token) {
+function _video_get_nid_by_video_token($content_type, $fid) {
   $field_info = _video_get_field_by_content_type($content_type);
+  //  print_r($field_info);
+  //  exit;
+  //echo $fid;
   $query = "SELECT nid FROM {%s} WHERE %s = '%s'";
-  $result = db_query($query, $field_info['table'], $field_info['columns']['video_token']['column'], $video_token);
+  $result = db_query($query, $field_info['table'], $field_info['field_name'] .'_fid', $fid);
   $nid = db_fetch_object($result);
-  return $nid->nid;
+  //  print_r($nid);
+  //  exit;
+  return $nid;
 }
