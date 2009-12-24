@@ -9,6 +9,7 @@
  * "php video_scheduler.php http://example.org/drupal/"
  *
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
+ * 
  */
 
 
@@ -91,14 +92,14 @@ function video_scheduler_start($job) {
 */
 function video_scheduler_select() {
 
-  $result = db_query('SELECT * FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid INNER JOIN {video} v ON n.vid = v.vid WHERE n.nid = v.nid AND vr.nid = n.nid AND vr.status = %d ORDER BY n.created', VIDEO_RENDERING_PENDING);
+  $result = db_query('SELECT * FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid WHERE vr.nid = n.nid AND vr.status = %d ORDER BY n.created', VIDEO_RENDERING_PENDING);
 
   // TODO: order jobs by priority
 
   // TODO: use db_query_range
   $jobs = array();
   $i = 0;
-  $count = db_result(db_query('SELECT COUNT(*) FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid INNER JOIN {video} v ON n.vid = v.vid WHERE n.nid = v.nid AND vr.nid = n.nid AND vr.status = %d', VIDEO_RENDERING_PENDING));
+  $count = db_result(db_query('SELECT COUNT(*) FROM {video_rendering} vr INNER JOIN {node} n ON vr.vid = n.vid WHERE vr.nid = n.nid AND vr.status = %d', VIDEO_RENDERING_PENDING));
   while($i < $count && $i < VIDEO_RENDERING_FFMPEG_INSTANCES) {
     $jobs[] = db_fetch_object($result);
     $i++;
