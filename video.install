@@ -68,6 +68,8 @@ function video_schema() {
     ),
     'primary key' => array('vid'),
   );
+
+  return $schema;
 }
 
 /**
