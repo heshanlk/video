@@ -108,7 +108,7 @@ function theme_video_play_flash($element) {
   );
   }
   else {
-    $output='<p>Use <b>SwfTools Module</b> to play FLV files if you only convert videos to FLV or use <b>FlowPlayer Module</b> must be enabled in order to play FLV videos with other types.</p>';
+    $output='<p>Use <b>SwfTools Module</b> to play FLV files if you only convert/upload FLV videos or <b>FlowPlayer Module</b> must be enabled in order to play FLV videos with other types.</p>';
   }
   return $output;
 }

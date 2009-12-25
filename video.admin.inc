@@ -211,6 +211,11 @@ function _video_transcoder( $gateway) {
   }
 }
 
+/**
+ *
+ * @staticvar <type> $transcoders
+ * @return <type> get installed types of video
+ */
 function _video_transcoder_types() {
   static $transcoders;
 
