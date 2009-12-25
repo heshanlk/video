@@ -292,13 +292,13 @@ function ffmpeg_auto_convert(&$job) {
 
   //print('executing ' . $command); die;
   watchdog('video_render', 'executing: ' . $command);
-
+//   watchdog('video_render', 'Starting : ' . time());
   //execute the command
   ob_start();
   passthru($command." 2>&1", $command_return);
   $command_output = ob_get_contents();
   ob_end_clean();
-
+//  watchdog('video_render', 'Completed : ' . time());
   //print $command_output;
 
   if (!file_exists($job->convfile) || !filesize($job->convfile)) {
@@ -314,9 +314,10 @@ function ffmpeg_auto_convert(&$job) {
     $file->filename = basename($file_name);
     $file->filepath = $job->convfile;
     $file->filemime = file_get_mimetype($file_name);
-    $file->filesize = filesize($thumbfile);
+    $file->filesize = filesize($job->convfile);
     $file->timestamp = time();
-    $job['converted'] = $file;
+    
+    $job->converted = $file;
   }
 }
 
