@@ -1,0 +1,19 @@
+// $Id$
+
+REQUIREMENTS
+------------------------------------
+Optional:
+  CCK required.
+  Filefield is required.
+
+
+
+INSTALL INSTRUCTIONS FOR VIDEO.MODULE
+-------------------------------------
+- See : http://video.heidisoft.com/docs/users-guide-3
+
+- Copy CCK, Filefield, video folder to modules/
+- Login as site administrator
+- Activate video.module as usual (administer->modules)
+- Set access control as you like (administer->access control)
+
