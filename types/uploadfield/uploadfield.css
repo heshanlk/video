@@ -107,3 +107,8 @@ br.video_image_clear {
   border: 1px solid red;
   padding: .5em;
 }
+
+/* override filefield entry */
+.widget-edit{
+  max-width:70%;
+}
