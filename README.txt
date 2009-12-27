@@ -4,16 +4,17 @@ VIDEO MODULE
 
 This module add the possibility to create
 video nodes which are containers to embed
-videos into drupal pages.
+videos into drupal pages, using CCK and
+filefield support.
 
 For installation and upgrade instructions see INSTALL.txt
-http://video.heidisoft.com/docs/users-guide-3
+http://video.heidisoft.com/content/welcome-video-module-documentation
 
 For information about supported file types see FILE_TYPES.txt
 http://video.heidisoft.com/features
 
 For general instructions read video.module handbook:
-  http://video.heidisoft.com/docs/users-guide
+  http://video.heidisoft.com/content/welcome-video-module-documentation
 
 Please submit bugs/features/support requests at:
   http://drupal.org/node/add/project_issue/video
