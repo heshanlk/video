@@ -37,6 +37,9 @@
 
 .uploadfield-video-thumb img{
   width : 250px;
+/*  min-width: 100px; */
+  min-height: 210px;
+
 }
 
 .uploadfield-video-thumb span{
