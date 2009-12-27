@@ -107,6 +107,8 @@ function video_render_main() {
     drupal_write_record ('files', $job);
     // TODO : add data of rendering
     _video_render_job_change_status($fid, VIDEO_RENDERING_COMPLETE);
+    // clear all cacahe data
+    cache_clear_all();
     watchdog('video_render', 'successfully converted %orig to %dest', array('%orig' => $job->filepath, '%dest' => $file->filepath));
     // delete the temp file
     unlink($tmpfile);
