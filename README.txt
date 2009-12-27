@@ -11,7 +11,7 @@ For installation and upgrade instructions see INSTALL.txt
 http://video.heidisoft.com/content/welcome-video-module-documentation
 
 For information about supported file types see FILE_TYPES.txt
-http://video.heidisoft.com/features
+http://video.heidisoft.com/content/features
 
 For general instructions read video.module handbook:
   http://video.heidisoft.com/content/welcome-video-module-documentation
