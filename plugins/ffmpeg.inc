@@ -302,7 +302,7 @@ function ffmpeg_auto_convert(&$job) {
   //print $command_output;
 
   if (!file_exists($job->convfile) || !filesize($job->convfile)) {
-    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output, WATCHDOG_ERROR);
+    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output);
   //    _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
   //    _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
   }
