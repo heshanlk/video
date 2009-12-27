@@ -364,7 +364,7 @@ function theme_uploadfield_image($file, $alt = '', $title = '', $attributes = NU
   $url = file_create_url($file['filepath']) . $query_string;
   $attributes['src'] = $url;
   $attributes = drupal_attributes($attributes);
-  return '<img '. $attributes .' />';
+  return '<span></span><img '. $attributes .' />';
 }
 
 function theme_uploadfield_item($item) {
@@ -400,7 +400,7 @@ function theme_uploadfield_widget_video_thumb($item = NULL) {
  */
 
 function uploadfield_v_perm() {
-  return array('use default thumbnail');
+  return array('use default thumbnail', 'bypass conversion video');
 }
 
 /**
