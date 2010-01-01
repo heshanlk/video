@@ -26,7 +26,8 @@ Install instructions
 1. Activate the auto conversion and auto thumbnails when cerating content
 2. Setup it's advanced options to meet your needs
 3. Move (or symlink) video_render.php and video_scheduler.php into your Drupal root
-4. Check permissions of the files and folders (/tmp/video and files/* must be writable by the webserver or the user executling the cron job)
+4. Check permissions of the files and folders (/tmp/video and files/* must be writa
+ble by the webserver or the user executling the cron job)
 5. You now have two options to execute the video_scheduler.php script:
 
   5.1 Schedule the execution of video_scheduler.php using unix cron
