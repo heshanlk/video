@@ -89,7 +89,8 @@ function video_render_main() {
 
   if(empty($file)) {
     watchdog('video_render', 'converted file is an empty file.');
-//    die;
+    _video_render_job_change_status($fid, VIDEO_RENDERING_FAILED);
+    die;
   }
 
 
