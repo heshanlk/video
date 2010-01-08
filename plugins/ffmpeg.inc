@@ -1,10 +1,11 @@
 <?php
 //$Id$
+
 /**
  * @file
- * Provide some api for use ffmpeg. Simplify video nodes creation.
+ * Provide a api for video conversion and auto thumbnailing using ffmpeg.
  *
- * @author Heshan Wanigasooriya <heshan at heidisoft.com><heshanmw at gmail dot com>
+ * @author Heshan Wanigasooriya <heshan at heidisoft.com, heshanmw at gmail dot com>
  */
 
 /**
@@ -16,81 +17,14 @@ define('VIDEO_RENDERING_COMPLETE', 10);
 define('VIDEO_RENDERING_FAILED', 20);
 
 
-
-function video_ffmpeg_helper_cron() {
+// TODO : add cron API to video module
+function ffmpeg_cron() {
   global $base_url;
 
   if(variable_get('video_ffmpeg_helper_auto_cvr_cron', true)) {
     exec("php video_scheduler.php $base_url > /dev/null &");
   }
 }
-
-
-/**
- * Implementatio of hook_perm()
- */
-function video_ffmpeg_helper_perm() {
-  return array('bypass automatic video conversion');
-}
-
-
-/**
- * Implementation of hook_help().
- */
-function video_ffmpeg_helper_help($path, $arg) {
-  switch ($path) {
-    case 'admin/modules#description':
-      return t('Enable ffmpeg support for video module.');
-  }
-}
-
-/**
- * Implementation of hook_menu()
- */
-function video_ffmpeg_helper_menu() {
-  $items = array();
-  $items['admin/settings/video/ffmpeg_helper'] = array(
-      'title' => 'Video ffmpeg Helper',
-      'description' => 'Administer video_ffmpeg_helper module settings',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('video_ffmpeg_helper_admin_settings'),
-      'access arguments' => array('administer site configuration'),
-      'type' => MENU_NORMAL_ITEM,
-  );
-
-  return $items;
-}
-
-/**
- * Validation for settings form
- */
-function video_ffmpeg_helper_admin_settings_validate($form, &$form_state) {
-  if (variable_get('video_image_auto_thumbnail', 0)) {
-    if (!_video_ffmpeg_helper_check_exe_path($form_state['values']['video_transcoder_path'])) {
-      form_set_error('video_transcoder_path', t('Set correct path for ffmpeg'));
-    }
-    if (!is_numeric($form_state['values']['video_ffmpeg_helper_auto_thumbnail_seek'])) {
-      form_set_error('video_ffmpeg_helper_auto_thumbnail_seek', t('Seek time must be an integer'));
-    }
-    $options = $form_state['values']['video_ffmpeg_helper_thumbnailer_options'];
-    if (!strstr($options, '%videofile') || !strstr($options, '%thumbfile')) {
-      form_set_error('video_ffmpeg_helper_thumbnailer_options', t('Thumbnail options must contain mandatory arguments %videofile and %thumbfile'));
-    }
-  }
-}
-
-/**
- * Returns true if the video is being encoded or queeded
- */
-function _video_ffmpeg_helper_is_being_processed($node) {
-  $result = db_query("SELECT status FROM {video_rendering} WHERE vid = %d AND nid = %d", $node->vid, $node->nid);
-  $status = db_result($result);
-  if($status == VIDEO_RENDERING_PENDING || $status == VIDEO_RENDERING_ACTIVE) { // video is still being converted
-    return TRUE;
-  }
-  return FALSE;
-}
-
 
 
 /**
@@ -327,13 +261,5 @@ function ffmpeg_auto_convert(&$job) {
  * Aspect ration is maintained.
  */
 function _video_render_get_size() {
-//      $content_types = _video_get_content_types();
-//      $content_type = $content_types;
-//      $nid = _video_get_nid_by_video_token($content_type[0], $job->fid);
-////      print_r($nid);
-//      $node = node_load(array('nid' => $nid->nid));
-//      print_r($node);
-
-
   return variable_get('video_ffmpeg_width', 640) . 'x' . variable_get('video_ffmpeg_height', 360);
 }
