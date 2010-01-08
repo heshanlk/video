@@ -232,7 +232,7 @@ function ffmpeg_auto_convert(&$job) {
   passthru($command." 2>&1", $command_return);
   $command_output = ob_get_contents();
   ob_end_clean();
-//  watchdog('video_render', 'Completed : ' . time());
+//  watchdog('video_render', 'Completed');
   //print $command_output;
 
   if (!file_exists($job->convfile) || !filesize($job->convfile)) {
