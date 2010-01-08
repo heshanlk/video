@@ -187,16 +187,16 @@ function video_admin_settings() {
  *
  */
 function video_admin_settings_validate($form, &$form_state) {
-    $function = variable_get('vid_convertor', 'ffmpeg') . '_check_exe_path';
-    if (function_exists($function)) {
-      $executable = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
-      if(!$function($executable)){
-        form_set_error('video_transcoder_path', t('Please specify correct executable path to Transcoder.'));
-      }
-    }
-    else {
-      form_set_error('vid_convertor', t('Transcoder <b>'. variable_get('vid_convertor', 'ffmpeg').'</b> not implemented properly.'));
-    }
+//    $function = variable_get('vid_convertor', 'ffmpeg') . '_check_exe_path';
+//    if (function_exists($function)) {
+//      $executable = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
+//      if(!$function($executable)){
+//        form_set_error('video_transcoder_path', t('Please specify correct executable path to Transcoder.'));
+//      }
+//    }
+//    else {
+//      form_set_error('vid_convertor', t('Transcoder <b>'. variable_get('vid_convertor', 'ffmpeg').'</b> not implemented properly.'));
+//    }
     
 }
 
