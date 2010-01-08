@@ -226,12 +226,15 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   $element['data']['width'] = array(
       '#type' => $default_width ? 'textfield' : 'value',
       '#title' => t('Width for Player'),
-      '#value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
+      '#default_value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
       '#description' => t('Set player width(in pix) here, make sure your video have good resolution to fix on larger values.'),
       '#size' => 15,
       '#maxlength' => 5,
       '#attributes' => array('class' => 'video-width-text'),
   );
+  if(!$default_width){
+     $element['data']['width']['#value'] = $field['widget']['default_width'];
+  }
 
   // only in preview mode and then create thumbnails
   if($field['widget']['autoconversion']) {
