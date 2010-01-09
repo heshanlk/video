@@ -137,26 +137,29 @@ function uploadfield_elements() {
  * Implementation of hook_file_download.
  */
 function uploadfield_file_download($filepath) {
+//  watchdog('video', 'file path is ' . $filepath);
+//  echo $filepath;
 // Return headers for admin thumbnails if private files are enabled.
-  if (strpos($filepath, 'uploadfield_thumbs') !== FALSE) {
-    $original_path = str_replace('uploadfield_thumbs/', '', $filepath);
-    $original_full_path = file_create_path($original_path);
-    $thumb_full_path = file_create_path($filepath);
-
-    // Allow access to temporary thumbnails, since they're not yet associated
-    // with a node. If not temporary, check access on the original file.
-    $status = db_result(db_query("SELECT status FROM {files} WHERE filepath = '%s'", $original_full_path));
-    $access = ($status == 0 || module_invoke_all('file_download', $original_path));
-    if ($access && $info = getimagesize($thumb_full_path)) {
-      return array(
-      'Content-Type: ' . $info['mime'],
-      'Content-Length: ' . filesize($thumb_full_path)
-      );
-    }
-  }
+//  if (strpos($filepath, 'video_thumbs') !== FALSE) {
+//    $original_path = str_replace('video_thumbs/', '', $filepath);
+//    $original_full_path = file_create_path($original_path);
+//    $thumb_full_path = file_create_path($filepath);
+//
+//    // Allow access to temporary thumbnails, since they're not yet associated
+//    // with a node. If not temporary, check access on the original file.
+//    $status = db_result(db_query("SELECT status FROM {files} WHERE filepath = '%s'", $original_full_path));
+//    $access = ($status == 0 || module_invoke_all('file_download', $original_path));
+//    if ($access && $info = getimagesize($thumb_full_path)) {
+//      return array(
+//      'Content-Type: ' . $info['mime'],
+//      'Content-Length: ' . filesize($thumb_full_path)
+//      );
+//    }
+//  }
 
   // Return headers for default images.
-  if (strpos($filepath, 'uploadfield_default_images') !== FALSE) {
+//  if (strpos($filepath, 'uploadfield_default_images') !== FALSE) {
+  if (strpos($filepath, 'video_thumbs') !== FALSE) {
     $full_path = file_create_path($filepath);
     if ($info = getimagesize($full_path)) {
       return array(
