@@ -275,7 +275,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   // hook_v_video()
   if($form_state['submitted'] == 1) {
     switch($form_state['values']['op']) {
-      case 'Save':
+      case t('Save'):
       //          print_r($form);
       //  exit;
       // update
@@ -287,10 +287,10 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
           video_module_invoke('insert', $element);
         }
         break;
-      case 'Preview':
+      case t('Preview'):
       //        module_invoke_all('v_preview');
         break;
-      case 'Delete':
+      case t('Delete'):
         video_module_invoke('delete', $element);
         break;
     }
