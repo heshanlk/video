@@ -16,6 +16,9 @@ define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
 define('VIDEO_RENDERING_FAILED', 20);
 
+// nice value to append at the beginning of the command
+define('VIDEO_RENDERING_NICE', 'nice -n 19');
+
 
 // TODO : add cron API to video module
 function ffmpeg_cron() {
@@ -166,7 +169,7 @@ function ffmpeg_auto_thumbnail($vidfile) {
         );
         $error_msg = t("error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
         // let's log this
-        watchdog('video_ffmpeg',$error_msg);
+        watchdog('video_ffmpeg',$error_msg, array(), WATCHDOG_ERROR);
       }
     }
     // Begin building file object.
@@ -225,7 +228,7 @@ function ffmpeg_auto_convert(&$job) {
   $command = VIDEO_RENDERING_NICE . " $converter $options";
 
   //print('executing ' . $command); die;
-  watchdog('video_render', 'executing: ' . $command);
+  watchdog('video_render', 'executing: ' . $command, array(), WATCHDOG_DEBUG);
 //   watchdog('video_render', 'Starting : ' . time());
   //execute the command
   ob_start();
@@ -236,7 +239,7 @@ function ffmpeg_auto_convert(&$job) {
   //print $command_output;
 
   if (!file_exists($job->convfile) || !filesize($job->convfile)) {
-    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output);
+    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output, array(), WATCHDOG_ERROR);
   //    _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
   //    _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
   }
