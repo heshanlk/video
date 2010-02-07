@@ -80,8 +80,10 @@ function video_scheduler_main() {
  * Starts rendering for a job
  */
 function video_scheduler_start($job) {
-  $url = (isset($_SERVER['argv'][1])) ? escapeshellarg($_SERVER['argv'][1]) : '';
-  exec("php video_render.php $job->fid $url > /dev/null &");
+//  $url = (isset($_SERVER['argv'][1])) ? escapeshellarg($_SERVER['argv'][1]) : '';
+//  watchdog('video_scheduler', 'Execute video_render.php %url and %job', array('%url'=>$url, '%job'=>$job->fid), WATCHDOG_DEBUG);
+//  exec("/usr/local/bin/php /home/freja/public_html/v5-dev/video_render.php $job->fid $url > /dev/null &");
+  video_render_main($job->fid);
 }
 
 
@@ -99,26 +101,116 @@ function video_scheduler_select() {
       f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d AND f.status = %d ORDER BY f.timestamp',
       VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, VIDEO_RENDERING_FFMPEG_INSTANCES);
   while($job = db_fetch_object($result)) {
-  //    $content_types = _video_get_content_types();
-  //    $content_type = $content_types;
-  //    $nid = _video_get_nid_by_video_token($content_type[0], $job->fid);
-  //    print_r($nid);
-  //    $node = node_load(array('nid' => $nid->nid));
-  //    print_r($node);
     $jobs[] = $job;
   }
-//  print_r($jobs);
-//  exit;
+  //  print_r($jobs);
+  //  exit;
   return $jobs;
 }
 
 /**
- * load file object
+ * Video Rendering Process
+ *
  */
-//function _video_filde_load(){
-//  return db_fetch_object(db_query('SELECT f.fid FROM {video_rendering} vr INNER JOIN {files}
-//      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d ORDER BY f.timestamp',
-//      VIDEO_RENDERING_PENDING, 0, VIDEO_RENDERING_FFMPEG_INSTANCES));
-//}
+function video_render_main($job_fid) {
+
+// get parameters passed from command line
+  $fid = $job_fid;
+  $job = NULL;
+  // set the status to active
+  _video_render_job_change_status($fid, VIDEO_RENDERING_ACTIVE);
+  // load the job object
+  $job = _video_render_load_job($fid);
+
+  if(empty($job)) {
+    watchdog('video_render', 'video_render.php has been called with an invalid job resource. exiting.', array(), WATCHDOG_ERROR);
+    die;
+  }
+
+  // get file object
+  _video_render_get_converted_file(&$job);
+  $file = $job->converted;
+
+  if(empty($file)) {
+    watchdog('video_render', 'converted file is an empty file.', array(), WATCHDOG_ERROR);
+    _video_render_job_change_status($fid, VIDEO_RENDERING_FAILED);
+    die;
+  }
+
+
+  $tmpfile = $file->filepath;
+
+  // the above no more works as token supports - use dirname
+  $dest_dir = dirname($job->filepath) . '/';
+
+  if (file_copy($file, $dest_dir)) {
+  //update the file table entry and copy file content to new one
+    $file->fid = $fid;
+    //update file with new
+    drupal_write_record ('files', $file, 'fid');
+    //add new file entry
+    drupal_write_record ('files', $job);
+    // TODO : add data of rendering
+    _video_render_job_change_status($fid, VIDEO_RENDERING_COMPLETE);
+    // clear all cacahe data
+    //cache_clear_all();
+    drupal_flush_all_caches();
+    watchdog('video_render', 'successfully converted %orig to %dest', array('%orig' => $job->filepath, '%dest' => $file->filepath), WATCHDOG_INFO);
+    // delete the temp file
+    unlink($tmpfile);
+  }
+  else {
+    _video_render_job_change_status($fid, VIDEO_RENDERING_FAILED);
+    // get the username of the process owner
+    $ownerarray = posix_getpwuid(posix_getuid());
+    $owner=$ownerarray['name'];
+    // get the username of the destination folder owner
+    $fownerarray = posix_getpwuid(fileowner($dest_dir));
+    $fowner=$fownerarray['name'];
+    // get destination folder permissions
+    $perms = substr(sprintf('%o', fileperms($dest_dir)), -4);
+    watchdog('video_render', 'error moving video %vid_file with nid = %nid to %dir the final directory. Check folder permissions.<br />The script was run by %uname .<br />The folder owner is %fowner .<br />The folder permissions are %perms .', array('%vid_file' => $job->origfile, '%nid' => $job->nid, '%dir' => $dest_dir, '%uname' => $owner, '%fowner' => $fowner, '%perms' => $perms), WATCHDOG_ERROR);
+  }
+}
+
+
+/**
+ * Get a string cointaining the command to be executed including options
+ */
+function _video_render_get_converted_file(&$job) {
+  $transcoder = variable_get('vid_convertor', 'ffmpeg');
+  module_load_include('inc', 'video', '/plugins/' . $transcoder);
+  $function = variable_get('vid_convertor', 'ffmpeg') . '_auto_convert';
+  if (function_exists($function)) {
+  //    $thumbs = ffmpeg_auto_thumbnail($file);
+  //    watchdog('video_render', 'calling to converter API %conv', array('%conv' => $transcoder));
+    $function(&$job);
+  }
+  else {
+  //    drupal_set_message(t('Transcoder not configured properly'), 'error');
+    print ('Transcoder not configured properly');
+  }
+}
+
+
+/**
+ * Load a job
+ */
+function _video_render_load_job($fid) {
+//  watchdog('video_render', 'Loading contents for file id %fid', array('%fid' => $fid));
+  $result = db_query('SELECT f.filepath, f.filesize, f.filename, f.filemime, f.filesize, f.status, f.uid
+      FROM {video_rendering} vr INNER JOIN {files} f
+      ON vr.fid = f.fid WHERE vr.fid = f.fid AND f.status = %d AND f.fid = %d',
+      FILE_STATUS_PERMANENT, $fid);
+  return db_fetch_object($result);
+}
+
+
+/**
+ * Change the status to $status of the job having nid=$nid and vid=$vid
+ */
+function _video_render_job_change_status($fid, $status) {
+  $result = db_query('UPDATE {video_rendering} SET status = %d WHERE fid = %d ', $status, $fid);
+}
 
 ?>
