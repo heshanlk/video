@@ -79,7 +79,7 @@ function theme_uploadfield_formatter_video_nodelink($element) {
       $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
       $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
     }
-  $class = 'popup uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
+  $class = 'popups uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
   return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 
 }
@@ -99,7 +99,7 @@ function theme_uploadfield_formatter_video_imagelink($element) {
   $node = $element['#node'];
   //  $imagetag = theme('uploadfield_formatter_video_plain', $element);
   $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
-  $class = 'popup uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
+  $class = 'popups uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
   return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
