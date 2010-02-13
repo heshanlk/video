@@ -18,7 +18,8 @@
  */
 
 // number of conversion jobs active at the same time
-define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
+defined('VIDEO_RENDERING_FFMPEG_INSTANCES')
+  or define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 
 /**
  * video_scheduler.php configuration ends.
@@ -28,10 +29,15 @@ define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
 /**
  * Define some constants
  */
-define('VIDEO_RENDERING_PENDING', 1);
-define('VIDEO_RENDERING_ACTIVE', 5);
-define('VIDEO_RENDERING_COMPLETE', 10);
-define('VIDEO_RENDERING_FAILED', 20);
+defined('VIDEO_RENDERING_PENDING')
+  or define('VIDEO_RENDERING_PENDING', 1);
+defined('VIDEO_RENDERING_ACTIVE')
+  or define('VIDEO_RENDERING_ACTIVE', 5);
+defined('VIDEO_RENDERING_COMPLETE')
+  or define('VIDEO_RENDERING_COMPLETE', 10);
+defined('VIDEO_RENDERING_FAILED')
+  or define('VIDEO_RENDERING_FAILED', 20);
+
 
 if (isset($_SERVER['argv'][1])) {
   $url = parse_url($_SERVER['argv'][1]);

@@ -5,9 +5,9 @@
  * @file
  * Provide a api for video conversion and auto thumbnailing using ffmpeg.
  *
+ * You must have ffmpeg_wrapper module installed in order to use this
+ *
  * @author Heshan Wanigasooriya <heshan at heidisoft.com, heshanmw at gmail dot com>
- * TODO: add common settings from video module configurations and extend it from ffmpeg.inc
- * since we need to have executable path of ffmpeg to ffmpeg.inc we need to have it
  */
 
 /**
@@ -28,7 +28,7 @@ defined('VIDEO_RENDERING_NICE')
 
 
 // TODO : add cron API to video module
-function ffmpeg_cron() {
+function ffmpeg_wrapper_cron() {
   global $base_url;
 
   if(variable_get('video_ffmpeg_helper_auto_cvr_cron', true)) {
@@ -40,7 +40,7 @@ function ffmpeg_cron() {
 /**
  * Get some informations from the video file
  */
-function ffmpeg_get_video_info($vidfile) {
+function ffmpeg_wrapper_get_video_info($vidfile) {
   static $ffmpeg_info;
   $fid = $vidfile['fid'];
   //  $command_output = cache_get($fid);
@@ -68,12 +68,13 @@ function ffmpeg_get_video_info($vidfile) {
 /**
  * Return the video resolution
  */
-function ffmpeg_auto_resolution(&$node) {
+function ffmpeg_wrapper_auto_resolution(&$vidfile) {
 
   if(!variable_get('video_ffmpeg_helper_auto_resolution', false)) {
 
   // call ffmpeg -i
-    $ffmpeg_output = ffmpeg_get_video_info($node);
+    $filepath = escapeshellarg($vidfile['filepath']);
+    $ffmpeg_output = ffmpeg_wrapper_file_data($filepath);
 
     // get resolution
     $pattern = '/Video: .*, ([0-9]{2,4}x[0-9]{2,4})/';
@@ -89,12 +90,12 @@ function ffmpeg_auto_resolution(&$node) {
 /**
  * Return the playtime seconds of a video
  */
-function ffmpeg_auto_playtime($file) {
+function ffmpeg_wrapper_auto_playtime($file) {
 
   if(!variable_get('video_ffmpeg_helper_auto_playtime', false)) {
 
   // call ffmpeg -i
-    $ffmpeg_output = ffmpeg_get_video_info($file);
+    $ffmpeg_output = ffmpeg_wrapper_get_video_info($file);
 
     // get playtime
     $pattern = '/Duration: ([0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9])/';
@@ -124,7 +125,7 @@ function ffmpeg_auto_playtime($file) {
  * @return
  *   a drupal file objects
  */
-function ffmpeg_auto_thumbnail($vidfile) {
+function ffmpeg_wrapper_auto_thumbnail($vidfile) {
   global $user;
   $uploaded_file = $vidfile;
   $fid = $uploaded_file["fid"];
@@ -148,7 +149,11 @@ function ffmpeg_auto_thumbnail($vidfile) {
     }
   }
   $count = variable_get('no_of_video_thumbs', 5);
-  $duration = ffmpeg_auto_playtime($vidfile);
+  // set file path
+  $filepath = escapeshellarg($vidfile['filepath']);
+  // calling ffmpeg_wrapper_file_data function
+  $file_data = ffmpeg_wrapper_file_data($filepath);
+  $duration = $file_data['duration'];
   $files = NULL;
   for($i = 1; $i <= $count; $i++) {
   // get ffmpeg configurations
@@ -156,27 +161,24 @@ function ffmpeg_auto_thumbnail($vidfile) {
     $thumbfile = $tmp . "/video-thumb-for-$fid-$i.png";
     //skip files already exists, this will save ffmpeg traffic
     if (!is_file($thumbfile)) {
-      $tnail = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
+//      $tnail = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
       $options = preg_replace(array('/%videofile/', '/%thumbfile/', '/%seek/'), array($videofile, $thumbfile, $seek), variable_get('video_ffmpeg_thumbnailer_options', '-i %videofile -an -y -f mjpeg -ss %seek -vframes 1 %thumbfile'));
-      //    $options = preg_replace(array('/%videofile/', '/%tmp/', '/%id/', '/%interval/'), array($videofile, $tmp, $i, ($duration/$count)), variable_get('video_image_thumbnailer_options', '-ss %id*%interval -i %videofile -vframes 1 %thumbfile'));
-      //  ffmpeg -ss $i*$interval -i intro.mov -vframes 1 -s 320x240 thumb_$i.jpg
-      //ffmpeg -i superstunt_8uiarzrh.mp4 -r 0.1 -ss 00:00:5 -f image2 img/images%02d.png
-      ////ffmpeg -i superstunt_8uiarzrh.mp4 -r 0.05 -ss 00:00:5 -f image2 img/images%1d.jpg
       // executes the command
-      $command = "$tnail $options";
-      ob_start();
-      passthru($command." 2>&1", $tnail_return);
-      $tnail_output = ob_get_contents();
-      ob_end_clean();
+      $tnail_output = ffmpeg_wrapper_run_command($options, $error_check = true, $path = '');
+//      $command = "$tnail $options";
+//      ob_start();
+//      passthru($command." 2>&1", $tnail_return);
+//      $tnail_output = ob_get_contents();
+//      ob_end_clean();
       if (!file_exists($thumbfile)) {
         $error_param = array(
             '%file' => $thumbfile,
-            '%cmd' => $command,
+            '%cmd' => $options,
             '%out' => $tnail_output,
         );
         $error_msg = t("error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
         // let's log this
-        watchdog('video_ffmpeg',$error_msg, array(), WATCHDOG_ERROR);
+        watchdog('video_ffmpeg',$error_msg);
       }
     }
     // Begin building file object.
@@ -200,30 +202,22 @@ function ffmpeg_auto_thumbnail($vidfile) {
  * @param <type> path to check
  * @return bool TRUE/FALSE
  */
-function ffmpeg_check_exe_path($path=NULL) {
-  if (!$path) {
-    $path = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
-  }
-  if (function_exists('is_executable')) {
-    $test = 'is_executable';
-  } else {
-    $test = 'file_exists';
-  }
-  return $test($path);
+function ffmpeg_wrapper_check_exe_path($path = NULL) {
+  return ffmpeg_wrapper_executable();
 }
 
 /**
  * Implementing hook_auto_convert();
  * @param <type> $job
  */
-function ffmpeg_auto_convert(&$job) {
+function ffmpeg_wrapper_auto_convert(&$job) {
   $videofile = escapeshellarg($job->filepath); // escape file name for safety
   $convfile = tempnam(file_directory_temp(), 'video-rendering');
   $audiobitrate = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64);
   $videobitrate = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200);
   $size = _video_render_get_size();
-  $converter = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
-  
+//  $converter = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
+
   $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'),
       array($videofile, $convfile, $audiobitrate, $size, $videobitrate),
       variable_get('video_ffmpeg_helper_auto_cvr_options',
@@ -232,21 +226,24 @@ function ffmpeg_auto_convert(&$job) {
   // set to the converted file output
   $job->convfile = $convfile;
 
-  $command = VIDEO_RENDERING_NICE . " $converter $options";
+  // run conversion commands from ffmpeg_wrapper module
+  $command_output = ffmpeg_wrapper_run_command($options, $error_check = true, $path = '');
+
+//  $command = VIDEO_RENDERING_NICE . " $converter $options";
 
   //print('executing ' . $command); die;
-  watchdog('video_render', 'executing: ' . $command, array(), WATCHDOG_DEBUG);
+  watchdog('video_render', 'executing: ' . $options);
 //   watchdog('video_render', 'Starting : ' . time());
   //execute the command
-  ob_start();
-  passthru($command." 2>&1", $command_return);
-  $command_output = ob_get_contents();
-  ob_end_clean();
+//  ob_start();
+//  passthru($command." 2>&1", $command_return);
+//  $command_output = ob_get_contents();
+//  ob_end_clean();
 //  watchdog('video_render', 'Completed');
   //print $command_output;
 
   if (!file_exists($job->convfile) || !filesize($job->convfile)) {
-    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output, array(), WATCHDOG_ERROR);
+    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output);
   //    _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
   //    _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
   }
@@ -260,16 +257,7 @@ function ffmpeg_auto_convert(&$job) {
     $file->filemime = file_get_mimetype($file_name);
     $file->filesize = filesize($job->convfile);
     $file->timestamp = time();
-    
+
     $job->converted = $file;
   }
-}
-
-
-/**
- * Calculate the converted video size basing on the width set on administration.
- * Aspect ration is maintained.
- */
-function _video_render_get_size() {
-  return variable_get('video_ffmpeg_width', 640) . 'x' . variable_get('video_ffmpeg_height', 480);
 }
