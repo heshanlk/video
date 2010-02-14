@@ -106,12 +106,12 @@ function video_admin_settings() {
       '#title' => t('Video transcoder'),
       '#default_value' => variable_get('vid_convertor', 'ffmpeg'),
       '#options' => $gateways,
-      '#description' => t('Video transcoder will help you to video conversion and automatic thumbnail generaion.')
+      '#description' => t('Video transcoder will help you to video conversion and automatic thumbnail generaion. You must install !ffmpeg_wrapper module to enable ffmpeg_wrapper support', array('!ffmpeg_wrapper' => l('ffmpeg_wrapper module', 'http://drupal.org/project/ffmpeg_wrapper')))
   );
   $form['conv']['video_transcoder_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to Video Transcoder'),
-      '#description' => t('Path to executable'),
+      '#description' => t('Path to executable, you can skip this if your usign ffmpeg_wrapper module support.'),
       '#default_value' => variable_get('video_transcoder_path', '/usr/bin/ffmpeg'),
   );
 
@@ -217,7 +217,7 @@ function video_admin_settings() {
 function video_admin_settings_validate($form, &$form_state) {
   // check ffmpeg_wrapper installed or not
   if ($form_state['values']['vid_convertor'] == 'ffmpeg_wrapper' && !module_exists('ffmpeg_wrapper')) {
-    form_set_error('vid_convertor', t('You do not have installed the ffmpeg_wrapper module to enable using its plugin, please install it.'));
+    form_set_error('vid_convertor', t('You do not have installed the !ffmpeg_wrapper module to enable using its plugin, please install it.' , array('!ffmpeg_wrapper' => l('ffmpeg_wrapper', 'http://drupal.org/project/ffmpeg_wrapper'))));
   }
 }
 
