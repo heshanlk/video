@@ -54,6 +54,13 @@ function video_admin_settings() {
       '#default_value' => variable_get('video_autoplay', TRUE),
       '#description' => t('Start the video when the page and video loads')
   );
+  
+  $form['menu']['video_autobuffering'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Automatically start video buffering'),
+      '#default_value' => variable_get('video_autobuffering', TRUE),
+      '#description' => t('Start buffering video when the page and video loads')
+  );
 
     $form['player'] = array(
       '#type' => 'fieldset',
@@ -67,6 +74,14 @@ function video_admin_settings() {
       '#default_value' => variable_get('video_cortado', $base_url . '/cortado.jar'),
       '#description' => t('Copy your cortado.jar file to Drupal root and keep the setting un-changed.')
   );
+
+    $form['player']['mp4_play_in_flowplayer'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Play HQ MP4 files in Flash Player'),
+      '#default_value' => variable_get('mp4_play_in_flowplayer', FALSE),
+      '#description' => t('Play HQ MP4 files in Flash player.')
+  );
+
 
   //
   $gateways = _video_transcoder_types();
