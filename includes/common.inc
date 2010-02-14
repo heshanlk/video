@@ -17,6 +17,10 @@ function _video_common_get_player($element) {
   $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
 
   $op = _video_get_filetype($element['#item']['filename']);
+  //play HQ mp4 videos in flash player
+  if(variable_get('mp4_play_in_flowplayer', FALSE) && $op == 'mp4'){
+    $op = 'mp4f';
+  }
   switch ($op) {
     case 'divx':
       return theme('video_play_divx', $element);
@@ -27,8 +31,9 @@ function _video_common_get_player($element) {
       return theme('video_play_quicktime', $element);
     case 'rm':
       return theme('video_play_realmedia', $element);
-    case 'f4v':
-    case 'flv': // flowplayer also supprts MP4, H.264 (.extension?)
+    case 'mp4f':
+    case 'f4v' :
+    case 'flv' : // flowplayer also supprts MP4, H.264 (.extension?)
       return theme('video_play_flash', $element);
     case 'swf':
       return theme('video_play_swf', $element);
