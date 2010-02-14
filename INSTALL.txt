@@ -13,6 +13,11 @@ INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 - See : http://video.heidisoft.com/content/welcome-video-module-documentation
 
 
+MIGRATE INSTRUCTIONS TO VIDEO.MODULE
+-------------------------------------
+- See : http://drupal.org/node/713482
+
+
 FFMPEG CONFIGURATIONS
 ---------------------
 
