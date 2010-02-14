@@ -84,9 +84,9 @@ function _video_get_filetype($vidfile) {
  *   string of content to display
  */
 function theme_video_play_flash($element) {
-  //TODO : remove item height set in here
+//TODO : remove item height set in here
   $video = file_create_url($element['#item']['filepath']);
-//  echo file_create_url($element['#item']['filepath']);
+  //  echo file_create_url($element['#item']['filepath']);
   $width = isset($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '';
   $height = isset($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '';
   $width = empty($width) ? '350px' : $width .'px';
@@ -98,14 +98,14 @@ function theme_video_play_flash($element) {
         'clip' => array(
         'url' =>  $video,
         //TODO: Make settings for this
-        'autoPlay' => FALSE, // Turn autoplay off
-        'autoBuffering' => TRUE,
+        'autoPlay' => variable_get('video_autoplay', TRUE), // Turn autoplay off
+        'autoBuffering' => variable_get('video_autobuffering', TRUE),
         ),
         ),
         $id, array(
         'style' => "width: $width; height: $height",
-    )
-  );
+        )
+    );
   }
   else {
     $output='<p>Use <b>SwfTools Module</b> to play FLV files if you only convert/upload FLV videos or <b>FlowPlayer Module</b> must be enabled in order to play FLV videos with other types.</p>';
@@ -133,23 +133,23 @@ function theme_video_play_swf($element) {
 
   // this will be executed by not Internet Explorer browsers
   $output = '<!--[if !IE]> <-->
-<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
-data="'. $video .'">
-<!--> <![endif]-->' . "\n";
+            <object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
+            data="'. $video .'">
+            <!--> <![endif]-->' . "\n";
 
   // this will be executed by Internet Explorer
   $output .= '<!--[if IE]>
-<object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
-classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
-<![endif]-->' . "\n";
+             <object type="application/x-shockwave-flash" width="'. $width .'" height="'. $height .'"
+             classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+             codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+             <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
-  $output .= '<param name="movie" value="'. $video .'" />'. "\n" .
-      '<param name="wmode" value="transparent" />' . "\n"
-      . //_video_get_parameters($node) .
-      '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
+  $output .=  '<param name="movie" value="'. $video .'" />'. "\n" .
+              '<param name="wmode" value="transparent" />' . "\n"
+              . //_video_get_parameters($node) .
+              '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+              </object>';
 /*
   $output = theme('video_format_play', $output, t('http://www.macromedia.com/go/getflashplayer'), t('Link to Flash player download'), t('Download the latest Flash player'));*/
   return $output;
@@ -177,22 +177,22 @@ function theme_video_play_dcr($element) {
 
   // this will be executed by not Internet Explorer browsers
   $output = '<!--[if !IE]> <-->
-<object type="application/x-director" width="'. $width .'" height="'. $height .'"
-data="'. $video .'">
-<!--> <![endif]-->' . "\n";
+            <object type="application/x-director" width="'. $width .'" height="'. $height .'"
+            data="'. $video .'">
+            <!--> <![endif]-->' . "\n";
 
   // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-director" width="'. $width .'" height="'. $height .'"
-classid="clsid:166B1BCA-3F9C-11CF-8075-444553540000"
-codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#version=10,0,0,0">
-<![endif]-->' . "\n";
+  $output .=  '<!--[if IE]>
+              <object type="application/x-director" width="'. $width .'" height="'. $height .'"
+              classid="clsid:166B1BCA-3F9C-11CF-8075-444553540000"
+              codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#version=10,0,0,0">
+              <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
-  $output .= '<param name="src" value="'. $video .'" />' . "\n"
-      . //_video_get_parameters($node) .
-      '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>';
+  $output .=  '<param name="src" value="'. $video .'" />' . "\n"
+              . //_video_get_parameters($node) .
+              '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+              </object>';
 /*
   $output = theme('video_format_play', $output, t('http://www.macromedia.com/shockwave/download/'),
                                       t('Link to Macromedia Shockwave Player Download Page'),
@@ -221,12 +221,12 @@ function theme_video_play_divx($element) {
   //$url = _video_get_fileurl($node->vidfile);
 
   $output = '<!-- [if IE] -->
-<object classid="clsid:67DABFBF-D0AB-41fa-9C46-CC0F21721616" width="'.$width.'" height="'.$height.'" codebase="http://go.divx.com/plugin/DivXBrowserPlugin.cab">
-<!--> <![endif]-->'. "\n";
+            <object classid="clsid:67DABFBF-D0AB-41fa-9C46-CC0F21721616" width="'.$width.'" height="'.$height.'" codebase="http://go.divx.com/plugin/DivXBrowserPlugin.cab">
+            <!--> <![endif]-->'. "\n";
   // this will be executed by not Internet Explorer browsers
   $output = '<!-- [if !IE] -->
-<object type="video/divx" data="'.$video.'" width="'.$width.'" height="'.$height.'" mode="zero">
-<!--> <![endif]-->'."\n";
+            <object type="video/divx" data="'.$video.'" width="'.$width.'" height="'.$height.'" mode="zero">
+            <!--> <![endif]-->'."\n";
 
   $output .= '<param name="src" value="'.$video.'"/>'."\n";
   $output .= '<param name="mode" value="zero"/>'."\n";
@@ -259,14 +259,16 @@ function theme_video_play_quicktime($element) {
 
   // this will be executed by not Internet Explorer browsers
   $output = '<!--[if !IE]> <-->
-<object type="video/quicktime" width="'. $width .'" height="'. $height .'"
-data="'. $video .'">
-<!--> <![endif]-->' . "\n";
+            <object type="video/quicktime" width="'. $width .'" height="'. $height .'"
+            data="'. $video .'">
+            <!--> <![endif]-->' . "\n";
 
   // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab" width="'. $width .'" height="'. $height .'" scale="tofit" >
-<![endif]-->' . "\n";
+  $output .=  '<!--[if IE]>
+              <object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"
+              codebase="http://www.apple.com/qtactivex/qtplugin.cab"
+              width="'. $width .'" height="'. $height .'" scale="tofit" >
+              <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
   //GMM: kioskmode enabled so users don't bypass download security video through player
@@ -274,23 +276,10 @@ data="'. $video .'">
               <param name="AUTOPLAY" value="'.(variable_get('video_autoplay', TRUE) ? TRUE : FALSE).'" />
               <param name="KIOSKMODE" value="true" />
               <param name="CONTROLLER" value="true" />' . "\n"
-      . //_video_get_parameters($node) .
-      '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
+              . //_video_get_parameters($node) .
+              '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+              </object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
 
-
-  /*
-  $output = '<script language="JavaScript" type="text/javascript">';
-  $output .= "InsertQuicktimeVideo('{$node->vidfile}','$height','{$node->video_scaled_x}');";
-  $output .= '</script>';
-  */
-
-  //Fix for bug http://drupal.org/node/630606
-/*
-  $output = theme('video_format_play', $output, t('http://www.apple.com/quicktime/download'),
-                                      t('Link to QuickTime Download Page'),
-                                      t('Download latest Quicktime Player'));
-									  */
   return $output;
 }
 
@@ -314,15 +303,15 @@ function theme_video_play_realmedia($element) {
 
   // this will be executed by not Internet Explorer browsers
   $output = '<!--[if !IE]> <-->
-<object type="audio/x-pn-realaudio-plugin" width="'. $width .'" height="'. $height .'"
-data="'. $video .'">
-<!--> <![endif]-->' . "\n";
+            <object type="audio/x-pn-realaudio-plugin" width="'. $width .'" height="'. $height .'"
+            data="'. $video .'">
+            <!--> <![endif]-->' . "\n";
 
   // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="audio/x-pn-realaudio-plugin" width="'. $width .'" height="'. $height .'"
-classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
-<![endif]-->' . "\n";
+  $output .=  '<!--[if IE]>
+              <object type="audio/x-pn-realaudio-plugin" width="'. $width .'" height="'. $height .'"
+              classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
+              <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
   $output .= '<param name="src" value="'. $video .'" />
@@ -339,9 +328,9 @@ classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" >
               <param name="CENTER" value="0" />
               <param name="MAINTAINASPECT" value="1" />
               <param name="BACKGROUNDCOLOR" value="#000000" />'
-      . //_video_get_parameters($node) .
-      '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
+              . //_video_get_parameters($node) .
+              '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+              </object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
 
 /*
   $output = theme('video_format_play', $output, t('http://www.real.com/'),
@@ -369,15 +358,15 @@ function theme_video_play_windowsmedia($element) {
 
   // this will be executed by not Internet Explorer browsers
   $output = '<!--[if !IE]> <-->
-<object type="application/x-mplayer2" width="'. $width .'" height="'. $height .'"
-data="'. $video .'">
-<!--> <![endif]-->' . "\n";
+            <object type="application/x-mplayer2" width="'. $width .'" height="'. $height .'"
+            data="'. $video .'">
+            <!--> <![endif]-->' . "\n";
 
   // this will be executed by Internet Explorer
-  $output .= '<!--[if IE]>
-<object type="application/x-oleobject" width="'. $width .'" height="'. $height .'"
-classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
-<![endif]-->' . "\n";
+  $output .=  '<!--[if IE]>
+              <object type="application/x-oleobject" width="'. $width .'" height="'. $height .'"
+              classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
+              <![endif]-->' . "\n";
 
   // params will be passed to both IE or not IE browsers
   $output .= '<param name="src" value="'. $video .'" />
@@ -387,18 +376,10 @@ classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" >
               <param name="autoStart" value="'.(variable_get('video_autoplay', TRUE) ? 'true' : 'false').'" />
               <param name="showControls" value="true" />
               <param name="loop" value="true" />'
-      . //_video_get_parameters($node) .
-      '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-</object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
+              . //_video_get_parameters($node) .
+              '<p>'. t('Your browser is not able to display this multimedia content.') .'</p>
+              </object>'; // only one </object> needed becouse only one opening tag has been parsed by browsers
 
-
-//  $output = "\n<div id=\"video-player\">\n" . $output;
-//  $output .= "<p>\n". t('Problems viewing videos?');
-//  $output .= "<br />\n";
-//  $output .= l(t('Download latest Windows Media Player'), t('http://windowsupdate.microsoft.com/'), array('attributes' => array('title' => t('Link to Windows Update')), 'absolute' => TRUE));
-//  $output .= "<br />\n";
-//  $output .= l(t('Download the plug-in for Firefox'), t('http://support.mozilla.com/en-US/kb/Using+the+Windows+Media+Player+plugin+with+Firefox'), array('attributes' => array('title' => t('Link to Firefox Plug-in')), 'absolute' => TRUE));
-//  $output .= "\n</p> \n </div>\n";
   return $output;
 }
 
