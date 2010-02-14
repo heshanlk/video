@@ -312,7 +312,7 @@ function uploadfield_field_formatter_info() {
 if(module_exists('imagecache')) {
   foreach (imagecache_presets() as $preset) {
     $formatters[$preset['presetname'] .'_videolinked'] = array(
-        'label' => t('@preset of video thumbnail linked to video', array('@preset' => $preset['presetname'])),
+        'label' => t('Preset @preset of video thumbnail linked to video', array('@preset' => $preset['presetname'])),
         'field types' => array('filefield'),
     );
   }
