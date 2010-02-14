@@ -29,90 +29,111 @@ function uploadfield_init() {
  * Implementation of hook_theme().
  */
 function uploadfield_theme() {
-  return array(
-  // Theme an image uploaded to uploadfield with alt and title.
-  // TODO: Switch to core theme image if possible.
-  'uploadfield_image' => array(
-  'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
-  ),
-  // Theme an uploadfield field item. It calls imagefied_image with the proper
-  // item properties as arguments.
-  'uploadfield_item' => array(
-  'arguments' => array('item' => NULL),
-  ),
-  // uploadfield_widget form element type theme function.
-  'uploadfield_widget' => array(
-  'arguments' => array('element' => NULL),
-  'file' => 'uploadfield_widget.inc',
-  ),
-  // Use to generate a preview (admin view) of an uploadfield item for use in
-  // field item forms and filefield widgets. Invoked by filefield_widget_process.
-  'uploadfield_widget_preview' => array(
-  'arguments' => array('item' => NULL),
-  ),
-  // Theme function for the field item elements. allows you to place children
-  // within the context of the parent.
-  'uploadfield_widget_item' => array(
-  'arguments' => array('element' => NULL),
-  ),
-  // Generates and img tag to the admin thumbnail of an uploadfield upload.
-  'uploadfield_admin_thumbnail' => array(
-  'arguments' => array('item' => NULL),
-  ),
-  // Generates and img tag to the video thumbnails.
-  'uploadfield_widget_video_thumb' => array(
-  'arguments' => array('item' => NULL),
-  ),
+  $theme = array();
+  $theme = array(
+                // Theme an image uploaded to uploadfield with alt and title.
+                // TODO: Switch to core theme image if possible.
+                'uploadfield_image' => array(
+                'arguments' => array('file' => NULL,
+                                     'alt' => '',
+                                     'title' => '',
+                                     'attributes' => NULL,
+                                     'getsize' => TRUE),
+                                    ),
+              // Theme an uploadfield field item. It calls imagefied_image with the proper
+              // item properties as arguments.
+              'uploadfield_item' => array(
+              'arguments' => array('item' => NULL),
+              ),
+              // uploadfield_widget form element type theme function.
+              'uploadfield_widget' => array(
+              'arguments' => array('element' => NULL),
+              'file' => 'uploadfield_widget.inc',
+              ),
+              // Use to generate a preview (admin view) of an uploadfield item for use in
+              // field item forms and filefield widgets. Invoked by filefield_widget_process.
+              'uploadfield_widget_preview' => array(
+              'arguments' => array('item' => NULL),
+              ),
+              // Theme function for the field item elements. allows you to place children
+              // within the context of the parent.
+              'uploadfield_widget_item' => array(
+              'arguments' => array('element' => NULL),
+              ),
+              // Generates and img tag to the admin thumbnail of an uploadfield upload.
+              'uploadfield_admin_thumbnail' => array(
+              'arguments' => array('item' => NULL),
+              ),
+              // Generates and img tag to the video thumbnails.
+              'uploadfield_widget_video_thumb' => array(
+              'arguments' => array('item' => NULL),
+              ),
 
-  // uploadfield formatter theme functions.
-  'uploadfield_formatter_video_plain' => array(
-  'arguments' => array('element' => NULL),
-  'file' => 'uploadfield_formatter.inc',
-  ),
-  'uploadfield_formatter_video_nodelink' => array(
-  'arguments' => array('element' => NULL),
-  'file' => 'uploadfield_formatter.inc',
-  ),
-  'uploadfield_formatter_video_imagelink' => array(
-  'arguments' => array('element' => NULL),
-  'file' => 'uploadfield_formatter.inc',
-  ),
+              // uploadfield formatter theme functions.
+              'uploadfield_formatter_video_plain' => array(
+              'arguments' => array('element' => NULL),
+              'file' => 'uploadfield_formatter.inc',
+              ),
+              'uploadfield_formatter_video_nodelink' => array(
+              'arguments' => array('element' => NULL),
+              'file' => 'uploadfield_formatter.inc',
+              ),
+              'uploadfield_formatter_video_imagelink' => array(
+              'arguments' => array('element' => NULL),
+              'file' => 'uploadfield_formatter.inc',
+              ),
 
-  //from includes/common.inc
-  'video_format_play' => array(
-  'arguments' => array('output' => NULL,'url' => NULL,'title' => NULL,'link_text' => NULL),
-  ),
-  'video_play_dcr' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_play_divx' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_play_flash' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_play_ogg_theora' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_play_quicktime' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_play_realmedia' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_play_swf' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_play_windowsmedia' => array(
-  'arguments' => array('node' => NULL),
-  ),
-  'video_encoding_failed' => array(
-  'arguments' => array(),
-  ),
-  'video_inprogress' => array(
-  'arguments' => array(),
-  ),
-  );
+              //from includes/common.inc
+              'video_format_play' => array(
+              'arguments' => array( 'output' => NULL,
+                                    'url' => NULL,
+                                    'title' => NULL,
+                                    'link_text' => NULL
+                                  ),
+              ),
+              'video_play_dcr' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_play_divx' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_play_flash' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_play_ogg_theora' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_play_quicktime' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_play_realmedia' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_play_swf' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_play_windowsmedia' => array(
+              'arguments' => array('node' => NULL),
+              ),
+              'video_encoding_failed' => array(
+              'arguments' => array(),
+              ),
+              'video_inprogress' => array(
+              'arguments' => array(),
+              ),
+          );
+  if(module_exists('imagecache')) {
+    // imagecache presets
+    foreach (imagecache_presets() as $preset) {
+      $theme['uploadfield_formatter_'. $preset['presetname'] .'_videolinked'] = array(
+          'arguments' => array('element' => NULL),
+          'function' => 'theme_uploadfield_formatter_videolinked',
+          'file' => 'uploadfield_formatter.inc'
+      );
+    }
+  }
+
+  return $theme;
 }
 
 /**
@@ -272,14 +293,14 @@ function uploadfield_field_formatter_info() {
   $module_path = drupal_get_path('module', 'uploadfield');
   $formatters = array(
       'video_plain' => array(
-      'label' => t('Video node'),
+      'label' => t('video'),
       'field types' => array('filefield'),
       'description' => t('Displays video files with player embeded.'),
       ),
       'video_nodelink' => array(
-      'label' => t('Video Thumbnail linked to Video node'),
+      'label' => t('video thumbnail linked to video'),
       'field types' => array('filefield'),
-      'description' => t('Displays video thumb files then the video node.'),
+      'description' => t('Displays video thumb files then the video.'),
       ),
       //      'video_imagelink' => array(
       //      'label' => t('Video Thumbnail linked to video file download'),
@@ -287,6 +308,15 @@ function uploadfield_field_formatter_info() {
       //      'description' => t('Displays video files in their original size.'),
       //      ),
   );
+
+if(module_exists('imagecache')) {
+  foreach (imagecache_presets() as $preset) {
+    $formatters[$preset['presetname'] .'_videolinked'] = array(
+        'label' => t('@preset of video thumbnail linked to video', array('@preset' => $preset['presetname'])),
+        'field types' => array('filefield'),
+    );
+  }
+}
   return $formatters;
 }
 

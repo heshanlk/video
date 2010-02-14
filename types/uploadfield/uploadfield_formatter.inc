@@ -85,6 +85,46 @@ function theme_uploadfield_formatter_video_nodelink($element) {
 }
 
 /**
+ * use image cache profiles for video thumb display
+ * @param object $element
+ * @return HTML image file
+ */
+
+function theme_uploadfield_formatter_videolinked($element) {
+  // Inside a view $element may contain NULL data. In that case, just return.
+  if (empty($element['#item']['fid'])) {
+    return '';
+  }
+
+  // Extract the preset name from the formatter name.
+  $presetname = substr($element['#formatter'], 0, strrpos($element['#formatter'], '_'));
+  $style = 'linked';
+
+  $item = $element['#item'];
+  $item['data']['alt'] = isset($item['data']['alt']) ? $item['data']['alt'] : '';
+  $item['data']['title'] = isset($item['data']['title']) ? $item['data']['title'] : NULL;
+
+  $node = $element['#node'];
+  //  $imagetag = theme('uploadfield_formatter_video_plain', $element);
+  $use_default_img = $element['#item']['data']['use_default_video_thumb'];
+  if($use_default_img) {
+    $thumb_path = $field['widget']['default_video_thumb'];
+//    $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
+  }
+  else if($element['#item']['data']['video_thumb']) {
+    //    print_r($field['widget']['default_video_thumb']);
+//      $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
+      $thumb_path = $element['#item']['data']['video_thumb'];
+//      $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
+  }
+//  die($presetname);
+  $imagetag = theme('imagecache', $presetname, $thumb_path, $node->title, $node->title);
+  $path = empty($item['nid']) ? '' : 'node/'. $item['nid'];
+  $class = "imagecache imagecache-$presetname imagecache-$style imagecache-{$element['#formatter']}";
+  return l($imagetag, $path, array('attributes' => array('class' => $class), 'html' => TRUE));
+}
+
+/**
  *
  * @param <type> $element
  * @return <type>
