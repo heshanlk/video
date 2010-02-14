@@ -55,6 +55,19 @@ function video_admin_settings() {
       '#description' => t('Start the video when the page and video loads')
   );
 
+    $form['player'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Video Extra Players'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE
+  );
+  $form['player']['video_cortado'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to OGG Cortado Player'),
+      '#default_value' => variable_get('video_cortado', $base_url . '/cortado.jar'),
+      '#description' => t('Copy your cortado.jar file to Drupal root and keep the setting un-changed.')
+  );
+
   //
   $gateways = _video_transcoder_types();
   //  print_r($gateways);
