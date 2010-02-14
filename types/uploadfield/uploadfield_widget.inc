@@ -233,7 +233,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       '#attributes' => array('class' => 'video-width-text'),
   );
   if(!$default_width){
-     $element['data']['width']['#value'] = $field['widget']['default_width'];
+     $element['data']['width']['#value'] = empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'];
   }
 
   // only in preview mode and then create thumbnails

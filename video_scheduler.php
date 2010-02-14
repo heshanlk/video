@@ -159,8 +159,9 @@ function video_render_main($job_fid) {
     // TODO : add data of rendering
     _video_render_job_change_status($fid, VIDEO_RENDERING_COMPLETE);
     // clear all cacahe data
-    //cache_clear_all();
-    drupal_flush_all_caches();
+    // cache_clear_all();
+    // drupal_flush_all_caches();
+    cache_clear_all("*", 'cache_content', true);
     watchdog('video_render', 'successfully converted %orig to %dest', array('%orig' => $job->filepath, '%dest' => $file->filepath), WATCHDOG_INFO);
     // delete the temp file
     unlink($tmpfile);
