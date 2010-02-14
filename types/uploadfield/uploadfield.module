@@ -295,7 +295,7 @@ function uploadfield_field_formatter_info() {
       'video_plain' => array(
       'label' => t('video'),
       'field types' => array('filefield'),
-      'description' => t('Displays video files with player embeded.'),
+      'description' => t('Displays video files with player embedded.'),
       ),
       'video_nodelink' => array(
       'label' => t('video thumbnail linked to video'),

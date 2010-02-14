@@ -31,7 +31,7 @@ function uploadfield_widget_settings_form($widget) {
       '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
       '#size' => 15,
       '#maxlength' => 5,
-      '#description' => t('Default player resolution WIDTHXHEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
+      '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
   );
 
   $form['player']['default_width'] = array(
@@ -40,7 +40,7 @@ function uploadfield_widget_settings_form($widget) {
       '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
       '#size' => 15,
       '#maxlength' => 5,
-      '#description' => t('Default player WIDTHXHEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
+      '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
   );
 
 
@@ -88,13 +88,13 @@ function uploadfield_widget_settings_form($widget) {
   $form['plugings']['autoconversion'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable auto conversion video'),
-      '#description' => t('Use ffmpeg(Default) to automaticcally convert videos to web compatible types eg. FLV, Please make sure to configure convertor settings.'),
+      '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure convertor settings.'),
       '#default_value' => $widget['autoconversion'],
   );
   $form['plugings']['autothumbnail'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable auto thumbnail video'),
-      '#description' => t('Use ffmpeg(Default) to automaticcally thumbnails, Please make sure to configure convertor settings.'),
+      '#description' => t('Use ffmpeg(Default) to automatically thumbnails, Please make sure to configure convertor settings.'),
       '#default_value' => $widget['autothumbnail'],
   );
 
@@ -227,7 +227,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       '#type' => $default_width ? 'textfield' : 'value',
       '#title' => t('Width for Player'),
       '#default_value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
-      '#description' => t('Set player width(in pix) here, make sure your video have good resolution to fix on larger values.'),
+      '#description' => t('Set player width(in pix) here, make sure your video have good resolution to fit on larger values.'),
       '#size' => 15,
       '#maxlength' => 5,
       '#attributes' => array('class' => 'video-width-text'),

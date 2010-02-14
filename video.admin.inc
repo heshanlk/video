@@ -126,7 +126,7 @@ function video_admin_settings() {
   $form['conv']['autothumb']['video_thumb_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to Video Thumbnails'),
-      '#description' => t('Path to save video thumbanils extracted from video'),
+      '#description' => t('Path to save video thumbnails extracted from video'),
       '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
   );
   $form['conv']['autothumb']['no_of_video_thumbs'] = array(
