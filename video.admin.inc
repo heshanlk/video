@@ -121,7 +121,7 @@ function video_admin_settings() {
 
     $form['conv'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Video ffmpeg'),
+        '#title' => t('FFmpeg video conversion settings.'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE
     );
