@@ -210,52 +210,195 @@ function ffmpeg_wrapper_check_exe_path($path = NULL) {
  * Implementing hook_auto_convert();
  * @param <type> $job
  */
+//function ffmpeg_wrapper_auto_convert(&$job) {
+//  $videofile = escapeshellarg($job->filepath); // escape file name for safety
+//  $convfile = tempnam(file_directory_temp(), 'video-rendering');
+//  $audiobitrate = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64);
+//  $videobitrate = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200);
+//  $size = _video_render_get_size();
+////  $converter = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
+//
+//  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'),
+//      array($videofile, $convfile, $audiobitrate, $size, $videobitrate),
+//      variable_get('video_ffmpeg_helper_auto_cvr_options',
+//      '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate -qscale 1 %convertfile'));
+//
+//  // set to the converted file output
+//  $job->convfile = $convfile;
+//
+//  // run conversion commands from ffmpeg_wrapper module
+//  $command_output = ffmpeg_wrapper_run_command($options, $error_check = true, $path = '');
+//
+////  $command = VIDEO_RENDERING_NICE . " $converter $options";
+//
+//  //print('executing ' . $command); die;
+//  watchdog('video_render', 'executing: ' . $options);
+////   watchdog('video_render', 'Starting : ' . time());
+//  //execute the command
+////  ob_start();
+////  passthru($command." 2>&1", $command_return);
+////  $command_output = ob_get_contents();
+////  ob_end_clean();
+////  watchdog('video_render', 'Completed');
+//  //print $command_output;
+//
+//  if (!file_exists($job->convfile) || !filesize($job->convfile)) {
+//    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output);
+//  //    _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
+//  //    _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
+//  }
+//  else {
+//    $file_name = basename($job->filename . ".flv");
+//    $file = new stdClass();
+//    $file->uid      = $job->uid;
+//    $file->status   = FILE_STATUS_PERMANENT;
+//    $file->filename = basename($file_name);
+//    $file->filepath = $job->convfile;
+//    $file->filemime = file_get_mimetype($file_name);
+//    $file->filesize = filesize($job->convfile);
+//    $file->timestamp = time();
+//
+//    $job->converted = $file;
+//  }
+//}
+
+
+/**
+ * This runs FFmpeg based on the form data passed into it.
+ * @param string $input_file
+ *   path to the file to operate on
+ * @param array $params
+ *   configuration options in the format set in the ffmpeg_wrapper_configuration_form()
+ * @param string $output_file_path
+ *   where to place the file, assumes same dir as $input_file. No trailing slash
+ * @param object $ffmpeg_object
+ *   contains debug information that calling functions can utilize
+ * @return string
+ *
+ */
 function ffmpeg_wrapper_auto_convert(&$job) {
-  $videofile = escapeshellarg($job->filepath); // escape file name for safety
-  $convfile = tempnam(file_directory_temp(), 'video-rendering');
-  $audiobitrate = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64);
-  $videobitrate = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200);
-  $size = _video_render_get_size();
-//  $converter = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
 
-  $options = preg_replace(array('/%videofile/', '/%convertfile/', '/%audiobitrate/', '/%size/', '/%videobitrate/'),
-      array($videofile, $convfile, $audiobitrate, $size, $videobitrate),
-      variable_get('video_ffmpeg_helper_auto_cvr_options',
-      '-y -i %videofile -f flv -ar 22050 -ab %audiobitrate -s %size -b %videobitrate -qscale 1 %convertfile'));
+  $ffmpeg_object = new stdClass();
+  // check configuration are pass of then use global $conf
+  if(empty ($params)){
+    global $conf;
+    $params = $conf;
+  }
 
-  // set to the converted file output
-  $job->convfile = $convfile;
+  $input_file = escapeshellarg($job->filepath); // escape file name for safety
 
-  // run conversion commands from ffmpeg_wrapper module
-  $command_output = ffmpeg_wrapper_run_command($options, $error_check = true, $path = '');
+  // first error check, make sure that we can decode this kind of file
+  if (! ffmpeg_wrapper_can_decode($input_file)) {
+    $message = 'FFmpeg Wrapper can not decode this file: !file';
+    $variables = array('!file' => l($input_file, file_create_url($input_file)));
+    watchdog('media_mover', $message, $variables, WATCHDOG_ERROR);
+    $ffmpeg_object->errors[] = $message;
+    return false;
+  }
 
-//  $command = VIDEO_RENDERING_NICE . " $converter $options";
+  // build the output file path if we don't have one. Use the output type as the extension.
+  $output_file = file_create_filename(basename($input_file) .'.'. $params['ffmpeg_output_type'], ($output_file_path ? $output_file_path : dirname($input_file)));
 
-  //print('executing ' . $command); die;
-  watchdog('video_render', 'executing: ' . $options);
-//   watchdog('video_render', 'Starting : ' . time());
-  //execute the command
-//  ob_start();
-//  passthru($command." 2>&1", $command_return);
-//  $command_output = ob_get_contents();
-//  ob_end_clean();
-//  watchdog('video_render', 'Completed');
-  //print $command_output;
+  // did the admin define a specific FFmpeg comand to run?
+  //  we only run what the admin specified
+  if ($params['ffmpeg_video_custom']) {
+    $options[] = str_replace(array('%in_file', '%out_file'), array($input_file, $output_file), $params['ffmpeg_video_custom_command']);
+  }
+  // build a standard configuration
+  else {
+    // build the ffmpeg command structure out
+    $options = array();
 
-  if (!file_exists($job->convfile) || !filesize($job->convfile)) {
+    // input file
+    $options[] = "-i '". $input_file ."'";
+
+    // build the watermark config
+    if ($params['ffmpeg_video_wm']) {
+      $options[] = "-vhook '". ffmpeg_wrapper_path_to_vhook('watermark.so') ." -f ". $params['ffmpeg_video_wm_file'] ."'";
+    }
+
+    // build the audio config
+    if ($params['ffmpeg_audio_advanced']) {
+
+      // use a specifc codec?
+      if ($params['ffmpeg_audio_acodec']) {
+        $options[] =  '-acodec '. $params['ffmpeg_audio_acodec'];
+      }
+
+      // use a specific sample rate?
+      if ($params['ffmpeg_audio_ar'] ) {
+        $options[] = '-ar '. $params['ffmpeg_audio_ar'];
+      }
+
+      // use a specific bit rate?
+      if ($params['ffmpeg_audio_ab']) {
+        $options[] = '-ab '. $params['ffmpeg_audio_ab'];
+      }
+    }
+
+    // build the video config
+    if ($params['ffmpeg_video_advanced']) {
+
+      // is codec set?
+      if ($params['ffmpeg_video_vcodec']) {
+        $options[] = '-vcodec '. $params['ffmpeg_video_vcodec'];
+      }
+
+      // is frame size set?
+      if ($params['ffmpeg_video_size']) {
+        $options[] = '-s '. $params[$params['ffmpeg_video_size'] == 'other' ? 'ffmpeg_video_size_other' : 'ffmpeg_video_size'];
+      }
+
+      // is the bit rate set?
+      if ($params['ffmpeg_video_br']) {
+        $options[] = '-b '. $params['ffmpeg_video_br'];
+      }
+
+      // is frame rate set?
+      if ($params['ffmpeg_video_fps']) {
+        $options[] = '-r '. $params['ffmpeg_video_fps'];
+      }
+    }
+
+    // implement truncating
+    if ($params['ffmpeg_time_advanced']) {
+      $options[] = '-t '. $params['ffmpeg_time'];
+    }
+
+    // add the output file
+    $options[] = "'". $output_file ."'";
+  }
+
+  $ffmpeg_object->command = implode(" ", $options);
+
+  // run ffmpeg with error checking
+  if (! $success = ffmpeg_wrapper_run_command($ffmpeg_object->command, true, null, $ffmpeg_object)) {
+    watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $success);
+    return;
+  }
+
+  // successful convert, make a note in the log
+  $message = 'FFmpeg converted this file: !file';
+  $message .= '<br />'. 'FFmpeg ran this command: <br /><pre> !command </pre>';
+  $variables = array('@file' => $output_file, !command =>  $ffmpeg_object->command);
+  watchdog('video_render', $message, $variables, WATCHDOG_NOTICE);
+
+  $ffmpeg_object->output_file = $output_file;
+
+  if (!file_exists($output_file) || !filesize($output_file)) {
     watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $command_output);
   //    _video_render_set_video_encoded_fid($job->nid, $job->vid, -1);
   //    _video_render_job_change_status($job->nid, $job->vid, VIDEO_RENDERING_FAILED);
   }
   else {
-    $file_name = basename($job->filename . ".flv");
+    $file_name = basename($output_file);
     $file = new stdClass();
     $file->uid      = $job->uid;
     $file->status   = FILE_STATUS_PERMANENT;
     $file->filename = basename($file_name);
-    $file->filepath = $job->convfile;
+    $file->filepath = $output_file;
     $file->filemime = file_get_mimetype($file_name);
-    $file->filesize = filesize($job->convfile);
+    $file->filesize = filesize($output_file);
     $file->timestamp = time();
 
     $job->converted = $file;
