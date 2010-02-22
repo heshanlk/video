@@ -371,7 +371,7 @@ function ffmpeg_wrapper_auto_convert(&$job) {
 
   $ffmpeg_object->command = implode(" ", $options);
 
-  // run ffmpeg with  out error checking
+  // run ffmpeg with error checking
   if (! $success = ffmpeg_wrapper_run_command($ffmpeg_object->command)) {
     watchdog('video_render', 'video conversion failed. ffmpeg reported the following output: ' . $success);
     return false;
