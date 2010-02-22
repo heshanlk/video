@@ -285,7 +285,7 @@ function ffmpeg_wrapper_auto_convert(&$job) {
     $params = $conf;
   }
 
-  $input_file = escapeshellarg($job->filepath); // escape file name for safety
+  $input_file = $job->filepath; // escape file name for safety
 
   // first error check, make sure that we can decode this kind of file
   if (! ffmpeg_wrapper_can_decode($input_file)) {
@@ -378,9 +378,9 @@ function ffmpeg_wrapper_auto_convert(&$job) {
   }
 
   // successful convert, make a note in the log
-  $message = 'FFmpeg converted this file: !file';
+  $message = 'FFmpeg converted this file: @file';
   $message .= '<br />'. 'FFmpeg ran this command: <br /><pre> !command </pre>';
-  $variables = array('@file' => $output_file, !command =>  $ffmpeg_object->command);
+  $variables = array('@file' => $output_file, '!command' =>  $ffmpeg_object->command);
   watchdog('video_render', $message, $variables, WATCHDOG_NOTICE);
 
   $ffmpeg_object->output_file = $output_file;
