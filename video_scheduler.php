@@ -191,10 +191,10 @@ function _video_render_get_converted_file(&$job) {
   if (function_exists($function)) {
   //    $thumbs = ffmpeg_auto_thumbnail($file);
   //    watchdog('video_render', 'calling to converter API %conv', array('%conv' => $transcoder));
-    $success = $function(&$job);
-    if(! $success) {
-       watchdog('video_render', 'error transcoding vide. existing.', array(), WATCHDOG_ERROR);
-    }
+    $function(&$job);
+//    if(! $success) {
+//       watchdog('video_render', 'error transcoding vide. existing.', array(), WATCHDOG_ERROR);
+//    }
   }
   else {
   //    drupal_set_message(t('Transcoder not configured properly'), 'error');
