@@ -216,7 +216,8 @@ function video_admin_settings() {
 
   }
   else {
-    $form['ffmpeg'] = ffmpeg_wrapper_configuration_form();
+    global $conf;
+    $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
   }
 
   return system_settings_form($form);
