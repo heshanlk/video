@@ -150,7 +150,7 @@ function ffmpeg_wrapper_auto_thumbnail($vidfile) {
   }
   $count = variable_get('no_of_video_thumbs', 5);
   // set file path
-  $filepath = escapeshellarg($vidfile['filepath']);
+  $filepath = $vidfile['filepath'];
   // calling ffmpeg_wrapper_file_data function
   $file_data = ffmpeg_wrapper_file_data($filepath);
   $duration = $file_data['duration'];
