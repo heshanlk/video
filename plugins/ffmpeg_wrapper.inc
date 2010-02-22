@@ -291,7 +291,7 @@ function ffmpeg_wrapper_auto_convert(&$job) {
   if (! ffmpeg_wrapper_can_decode($input_file)) {
     $message = 'FFmpeg Wrapper can not decode this file: !file';
     $variables = array('!file' => l($input_file, file_create_url($input_file)));
-    watchdog('media_mover', $message, $variables, WATCHDOG_ERROR);
+    watchdog('video_render', $message, $variables, WATCHDOG_ERROR);
     $ffmpeg_object->errors[] = $message;
     return false;
   }
