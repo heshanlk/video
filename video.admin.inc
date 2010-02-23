@@ -117,7 +117,7 @@ function video_admin_settings() {
 
   // ffmpeg wapper settings
   $video_converter = variable_get('vid_convertor', 'ffmpeg');
-  if(module_exists('ffmpeg_wrapper') && $video_converter == 'ffmpeg') {
+  if(!module_exists('ffmpeg_wrapper') && $video_converter != 'ffmpeg_wrapper') {
 
     $form['conv'] = array(
         '#type' => 'fieldset',
@@ -217,7 +217,8 @@ function video_admin_settings() {
   }
   else {
     global $conf;
-    $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
+    if(module_exists('ffmpeg_wrapper'))
+      $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
   }
 
   return system_settings_form($form);
