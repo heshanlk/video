@@ -164,7 +164,7 @@ function video_render_main($job_fid) {
     cache_clear_all("*", 'cache_content', true);
     watchdog('video_render', 'successfully converted %orig to %dest', array('%orig' => $job->filepath, '%dest' => $file->filepath), WATCHDOG_INFO);
     // delete the temp file
-    unlink($tmpfile);
+//    unlink($tmpfile);
   }
   else {
     _video_render_job_change_status($fid, VIDEO_RENDERING_FAILED);
