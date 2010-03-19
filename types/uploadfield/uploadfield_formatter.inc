@@ -11,10 +11,14 @@
 /**
  * Define some constants
  */
-define('VIDEO_RENDERING_PENDING', 1);
-define('VIDEO_RENDERING_ACTIVE', 5);
-define('VIDEO_RENDERING_COMPLETE', 10);
-define('VIDEO_RENDERING_FAILED', 20);
+defined('VIDEO_RENDERING_PENDING')
+  or define('VIDEO_RENDERING_PENDING', 1);
+defined('VIDEO_RENDERING_ACTIVE')
+  or define('VIDEO_RENDERING_ACTIVE', 5);
+defined('VIDEO_RENDERING_COMPLETE')
+  or define('VIDEO_RENDERING_COMPLETE', 10);
+defined('VIDEO_RENDERING_FAILED')
+  or define('VIDEO_RENDERING_FAILED', 20);
 /**
  *
  * @param <type> $element
