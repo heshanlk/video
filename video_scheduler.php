@@ -12,7 +12,6 @@
  *
  */
 
-
 /**
  * video_scheduler.php configuration
  */
