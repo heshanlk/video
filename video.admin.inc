@@ -114,10 +114,16 @@ function video_admin_settings() {
       '#description' => t('Path to executable, you can skip this if your usign ffmpeg_wrapper module support.'),
       '#default_value' => variable_get('video_transcoder_path', '/usr/bin/ffmpeg'),
   );
+  $form['tranccoder']['no_of_video_thumbs'] = array(
+        '#type' => 'textfield',
+        '#title' => t('No of video thumbnails'),
+        '#description' => t('No of thumbnails extracting from video'),
+        '#default_value' => variable_get('no_of_video_thumbs', 5),
+    );
 
   // ffmpeg wapper settings
   $video_converter = variable_get('vid_convertor', 'ffmpeg');
-  if(!module_exists('ffmpeg_wrapper') && $video_converter != 'ffmpeg_wrapper') {
+  if($video_converter == 'ffmpeg') {
 
     $form['conv'] = array(
         '#type' => 'fieldset',
@@ -138,12 +144,6 @@ function video_admin_settings() {
         '#title' => t('Path to Video Thumbnails'),
         '#description' => t('Path to save video thumbnails extracted from video'),
         '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
-    );
-    $form['conv']['autothumb']['no_of_video_thumbs'] = array(
-        '#type' => 'textfield',
-        '#title' => t('No of thumbnails'),
-        '#description' => t('No of thumbnails extracting from video'),
-        '#default_value' => variable_get('no_of_video_thumbs', 5),
     );
     $form['conv']['autothumb']['advanced'] = array(
         '#type' => 'fieldset',
@@ -215,7 +215,7 @@ function video_admin_settings() {
     );
 
   }
-  else {
+  else if($video_converter == 'ffmpeg_wrapper') {
     global $conf;
     if(module_exists('ffmpeg_wrapper'))
       $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
