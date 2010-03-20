@@ -221,25 +221,56 @@ function video_admin_settings() {
       $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
   }
   else if($video_converter == 'zencoder') {
-      $form['conv']['zencoder'] = array(
+      $form['zencoder'] = array(
           '#type' => 'fieldset',
-          '#title' => t('Automatic video conversion'),
-          '#collapsible' => TRUE,
-          '#collapsed' => FALSE
+          '#title' => t("ZENCODER configuration"),
+          '#description' => t('Settings for the zencoder module.',
+          array('!link' => l(t('S3 test'), 'admin/build/s3_ap1/test'))),
+          '#element_validate' => array('s3_api_admin_validate'),
       );
-      $form['conv']['zencoder']['zencoder_key'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Zencoder Key'),
-          '#size' => 10,
-          '#maxlength' => 10,
-          '#default_value' => variable_get('zencoder_key', ''),
+
+      $form['zencoder']['s3_api'] = array(
+          '#type' => 'fieldset',
+          '#title' => t("S3 configuration"),
+          '#description' => t('Settings for the S3 module. You can see if your connection is functional by using the link.',
+          array('!link' => l(t('S3 test'), 'admin/build/s3_ap1/test'))),
+          '#element_validate' => array('s3_api_admin_validate'),
       );
-      $form['conv']['zencoder']['s3_key'] = array(
+
+      $form['zencoder']['s3_api']['s3_api_bucket'] = array(
           '#type' => 'textfield',
-          '#title' => t('Destination video height'),
-          '#size' => 10,
-          '#maxlength' => 10,
-          '#default_value' => variable_get('s3_key', ''),
+          '#title' => t('S3 Bucket'),
+          '#default_value' => variable_get('s3_api_bucket', str_replace(' ', '_', variable_get('site_name', t('My Site')))),
+          '#description' => t("Name of the S3 bucket, note this has to be unique. This can be overridden by a configuration, but this is the default value."),
+      );
+
+      $form['zencoder']['s3_api']['s3_api_default_perm'] = array(
+          '#type' => 'select',
+          '#options' => s3_api_file_perms(),
+          '#title' => t('S3 Default Permissions'),
+          '#default_value' => variable_get('s3_api_default_perm', ACL_PUBLIC_READ),
+          '#description' => t('Default permissions on files and buckets created on S3'),
+      );
+
+      $form['zencoder']['s3_api']['s3_api_default_server_url'] = array(
+          '#type' => 'textfield',
+          '#title' => t('S3 URL'),
+          '#default_value' => variable_get('s3_api_default_server_url', "https://s3.amazonaws.com/"),
+          '#description' => t('URL to send to amazon. You probably do not need to change this.'),
+      );
+
+      $form['zencoder']['s3_api']['s3_api_key'] = array(
+          '#type' => 'textfield',
+          '#title' => t('S3 Key'),
+          '#default_value' => variable_get('s3_api_key', ""),
+          '#description' => t("S3 key."),
+      );
+
+      $form['zencoder']['s3_api']['s3_api_skey'] = array(
+          '#type' => 'textfield',
+          '#title' => t('S3 Secret Key'),
+          '#default_value' => variable_get('s3_api_skey', ""),
+          '#description' => t("S3 secret key."),
       );
     }
 
