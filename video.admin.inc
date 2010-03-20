@@ -220,6 +220,28 @@ function video_admin_settings() {
     if(module_exists('ffmpeg_wrapper'))
       $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
   }
+  else if($video_converter == 'zencoder') {
+      $form['conv']['zencoder'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Automatic video conversion'),
+          '#collapsible' => TRUE,
+          '#collapsed' => FALSE
+      );
+      $form['conv']['zencoder']['zencoder_key'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Zencoder Key'),
+          '#size' => 10,
+          '#maxlength' => 10,
+          '#default_value' => variable_get('zencoder_key', ''),
+      );
+      $form['conv']['zencoder']['s3_key'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Destination video height'),
+          '#size' => 10,
+          '#maxlength' => 10,
+          '#default_value' => variable_get('s3_key', ''),
+      );
+    }
 
   return system_settings_form($form);
 }
