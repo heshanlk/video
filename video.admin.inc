@@ -226,7 +226,7 @@ function video_admin_settings() {
           '#title' => t("ZENCODER configuration"),
           '#description' => t('Settings for the zencoder module.',
           array('!link' => l(t('S3 test'), 'admin/build/s3_ap1/test'))),
-          '#element_validate' => array('s3_api_admin_validate'),
+          '#element_validate' => array('video_admin_settings_validate'),
       );
 
       $form['zencoder']['s3_api'] = array(
@@ -234,7 +234,7 @@ function video_admin_settings() {
           '#title' => t("S3 configuration"),
           '#description' => t('Settings for the S3 module. You can see if your connection is functional by using the link.',
           array('!link' => l(t('S3 test'), 'admin/build/s3_ap1/test'))),
-          '#element_validate' => array('s3_api_admin_validate'),
+          '#element_validate' => array('video_admin_settings_validate'),
       );
 
       $form['zencoder']['s3_api']['s3_api_bucket'] = array(
@@ -246,7 +246,7 @@ function video_admin_settings() {
 
       $form['zencoder']['s3_api']['s3_api_default_perm'] = array(
           '#type' => 'select',
-          '#options' => s3_api_file_perms(),
+          '#options' => s3_file_perms(),
           '#title' => t('S3 Default Permissions'),
           '#default_value' => variable_get('s3_api_default_perm', ACL_PUBLIC_READ),
           '#description' => t('Default permissions on files and buckets created on S3'),
