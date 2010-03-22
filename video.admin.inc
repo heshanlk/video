@@ -101,13 +101,23 @@ function video_admin_settings() {
       '#collapsed' => FALSE
   );
 
+  // TODO : write a common function to pick as help
+  $help_transcoders = array();
+  $help_transcoders[] = l('FFMPEG Default module', 'http://drupal.org/node/722506');
+  $help_transcoders[] = l('FFMPEG Wrapper module', 'http://drupal.org/project/ffmpeg_wrapper');
+  $help_transcoders[] = l('ZENCODER Online Transcoder', 'http://zencoder.tv/');
+  
   $form['tranccoder']['vid_convertor'] = array(
       '#type' => 'radios',
       '#title' => t('Video transcoder'),
       '#default_value' => variable_get('vid_convertor', 'ffmpeg'),
       '#options' => $gateways,
-      '#description' => t('Video transcoder will help you to video conversion and automatic thumbnail generaion. You must install !ffmpeg_wrapper module to enable ffmpeg_wrapper support', array('!ffmpeg_wrapper' => l('ffmpeg_wrapper module', 'http://drupal.org/project/ffmpeg_wrapper')))
-  );
+      '#description' => t('Video transcoder will help you to video conversion
+          and automatic thumbnail generaion. You must install !ffmpeg_wrapper
+          module to enable ffmpeg_wrapper support. !list',
+              array('!ffmpeg_wrapper' => l('ffmpeg_wrapper module', 'http://drupal.org/project/ffmpeg_wrapper'),
+                    '!list' => theme('item_list', $help_transcoders)))
+              );
   $form['tranccoder']['video_transcoder_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to Video Transcoder'),
@@ -229,48 +239,18 @@ function video_admin_settings() {
           '#element_validate' => array('video_admin_settings_validate'),
       );
 
-      $form['zencoder']['s3_api'] = array(
-          '#type' => 'fieldset',
-          '#title' => t("S3 configuration"),
-          '#description' => t('Settings for the S3 module. You can see if your connection is functional by using the link.',
-          array('!link' => l(t('S3 test'), 'admin/build/s3_ap1/test'))),
-          '#element_validate' => array('video_admin_settings_validate'),
-      );
-
-      $form['zencoder']['s3_api']['s3_api_bucket'] = array(
+      $form['zencoder']['zencoder_api_key'] = array(
           '#type' => 'textfield',
-          '#title' => t('S3 Bucket'),
-          '#default_value' => variable_get('s3_api_bucket', str_replace(' ', '_', variable_get('site_name', t('My Site')))),
-          '#description' => t("Name of the S3 bucket, note this has to be unique. This can be overridden by a configuration, but this is the default value."),
+          '#title' => t('Zencoder Key'),
+          '#default_value' => variable_get('zencoder_api_key', ""),
+          '#description' => t("Zencoder key."),
       );
 
-      $form['zencoder']['s3_api']['s3_api_default_perm'] = array(
-          '#type' => 'select',
-          '#options' => s3_file_perms(),
-          '#title' => t('S3 Default Permissions'),
-          '#default_value' => variable_get('s3_api_default_perm', ACL_PUBLIC_READ),
-          '#description' => t('Default permissions on files and buckets created on S3'),
-      );
-
-      $form['zencoder']['s3_api']['s3_api_default_server_url'] = array(
+      $form['zencoder']['zencoder_api_skey'] = array(
           '#type' => 'textfield',
-          '#title' => t('S3 URL'),
-          '#default_value' => variable_get('s3_api_default_server_url', "https://s3.amazonaws.com/"),
-          '#description' => t('URL to send to amazon. You probably do not need to change this.'),
-      );
-
-      $form['zencoder']['s3_api']['s3_api_key'] = array(
-          '#type' => 'textfield',
-          '#title' => t('S3 Key'),
-          '#default_value' => variable_get('s3_api_key', ""),
-          '#description' => t("S3 key."),
-      );
-
-      $form['zencoder']['s3_api']['s3_api_skey'] = array(
-          '#type' => 'textfield',
-          '#title' => t('S3 Secret Key'),
-          '#default_value' => variable_get('s3_api_skey', ""),
-          '#description' => t("S3 secret key."),
+          '#title' => t('Zencoder Secret Key'),
+          '#default_value' => variable_get('zencoder_api_skey', ""),
+          '#description' => t("Zencoder secret key."),
       );
     }
 
