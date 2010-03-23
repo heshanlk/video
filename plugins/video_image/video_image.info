@@ -1,8 +1,0 @@
-;$Id$
-name = Video Image
-description = Enable thumbnails support for video module.
-dependencies[] = image
-dependencies[] = video
-package = "Video"
-core = 6.x
-

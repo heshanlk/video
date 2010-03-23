@@ -1,7 +1,0 @@
-; $Id$
-name = Upload Video
-description = Enable Uploaded video support for Video module.
-dependencies[] = video
-dependencies[] = token
-package = "Video"
-core = 6.x
