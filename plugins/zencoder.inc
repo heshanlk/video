@@ -305,22 +305,3 @@ function _video_curl_post($url, $fields, &$output) {
 
 /** S3 API functions **/
 /** ---------------- **/
-defined('ACL_PRIVATE')
-    or define('ACL_PRIVATE', 'private');
-defined('ACL_PUBLIC_READ')
-    or define('ACL_PUBLIC_READ', 'public-read');
-defined('ACL_PUBLIC_READ_WRITE')
-    or define('ACL_PUBLIC_READ_WRITE', 'public-read-write');
-
-/**
- * Builds the default list of file/bucket permissions
- * @return array
- */
-function s3_file_perms() {
-  $options = array(
-      ACL_PRIVATE => t('Private'),
-      ACL_PUBLIC_READ => t('Public read'),
-      ACL_PUBLIC_READ_WRITE => t('Public read and write'),
-  );
-  return $options;
-}
