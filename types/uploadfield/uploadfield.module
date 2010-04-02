@@ -519,7 +519,7 @@ function uploadfield_v_video($op, &$element) {
       }
 
       // auto covnersion
-      if($field['widget']['autoconversion']) {
+      if($field['widget']['autoconversion'] && !$element['#value']['data']['bypass_autoconversion']) {
         video_auto_transcode_add_to_queue($element, $op);
       }
       break;
