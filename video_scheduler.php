@@ -133,7 +133,7 @@ function video_render_main($job_fid) {
   }
 
   // get file object
-  _video_render_get_converted_file(&$job);
+  _video_render_get_converted_file($job);
   $file = $job->converted;
 
   if(empty($file)) {
@@ -190,7 +190,7 @@ function _video_render_get_converted_file(&$job) {
   if (function_exists($function)) {
   //    $thumbs = ffmpeg_auto_thumbnail($file);
   //    watchdog('video_render', 'calling to converter API %conv', array('%conv' => $transcoder));
-    $function(&$job);
+    $function($job);
 //    if(! $success) {
 //       watchdog('video_render', 'error transcoding vide. existing.', array(), WATCHDOG_ERROR);
 //    }
