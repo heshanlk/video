@@ -36,11 +36,11 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
   $file = $element['#value'];
 
   //load cck instace settings
-//  $field = content_fields($element['#field_name'], $element['#type_name']);
-//  $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
-//  $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
+  //  $field = content_fields($element['#field_name'], $element['#type_name']);
+  //  $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
+  //  $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
 
-//  $serialized_data = array('resolution' =>$field['widget']['default_resolution'], 'width' => $element['#item']['data']['width']);
+  //  $serialized_data = array('resolution' =>$field['widget']['default_resolution'], 'width' => $element['#item']['data']['width']);
 
   $fid = $file['fid'];
   $transcoder = variable_get('vid_convertor', 'ffmpeg');
