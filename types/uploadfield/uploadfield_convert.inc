@@ -13,13 +13,13 @@
  * Define some constants
  */
 defined('VIDEO_RENDERING_PENDING')
-  or define('VIDEO_RENDERING_PENDING', 1);
+    or define('VIDEO_RENDERING_PENDING', 1);
 defined('VIDEO_RENDERING_ACTIVE')
-  or define('VIDEO_RENDERING_ACTIVE', 5);
+    or define('VIDEO_RENDERING_ACTIVE', 5);
 defined('VIDEO_RENDERING_COMPLETE')
-  or define('VIDEO_RENDERING_COMPLETE', 10);
+    or define('VIDEO_RENDERING_COMPLETE', 10);
 defined('VIDEO_RENDERING_FAILED')
-  or define('VIDEO_RENDERING_FAILED', 20);
+    or define('VIDEO_RENDERING_FAILED', 20);
 
 function video_auto_transcode_process(&$element) {
 //  $file = $element['#value'];
@@ -49,11 +49,11 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
   $fid = $file['fid'];
   $transcoder = variable_get('vid_convertor', 'ffmpeg');
 
-  // do specific tasks in trancoders
-  _video_render_add_job($file);
-
   switch($op) {
     case 'insert':
+    // do specific tasks in trancoders
+      _video_render_add_job($file);
+
       $serialized_data ['old_file'] = $fid;
       db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data, transcoder)
           VALUES (%d, %d, %d, %d, %d, \'%s\', \'%s\')',
@@ -62,6 +62,9 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
       break;
 
     case 'update':
+    // do specific tasks in trancoders
+      _video_render_add_job($file);
+
       $old_fid = $element['#default_value']['fid'];
       $serialized_data ['old_file'] = $old_fid;
       if($old_fid != $fid) {
@@ -112,14 +115,14 @@ function _video_get_nid_by_video_token($content_type, $fid) {
 
 /**
  *
- * @param <type> $job 
+ * @param <type> $job
  */
 function _video_render_add_job(&$job) {
   $transcoder = variable_get('vid_convertor', 'ffmpeg');
   module_load_include('inc', 'video', '/plugins/' . $transcoder);
   $function = variable_get('vid_convertor', 'ffmpeg') . '_add_job';
   if (function_exists($function)) {
-     $function($job);
+    $function($job);
   }
   else {
   //    drupal_set_message(t('Transcoder not configured properly'), 'error');
