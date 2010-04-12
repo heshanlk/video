@@ -43,12 +43,14 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
 //  $serialized_data = array('resolution' =>$field['widget']['default_resolution'], 'width' => $element['#item']['data']['width']);
 
   $fid = $file['fid'];
+  $transcoder = variable_get('vid_convertor', 'ffmpeg');
 
   switch($op) {
     case 'insert':
-      db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed)
-          VALUES (%d, %d, %d, %d, %d)',
-          $fid, 0, VIDEO_RENDERING_PENDING, 0, 0);
+      $serialized_data ['old_file'] = $fid;
+      db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data, transcoder)
+          VALUES (%d, %d, %d, %d, %d, \'%s\', \'%s\')',
+          $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data), $transcoder);
       drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
       break;
 
@@ -57,9 +59,9 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
       $serialized_data ['old_file'] = $old_fid;
       if($old_fid != $fid) {
         db_query('DELETE FROM {video_rendering} WHERE fid = %d', $old_fid);
-        db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data)
-          VALUES (%d, %d, %d, %d, %d, \'%s\')',
-            $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data));
+        db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data, transcoder)
+          VALUES (%d, %d, %d, %d, %d, \'%s\', \'%s\')',
+            $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data), $transcoder);
         drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
       }
       break;
