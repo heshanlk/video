@@ -106,7 +106,7 @@ function video_admin_settings() {
   $help_transcoders[] = l('FFMPEG Default module', 'http://drupal.org/node/722506');
   $help_transcoders[] = l('FFMPEG Wrapper module', 'http://drupal.org/project/ffmpeg_wrapper');
   $help_transcoders[] = l('ZENCODER Online Transcoder', 'http://zencoder.tv/');
-  
+
   $form['tranccoder']['vid_convertor'] = array(
       '#type' => 'radios',
       '#title' => t('Video transcoder'),
@@ -115,9 +115,9 @@ function video_admin_settings() {
       '#description' => t('Video transcoder will help you to video conversion
           and automatic thumbnail generaion. You must install !ffmpeg_wrapper
           module to enable ffmpeg_wrapper support. !list',
-              array('!ffmpeg_wrapper' => l('ffmpeg_wrapper module', 'http://drupal.org/project/ffmpeg_wrapper'),
-                    '!list' => theme('item_list', $help_transcoders)))
-              );
+      array('!ffmpeg_wrapper' => l('ffmpeg_wrapper module', 'http://drupal.org/project/ffmpeg_wrapper'),
+      '!list' => theme('item_list', $help_transcoders)))
+  );
   $form['tranccoder']['video_transcoder_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to Video Transcoder'),
@@ -125,11 +125,11 @@ function video_admin_settings() {
       '#default_value' => variable_get('video_transcoder_path', '/usr/bin/ffmpeg'),
   );
   $form['tranccoder']['no_of_video_thumbs'] = array(
-        '#type' => 'textfield',
-        '#title' => t('No of video thumbnails'),
-        '#description' => t('No of thumbnails extracting from video'),
-        '#default_value' => variable_get('no_of_video_thumbs', 5),
-    );
+      '#type' => 'textfield',
+      '#title' => t('No of video thumbnails'),
+      '#description' => t('No of thumbnails extracting from video'),
+      '#default_value' => variable_get('no_of_video_thumbs', 5),
+  );
 
   // ffmpeg wapper settings
   $video_converter = variable_get('vid_convertor', 'ffmpeg');
@@ -141,7 +141,7 @@ function video_admin_settings() {
         '#collapsible' => FALSE,
         '#collapsed' => FALSE
     );
-    
+
     //auto thumb videos
     $form['conv']['autothumb'] = array(
         '#type' => 'fieldset',
@@ -226,33 +226,33 @@ function video_admin_settings() {
 
   }
   else if($video_converter == 'ffmpeg_wrapper') {
-    global $conf;
-    if(module_exists('ffmpeg_wrapper'))
-      $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
-  }
-  else if($video_converter == 'zencoder') {
-      $form['zencoder'] = array(
-          '#type' => 'fieldset',
-          '#title' => t("ZENCODER configuration"),
-          '#description' => t('Settings for the zencoder module.',
-          array('!link' => l(t('S3 test'), 'admin/build/s3_ap1/test'))),
-          '#element_validate' => array('video_admin_settings_validate'),
-      );
-
-      $form['zencoder']['zencoder_api_key'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Zencoder Key'),
-          '#default_value' => variable_get('zencoder_api_key', ""),
-          '#description' => t("Zencoder key."),
-      );
-
-      $form['zencoder']['zencoder_api_skey'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Zencoder Secret Key'),
-          '#default_value' => variable_get('zencoder_api_skey', ""),
-          '#description' => t("Zencoder secret key."),
-      );
+      global $conf;
+      if(module_exists('ffmpeg_wrapper'))
+        $form['ffmpeg'] = ffmpeg_wrapper_configuration_form($conf);
     }
+    else if($video_converter == 'zencoder') {
+        $form['zencoder'] = array(
+            '#type' => 'fieldset',
+            '#title' => t("ZENCODER configuration"),
+            '#description' => t('Settings for the zencoder module.',
+            array('!link' => l(t('S3 test'), 'admin/build/s3_ap1/test'))),
+            '#element_validate' => array('video_admin_settings_validate'),
+        );
+
+        $form['zencoder']['zencoder_api_key'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Zencoder Key'),
+            '#default_value' => variable_get('zencoder_api_key', ""),
+            '#description' => t("Zencoder key."),
+        );
+
+        $form['zencoder']['zencoder_api_skey'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Zencoder Secret Key'),
+            '#default_value' => variable_get('zencoder_api_skey', ""),
+            '#description' => t("Zencoder secret key."),
+        );
+      }
 
   return system_settings_form($form);
 }
