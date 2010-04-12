@@ -55,13 +55,13 @@ error_reporting(E_ALL);
 
 //watchdog('video_scheduler', 'starting video conversion jobs.', array(), WATCHDOG_DEBUG);
 // allow execution only from the command line!
-if(empty($_SERVER['REQUEST_METHOD'])) {
+//if(empty($_SERVER['REQUEST_METHOD'])) {
   video_scheduler_main();
-}
-else {
-  print ('This script is only executable from the command line.');
-  die();
-}
+//}
+//else {
+//  print ('This script is only executable from the command line.');
+//  die();
+//}
 
 
 
@@ -103,7 +103,7 @@ function video_scheduler_select() {
   $jobs = array();
   $i = 0;
   $result = db_query_range('SELECT f.fid, f.filepath, f.filesize, f.filename, f.filemime, f.status FROM {video_rendering} vr INNER JOIN {files}
-      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d AND f.status = %d ORDER BY f.timestamp',
+      f ON vr.fid = f.fid WHERE vr.fid = f.fid AND vr.status = %d AND f.status = %d AND vr.transcoder IN ("ffmpeg_wrapper", "ffmpeg") ORDER BY f.timestamp',
       VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, VIDEO_RENDERING_FFMPEG_INSTANCES);
   while($job = db_fetch_object($result)) {
     $jobs[] = $job;
