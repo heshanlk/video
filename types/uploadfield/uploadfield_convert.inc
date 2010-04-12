@@ -49,6 +49,9 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
   $fid = $file['fid'];
   $transcoder = variable_get('vid_convertor', 'ffmpeg');
 
+  // do specific tasks in trancoders
+  _video_render_add_job($file);
+
   switch($op) {
     case 'insert':
       $serialized_data ['old_file'] = $fid;
@@ -105,4 +108,20 @@ function _video_get_nid_by_video_token($content_type, $fid) {
   $result = db_query($query, $field_info['table'], $field_info['field_name'] .'_fid', $fid);
   $nid = db_fetch_object($result);
   return $nid;
+}
+
+/**
+ *
+ * @param <type> $job 
+ */
+function _video_render_add_job(&$job) {
+  $transcoder = variable_get('vid_convertor', 'ffmpeg');
+  module_load_include('inc', 'video', '/plugins/' . $transcoder);
+  $function = variable_get('vid_convertor', 'ffmpeg') . '_add_job';
+  if (function_exists($function)) {
+     $function($job);
+  }
+  else {
+  //    drupal_set_message(t('Transcoder not configured properly'), 'error');
+  }
 }

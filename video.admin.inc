@@ -241,17 +241,17 @@ function video_admin_settings() {
 
         $form['zencoder']['zencoder_api_key'] = array(
             '#type' => 'textfield',
-            '#title' => t('Zencoder Key'),
+            '#title' => t('Zencoder API Key'),
             '#default_value' => variable_get('zencoder_api_key', ""),
             '#description' => t("Zencoder key."),
         );
-
-        $form['zencoder']['zencoder_api_skey'] = array(
-            '#type' => 'textfield',
-            '#title' => t('Zencoder Secret Key'),
-            '#default_value' => variable_get('zencoder_api_skey', ""),
-            '#description' => t("Zencoder secret key."),
-        );
+//
+//        $form['zencoder']['zencoder_api_skey'] = array(
+//            '#type' => 'textfield',
+//            '#title' => t('Zencoder Secret Key'),
+//            '#default_value' => variable_get('zencoder_api_skey', ""),
+//            '#description' => t("Zencoder secret key."),
+//        );
       }
 
   return system_settings_form($form);
