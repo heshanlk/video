@@ -81,7 +81,7 @@ function video_uninstall() {
 
 /**
  * Update 6001
- * adding new filed to keep transcoder type
+ * adding new filed to keep transcoder type zencoder
  * @return <type>
  */
 function video_update_6000() {
