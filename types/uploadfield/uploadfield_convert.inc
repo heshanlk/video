@@ -37,6 +37,8 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
   if(is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
     $fid = $file['fid'];
+    // type of transcoder
+    $transcoder = variable_get('vid_convertor', 'ffmpeg');
     //setup our conversion class and check for the fid existence.
     //module_load_include('inc', 'video', '/includes/conversion');
     //$video_conversion = new video_conversion;
@@ -47,9 +49,10 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
         // do specific tasks defined in trancoders
           _video_render_add_job($file);
           //video has not been added to the que yet so lets add it.
-          db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed) 
-                    VALUES (%d, %d, %d, %d, %d)',
-                    $fid, 0, VIDEO_RENDERING_PENDING, 0, 0);
+          $serialized_data ['old_file'] = $fid;
+          db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data, transcoder)
+          VALUES (%d, %d, %d, %d, %d, \'%s\', \'%s\')',
+              $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data), $transcoder);
           drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
         }
         break;
@@ -64,9 +67,9 @@ function video_auto_transcode_add_to_queue(&$element, $op) {
           if(!$video = video_tmp_load_video($fid)) {
           // do specific tasks defined in trancoders
             _video_render_add_job($file);
-            db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data) 
-                      VALUES (%d, %d, %d, %d, %d, \'%s\')',
-                      $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data));
+            db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data, transcoder)
+          VALUES (%d, %d, %d, %d, %d, \'%s\', \'%s\')',
+                $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data), $transcoder);
             drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for web displaying.'));
           }
           $convert = true;
