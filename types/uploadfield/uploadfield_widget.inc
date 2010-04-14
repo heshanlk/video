@@ -98,7 +98,6 @@ function uploadfield_widget_settings_form($widget) {
       '#default_value' => $widget['autothumbnail'],
   );
 
-
   return $form;
 }
 
@@ -248,6 +247,15 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
           '#description' => t('This will bypass your auto conversion of videos.'),
           '#attributes' => array('class' => 'video-bypass-auto-conversion'),
       );
+      /* Future development
+      $element['data']['convert_video_on_save'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Convert video on save'),
+          '#default_value' => !empty($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : FALSE,
+          '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
+          '#attributes' => array('class' => 'video-convert-video-on-save'),
+      );
+      */
     }
   }
 
@@ -269,28 +277,24 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     );
   }
 
-
-  // creating Update/Insert/Delete API
-  // TODO : use if any better solution than this with filefield
-  // hook_v_video()
+  //Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
+  //@todo This switch needs rework, especially the delete.  We may not need this anymore as we can hand
+  //off the actual checking to other functionality.
   if($form_state['submitted'] == 1) {
-    switch($form_state['values']['op']) {
-      case t('Save'):
-      //          print_r($form);
-      //  exit;
-      // update
+    switch($form_state['clicked_button']['#submit'][0]) {
+      case 'node_form_submit':
         if(!empty($form_state['values']['nid'])) {
           video_module_invoke('update', $element);
         }
-        // insert
         else {
           video_module_invoke('insert', $element);
         }
         break;
-      case t('Preview'):
-      //        module_invoke_all('v_preview');
+      case 'node_form_build_preview':
         break;
-      case t('Delete'):
+      case 'node_form_delete_submit':
+        //@todo When a user presses the delete button, they are then prompted with a confirmation page.
+        //If a user clicks cancel on that page... well the dlete hook is still executed.  Need to put this somewhere else.
         video_module_invoke('delete', $element);
         break;
     }
