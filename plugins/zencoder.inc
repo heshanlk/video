@@ -303,12 +303,43 @@ function zencoder_add_job($file) {
   "output":[{
       "label":"web",
       "base_url":"s3://heidi_test",
-      "filename":"28022009063_new.mp4.flv"
+      "filename":"28022009063.mp4.flv",
+      "width":400,
+      "height":600,
+      "quality":3,
+      "speed":3,
+      "upscale":1,
+      "stretch":1,
+      "frame_rate":1100,
+      "max_frame_rate":2100,
+      "keyframe_interval":2,
+      "video_bitrate":20000,
+      "bitrate_cap":32,
+      "buffer_size":700,
+      "h264_profile":"baseline",
+      "h264_level":5,
+      "skip_video":1,
+      "audio_codec":"mp3",
+      "audio_bitrate":123,
+      "audio_channels":2,
+      "audio_sample_rate":2344,
+      "skip_audio":1,
+      "thumbnails":{
+        "number":5,
+        "size":"128X128",
+        "base_url":"s3://heidi_test",
+        "prefix":"zc_thumb"
+      },
+      "notifications":[
+        "http://locahost.com",
+        "heshanmw@gmail.com"
+      ],
+      "start_clip":3,
+      "clip_length":23
     }
   ],
   "api_key":"45ba476ace079f485ef96b4152a20b35"
-}
-');
+}');
 
   // Check if it worked
   if ($encoding_job->created) {
