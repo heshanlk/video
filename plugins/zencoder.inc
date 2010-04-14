@@ -297,6 +297,40 @@ function zencoder_add_job($file) {
   //28022009063.mp4
   //    "input": "s3://' . $bucket . '/' . $filename . '"
   //    "input": "s3://heidi_test/28022009063.mp4"
+  // Get varialbes
+  $lable = $filename;
+  $base_url = $folder;
+  $filename = $filename;
+  $width = variable_get('zc_width', '');
+  $height = variable_get('zc_height', '');
+  $quality = variable_get('zc_quality', 3);
+  $speed = variable_get('zc_speed', 3);
+  $upscale = variable_get('zc_upscale', '');
+  $stretch = variable_get('zc_stretch', '');
+  $frame_rate = variable_get('zc_frame_rate', '');
+  $max_frame_rate = variable_get('zc_max_frame_rate', '');
+  $keyframe_interval = variable_get('zc_key_frame_interval', '');
+  $video_bitrate = variable_get('zc_vid_bit_rate', '');
+  $bitrate_cap = variable_get('zc_bit_rate_cap', '');
+  $buffer_size = variable_get('zc_buffer_size', '');
+  $h264_profile = variable_get('zc_h245_profile', 1);
+  $h264_level = variable_get('zc_h245_level', 0);
+  $skip_video = variable_get('zc_skip_video', '');
+  $audio_codec = variable_get('zc_audio_codec', 'aac');
+  $audio_bitrate = variable_get('zc_audio_bitrate', '');
+  $audio_channels = variable_get('zc_audio_channels', 2);
+  $audio_sample_rate = variable_get('zc_audio_sample_rate', '');
+  $skip_audio = variable_get('zc_skip_audio', '');
+  $thumn_no = $thumds;
+  $thumb_size = $size;
+  $thumb_base = $baseurl;
+  $thumb_prefix = $filename;
+  $notify_url = variable_get('zc_notify_url', '');
+  $notify_email = variable_get('zc_notify_email', '');
+  $start_clip = variable_get('zc_start_clip', '');
+  $clip_length = variable_get('zc_clip_length', '');
+
+  
   $encoding_job = new ZencoderJob('
 {
   "input":"s3://heidi_test/28022009063.mp4",
@@ -338,7 +372,7 @@ function zencoder_add_job($file) {
       "clip_length":23
     }
   ],
-  "api_key":"45ba476ace079f485ef96b4152a20b35"
+  "api_key":"' . $api_key . '"
 }');
 
   // Check if it worked
