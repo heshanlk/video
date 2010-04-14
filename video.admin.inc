@@ -239,15 +239,19 @@ function video_admin_settings() {
             '#element_validate' => array('video_admin_settings_validate'),
         );
 
+        $links = array();
+        $links[] = t('Settings for the Amazon S3 module. You must change the S3 settings to properly work with Zencoder !link', array('!link' => l(t('Amazon S3 Settings'), 'admin/build/s3_api/settings')));
+        $links[] = t('Download Amazon S3 Api module !module in your not installed it yet', array('!module' => l(t('Amazon S3 Module'), 'http://ftp.drupal.org/files/projects/s3_api-6.x-1.1.tar.gz')));
+        $links[] = t('SignUp for Zencoder Api !zencoder', array('!zencoder' => l(t('Click here to signup'), 'http://zencoder.com/')));
+
         $form['zencoder']['zencoder_api_key'] = array(
             '#type' => 'textfield',
             '#title' => t('Zencoder API Key'),
             '#default_value' => variable_get('zencoder_api_key', ""),
-            '#description' => t('Settings for the Amazon S3 module. You must change the S3 settings to properly work with Zencoder !link.
-            <br/>Download Amazon S3 Api module !module in your not installed it yet.',
-            array('!link' => l(t('Amazon S3 Settings'), 'admin/build/s3_api/settings'),
-            '!module' => l(t('Amazon S3 Module'), 'http://ftp.drupal.org/files/projects/s3_api-6.x-1.1.tar.gz'))),
+            '#description' => theme('item_list', $links),
         );
+        global $conf;
+        $form['zencoder']['zencoder_options'] = zencoder_configuration_form($conf);
       //
       //        $form['zencoder']['zencoder_api_skey'] = array(
       //            '#type' => 'textfield',
