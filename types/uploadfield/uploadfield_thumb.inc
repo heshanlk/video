@@ -25,7 +25,7 @@ function video_auto_thumb_process (&$element) {
       drupal_set_message(t('Transcoder not configured properly'), 'error');
     }
     $default_thumb = '';
-    $rnd_img = rand(1, variable_get('no_of_video_thumbs', 5));
+    $rnd_img = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
     $default_thumb = $thumbs[$rnd_img]->filepath;
 
     if(is_array($thumbs)) {
