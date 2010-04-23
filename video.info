@@ -1,7 +1,8 @@
 ;$Id$
 
 name = Video
-description = Allows video nodes.
+description = Allows Creation of CCK Video Fields.
 package = "Video"
 dependencies[] = content
+dependencies[] = filefield
 core = 6.x

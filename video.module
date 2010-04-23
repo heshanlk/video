@@ -47,18 +47,7 @@ function video_auto_thumbnail() {
  * Implementation of hook_nodeapi()
  */
 function video_nodeapi(&$node, $op, $teaser) {
-//  watchdog('video', $op . ' - called');
-//  print_r();
-//    switch ($op) {
-//      case 'load':
-//          //exit;
-//        return _video_image_load($node);
-//
-//      case 'prepare':
-//          //exit;
-//        _video_image_prepare($node);
-//        break;
-//    }
+
 }
 
 /**
@@ -74,4 +63,13 @@ function video_module_invoke($type, &$array) {
       $function($type, $array);
     }
   }
+}
+
+/*
+ * Implmentation of hook_cron().
+ */
+function video_cron() {
+  module_load_include('inc', 'video', '/includes/conversion');
+  $video_conversion = new video_conversion;
+  $video_conversion->run_queue();
 }
