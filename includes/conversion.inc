@@ -113,6 +113,9 @@ class video_conversion {
         return FALSE;
       }
     }
+    else {
+      watchdog('video_conversion', 'Error converting file, no file present.', array(), WATCHDOG_ERROR);
+    }
     return FALSE;
   }
 

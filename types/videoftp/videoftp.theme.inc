@@ -15,8 +15,8 @@ function theme_videoftp_widget($element) {
 
 function theme_videoftp_widget_item($element) {
   // Put the upload button directly after the upload field.
-  $element[$element['#field_name']]['#field_suffix'] = drupal_render($element['videoftp_attach']);
-  $element[$element['#field_name']]['#theme'] = 'videoftp_widget_file';
+  $element['ftpselect']['#field_suffix'] = drupal_render($element['videoftp_attach']);
+  $element['ftpselect']['#theme'] = 'videoftp_widget_file';
   $output = '<div class="filefield-element clear-block">';
 
   if ($element['fid']['#value'] != 0) {

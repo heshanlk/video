@@ -112,8 +112,8 @@ function video_thumb_process(&$element) {
       '#weight' => 10,
       '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()'),
     );
-    
-    // Setup our large thumbnail that is on the left. 
+
+    // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
     if (!empty($file['data']['video_thumb'])) {
       $large_thumb = array('filepath' => $file['data']['video_thumb']);
@@ -124,10 +124,63 @@ function video_thumb_process(&$element) {
     else {
       $large_thumb = array('filepath' => $default_thumb);
     }
-    // @todo Add javascript to change the thumbnail on radio select.
     // @todo Integrate the thumbnails with imagecache.
     $element['preview']['#suffix'] = '<div class="video_large_thumbnail">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) .'</div>';
   }
+}
+
+/**
+ * Adds a video to the video rendering table.
+ *
+ * If auto converting, it will convert your video to flv right now.  We are passing the element by reference
+ * just in case we ever want to add more to the element during this process.
+ *
+ * @param $element
+ *   Form element to get the video file from.
+ */
+function video_convert_process(&$element) {
+  $file = $element['#value'];
+  $convert = false;
+  //we need to check if this fid has already been added to the database AND that there is in fact a fid
+  if (is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
+    $fid = $file['fid'];
+    //setup our conversion class and check for the fid existence.
+    module_load_include('inc', 'video', '/includes/conversion');
+    $video_conversion = new video_conversion;
+    // Is this is an update?
+    $old_fid = $element['#default_value']['fid'];
+    $serialized_data['old_file'] = $old_fid;
+    if ($old_fid != $fid) {
+      db_query('DELETE FROM {video_rendering} WHERE fid = %d', $old_fid);
+    }
+    // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
+    if(!$video = $video_conversion->load_video($fid)) {
+      // Video has not been added to the que yet so lets add it.
+      db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data) VALUES (%d, %d, %d, %d, %d, \'%s\')', $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data));
+      $convert = true;
+    }
+
+    // Our video should be in the database pending, lets see if we need to convert it now.
+    // Check if we are going from unselected to selected or if this is a new video and we have checked the checkbox
+    if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save']) && $file['data']['convert_video_on_save']) || ($convert && $file['data']['convert_video_on_save'])) {
+      if (!$video_conversion->process($fid)) {
+        drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
+      }
+      else {
+        drupal_set_message(t('Successfully converted your video.'));
+      }
+    }
+    elseif ($convert) {
+      drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for display.'));
+    }
+  }
+}
+
+/**
+ * Implementation of hook_file_delete().
+ */
+function video_file_delete($file) {
+  db_query('DELETE FROM {video_rendering} WHERE fid = %d', $file->fid);
 }
 
 /**
@@ -149,4 +202,52 @@ function video_web_extensions($ext) {
     return FALSE;
   }
   return TRUE;
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function video_views_api() {
+  return array(
+    'api' => 2.0,
+    'path' => drupal_get_path('module', 'video') . '/views',
+  );
+}
+function video_widget_element_settings(&$element) {
+  $file = $element['#value'];
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  // Check if using the default width and replace tokens.
+  $default_width = user_access('override player width');
+  $element['data']['width'] = array(
+      '#type' => $default_width ? 'textfield' : 'value',
+      '#title' => t('Width for Player'),
+      '#default_value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
+      '#description' => t('Set player width(in px) here, make sure your video has good resolution to fit on larger values.'),
+      '#size' => 15,
+      '#maxlength' => 5,
+      '#attributes' => array('class' => 'video-width-text'),
+  );
+  if(!$default_width){
+    $element['data']['width']['#value'] = empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'];
+  }
+
+  // only in preview mode and then create thumbnails
+  if($field['widget']['autoconversion']) {
+    if (user_access('bypass conversion video')) {
+      $element['data']['bypass_autoconversion'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Bypass auto conversion'),
+        '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
+        '#description' => t('This will bypass your auto conversion of videos.'),
+        '#attributes' => array('class' => 'video-bypass-auto-conversion'),
+      );
+      $element['data']['convert_video_on_save'] = array(
+       '#type' => 'checkbox',
+       '#title' => t('Convert video on save'),
+       '#default_value' => !empty($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : FALSE,
+       '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
+       '#attributes' => array('class' => 'video-convert-video-on-save'),
+      );
+    }
+  }
 }

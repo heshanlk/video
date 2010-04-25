@@ -80,12 +80,14 @@ function videoftp_widget_value($element, $edit = FALSE) {
     $item = $element['#default_value'];
   }
   else {
+    // Reset our item array for our data.
     $item = array_merge($element['#default_value'], $edit);
     $field = content_fields($element['#field_name'], $element['#type_name']);
 
     // Uploads take priority over value of fid text field.
     if ($fid = videoftp_save_upload($element)) {
       $item['fid'] = $fid;
+      $item['data'] = array(); //reset our thumbnail
     }
     // Check for #videoftp_value_callback values.
     // Because FAPI does not allow multiple #value_callback values like it does
@@ -126,13 +128,9 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $element['#theme'] = 'videoftp_widget_item';
   
-  $options = videoftp_options($field);
-  $element[$field_name] = array(
-    '#type' => 'select',
-    '#required' => isset($element['#required']) ? $element['#required'] : $field['required'],
-    '#options' => $options,
-  );
-  
+  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
+    $element['preview']['#value'] = theme('videoftp_widget_preview', $element['#value']);
+  }
 
   // Title is not necessary for each individual field.
   if ($field['multiple'] > 0) {
@@ -197,7 +195,14 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   // Set access on the buttons and select.
   $element['videoftp_attach']['#access'] = empty($item['fid']);
   $element['videoftp_remove']['#access'] = !empty($item['fid']);
-  $element[$field_name]['#access'] = empty($item['fid']);
+  
+  $options = videoftp_options($field);
+  $element['ftpselect'] = array(
+    '#type' => 'select',
+    '#required' => isset($element['#required']) ? $element['#required'] : $field['required'],
+    '#options' => $options,
+    '#access' => empty($item['fid']),
+  );
 
   // Set the FID.
   $element['fid'] = array(
@@ -219,6 +224,12 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
     '#access' => !empty($item['fid']),
   );
 
+  // Add our extra fields if in preview mode
+  if(!empty($item['fid'])) {
+    video_widget_element_settings($element);
+  }
+
+  // Create our thumbnails
   if($field['widget']['autothumbnail']) {
     video_thumb_process($element);
   }
@@ -237,6 +248,23 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   $element['#attributes']['id'] = $element['#id'] .'-ahah-wrapper';
   $element['#prefix'] = '<div '. drupal_attributes($element['#attributes']) .'>';
   $element['#suffix'] = '</div>';
+
+  // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
+  if($form_state['submitted'] == 1) {
+    switch($form_state['clicked_button']['#submit'][0]) {      
+      case 'node_form_submit':
+        // Auto convert our video file
+        if($field['widget']['autoconversion']) {
+          video_convert_process($element);
+        }
+        break;
+      case 'node_form_build_preview':
+        break;
+      case 'node_form_delete_submit':
+        //moved to hook_file_delete.
+        break;
+    }
+  }
   return $element;
 }
 
@@ -244,9 +272,9 @@ function videoftp_save_upload($element) {
   global $user;
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
-  $video = $element['#post'][$field['field_name']][$delta][$field['field_name']];
+  $video = $element['#post'][$field['field_name']][$delta]['ftpselect'];
   $ftp_path = file_directory_path().'/'.$field['widget']['ftp_path'];
-  
+
   if (empty($video) || !file_exists($ftp_path.'/'.$video)) {
     return 0;
   }
@@ -263,8 +291,8 @@ function videoftp_save_upload($element) {
 
   //lets move our file from the ftp folder to the files directory
   if(file_copy($file)) { //@todo add file_move after we finish testing.
-    // Insert new record to the database.
-    drupal_write_record('files', $file);
+  // Insert new record to the database.
+  drupal_write_record('files', $file);
   }
   _field_file_cache($file); // cache the file in order to minimize load queries
   return $file->fid;

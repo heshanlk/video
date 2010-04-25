@@ -6,6 +6,13 @@
  * video ftp core hooks and menu callbacks.
  */
 
+module_load_include('inc', 'videoftp', 'videoftp_widget');
+
+function videoftp_init() {
+  drupal_add_css(drupal_get_path('module', 'video'). '/css/video.css');
+  drupal_add_js(drupal_get_path('module', 'video'). '/js/admin.js');
+}
+
 function videoftp_menu() {
   $items = array();
   $items['videoftp/ahah/%/%/%'] = array(
@@ -66,7 +73,6 @@ function videoftp_elements() {
     'videoftp_widget' => array(
       '#input' => TRUE,
       '#columns' => array('fid', 'list', 'data'),
-      '#delta' => 0,
       '#process' => array('videoftp_widget_process'),
   	  '#value_callback' => 'videoftp_widget_value',
     ),
@@ -93,9 +99,6 @@ function videoftp_widget_settings($op, $widget) {
  * Implementation of hook_widget().
  */
 function videoftp_widget(&$form, &$form_state, $field, $items, $delta = NULL) {
-  // Load up our include file for the widget.
-  module_load_include('inc', 'videoftp', 'videoftp_widget');
-  drupal_add_js(drupal_get_path('module', 'video'). '/js/admin.js');
   $item = array('fid' => 0, 'list' => $field['list_default'], 'data' => array('description' => '', 'video_thumb' => ''));
   if (isset($items[$delta])) {
     $item = array_merge($item, $items[$delta]);
@@ -104,7 +107,6 @@ function videoftp_widget(&$form, &$form_state, $field, $items, $delta = NULL) {
     '#title' => $field['widget']['label'],
     '#type' => $field['widget']['type'],
     '#default_value' => $item,
-    //'#upload_validators' => array('videoftp_widget_validate_file'),
   );
   return $element;
 }
