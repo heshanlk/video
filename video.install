@@ -54,7 +54,6 @@ function video_schema() {
         'type' => 'text',
         'not null' => FALSE,
       ),
-
     ),
     'indexes' => array(
       'status' => array('status'),
@@ -76,6 +75,7 @@ function video_install() {
  */
 function video_uninstall() {
   drupal_uninstall_schema('video');
+  //@todo Need to drop all variables used in this module here.
 }
 
 /**

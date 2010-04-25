@@ -237,7 +237,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
 
   // only in preview mode and then create thumbnails
   if($field['widget']['autoconversion']) {
-    video_module_invoke('convert', $element);
+    //video_module_invoke('convert', $element);
     //bypass auto conversion
     if (user_access('bypass conversion video')) {
       $element['data']['bypass_autoconversion'] = array(
@@ -263,7 +263,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
 
   // only in preview mode and then create thumbnails
   if($field['widget']['autothumbnail']) {
-    video_module_invoke('thumbs', $element);
+    //video_module_invoke('thumbs', $element);
   }
   // default image default_image
   if (user_access('use default thumbnail') && !empty($field['widget']['default_video_thumb'])) {

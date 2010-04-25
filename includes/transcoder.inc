@@ -2,29 +2,45 @@
 //$Id$
 /*
  * @file
- * Class file used to wrap the trancoder functions.
+ * Class file used to wrap the transcoder functions.
  * 
- * //@todo Add Better commenting.
  */
 
 class video_transcoder {
-  public $transcoder;
+  private $transcoder;
   
   public function __construct() {
-    $this->transcoder = variable_get('vid_convertor', 'ffmpeg');
-    module_load_include('inc', 'video', '/plugins/' . $this->transcoder);
-  }
-  
-  public function generate_thumbnails($file) {
-    $function = $this->transcoder.'_auto_thumbnail';
-    if (function_exists($function)) {
-      $thumbs = $function($file);
-      return $thumbs;
+    $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
+    module_load_include('inc', 'video', '/transcoders/' . $transcoder);
+    if(class_exists($transcoder)) {
+      $this->transcoder = new $transcoder;
     }
     else {
       drupal_set_message(t('Transcoder not configured properly'), 'error');
-      return false;
     }
+  }
+  
+  public function admin_settings() {
+    drupal_add_js(drupal_get_path('module', 'video'). '/js/admin.js');
+    $form = array();
+    $options = $this->_transcoders();
+    $form['vid_convertor'] = array(
+      '#type' => 'radios',
+      '#title' => t('Video transcoder'),
+      '#default_value' => variable_get('vid_convertor', 'video_ffmpeg'),
+      '#options' => $options['radios'],
+      '#description' => t('Selecting a video transcoder will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', $options['help']))),
+      '#prefix' => '<div id="transcoder-radios">',
+      '#suffix' => '</div>',
+    );
+    $form = $form + $options['admin_settings'];
+    return $form;
+  }
+  
+  
+  public function generate_thumbnails($file) {
+    $thumbs = $this->transcoder->thumbnails($file);
+    return $thumbs;
   }
   
   public function convert_video(&$job) {
@@ -32,4 +48,29 @@ class video_transcoder {
     $ffmpeg = new video_ffmpeg;
     $ffmpeg->convert($job);
   }
+  
+  private function _transcoders() {
+    // Lets find our transcoder classes and build our radio options
+    // We do this by scanning our transcoders folder
+    $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
+    $path = drupal_get_path('module', 'video') .'/transcoders';
+    $files = file_scan_directory($path, '^.*\.inc$');
+    foreach($files as $file) {
+      module_load_include('inc', 'video', '/transcoders/' . $file->name);
+      $focus = new $file->name;
+      $form['radios'][$focus->get_value()] = $focus->get_name();
+      $form['help'][] = $focus->get_help();
+      $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings();      
+    }
+    return $form;
+  }
+}
+
+interface transcoder_interface {
+  public function get_name();
+  public function get_value();
+  public function get_help();
+  public function admin_settings();
+  public function thumbnails($video);
+  //public function convert();
 }

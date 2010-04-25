@@ -12,15 +12,6 @@
  *
  */
 
-/**
- * video_scheduler.php configuration
- */
-
-/**
- * video_scheduler.php configuration ends.
- * DO NOT EDIT BELOW THIS LINE
- */
-
 if (isset($_SERVER['argv'][1])) {
   $url = parse_url($_SERVER['argv'][1]);
   $_SERVER['SCRIPT_NAME'] = $url['path'];
@@ -34,7 +25,5 @@ drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
 //include our conversion class (also contains our defines)
 module_load_include('inc', 'video', 'includes/conversion');
 $video_conversion = new video_conversion;
-//uncomment this line to output execution times
-//$video_conversion->log_time = true;
 $video_conversion->run_queue();
 ?>

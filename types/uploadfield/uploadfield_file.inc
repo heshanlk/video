@@ -70,7 +70,7 @@ function uploadfield_file_admin_thumb_path($file, $create_thumb = TRUE) {
   if ($create_thumb) {
     uploadfield_create_admin_thumb($file->filepath, $filepath);
   }
-
+  print $filepath;
   return $filepath;
 }
 

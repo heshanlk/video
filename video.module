@@ -11,8 +11,8 @@
  */
 
 function video_perm() {
-//bypass conversion video
-//'override player width'
+  //bypass conversion video
+  //'override player width'
   return module_invoke_all('v_perm');
 }
 
@@ -25,44 +25,53 @@ function video_menu() {
     'title' => 'Video',
     'description' => 'Configure different aspects of the video module and its plugins',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_admin_settings'),
+    'page arguments' => array('video_general_admin_settings'),
     'file' => 'video.admin.inc',
     'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/settings/video/general'] = array(
+    'title' => 'General',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  $items['admin/settings/video/transcoders'] = array(
+    'title' => 'Transcoders',
+    'description' => 'Configure your transcoder to convert your videos or extra thumbnails.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_transcoder_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+  $items['admin/settings/video/metadata'] = array(
+    'title' => 'Metadata',
+    'description' => 'Configure your metadata settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_metadata_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
   );
   return $items;
-
 }
 
 /**
- * Implementation a autothumbnail hook().
+ * Implementation of hook_theme().
  */
-
-function video_auto_thumbnail() {
-//bypass conversion video
-//'override player width'
-  return module_invoke_all('v_auto_thumbnail');
-}
-
-/**
- * Implementation of hook_nodeapi()
- */
-function video_nodeapi(&$node, $op, $teaser) {
-
-}
-
-/**
- * Invokes hook_v_video() in every module.
- *
- * We cannot use module_invoke() for this, because the arguments need to
- * be passed by reference.
- */
-function video_module_invoke($type, &$array) {
-  foreach (module_list() as $module) {
-    $function = $module .'_v_video';
-    if (function_exists($function)) {
-      $function($type, $array);
-    }
-  }
+function video_theme() {
+  $theme = array();
+  $theme['video_thumbnails'] = array(
+    'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
+    'file' => 'video.theme.inc',
+  );
+  $theme['video_widget_preview'] = array(
+    'arguments' => array('item' => TRUE),
+    'file' => 'video.theme.inc',
+  );
+  return $theme;
 }
 
 /*
@@ -72,4 +81,72 @@ function video_cron() {
   module_load_include('inc', 'video', '/includes/conversion');
   $video_conversion = new video_conversion;
   $video_conversion->run_queue();
+}
+
+/*
+ * Utility function that will add a preview of thumbnails for you to select when uploading videos.
+ */
+function video_thumb_process(&$element) {
+  // Developed for ffmpeg support
+  $file = $element['#value'];
+  if (isset($element['preview']) && $file['fid'] != 0) {
+    module_load_include('inc', 'video', '/includes/transcoder');
+    $transcoder = new video_transcoder;
+    if($thumbs = $transcoder->generate_thumbnails($file)) {
+      $default_thumb = '';
+      $rnd_img = rand(0, variable_get('no_of_video_thumbs', 5) - 1);
+      $default_thumb = $thumbs[$rnd_img]->filepath;
+
+      if(is_array($thumbs)) {
+        foreach($thumbs as $fid => $img) {
+          $thumbss[$img->filepath] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
+        }
+      }
+    }
+
+    $element['data']['video_thumb'] = array(
+      '#type' => 'radios',
+      '#title' => t('Video Thumbnails'),
+      '#options' => $thumbss,
+      '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
+      '#weight' => 10,
+      '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()'),
+    );
+    
+    // Setup our large thumbnail that is on the left. 
+    // @todo Add smaller video preview instead of thumbnail?
+    if (!empty($file['data']['video_thumb'])) {
+      $large_thumb = array('filepath' => $file['data']['video_thumb']);
+    }
+    elseif (!empty($field['widget']['default_video_thumb'])) {
+      $large_thumb = $field['widget']['default_video_thumb'];
+    }
+    else {
+      $large_thumb = array('filepath' => $default_thumb);
+    }
+    // @todo Add javascript to change the thumbnail on radio select.
+    // @todo Integrate the thumbnails with imagecache.
+    $element['preview']['#suffix'] = '<div class="video_large_thumbnail">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) .'</div>';
+  }
+}
+
+/**
+ * Compares passed extensions with normal video web extensions.
+ */
+function video_web_extensions($ext) {
+  $extensions = array_filter(explode(' ', $ext));
+  $web_extensions = array(
+      'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
+      'divx', //divx
+      'rm', // realplayer
+      'flv', 'f4v', //flash player
+      'swf', // swf player
+      'dir', 'dcr', // dcr player
+      'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
+      'ogg' // ogg theora
+  );
+  if (count(array_diff($extensions, $web_extensions))) {
+    return FALSE;
+  }
+  return TRUE;
 }
