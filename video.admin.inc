@@ -38,6 +38,12 @@ function video_general_admin_settings() {
       '#default_value' => variable_get('video_autobuffering', TRUE),
       '#description' => t('Start buffering video when the page and video loads')
   );
+  $form['mp4_play_in_flowplayer'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Play MP4 files in the Flash Player'),
+      '#default_value' => variable_get('mp4_play_in_flowplayer', FALSE),
+      '#description' => t('Do you want to play .mp4 files in the flash player?  These files must be H264 encoded in order to work.')
+  );
   return system_settings_form($form);
 }
 
@@ -45,5 +51,22 @@ function video_metadata_admin_settings() {
   module_load_include('inc', 'video', '/includes/metadata');
   $metadata = new video_metadata;
   $form = $metadata->admin_settings();
+  return system_settings_form($form);
+}
+
+function video_cron_admin_settings() {
+  $form = array();
+  $form['video_cron'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use Drupals built in cron.'),
+      '#default_value' => variable_get('video_cron', FALSE),
+      '#description' => t('If you would like to use Drupals built in cron hook, check this box.  Please be warned that transcoding videos is very resource intensive.  If you use poor mans cron, I highly discourage this option.  I also suggest you setup your cron to call this function through CLI instead of WGET.'),
+  );
+  $form['video_ffmpeg_instances'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Total videos to convert during each cron process.'),
+      '#default_value' => variable_get('video_ffmpeg_instances', 5),
+      '#description' => t('How many videos do you want to process on each cron run?  Either through hook_cron or the video_scheduler.php.'),
+  );
   return system_settings_form($form);
 }

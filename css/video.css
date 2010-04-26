@@ -44,7 +44,7 @@
 
 .uploadfield-video-thumb span{
     /* This is the overlay image for use as a play button. */
-  background: url(../../images/play.png) no-repeat;
+  background: url(../images/play.png) no-repeat;
 
   /* This is the size of our button. DOES NOT WORK WITH DEFAULT THUMB SIZE! */
   width: 50px;

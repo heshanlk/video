@@ -11,6 +11,7 @@
  */
 
 function video_perm() {
+  
   //bypass conversion video
   //'override player width'
   return module_invoke_all('v_perm');
@@ -55,6 +56,16 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 2,
   );
+  $items['admin/settings/video/cron'] = array(
+    'title' => 'Cron Settings',
+    'description' => 'Configure your cron settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_cron_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
   return $items;
 }
 
@@ -71,16 +82,74 @@ function video_theme() {
     'arguments' => array('item' => TRUE),
     'file' => 'video.theme.inc',
   );
+  $theme['video_formatter_video_plain'] = array(
+    'arguments' => array('element' => NULL),
+    'file' => 'video_formatter.inc',
+  );
+  $theme['video_formatter_video_nodelink'] = array(
+    'arguments' => array('element' => NULL),
+    'file' => 'video_formatter.inc',
+  );
+  $theme['video_encoding_failed'] = array(
+    'arguments' => array(),
+    'file' => 'video_formatter.inc',
+  );
+  $theme['video_inprogress'] = array(
+    'arguments' => array(),
+    'file' => 'video_formatter.inc',
+  );
+  $theme['video_play_flash'] = array(
+    'arguments' => array('node' => NULL),
+    'file' => 'video_formatter.inc',
+  );
+  $theme['video_play_quicktime'] = array(
+    'arguments' => array('node' => NULL),
+    'file' => 'video_formatter.inc',
+  );
+  $theme['video_play_windowsmedia'] = array(
+    'arguments' => array('node' => NULL),
+    'file' => 'video_formatter.inc',
+  );
+  
   return $theme;
+}
+
+/**
+ * Implementation of CCK's hook_field_formatter_info().
+ */
+function video_field_formatter_info() {
+  $formatters = array(
+    'video_plain' => array(
+      'label' => t('Video'),
+      'field types' => array('filefield'),
+      'description' => t('Displays video files with player embedded.'),
+    ),
+    'video_nodelink' => array(
+      'label' => t('Video Thumbnail linked to node'),
+      'field types' => array('filefield'),
+      'description' => t('Displays the video thumbnail and links to the node.'),
+    ),
+  );
+  //if(module_exists('imagecache')) {
+  //  foreach (imagecache_presets() as $preset) {
+  //    $formatters[$preset['presetname'] .'_videolinked'] = array(
+  //        'label' => t('Preset @preset of video thumbnail linked to video', array('@preset' => $preset['presetname'])),
+  //        'field types' => array('filefield'),
+  //    );
+  //  }
+  //}
+  return $formatters;
 }
 
 /*
  * Implmentation of hook_cron().
  */
 function video_cron() {
-  module_load_include('inc', 'video', '/includes/conversion');
-  $video_conversion = new video_conversion;
-  $video_conversion->run_queue();
+  if (variable_get('video_cron', FALSE)) {
+    module_load_include('inc', 'video', '/includes/conversion');
+    $video_conversion = new video_conversion;
+    $video_conversion->run_queue();
+  }
 }
 
 /*
@@ -142,7 +211,7 @@ function video_convert_process(&$element) {
   $file = $element['#value'];
   $convert = false;
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
-  if (is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
+  if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !$element['#default_value']['data']['bypass_autoconversion']) {
     $fid = $file['fid'];
     //setup our conversion class and check for the fid existence.
     module_load_include('inc', 'video', '/includes/conversion');
@@ -249,5 +318,54 @@ function video_widget_element_settings(&$element) {
        '#attributes' => array('class' => 'video-convert-video-on-save'),
       );
     }
+  }
+}
+
+/**
+ * Get the object for the suitable player for the parameter resource
+ */
+function video_get_player($element) {
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  //print_r($field);
+  $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
+  $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
+
+  $file = pathinfo($element['#item']['filename']);
+  $op = $file['extension'];
+
+  //play HQ mp4 videos in flash player
+  if(variable_get('mp4_play_in_flowplayer', FALSE) && $op == 'mp4'){
+    $op = 'mp4f';
+  }
+  switch ($op) {
+    case 'divx':
+      return theme('video_play_divx', $element);
+    case 'mov':
+    case '3gp':
+    case '3g2':
+    case 'mp4': // video/mp4
+      return theme('video_play_quicktime', $element);
+    case 'rm':
+      return theme('video_play_realmedia', $element);
+    case 'mp4f':
+    case 'f4v' :
+    case 'flv' : // flowplayer also supprts MP4, H.264 (.extension?)
+      return theme('video_play_flash', $element);
+    case 'swf':
+      return theme('video_play_swf', $element);
+    case 'dir':
+    case 'dcr':
+      return theme('video_play_dcr', $element);
+    case 'asf':
+    case 'wmv':
+    case 'avi':
+    case 'mpg':
+    case 'mpeg':
+      return theme('video_play_windowsmedia', $element);
+    case 'ogg':
+      return theme('video_play_ogg_theora', $element);
+    default:
+      drupal_set_message('No video player is configured for ' .$op, 'error');
+      break;
   }
 }

@@ -4,6 +4,7 @@
  * @file
  * Class file used to wrap the transcoder functions.
  * 
+ * @todo need more commenting
  */
 
 class video_transcoder {
@@ -37,16 +38,19 @@ class video_transcoder {
     return $form;
   }
   
-  
   public function generate_thumbnails($file) {
     $thumbs = $this->transcoder->thumbnails($file);
     return $thumbs;
   }
   
   public function convert_video(&$job) {
-    module_load_include('inc', 'video', '/includes/ffmpeg');
-    $ffmpeg = new video_ffmpeg;
-    $ffmpeg->convert($job);
+    $this->transcoder->convert($job);
+    // If they are using metadata.
+    if (variable_get('video_metadata', FALSE)) {
+      module_load_include('inc', 'video', '/includes/metadata');
+      $metadata = new video_metadata;
+      $metadata->process($job->convfile);
+    }
   }
   
   private function _transcoders() {

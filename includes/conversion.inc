@@ -5,10 +5,6 @@
  * Class file to handle video conversion using ffmpeg.
  * 
  */
-
-//@todo: Lets move this define to a variable and allow the user to set it through the UI.
-define('VIDEO_RENDERING_FFMPEG_INSTANCES', 5);
-
 define('VIDEO_RENDERING_PENDING', 1);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
@@ -31,15 +27,16 @@ class video_conversion {
   }
 
   /**
-   * Select VIDEO_RENDERING_FFMPEG_INSTANCES videos from queue
+   * Select videos from queue
    * 
    * @return
    *   An array containing all the videos to be proccessed.
    */
   private function select_queue() {
+    $total_jobs = variable_get('video_ffmpeg_instances', 5);
     $jobs = array();
     $result = db_query_range('SELECT f.* FROM {video_rendering} vr LEFT JOIN {files} f ON vr.fid = f.fid WHERE vr.status = %d AND f.status = %d ORDER BY f.timestamp',
-    VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, VIDEO_RENDERING_FFMPEG_INSTANCES);
+    VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_jobs);
 
     while ($row = db_fetch_object($result)) {
       $jobs[] = $row;

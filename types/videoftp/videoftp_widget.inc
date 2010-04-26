@@ -35,6 +35,22 @@ function videoftp_widget_settings_form($widget) {
     '#collapsed' => FALSE,
     '#weight' => 10
   );
+  $form['plugins']['default_resolution'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Default Video Resolution'),
+      '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
+      '#size' => 15,
+      '#maxlength' => 5,
+      '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
+  );
+  $form['plugins']['default_width'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Default Video Player Width'),
+      '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
+      '#size' => 15,
+      '#maxlength' => 5,
+      '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
+  );
   $form['plugins']['autoconversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable video conversion.'),
@@ -52,6 +68,8 @@ function videoftp_widget_settings_form($widget) {
 
 /**
  * Implementation of CCK's hook_widget_settings($op = 'validate').
+ * 
+ * //@todo Integrate this into a universal function to share with uploadfield_widget
  */
 function videoftp_widget_settings_validate($widget) {
   // Check that only web images are specified in the callback.
@@ -61,13 +79,27 @@ function videoftp_widget_settings_validate($widget) {
   // Check for our ftp filepath and try to create it, if not it will throw an error.
   $ftp_path = file_directory_path().'/'.$widget['ftp_path'];
   file_check_directory($ftp_path, true, 'ftp_path');
+  
+  // Check that set video resolutions are valid.
+  foreach (array('default_width') as $numerics) {
+    if (!empty($widget[$numerics]) && !preg_match('/^[0-9]+$/', $widget[$numerics])) {
+      form_set_error($numerics, t('Please specify default width in integers only (e.g. 640).'));
+    }
+  }
+
+  // Check that set resolutions are valid.
+  foreach (array('default_resolution') as $resolution) {
+    if (!empty($widget[$resolution]) && !preg_match('/^[0-9]+:[0-9]+$/', $widget[$resolution])) {
+      form_set_error($resolution, t('Please specify a resolution in the format WIDTH:HEIGHT (e.g. 16:9).'));
+    }
+  }
 }
 
 /**
  * Implementation of CCK's hook_widget_settings($op = 'save').
  */
 function videoftp_widget_settings_save($widget) {
-  return array('file_extensions', 'ftp_path', 'autothumbnail','autoconversion');
+  return array('file_extensions', 'ftp_path', 'autothumbnail','autoconversion', 'default_resolution', 'default_width');
 }
 
 /**
