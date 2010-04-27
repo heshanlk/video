@@ -339,7 +339,6 @@ function video_get_player($element) {
 
   $file = pathinfo($element['#item']['filename']);
   $op = $file['extension'];
-  print $op;
 
   //play HQ mp4 videos in flash player
   if(variable_get('mp4_play_in_flowplayer', FALSE) && $op == 'mp4'){
