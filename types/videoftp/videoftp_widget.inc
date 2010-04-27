@@ -27,7 +27,7 @@ function videoftp_widget_settings_form($widget) {
     '#required' => TRUE,
     '#weight' => 2,
   );
-  // Default image settings.
+  // Default video settings.
   $form['plugins'] = array(
     '#type' => 'fieldset',
     '#title' => t('Video Advanced Settings'),
@@ -99,7 +99,7 @@ function videoftp_widget_settings_validate($widget) {
  * Implementation of CCK's hook_widget_settings($op = 'save').
  */
 function videoftp_widget_settings_save($widget) {
-  return array('file_extensions', 'ftp_path', 'autothumbnail','autoconversion', 'default_resolution', 'default_width');
+  return array('file_extensions', 'ftp_path', 'autothumbnail','autoconversion', 'default_resolution', 'default_width', 'default_video_thumb');
 }
 
 /**

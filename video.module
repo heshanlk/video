@@ -6,6 +6,14 @@
  *
  */
 
+/*
+ * Implementation of hook_init().
+ */
+function video_init() {
+  drupal_add_css(drupal_get_path('module', 'video'). '/css/video.css');
+  drupal_add_js(drupal_get_path('module', 'video'). '/js/admin.js');
+}
+
 /**
  * Implementation of hook_perm().
  */
@@ -211,7 +219,7 @@ function video_convert_process(&$element) {
   $file = $element['#value'];
   $convert = false;
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
-  if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !$element['#default_value']['data']['bypass_autoconversion']) {
+  if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !$file['data']['bypass_autoconversion']) {
     $fid = $file['fid'];
     //setup our conversion class and check for the fid existence.
     module_load_include('inc', 'video', '/includes/conversion');
@@ -326,12 +334,12 @@ function video_widget_element_settings(&$element) {
  */
 function video_get_player($element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
-  //print_r($field);
   $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
   $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
 
   $file = pathinfo($element['#item']['filename']);
   $op = $file['extension'];
+  print $op;
 
   //play HQ mp4 videos in flash player
   if(variable_get('mp4_play_in_flowplayer', FALSE) && $op == 'mp4'){

@@ -18,10 +18,14 @@ function theme_video_formatter_video_plain($element) {
     return theme('video_encoding_failed');
   }
   else {
+    //lets get our width/height and video url and pass them as arguments instead of the full element object
+    $video = file_create_url($element['#item']['filepath']);
+    //@todo change default width and height to be configuration settings.
+    $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] .'px' : '350px';
+    $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] .'px' : '285px';
     return video_get_player($element);
   }
 }
-
 
 /**
  *
@@ -29,25 +33,20 @@ function theme_video_formatter_video_plain($element) {
  * @return <type>
  */
 
-function theme_uploadfield_formatter_video_nodelink($element) {
+function theme_video_formatter_video_nodelink($element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Inside a view $element may contain null data. In that case, just return.
-  if (empty($element['#item']['fid'])) {
-    return '';
-  }
-  //  print_r($field);
-  //  exit;
+  if (empty($element['#item']['fid'])) return '';
   $node = $element['#node'];
-  //  $imagetag = theme('uploadfield_formatter_video_plain', $element);
   $use_default_img = $element['#item']['data']['use_default_video_thumb'];
   if($use_default_img) {
     $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
   }
   else if($element['#item']['data']['video_thumb']) {
     //    print_r($field['widget']['default_video_thumb']);
-      $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
-      $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
-    }
+    $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
+    $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
+  }
   $class = 'popups uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
   return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 
@@ -78,15 +77,15 @@ function theme_uploadfield_formatter_videolinked($element) {
   $use_default_img = $element['#item']['data']['use_default_video_thumb'];
   if($use_default_img) {
     $thumb_path = $field['widget']['default_video_thumb'];
-//    $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
+    //    $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
   }
   else if($element['#item']['data']['video_thumb']) {
     //    print_r($field['widget']['default_video_thumb']);
-//      $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
-      $thumb_path = $element['#item']['data']['video_thumb'];
-//      $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
+    //      $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
+    $thumb_path = $element['#item']['data']['video_thumb'];
+    //      $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
   }
-//  die($presetname);
+  //  die($presetname);
   $imagetag = theme('imagecache', $presetname, $thumb_path, $node->title, $node->title);
   $path = empty($item['nid']) ? '' : 'node/'. $item['nid'];
   $class = "imagecache imagecache-$presetname imagecache-$style imagecache-{$element['#formatter']}";

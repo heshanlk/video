@@ -8,11 +8,6 @@
 
 module_load_include('inc', 'videoftp', 'videoftp_widget');
 
-function videoftp_init() {
-  drupal_add_css(drupal_get_path('module', 'video'). '/css/video.css');
-  drupal_add_js(drupal_get_path('module', 'video'). '/js/admin.js');
-}
-
 function videoftp_menu() {
   $items = array();
   $items['videoftp/ahah/%/%/%'] = array(
