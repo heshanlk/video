@@ -36,20 +36,20 @@ function videoftp_widget_settings_form($widget) {
     '#weight' => 10
   );
   $form['plugins']['default_resolution'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Default Video Resolution'),
-      '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
-      '#size' => 15,
-      '#maxlength' => 5,
-      '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
+    '#type' => 'textfield',
+    '#title' => t('Default Video Resolution'),
+    '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
+    '#size' => 15,
+    '#maxlength' => 5,
+    '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
   );
   $form['plugins']['default_width'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Default Video Player Width'),
-      '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
-      '#size' => 15,
-      '#maxlength' => 5,
-      '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
+    '#type' => 'textfield',
+    '#title' => t('Default Video Player Width'),
+    '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
+    '#size' => 15,
+    '#maxlength' => 5,
+    '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
   );
   $form['plugins']['autoconversion'] = array(
     '#type' => 'checkbox',

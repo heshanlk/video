@@ -8,6 +8,7 @@
 
 module_load_include('inc', 'videoftp', 'videoftp_widget');
 
+  
 function videoftp_menu() {
   $items = array();
   $items['videoftp/ahah/%/%/%'] = array(
@@ -67,7 +68,7 @@ function videoftp_elements() {
   return array(
     'videoftp_widget' => array(
       '#input' => TRUE,
-      '#columns' => array('fid', 'list', 'data'),
+      '#columns' => array('fid', 'list', 'data', 'filepath'),
       '#process' => array('videoftp_widget_process'),
   	  '#value_callback' => 'videoftp_widget_value',
     ),

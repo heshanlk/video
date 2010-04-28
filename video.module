@@ -290,6 +290,7 @@ function video_views_api() {
     'path' => drupal_get_path('module', 'video') . '/views',
   );
 }
+
 function video_widget_element_settings(&$element) {
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
