@@ -1,6 +1,6 @@
-; $Id:
-name = Video FTP
-description = Allows you to attach videos uploaded through FTP to nodes.
+; $Id$
+name = Video Import
+description = Allows you to attach videos uploaded through FTP, or S3 file systems to nodes.
 core = 6.x
 dependencies[] = content
 dependencies[] = filefield
