@@ -13,7 +13,7 @@ http://video.heidisoft.com/content/features
 
 Please submit bugs/features/support requests at:
   http://video.heidisoft.com/content/welcome-video-module-documentation
-	http://video.heidisoft.com/contact
+  http://video.heidisoft.com/contact
 
 
 Maintainers
