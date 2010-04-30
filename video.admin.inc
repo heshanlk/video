@@ -31,18 +31,11 @@ function video_general_admin_settings() {
       '#default_value' => variable_get('video_autoplay', TRUE),
       '#description' => t('Start the video when the page and video loads')
   );
-
   $form['video_autobuffering'] = array(
       '#type' => 'checkbox',
       '#title' => t('Automatically start video buffering'),
       '#default_value' => variable_get('video_autobuffering', TRUE),
       '#description' => t('Start buffering video when the page and video loads')
-  );
-  $form['mp4_play_in_flowplayer'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Play MP4 files in the Flash Player'),
-      '#default_value' => variable_get('mp4_play_in_flowplayer', FALSE),
-      '#description' => t('Do you want to play .mp4 files in the flash player?  These files must be H264 encoded in order to work.')
   );
   return system_settings_form($form);
 }

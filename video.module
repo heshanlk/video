@@ -116,19 +116,18 @@ function video_theme() {
     'arguments' => array(),
     'file' => 'video_formatter.inc',
   );
-  $theme['video_play_flash'] = array(
-    'arguments' => array('node' => NULL),
-    'file' => 'video_formatter.inc',
-  );
-  $theme['video_play_quicktime'] = array(
-    'arguments' => array('node' => NULL),
-    'file' => 'video_formatter.inc',
-  );
-  $theme['video_play_windowsmedia'] = array(
-    'arguments' => array('node' => NULL),
-    'file' => 'video_formatter.inc',
-  );
   
+  $path = drupal_get_path('module', 'video'). '/theme';
+  //Lets setup our themes for our players
+  $players = video_video_players();
+  foreach($players as $tpl => $value) {
+    $theme[$tpl] = array(
+      'arguments' => array('video' => NULL, 'width' => NULL, 'height' => NULL, 'formatter' => NULL),
+      'file' => 'video_formatter.inc',
+      'template' => str_replace('_', '-', $tpl),
+      'path' => $path,
+    );
+  }  
   return $theme;
 }
 
@@ -393,45 +392,20 @@ function video_video_flv_players() {
  */
 function video_get_player($element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
+  //setup our resolution and fix our height.
   $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
   $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
 
   $file = pathinfo($element['#item']['filename']);
   $op = $file['extension'];
+  
+  //lets spit out our theme based on the extension
+  $defaults = video_video_extensions();
+  $theme_function = variable_get('video_extension_'.$op, $defaults[$op]);
+  
+  $video = file_create_url($element['#item']['filepath']);
+  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
+  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
 
-  //play HQ mp4 videos in flash player
-  if(variable_get('mp4_play_in_flowplayer', FALSE) && $op == 'mp4'){
-    $op = 'mp4f';
-  }
-  switch ($op) {
-    case 'divx':
-      return theme('video_play_divx', $element);
-    case 'mov':
-    case '3gp':
-    case '3g2':
-    case 'mp4': // video/mp4
-      return theme('video_play_quicktime', $element);
-    case 'rm':
-      return theme('video_play_realmedia', $element);
-    case 'mp4f':
-    case 'f4v' :
-    case 'flv' : // flowplayer also supprts MP4, H.264 (.extension?)
-      return theme('video_play_flash', $element);
-    case 'swf':
-      return theme('video_play_swf', $element);
-    case 'dir':
-    case 'dcr':
-      return theme('video_play_dcr', $element);
-    case 'asf':
-    case 'wmv':
-    case 'avi':
-    case 'mpg':
-    case 'mpeg':
-      return theme('video_play_windowsmedia', $element);
-    case 'ogg':
-      return theme('video_play_ogg_theora', $element);
-    default:
-      drupal_set_message('No video player is configured for ' .$op, 'error');
-      break;
-  }
+  return theme($theme_function, $video, $width, $height, $element['#formatter']);
 }

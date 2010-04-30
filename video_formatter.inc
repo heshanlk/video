@@ -106,87 +106,26 @@ function theme_video_encoding_failed() {
   return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
 }
 
-/*
- * Use SWF Tools to play flash video files.
- * //@todo Break this out to allow the user to be able to use other flash players and not limit this to just swftools.
- */
-function theme_video_play_flash($element) {
-  //TODO : remove item height set in here
-  $video = file_create_url($element['#item']['filepath']);
-  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] .'px' : '350px';
-  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] .'px' : '285px';
-
-  if (module_exists('flowplayer')) {
-    $options = array('clip' => array('url' =>  $video, 'autoPlay' => variable_get('video_autoplay', TRUE), 'autoBuffering' => variable_get('video_autobuffering', TRUE)), $element['#formatter'], array('style' => "width: $width; height: $height"));
-    $output = theme('flowplayer', $options);
+function video_preprocess_video_play_flv(&$vars) {
+  //lets determine what player to output
+  $pathinfo = pathinfo($vars['video']);
+  $player_id = variable_get('video_extension_'.$pathinfo['extension'].'_flash_player', '');
+  if ($player_id == 'swftools') {
+    $output = swf($vars['video'], array('params' => array('width' => $vars['width'], 'height' => $vars['height'])));
+  }
+  elseif ($player_id == 'flowplayer') {
+    $output = theme('flowplayer', array(
+      'clip' => array(
+        'url' =>  $vars['video'],
+        'autoPlay' => variable_get('video_autoplay', TRUE),
+        'autoBuffering' => variable_get('video_autobuffering', TRUE),
+      ),
+    ),
+    $vars['formatter'],
+    array('style' => 'width: '. $vars['width'] .'px; height: '. $vars['height'] .'px;'));
   }
   else {
-    $output = t('Download or enable the !flowplayer module (<b>flowplayer</b>) to play FLV files.', array('!flowplayer' => l(t('Flowplayer'), 'http://drupal.org/project/flowplayer')));
+    $output = t('No flash player has been setup.');
   }
-  return $output;
-}
-
-/**
- * Play videos from in Quicktime format
- *
- * @see http://developer.apple.com/internet/ieembedprep.html
- * @param $element
- *   object with element information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_quicktime($element) {
-  // Increase the height to accommodate the player controls on the bottom.
-  $video = file_create_url($element['#item']['filepath']);
-  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] .'px' : '350px';
-  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] .'px' : '285px';
-
-  // this wont be ran by Internet Explorer browsers
-  $output = '<!--[if !IE]> <--><object type="video/quicktime" width="'. $width .'" height="'. $height .'" data="'. $video .'"><!--> <![endif]-->' . "\n";
-  // this will be executed by Internet Explorer
-  $output .=  '<!--[if IE]><object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab" width="'. $width .'" height="'. $height .'" scale="tofit" ><![endif]-->' . "\n";
-  // params will be passed to all browsers
-  //GMM: kioskmode enabled so users don't bypass download security video through player
-  $output .= '<param name="src" value="'. $video .'" />
-    <param name="AUTOPLAY" value="'.(variable_get('video_autoplay', TRUE) ? TRUE : FALSE).'" />
-    <param name="KIOSKMODE" value="true" />
-    <param name="CONTROLLER" value="true" />
-    <p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-    </object>';
-
-  return $output;
-}
-
-/**
- * Play videos from in WindowsMediaVideo format
- *
- * @param $node
- *   object with node information
- *
- * @return
- *   string of content to display
- */
-function theme_video_play_windowsmedia($element) {
-  // Windows Media's embeded player includes the controls in the height
-  $video = file_create_url($element['#item']['filepath']);
-  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] .'px' : '350px';
-  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] .'px' : '285px';
-
-  // this wont be ran by Internet Explorer browsers
-  $output = '<!--[if !IE]> <--><object type="application/x-mplayer2" width="'. $width .'" height="'. $height .'" data="'. $video .'"><!--> <![endif]-->' . "\n";
-  // this will be executed by Internet Explorer
-  $output .=  '<!--[if IE]><object type="application/x-oleobject" width="'. $width .'" height="'. $height .'" classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" ><![endif]-->' . "\n";
-  // params will be passed to all browsers
-  $output .= '<param name="src" value="'. $video .'" />
-    <param name="URL" value="'.$video.'" />
-    <param name="animationatStart" value="true" />
-    <param name="transparentatStart" value="true" />
-    <param name="autoStart" value="'.(variable_get('video_autoplay', TRUE) ? 'true' : 'false').'" />
-    <param name="showControls" value="true" />
-    <param name="loop" value="true" />
-    <p>'. t('Your browser is not able to display this multimedia content.') .'</p>
-    </object>';
-
-  return $output;
+  $vars['player'] = $output;
 }
