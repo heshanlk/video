@@ -11,13 +11,19 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   private $name = 'FFmpeg Wrapper';
   private $value = 'video_ffmpeg_wrapper';
   
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#thumbnails($video)
-   */
-  public function thumbnails($video) {
-    
+  
+  public function run_command($command) {
+    $output = ffmpeg_wrapper_run_command($command, $error_check = true, $path = '');
+    return $output;
   }
+   
+  /**
+   * Return the playtime seconds of a video
+   */
+  function get_playtime($video) {
+    $ffmpeg_output = ffmpeg_wrapper_file_data($video['filepath']);
+    return $ffmpeg_output['duration'];
+  }  
 
   /**
    * Interface Implementations
@@ -56,22 +62,25 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     $form = array();
     if (!module_exists('ffmpeg_wrapper')) {
       $markup = t('You must download and install the !ffmpeg_wrapper to use the FFmpeg Wrapper as a transcoder.', array('!ffmpeg_wrapper' => l(t('FFmpeg Wrapper Module'), 'http://www.drupal.org/project/ffmpeg_wrapper')));
-    }
-    else {
-      $form['tranccoder']['no_of_video_thumbs'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Number of thumbnails'),
-        '#description' => t('Number of thumbnails to display from video.'),
-        '#default_value' => variable_get('no_of_video_thumbs', 5),
-      );
-      $markup = t('You must edit the !ffmpeg_wrapper on the modules configuration page.', array('!ffmpeg_wrapper', l(t('FFmpeg Wrapper Settings'), 'admin/settings/ffmpeg_wrapper')));
-    }
-    $form['video_wrapper_info'] = array(
+      $form['video_wrapper_info'] = array(
       '#type' => 'markup',
       '#value' => $markup,
       '#prefix' => '<div id="'. $this->value .'">',
       '#suffix' => '</div>',
-    );
+      );
+    }
+    else {
+      $form['video_ffmpeg_wrapper_start'] = array(
+        '#type' => 'markup',
+        '#value' => '<div id="video_ffmpeg_wrapper">',
+      );
+      $ffmpeg_admin_form = ffmpeg_wrapper_admin();
+      $form = array_merge($form, $ffmpeg_admin_form['ffmpeg_wrapper']);
+      $form['video_ffmpeg_wrapper_end'] = array(
+        '#type' => 'markup',
+        '#value' => '</div>',
+      );
+    } 
     return $form;
   }
 }
