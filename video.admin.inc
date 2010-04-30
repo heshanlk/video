@@ -47,6 +47,41 @@ function video_general_admin_settings() {
   return system_settings_form($form);
 }
 
+function video_players_admin_settings() {
+  $form = array();
+  $form['extensions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Video Extensions'),
+    '#description' => t('Here you can map specific players to each video extension type.'),
+  );
+  //lets get all our supported extensions and players.
+  $extensions = video_video_extensions();
+  $players = video_video_players();
+  $flv_players = video_video_flv_players();
+  
+  foreach($extensions as $ext => $player) {
+    $form['extensions']['video_extension_'.$ext] = array(
+      '#type' => 'select',
+      '#title' => t('Extension:'). '  '.$ext,
+      '#default_value' => variable_get('video_extension_'.$ext, $player),
+      '#options' => $players,
+      '#prefix' => '<div class="video_select" rel="'.$ext.'">',
+      '#suffix' => '</div>',
+    );
+
+    $form['extensions']['video_extension_'.$ext.'_flash_player'] = array(
+      '#type' => !empty($flv_players) ? 'radios' : 'markup',
+      '#title' => t('Flash Player for').' '.$ext,
+      '#value' => !empty($flv_players) ? '' : t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools') , 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
+      '#options' => $flv_players,
+      '#default_value' => variable_get('video_extension_'.$ext.'_flash_player', ''),
+      '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_'.$ext.'">',
+      '#suffix' => '</div>',
+    );
+  }
+  return system_settings_form($form);
+}
+
 function video_metadata_admin_settings() {
   module_load_include('inc', 'video', '/includes/metadata');
   $metadata = new video_metadata;

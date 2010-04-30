@@ -44,6 +44,16 @@ function video_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 0,
   );
+  $items['admin/settings/video/players'] = array(
+    'title' => 'Players',
+    'description' => 'Configure your player settings for each video extension.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_players_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
   $items['admin/settings/video/transcoders'] = array(
     'title' => 'Transcoders',
     'description' => 'Configure your transcoder to convert your videos or extra thumbnails.',
@@ -52,7 +62,7 @@ function video_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'video.admin.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' => 1,
+    'weight' => 2,
   );
   $items['admin/settings/video/metadata'] = array(
     'title' => 'Metadata',
@@ -62,7 +72,7 @@ function video_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'video.admin.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' => 2,
+    'weight' => 3,
   );
   $items['admin/settings/video/cron'] = array(
     'title' => 'Cron Settings',
@@ -72,7 +82,7 @@ function video_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'video.admin.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' => 3,
+    'weight' => 4,
   );
   return $items;
 }
@@ -328,6 +338,54 @@ function video_widget_element_settings(&$element) {
       );
     }
   }
+}
+
+function video_video_extensions() {
+  $extensions = array(
+    'divx' => 'video_play_divx',
+    'mov' => 'video_play_quicktime',
+    '3gp' => 'video_play_quicktime',
+    '3g2' => 'video_play_quicktime',
+    'mp4' => 'video_play_quicktime',
+    'rm' => 'video_play_realmedia',
+    'f4v' => 'video_play_flv',
+    'flv' => 'video_play_flv',
+    'swf' => 'video_play_flash',
+    'dir' => 'video_play_dcr',
+    'dcr' => 'video_play_dcr',
+    'asf' => 'video_play_windowsmedia',
+    'wmv' => 'video_play_windowsmedia',
+    'avi' => 'video_play_windowsmedia',
+    'mpg' => 'video_play_windowsmedia',
+    'mpeg' => 'video_play_windowsmedia',
+    'ogg' => 'video_play_theora',
+  );
+  return $extensions;
+}
+
+function video_video_players() {
+  $players = array(
+    'video_play_divx' => t('Divx Player'),
+    'video_play_quicktime' => t('Quicktime'),
+    'video_play_realmedia' => t('Real Media Player'),
+    'video_play_flv' => t('FLV Flash Players'),
+    'video_play_flash' => t('SWF Flash Player'),
+    'video_play_dcr' => t('Director/Shockwave'),
+    'video_play_windowsmedia' => t('Windows Media Player'),
+    'video_play_theora' => t('Theora Player'),
+  );
+  return $players;
+}
+
+function video_video_flv_players() {
+  $options = array();
+  if(module_exists('swftools')) {
+    $options['swftools'] = t('SWF Tools');
+  }
+  if(module_exists('flowplayer')) {
+    $options['flowplayer'] = t('Flowplayer');
+  }
+  return $options;
 }
 
 /**

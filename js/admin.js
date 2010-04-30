@@ -12,18 +12,30 @@ $(document).ready(function() {
 		video_hide_all_options();
 	});
 	
-	function video_hide_all_options() {
-		$("input[@name='vid_convertor']").each(function() {
-			var id = $(this).val();
-		    $('#'+id).hide();
-			if ($(this).is(':checked')) {
-				$('#' + id).show();
-			}			
+	$('.video_select').each(function() {
+		var ext = $(this).attr('rel');
+		$('select', this).change(function() {
+			if($(this).val() == 'video_play_flv') {
+				$('#flv_player_'+ext).show();
+			} else {
+				$('#flv_player_'+ext).hide();
+			}
 		});
-	}
-	
-	
+		if($('select', this).val() == 'video_play_flv') {
+			$('#flv_player_'+ext).show();
+		}
+	});	
 });
+
+function video_hide_all_options() {
+	$("input[@name='vid_convertor']").each(function() {
+		var id = $(this).val();
+	    $('#'+id).hide();
+		if ($(this).is(':checked')) {
+			$('#' + id).show();
+		}			
+	});
+}
 
 function videoftp_thumbnail_change() {
     // Add handlers for the video thumbnail radio buttons to update the large thumbnail onchange.

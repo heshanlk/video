@@ -112,3 +112,21 @@ br.video_image_clear {
 .widget-edit{
   max-width:70%;
 }
+
+.admin_flv_player_wrapper { display: none; }
+/*
+ * VIDEO OJBECT FIXES CROSS BROWSER
+ */
+* html object.video-object {
+	display: none;
+}
+
+* html object.video-object/**/ {
+	display: inline;
+}
+
+* html object.video-object {
+	display/**/: none;
+}
+ 
+ 
