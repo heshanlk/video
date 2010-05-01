@@ -44,8 +44,19 @@ class video_transcoder {
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
     $final_thumb_path = file_directory_path(). '/' . $video_thumb_path . '/' . $video['fid'];
-    // Check our directory first.
-    field_file_check_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
+
+    // Ensure the destination directory exists and is writable.
+    $directories = explode('/', $final_thumb_path);
+    // Get the file system directory.
+    $file_system = file_directory_path();
+    foreach ($directories as $directory) {
+      $full_path = isset($full_path) ? $full_path . '/' . $directory : $directory;
+      // Don't check directories outside the file system path.
+      if (strpos($full_path, $file_system) === 0) {
+        field_file_check_directory($full_path, FILE_CREATE_DIRECTORY);
+      }
+    }
+
     // Total thumbs to generate
     $total_thumbs = variable_get('no_of_video_thumbs', 5);
     $videofile = escapeshellarg($video['filepath']);

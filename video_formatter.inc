@@ -27,29 +27,46 @@ function theme_video_formatter_video_plain($element) {
   }
 }
 
-/**
- *
- * @param <type> $element
- * @return <type>
- */
-
 function theme_video_formatter_video_nodelink($element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) return '';
   $node = $element['#node'];
+  //$use_default_img = $element['#item']['data']['use_default_video_thumb'];
+  if($use_default_img) {
+    $imagetag = theme('video_widget_video_thumb', $field['widget']['default_video_thumb']);
+  }
+  elseif ($element['#item']['data']['video_thumb']) {
+    $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
+    $imagetag = theme('video_image', $thumb, '', '', '', FALSE);
+  }
+  $class = 'popups video video-nodelink video-'. $element['#field_name'];
+  return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
+}
+
+function theme_video_formatter_video_lightbox($element) {
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  //setup our resolution and fix our height.
+  $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
+  $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
+  
+  $video = file_create_url($element['#item']['filepath']);
+  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
+  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
+  
+  // Inside a view $element may contain null data. In that case, just return.
+  if (empty($element['#item']['fid'])) return '';
+  $node = $element['#node'];
   $use_default_img = $element['#item']['data']['use_default_video_thumb'];
   if($use_default_img) {
-    $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
+    $imagetag = theme('video_widget_video_thumb', $field['widget']['default_video_thumb']);
   }
-  else if($element['#item']['data']['video_thumb']) {
-    //    print_r($field['widget']['default_video_thumb']);
+  elseif ($element['#item']['data']['video_thumb']) {
     $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
-    $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
+    $imagetag = theme('video_image', $thumb, '', '', '', FALSE);
   }
-  $class = 'popups uploadfield uploadfield-nodelink uploadfield-'. $element['#field_name'];
-  return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
-
+  $class = 'video video-nodelink video-'. $element['#field_name'];
+  return l($imagetag, $video, array('attributes' => array('class' => $class, 'rel' => 'lightvideo[video|width:'.$width.'px; height:'.$height.'px;]'), 'html' => TRUE));
 }
 
 /**

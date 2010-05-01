@@ -19,10 +19,6 @@ function video_init() {
  */
 
 function video_perm() {
-  
-  //bypass conversion video
-  //'override player width'
-  return module_invoke_all('v_perm');
 }
 
 /**
@@ -100,6 +96,14 @@ function video_theme() {
     'arguments' => array('item' => TRUE),
     'file' => 'video.theme.inc',
   );
+  $theme['video_image'] = array(
+    'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
+    'file' => 'video.theme.inc',
+  );
+  $theme['video_widget_video_thumb'] = array(
+    'arguments' => array('item' => TRUE),
+    'file' => 'video.theme.inc',
+  );
   $theme['video_formatter_video_plain'] = array(
     'arguments' => array('element' => NULL),
     'file' => 'video_formatter.inc',
@@ -108,6 +112,10 @@ function video_theme() {
     'arguments' => array('element' => NULL),
     'file' => 'video_formatter.inc',
   );
+//  $theme['video_formatter_video_lightbox'] = array(
+//    'arguments' => array('element' => NULL),
+//    'file' => 'video_formatter.inc',
+//  );
   $theme['video_encoding_failed'] = array(
     'arguments' => array(),
     'file' => 'video_formatter.inc',
@@ -145,6 +153,11 @@ function video_field_formatter_info() {
       'label' => t('Video Thumbnail linked to node'),
       'field types' => array('filefield'),
       'description' => t('Displays the video thumbnail and links to the node.'),
+    ),
+    'video_lightbox' => array(
+      'label' => t('Video Thumbnail to Lightbox'),
+      'field types' => array('filefield'),
+      'description' => t('Displays the video thumbnail and adds lightbox support.'),
     ),
   );
   //if(module_exists('imagecache')) {
