@@ -35,7 +35,7 @@ class video_transcoder {
       $this->transcoder = new $transcoder;
     }
     else {
-      drupal_set_message(t('Transcoder not configured properly'), 'error');
+      drupal_set_message(t('The transcoder is not configured properly.'), 'error');
     }
   }
 

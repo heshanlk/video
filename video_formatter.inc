@@ -44,7 +44,18 @@ function theme_video_formatter_video_nodelink($element) {
   return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
-function theme_video_formatter_video_lightbox($element) {
+function theme_video_formatter_video_colorbox($element) {
+  global $base_path;
+  if (!module_exists('colorbox')) {
+    drupal_set_message(t('You must download and enable !colorbox for this formatter.', array('!colorbox' => l(t('Colorbox'), 'http://www.drupal.org/project/colorbox'))), 'error');
+    return theme('video_formatter_video_nodelink', $element);
+  }
+  
+  //load up our media plugins
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/flowplayer-3.2.0.min.js');
+  
   $field = content_fields($element['#field_name'], $element['#type_name']);
   //setup our resolution and fix our height.
   $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
@@ -54,19 +65,40 @@ function theme_video_formatter_video_lightbox($element) {
   $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
   $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
   
+  $action = swftools_get_action($video);
+  $player = swftools_get_player($action);
+  $path = explode("_", $player);
+  $player_url = $base_path . swftools_get_player_path() .'/'. $path[0] .'/'. variable_get($player .'_file', '');
+  if(stristr($player, 'flowplayer')) {
+    $player = 'flowplayer';
+  }
+  //add our default settings to the Drupal.settings object
+  $settings = array('video' => array(
+    'flvplayer' => $player_url, 
+    'autoplay' => variable_get('video_autoplay', TRUE),
+    'autobuffer' => variable_get('video_autobuffering', TRUE),
+    'player' => $player,
+  ));
+  drupal_add_js($settings, 'setting');
+  
+  
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) return '';
   $node = $element['#node'];
   $use_default_img = $element['#item']['data']['use_default_video_thumb'];
   if($use_default_img) {
-    $imagetag = theme('video_widget_video_thumb', $field['widget']['default_video_thumb']);
+    $thumb = $field['widget']['default_video_thumb'];
   }
   elseif ($element['#item']['data']['video_thumb']) {
     $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
-    $imagetag = theme('video_image', $thumb, '', '', '', FALSE);
   }
-  $class = 'video video-nodelink video-'. $element['#field_name'];
-  return l($imagetag, $video, array('attributes' => array('class' => $class, 'rel' => 'lightvideo[video|width:'.$width.'px; height:'.$height.'px;]'), 'html' => TRUE));
+  else {
+    //need some type of default if nothing is present
+    drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
+  }
+  $imagetag = theme('video_image', $thumb, '', '', '', FALSE);
+  $class = 'video-box video-'. $element['#field_name'] .'{width:\''.$width.'px\', height:\''.$height.'px\', player:\''.$player.'\'}';
+  return l($imagetag, $video, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
 /**

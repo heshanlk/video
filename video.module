@@ -11,7 +11,7 @@
  */
 function video_init() {
   drupal_add_css(drupal_get_path('module', 'video'). '/css/video.css');
-  drupal_add_js(drupal_get_path('module', 'video'). '/js/admin.js');
+  drupal_add_js(drupal_get_path('module', 'video'). '/js/video.js');
 }
 
 /**
@@ -112,10 +112,10 @@ function video_theme() {
     'arguments' => array('element' => NULL),
     'file' => 'video_formatter.inc',
   );
-//  $theme['video_formatter_video_lightbox'] = array(
-//    'arguments' => array('element' => NULL),
-//    'file' => 'video_formatter.inc',
-//  );
+  $theme['video_formatter_video_colorbox'] = array(
+    'arguments' => array('element' => NULL),
+    'file' => 'video_formatter.inc',
+  );
   $theme['video_encoding_failed'] = array(
     'arguments' => array(),
     'file' => 'video_formatter.inc',
@@ -135,7 +135,7 @@ function video_theme() {
       'template' => str_replace('_', '-', $tpl),
       'path' => $path,
     );
-  }  
+  }
   return $theme;
 }
 
@@ -154,10 +154,10 @@ function video_field_formatter_info() {
       'field types' => array('filefield'),
       'description' => t('Displays the video thumbnail and links to the node.'),
     ),
-    'video_lightbox' => array(
-      'label' => t('Video Thumbnail to Lightbox'),
+    'video_colorbox' => array(
+      'label' => t('Video Thumbnail to Colorbox'),
       'field types' => array('filefield'),
-      'description' => t('Displays the video thumbnail and adds lightbox support.'),
+      'description' => t('Displays the video thumbnail and adds colorbox support.'),
     ),
   );
   //if(module_exists('imagecache')) {
@@ -295,7 +295,8 @@ function video_web_extensions($ext) {
       'swf', // swf player
       'dir', 'dcr', // dcr player
       'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
-      'ogg' // ogg theora
+      'ogg',
+      'ogv', // ogg/ogv theora
   );
   if (count(array_diff($extensions, $web_extensions))) {
     return FALSE;
@@ -321,15 +322,12 @@ function video_widget_element_settings(&$element) {
   $element['data']['width'] = array(
       '#type' => $default_width ? 'textfield' : 'value',
       '#title' => t('Width for Player'),
-      '#default_value' => empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
+      '#value' => !isset($file['data']['width']) || empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
       '#description' => t('Set player width(in px) here, make sure your video has good resolution to fit on larger values.'),
       '#size' => 15,
       '#maxlength' => 5,
       '#attributes' => array('class' => 'video-width-text'),
   );
-  if(!$default_width){
-    $element['data']['width']['#value'] = empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'];
-  }
 
   // only in preview mode and then create thumbnails
   if($field['widget']['autoconversion']) {
@@ -371,6 +369,7 @@ function video_video_extensions() {
     'mpg' => 'video_play_windowsmedia',
     'mpeg' => 'video_play_windowsmedia',
     'ogg' => 'video_play_theora',
+  	'ogv' => 'video_play_theora',
   );
   return $extensions;
 }

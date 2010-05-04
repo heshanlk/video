@@ -256,14 +256,14 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
     '#access' => !empty($item['fid']),
   );
 
-  // Add our extra fields if in preview mode
-  if(!empty($item['fid'])) {
-    video_widget_element_settings($element);
-  }
-
   // Create our thumbnails
   if($field['widget']['autothumbnail']) {
     video_thumb_process($element);
+  }
+  
+  // Add our extra fields if in preview mode
+  if(!empty($item['fid'])) {
+    video_widget_element_settings($element);
   }
 
   // Set #element_validate in a way that it will not wipe out other
@@ -297,6 +297,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
         break;
     }
   }
+  //print_r($element);
   return $element;
 }
 
