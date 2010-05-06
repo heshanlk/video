@@ -155,6 +155,10 @@ function theme_video_encoding_failed() {
   return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
 }
 
+function video_preprocess_video_formatter_video_plain(&$vars) {
+  print_r($vars);
+}
+
 function video_preprocess_video_play_flv(&$vars) {
   //lets determine what player to output
   $pathinfo = pathinfo($vars['video']);
