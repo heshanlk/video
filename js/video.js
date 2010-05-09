@@ -7,6 +7,9 @@
  */
 
 $(document).ready(function() {
+	//lets see if we have any jmedia movies
+	$('.jmedia').media();
+	
 	video_hide_all_options();
 	$("input[name='vid_convertor']").change(function() {
 		video_hide_all_options();

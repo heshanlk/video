@@ -141,6 +141,19 @@ function theme_uploadfield_formatter_videolinked($element) {
   return l($imagetag, $path, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
+function theme_video_formatter_video_media_js($element) {
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
+  //lets get our width/height and video url and pass them as arguments
+  $video = file_create_url($element['#item']['filepath']);
+  //@todo change default width and height to be configuration settings.
+  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
+  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
+  //lets output the link to be overtaken by jmedia
+  $link = l($element['#item']['filename'], $video, array('attributes' => array('class' => 'jmedia {width: '. $width .', height: '. $height .', autoplay: '. variable_get('video_autoplay', TRUE) .'}')));
+  return $link;
+}
+
 /**
  * Displays a "encoding in progress message"
  */
@@ -160,25 +173,71 @@ function video_preprocess_video_formatter_video_plain(&$vars) {
 }
 
 function video_preprocess_video_play_flv(&$vars) {
+  $video = file_create_url($vars['element']['#item']['filepath']);
+  $width = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $height = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
+  
   //lets determine what player to output
-  $pathinfo = pathinfo($vars['video']);
+  $pathinfo = pathinfo($video);
   $player_id = variable_get('video_extension_'.$pathinfo['extension'].'_flash_player', '');
   if ($player_id == 'swftools') {
-    $output = swf($vars['video'], array('params' => array('width' => $vars['width'], 'height' => $vars['height'])));
+    $output = swf($video, array('params' => array('width' => $width, 'height' => $height)));
   }
   elseif ($player_id == 'flowplayer') {
     $output = theme('flowplayer', array(
       'clip' => array(
-        'url' =>  $vars['video'],
+        'url' =>  $video,
         'autoPlay' => variable_get('video_autoplay', TRUE),
         'autoBuffering' => variable_get('video_autobuffering', TRUE),
       ),
     ),
     $vars['formatter'],
-    array('style' => 'width: '. $vars['width'] .'px; height: '. $vars['height'] .'px;'));
+    array('style' => 'width: '. $width .'px; height: '. $height .'px;'));
   }
   else {
     $output = t('No flash player has been setup.');
   }
   $vars['player'] = $output;
+}
+
+function video_preprocess_video_play_windowsmedia(&$vars) {
+  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
+  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
+}
+
+function video_preprocess_video_play_quicktime(&$vars) {
+  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
+  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
+}
+
+function video_preprocess_video_play_divx(&$vars) {
+  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
+  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
+}
+
+function video_preprocess_video_play_realmedia(&$vars) {
+  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
+  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
+}
+
+function video_preprocess_video_play_dcr(&$vars) {
+  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
+  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
+}
+
+function video_preprocess_video_play_theora(&$vars) {
+  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
+  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
+}
+
+function video_preprocess_video_play_flash(&$vars) {
+  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
+  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
+  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
 }

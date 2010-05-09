@@ -116,6 +116,10 @@ function video_theme() {
     'arguments' => array('element' => NULL),
     'file' => 'video_formatter.inc',
   );
+  $theme['video_formatter_video_media_js'] = array(
+    'arguments' => array('element' => NULL),
+    'file' => 'video_formatter.inc',
+  );
   $theme['video_encoding_failed'] = array(
     'arguments' => array(),
     'file' => 'video_formatter.inc',
@@ -130,7 +134,7 @@ function video_theme() {
   $players = video_video_players();
   foreach($players as $tpl => $value) {
     $theme[$tpl] = array(
-      'arguments' => array('video' => NULL, 'width' => NULL, 'height' => NULL, 'formatter' => NULL),
+      'arguments' => array('element' => NULL),
       'file' => 'video_formatter.inc',
       'template' => str_replace('_', '-', $tpl),
       'path' => $path,
@@ -158,6 +162,11 @@ function video_field_formatter_info() {
       'label' => t('Video Thumbnail to Colorbox'),
       'field types' => array('filefield'),
       'description' => t('Displays the video thumbnail and adds colorbox support.'),
+    ),
+    'video_media_js' => array(
+      'label' => t('Video inject with jMedia'),
+      'field types' => array('filefield'),
+      'description' => t('Displays the video by using jmedia javascript.'),
     ),
   );
   //if(module_exists('imagecache')) {
@@ -414,10 +423,7 @@ function video_get_player($element) {
   //lets spit out our theme based on the extension
   $defaults = video_video_extensions();
   $theme_function = variable_get('video_extension_'.$op, $defaults[$op]);
+  //print $theme_function;
   
-  $video = file_create_url($element['#item']['filepath']);
-  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
-  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
-
-  return theme($theme_function, $video, $width, $height, $element['#formatter']);
+  return theme($theme_function, $element); //  $video, $width, $height, $element['#formatter']);
 }

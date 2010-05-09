@@ -5,6 +5,7 @@
  * Theme file to handle ogg theora output.
  * 
  * Variables passed.
+ * $element is the complete array for the cck field.
  * $width is the width of the video.
  * $height is the height of the video.
  * $video is the URL of the actual video.
