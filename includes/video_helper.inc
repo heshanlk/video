@@ -56,7 +56,7 @@ class video_helper {
     $thumbnail->url = file_create_url($thumbnail->filepath);
     //swftools appends sites/default/files to the front of our path...
     //@todo Is this a setting?  Need to figure this out.
-    $thumbanil->swfthumb = str_replace(file_directory_path(), '', $thumbnail->filepath);
+    $thumbnail->swfthumb = $thumbnail->filepath;
     // Return our object
     return $thumbnail;
   }

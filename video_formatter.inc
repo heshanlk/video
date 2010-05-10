@@ -144,11 +144,11 @@ function theme_video_flv($video, $node) {
         'autoBuffering' => $video->autobuffering,
       ),
     );
-    $output = theme(
+    $themed_output = theme(
       'flowplayer', 
       $options,
       $video->formatter,
-      array('style' => 'width: '. $width .'px; height: '. $height .'px;')
+      array('style' => 'width: '. $video->width .'px; height: '. $video->height .'px;')
     );
   }
   else {
