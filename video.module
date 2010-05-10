@@ -134,12 +134,18 @@ function video_theme() {
   $players = video_video_players();
   foreach($players as $tpl => $value) {
     $theme[$tpl] = array(
-      'arguments' => array('element' => NULL),
+      'arguments' => array('video' => NULL, 'player' => NULL, 'node' => NULL),
       'file' => 'video_formatter.inc',
       'template' => str_replace('_', '-', $tpl),
       'path' => $path,
     );
   }
+  //We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
+  //calling our flv template file.
+  $theme['video_flv'] = array(
+    'arguments' => array('element' => NULL),
+    'file' => 'video_formatter.inc'
+  ); 
   return $theme;
 }
 
@@ -413,17 +419,54 @@ function video_video_flv_players() {
  */
 function video_get_player($element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
-  //setup our resolution and fix our height.
+  // Setup our resolution and fix our height.
   $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
   $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
 
+  // Get extension of the video file so we know how to output it.
   $file = pathinfo($element['#item']['filename']);
   $op = $file['extension'];
   
-  //lets spit out our theme based on the extension
+  // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
   $theme_function = variable_get('video_extension_'.$op, $defaults[$op]);
-  //print $theme_function;
   
-  return theme($theme_function, $element); //  $video, $width, $height, $element['#formatter']);
+  // Setup our node object to be passed along with the player.
+  $node = $element['#node'];
+  
+  // Setup our thumbnail.
+  $use_default_img = $element['#item']['data']['use_default_video_thumb'];
+  if ($use_default_img) {
+    $thumbnail = $field['widget']['default_video_thumb'];
+  }
+  elseif ($element['#item']['data']['video_thumb']) {
+    $thumbnail = $element['#item']['data']['video_thumb'];
+  } else {
+    $thumbnail = '';  //@todo have a fallback thumbnail.
+  }
+  
+  // Build our video object for all types.
+  $video = new stdClass();
+  $video->url = file_create_url($element['#item']['filepath']);
+  $video->extension = $op;
+  $video->width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
+  $video->height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
+  $video->thumbnail = file_create_url($thumbnail);
+  $video->formatter = $element['#formatter'];
+  $video->autoplay = variable_get('video_autoplay', TRUE);
+  $video->autobuffering = variable_get('video_autobuffering', TRUE);
+  $video->flash_player = variable_get('video_extension_'.$op.'_flash_player', '');
+  $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
+  
+  //@todo Each player/object output potentially has different heights.  How are we going to handle that?
+  //players tab maybe?  Then add our height in?
+  //$video->height += player_tab_height()?
+  
+  // Lets do some special handling for our flv files to accomdate multiple players.
+  if($theme_function == 'video_play_flv') {
+    return theme('video_flv', $video, $node);
+  }
+  else {
+    return theme($theme_function, $video, $node);
+  }
 }

@@ -5,14 +5,13 @@
  * Theme file to handle ogg theora output.
  * 
  * Variables passed.
- * $element is the complete array for the cck field.
- * $width is the width of the video.
- * $height is the height of the video.
- * $video is the URL of the actual video.
+ * $video is the video object.
+ * $node is the node object.
+ * 
  */
 ?> 
-<applet=code="com.fluendo.player.Cortado.class" archive="<?php print variable_get('video_ogg_player', 'http://theora.org/cortado.jar'); ?>" width="<?php print $width; ?>" height="<?php print $height; ?>">
-  <param name="url" value="<?php print $video; ?>" />
+<applet=code="com.fluendo.player.Cortado.class" archive="<?php print $video->theora_player; ?>" width="<?php print $video->width; ?>" height="<?php print $video->height; ?>">
+  <param name="url" value="<?php print $video->url; ?>" />
   <param name="local" value="false" />
   <param name="mode" value="zero" />
   <param name="keepaspect" value="true" />

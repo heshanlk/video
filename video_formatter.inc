@@ -6,6 +6,10 @@
  * Video formatter hooks and callbacks.
  */
 
+/*
+ * Default video cck formatter.  Makes sure the video being displayed exists, has been converted (if in que).
+ * If not or the video is processed, then it will get the default player for the specific video type for output.
+ */
 function theme_video_formatter_video_plain($element) {
   //module_load_include('inc', 'video', '/includes/common');
   if (empty($element['#item']['fid'])) return '';
@@ -18,21 +22,19 @@ function theme_video_formatter_video_plain($element) {
     return theme('video_encoding_failed');
   }
   else {
-    //lets get our width/height and video url and pass them as arguments instead of the full element object
-    $video = file_create_url($element['#item']['filepath']);
-    //@todo change default width and height to be configuration settings.
-    $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] .'px' : '350px';
-    $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] .'px' : '285px';
     return video_get_player($element);
   }
 }
 
+/*
+ * Renders the video thumbnail as a link to the node page.
+ */
 function theme_video_formatter_video_nodelink($element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) return '';
   $node = $element['#node'];
-  //$use_default_img = $element['#item']['data']['use_default_video_thumb'];
+  $use_default_img = $element['#item']['data']['use_default_video_thumb'];
   if($use_default_img) {
     $imagetag = theme('video_widget_video_thumb', $field['widget']['default_video_thumb']);
   }
@@ -44,6 +46,13 @@ function theme_video_formatter_video_nodelink($element) {
   return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
+/*
+ * Renders the video thumbnail linked to the absolute filepath of the video.  Colorbox is introduced to handle
+ * the video in an overlay.
+ * 
+ * @todo Very unstable, need better methods of integration.  Seems hackish right now to find out what flv player is being
+ * used.  We are also using jmedia for all other filetypes.
+ */
 function theme_video_formatter_video_colorbox($element) {
   global $base_path;
   if (!module_exists('colorbox')) {
@@ -101,6 +110,80 @@ function theme_video_formatter_video_colorbox($element) {
   return l($imagetag, $video, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
+/*
+ * We are using the jMedia library to output our video files.
+ * 
+ * @todo Does not work with flv files as this requires an actual flv player.  Need to figure out how to best integrate the player
+ * into this function.
+ * 
+ * We are outputing an anchor to the videofile.  The jMedia functions will overtake this anchor and setup our object/embed tags.
+ */
+function theme_video_formatter_video_media_js($element) {
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
+  //lets get our width/height and video url and pass them as arguments
+  $video = file_create_url($element['#item']['filepath']);
+  //@todo change default width and height to be configuration settings.
+  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
+  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
+  //lets output the link to be overtaken by jmedia
+  $link = l($element['#item']['filename'], $video, array('attributes' => array('class' => 'jmedia {width: '. $width .', height: '. $height .', autoplay: '. variable_get('video_autoplay', TRUE) .'}')));
+  return $link;
+}
+
+/**
+ * Displays a "encoding in progress message"
+ */
+function theme_video_inprogress() {
+  return '<div class="video-ffmpeg-helper-inprogress">'. t('This video is currently being processed. Please wait.') . '</div>';
+}
+
+/**
+ * Display an "encoding failed" message"
+ */
+function theme_video_encoding_failed() {
+  return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
+}
+
+function video_preprocess_video_formatter_video_plain(&$vars) {
+  print_r($vars);
+}
+
+function video_video_flv($video, $node) {
+  if ($video->flash_player == 'swftools') {
+    $options = array(
+      'params' => array(
+        'width' => $video->width,
+        'height' => $video->height,
+      ),
+      'othervars' => array(
+        'image' => $video->thumbnail,
+      ),
+    );
+    $output = swf($video->url, $options);
+  }
+  elseif ($video->flash_player == 'flowplayer') {
+    $options = array(
+      'clip' => array(
+        'url' => $video->url,
+        'autoPlay' => $video->autoplay,
+        'autoBuffering' => $video->autobuffering,
+      ),
+    );
+    $output = theme(
+      'flowplayer', 
+      $options,
+      $video->formatter,
+      array('style' => 'width: '. $width .'px; height: '. $height .'px;')
+    );
+  }
+  else {
+    $output = t('No flash player has been setup.');
+  }
+  return theme('video_play_flv', $output, $node);
+}
+
+
 /**
  * use image cache profiles for video thumb display
  * @param object $element
@@ -139,105 +222,4 @@ function theme_uploadfield_formatter_videolinked($element) {
   $path = empty($item['nid']) ? '' : 'node/'. $item['nid'];
   $class = "imagecache imagecache-$presetname imagecache-$style imagecache-{$element['#formatter']}";
   return l($imagetag, $path, array('attributes' => array('class' => $class), 'html' => TRUE));
-}
-
-function theme_video_formatter_video_media_js($element) {
-  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
-  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
-  //lets get our width/height and video url and pass them as arguments
-  $video = file_create_url($element['#item']['filepath']);
-  //@todo change default width and height to be configuration settings.
-  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
-  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
-  //lets output the link to be overtaken by jmedia
-  $link = l($element['#item']['filename'], $video, array('attributes' => array('class' => 'jmedia {width: '. $width .', height: '. $height .', autoplay: '. variable_get('video_autoplay', TRUE) .'}')));
-  return $link;
-}
-
-/**
- * Displays a "encoding in progress message"
- */
-function theme_video_inprogress() {
-  return '<div class="video-ffmpeg-helper-inprogress">'. t('This video is currently being processed. Please wait.') . '</div>';
-}
-
-/**
- * Display an "encoding failed" message"
- */
-function theme_video_encoding_failed() {
-  return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
-}
-
-function video_preprocess_video_formatter_video_plain(&$vars) {
-  print_r($vars);
-}
-
-function video_preprocess_video_play_flv(&$vars) {
-  $video = file_create_url($vars['element']['#item']['filepath']);
-  $width = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $height = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
-  
-  //lets determine what player to output
-  $pathinfo = pathinfo($video);
-  $player_id = variable_get('video_extension_'.$pathinfo['extension'].'_flash_player', '');
-  if ($player_id == 'swftools') {
-    $output = swf($video, array('params' => array('width' => $width, 'height' => $height)));
-  }
-  elseif ($player_id == 'flowplayer') {
-    $output = theme('flowplayer', array(
-      'clip' => array(
-        'url' =>  $video,
-        'autoPlay' => variable_get('video_autoplay', TRUE),
-        'autoBuffering' => variable_get('video_autobuffering', TRUE),
-      ),
-    ),
-    $vars['formatter'],
-    array('style' => 'width: '. $width .'px; height: '. $height .'px;'));
-  }
-  else {
-    $output = t('No flash player has been setup.');
-  }
-  $vars['player'] = $output;
-}
-
-function video_preprocess_video_play_windowsmedia(&$vars) {
-  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
-  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
-}
-
-function video_preprocess_video_play_quicktime(&$vars) {
-  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
-  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
-}
-
-function video_preprocess_video_play_divx(&$vars) {
-  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
-  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
-}
-
-function video_preprocess_video_play_realmedia(&$vars) {
-  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
-  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
-}
-
-function video_preprocess_video_play_dcr(&$vars) {
-  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
-  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
-}
-
-function video_preprocess_video_play_theora(&$vars) {
-  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
-  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
-}
-
-function video_preprocess_video_play_flash(&$vars) {
-  $vars['video'] = file_create_url($vars['element']['#item']['filepath']);
-  $vars['width'] = isset($vars['element']['#item']['data']['width']) && !empty($vars['element']['#item']['data']['width']) ? $vars['element']['#item']['data']['width'] : '350';
-  $vars['height'] = isset($vars['element']['#item']['data']['height']) && !empty($vars['element']['#item']['data']['height']) ? $vars['element']['#item']['data']['height'] : '285';
 }
