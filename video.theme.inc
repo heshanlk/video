@@ -60,13 +60,18 @@ function theme_video_widget_video_thumb($item = NULL) {
  * @{
  * @see uploadfield_theme().
  */
-function theme_video_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
+function theme_video_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE, $imagecache = FALSE) {
   $file = (array)$file;
-  if (!is_file($file['filepath'])) {
-    return '<!-- File not found: '. $file['filepath'] .' -->';
+  //if this is imagecache skip this as the file might not be created yet
+  if (!$imagecache && !is_file($file['filepath'])) {
+    return '<!-- File not found: '. str_replace("--", "-", $file['filepath']) .'" -->';
   }
 
-  if ($getsize) {
+  if ($getsize && $imagecache && ($image = image_get_info($file['filepath']))) {
+    $attributes['width'] = $image['width'];
+    $attributes['height'] = $image['height'];
+  }
+  elseif ($getsize) {
   // Use cached width and height if available.
     if (!empty($file['data']['width']) && !empty($file['data']['height'])) {
       $attributes['width']  = $file['data']['width'];

@@ -53,7 +53,14 @@ class video_helper {
       //need some type of default if nothing is present
       //drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
     }
-    $thumbnail->url = file_create_url($thumbnail->filepath);
+    //lets check for an imagecache preset
+    if(isset($element['imagecache_preset'])) {
+      $thumbnail->url = imagecache_create_url($element['imagecache_preset'], $thumbnail->filepath);
+      $thumbnail->filepath = imagecache_create_path($element['imagecache_preset'], $thumbnail->filepath);
+    } else {
+      $thumbnail->url = file_create_url($thumbnail->filepath);  
+    }
+    
     //swftools appends sites/default/files to the front of our path...
     //@todo Is this a setting?  Need to figure this out.
     $thumbnail->swfthumb = $thumbnail->filepath;

@@ -28,7 +28,7 @@ function theme_video_formatter_video_plain($element) {
 /*
  * Renders the video thumbnail as a link to the node page.
  */
-function theme_video_formatter_video_nodelink($element) {
+function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) return '';
@@ -37,7 +37,7 @@ function theme_video_formatter_video_nodelink($element) {
   $video_helper = new video_helper;
   $thumbnail = $video_helper->thumbnail_object($element);
   //get our themed image
-  $image = theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title);
+  $image = theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title, '', TRUE, $imagecache);
   $class = 'popups video video-nodelink video-'. $element['#field_name'];
   return l($image, 'node/'. $element['#node']->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
@@ -49,7 +49,7 @@ function theme_video_formatter_video_nodelink($element) {
  * @todo Very unstable, need better methods of integration.  Seems hackish right now to find out what flv player is being
  * used.  We are also using jmedia for all other filetypes.
  */
-function theme_video_formatter_video_colorbox($element) {
+function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
   global $base_path;
   if (!module_exists('colorbox')) {
     drupal_set_message(t('You must download and enable !colorbox for this formatter.', array('!colorbox' => l(t('Colorbox'), 'http://www.drupal.org/project/colorbox'))), 'error');
@@ -84,7 +84,7 @@ function theme_video_formatter_video_colorbox($element) {
     'player' => $player,
   ));
   drupal_add_js($settings, 'setting');  
-  $image = theme('video_image', $video->thumbnail, $video->thumbnail->alt, $video->thumbnail->title);
+  $image = theme('video_image', $video->thumbnail, $video->thumbnail->alt, $video->thumbnail->title, '', TRUE, $imagecache);
   $class = 'video-box video-'. $element['#field_name'] .'{width:\''.$video->width.'px\', height:\''.$video->height.'px\', player:\''.$player.'\'}';
   return l($image, $video->url, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
@@ -157,43 +157,17 @@ function theme_video_flv($video, $node) {
   return theme('video_play_flv', $video, $node, $themed_output);
 }
 
-
-/**
- * use image cache profiles for video thumb display
- * @param object $element
- * @return HTML image file
- */
-
-function theme_uploadfield_formatter_videolinked($element) {
+function theme_video_formatter_imagecache($element) {
   // Inside a view $element may contain NULL data. In that case, just return.
   if (empty($element['#item']['fid'])) {
     return '';
   }
-
+  
   // Extract the preset name from the formatter name.
-  $presetname = substr($element['#formatter'], 0, strrpos($element['#formatter'], '_'));
-  $style = 'linked';
-
-  $item = $element['#item'];
-  $item['data']['alt'] = isset($item['data']['alt']) ? $item['data']['alt'] : '';
-  $item['data']['title'] = isset($item['data']['title']) ? $item['data']['title'] : NULL;
-
-  $node = $element['#node'];
-  //  $imagetag = theme('uploadfield_formatter_video_plain', $element);
-  $use_default_img = $element['#item']['data']['use_default_video_thumb'];
-  if($use_default_img) {
-    $thumb_path = $field['widget']['default_video_thumb'];
-    //    $imagetag = theme('uploadfield_widget_video_thumb', $field['widget']['default_video_thumb']);
+  list($namespace, $theme_function) = explode('__', $element['#formatter'], 2);
+  if ($preset = imagecache_preset_by_name($namespace)) {
+    $element['imagecache_preset'] = $namespace;
   }
-  else if($element['#item']['data']['video_thumb']) {
-    //    print_r($field['widget']['default_video_thumb']);
-    //      $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
-    $thumb_path = $element['#item']['data']['video_thumb'];
-    //      $imagetag = theme('uploadfield_widget_video_thumb', $thumb);
-  }
-  //  die($presetname);
-  $imagetag = theme('imagecache', $presetname, $thumb_path, $node->title, $node->title);
-  $path = empty($item['nid']) ? '' : 'node/'. $item['nid'];
-  $class = "imagecache imagecache-$presetname imagecache-$style imagecache-{$element['#formatter']}";
-  return l($imagetag, $path, array('attributes' => array('class' => $class), 'html' => TRUE));
+  //return $theme_function;
+  return theme('video_formatter_'. $theme_function, $element, TRUE);
 }
