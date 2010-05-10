@@ -33,17 +33,14 @@ function theme_video_formatter_video_nodelink($element) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) return '';
-  $node = $element['#node'];
-  $use_default_img = $element['#item']['data']['use_default_video_thumb'];
-  if($use_default_img) {
-    $imagetag = theme('video_widget_video_thumb', $field['widget']['default_video_thumb']);
-  }
-  elseif ($element['#item']['data']['video_thumb']) {
-    $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
-    $imagetag = theme('video_image', $thumb, '', '', '', FALSE);
-  }
+  //setup our thumbnail object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  $thumbnail = $video_helper->thumbnail_object($element);
+  //get our themed image
+  $image = theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title);
   $class = 'popups video video-nodelink video-'. $element['#field_name'];
-  return l($imagetag, 'node/'. $node->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
+  return l($image, 'node/'. $element['#node']->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
 /*
@@ -60,21 +57,20 @@ function theme_video_formatter_video_colorbox($element) {
     return theme('video_formatter_video_nodelink', $element);
   }
   
+  // Inside a view $element may contain null data. In that case, just return.
+  if (empty($element['#item']['fid'])) return '';
+  
   //load up our media plugins
   drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
   drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
   drupal_add_js(drupal_get_path('module', 'video') .'/js/flowplayer-3.2.0.min.js');
   
-  $field = content_fields($element['#field_name'], $element['#type_name']);
-  //setup our resolution and fix our height.
-  $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
-  $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
-  
-  $video = file_create_url($element['#item']['filepath']);
-  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
-  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
-  
-  $action = swftools_get_action($video);
+  //setup our video object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  $video = $video_helper->video_object($element);
+   
+  $action = swftools_get_action($video->filepath);
   $player = swftools_get_player($action);
   $path = explode("_", $player);
   $player_url = $base_path . swftools_get_player_path() .'/'. $path[0] .'/'. variable_get($player .'_file', '');
@@ -84,30 +80,14 @@ function theme_video_formatter_video_colorbox($element) {
   //add our default settings to the Drupal.settings object
   $settings = array('video' => array(
     'flvplayer' => $player_url, 
-    'autoplay' => variable_get('video_autoplay', TRUE),
-    'autobuffer' => variable_get('video_autobuffering', TRUE),
+    'autoplay' => $video->autoplay,
+    'autobuffer' => $video->autobuffering,
     'player' => $player,
   ));
-  drupal_add_js($settings, 'setting');
-  
-  
-  // Inside a view $element may contain null data. In that case, just return.
-  if (empty($element['#item']['fid'])) return '';
-  $node = $element['#node'];
-  $use_default_img = $element['#item']['data']['use_default_video_thumb'];
-  if($use_default_img) {
-    $thumb = $field['widget']['default_video_thumb'];
-  }
-  elseif ($element['#item']['data']['video_thumb']) {
-    $thumb = array('filepath' => $element['#item']['data']['video_thumb']);
-  }
-  else {
-    //need some type of default if nothing is present
-    drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
-  }
-  $imagetag = theme('video_image', $thumb, '', '', '', FALSE);
-  $class = 'video-box video-'. $element['#field_name'] .'{width:\''.$width.'px\', height:\''.$height.'px\', player:\''.$player.'\'}';
-  return l($imagetag, $video, array('attributes' => array('class' => $class), 'html' => TRUE));
+  drupal_add_js($settings, 'setting');  
+  $image = theme('video_image', $video->thumbnail, $video->thumbnail->alt, $video->thumbnail->title);
+  $class = 'video-box video-'. $element['#field_name'] .'{width:\''.$video->width.'px\', height:\''.$video->height.'px\', player:\''.$player.'\'}';
+  return l($image, $video->url, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
 /*
@@ -121,13 +101,12 @@ function theme_video_formatter_video_colorbox($element) {
 function theme_video_formatter_video_media_js($element) {
   drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
   drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
-  //lets get our width/height and video url and pass them as arguments
-  $video = file_create_url($element['#item']['filepath']);
-  //@todo change default width and height to be configuration settings.
-  $width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
-  $height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
+  //setup our video object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  $video = $video_helper->video_object($element);
   //lets output the link to be overtaken by jmedia
-  $link = l($element['#item']['filename'], $video, array('attributes' => array('class' => 'jmedia {width: '. $width .', height: '. $height .', autoplay: '. variable_get('video_autoplay', TRUE) .'}')));
+  $link = l($video->filename, $video->filename, array('attributes' => array('class' => 'jmedia {width: '. $video->width .', height: '. $video->height .', autoplay: '. $video->autoplay .'}')));
   return $link;
 }
 
@@ -153,10 +132,10 @@ function video_video_flv($video, $node) {
         'height' => $video->height,
       ),
       'othervars' => array(
-        'image' => $video->thumbnail,
+        'image' => $video->thumbnail->url,
       ),
     );
-    $output = swf($video->url, $options);
+    $themed_output = swf($video->url, $options);
   }
   elseif ($video->flash_player == 'flowplayer') {
     $options = array(
@@ -174,9 +153,9 @@ function video_video_flv($video, $node) {
     );
   }
   else {
-    $output = t('No flash player has been setup.');
+    $themed_output = t('No flash player has been setup.');
   }
-  return theme('video_play_flv', $output, $node);
+  return theme('video_play_flv', $video, $node, $themed_output);
 }
 
 
