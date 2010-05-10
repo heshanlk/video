@@ -11,7 +11,6 @@
  * If not or the video is processed, then it will get the default player for the specific video type for output.
  */
 function theme_video_formatter_video_plain($element) {
-  //module_load_include('inc', 'video', '/includes/common');
   if (empty($element['#item']['fid'])) return '';
   $result = db_query('SELECT vr.status FROM {video_rendering} vr INNER JOIN {files} f ON vr.fid = f.fid WHERE vr.fid = f.fid AND f.status = %d AND f.fid = %d', FILE_STATUS_PERMANENT, $element['#item']['fid']);
   $status = db_fetch_object($result);
@@ -124,7 +123,7 @@ function theme_video_encoding_failed() {
   return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
 }
 
-function video_video_flv($video, $node) {
+function theme_video_flv($video, $node) {
   if ($video->flash_player == 'swftools') {
     $options = array(
       'params' => array(
@@ -132,7 +131,7 @@ function video_video_flv($video, $node) {
         'height' => $video->height,
       ),
       'othervars' => array(
-        'image' => $video->thumbnail->url,
+        'image' => $video->thumbnail->swfthumb,
       ),
     );
     $themed_output = swf($video->url, $options);
