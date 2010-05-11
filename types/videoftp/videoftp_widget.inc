@@ -14,7 +14,7 @@ function videoftp_widget_settings_form($widget) {
   $form['file_extensions'] = array(
     '#type' => 'textfield',
     '#title' => t('Permitted upload file extensions.'),
-    '#default_value' => !empty($widget['file_extensions']) ? $widget['file_extensions'] : 'mp4 mpeg avi mpg wmv flv',
+    '#default_value' => !empty($widget['file_extensions']) ? $widget['file_extensions'] : 'mp4 mpeg avi mpg wmv flv mov',
     '#size' => 64,
     '#description' => t('Extensions a user can attach to this field.  Separate extensions with a space and do not include the leading dot.  Leaving this blank will allow attachment of a file with any extension.'),
     '#weight' => 1
@@ -27,42 +27,9 @@ function videoftp_widget_settings_form($widget) {
     '#required' => TRUE,
     '#weight' => 2,
   );
-  // Default video settings.
-  $form['plugins'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Video Advanced Settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#weight' => 10
-  );
-  $form['plugins']['default_resolution'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Default Video Resolution'),
-    '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
-    '#size' => 15,
-    '#maxlength' => 5,
-    '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
-  );
-  $form['plugins']['default_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Default Video Player Width'),
-    '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
-    '#size' => 15,
-    '#maxlength' => 5,
-    '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
-  );
-  $form['plugins']['autoconversion'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable video conversion.'),
-    '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
-    '#default_value' => $widget['autoconversion'],
-  );
-  $form['plugins']['autothumbnail'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable thumbnail creation.'),
-    '#description' => t('Use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings.'),
-    '#default_value' => $widget['autothumbnail'],
-  );
+  //default settings
+  $default = video_default_widget_settings($widget);
+  $form = $form + $default;
   return $form;
 }
 

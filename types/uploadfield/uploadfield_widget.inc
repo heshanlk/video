@@ -13,115 +13,13 @@ function uploadfield_widget_settings_form($widget) {
   $form = module_invoke('filefield', 'widget_settings', 'form', $widget);
 
   if ($form['file_extensions']['#default_value'] == 'txt') {
-    $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv flv';
+    $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv flv mov';
   }
 
-  // Default video settings.
-  $form['plugins'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Video Advanced Settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#weight' => 10
-  );
-  $form['plugins']['default_resolution'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Default Video Resolution'),
-      '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
-      '#size' => 15,
-      '#maxlength' => 5,
-      '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
-  );
-  $form['plugins']['default_width'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Default Video Player Width'),
-      '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
-      '#size' => 15,
-      '#maxlength' => 5,
-      '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
-  );
-  $form['plugins']['autoconversion'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable video conversion.'),
-    '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
-    '#default_value' => $widget['autoconversion'],
-  );
-  $form['plugins']['autothumbnail'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable thumbnail creation.'),
-    '#description' => t('Use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings.'),
-    '#default_value' => $widget['autothumbnail'],
-  );
-
-
-  // Default thumbnail settings.
-  $form['default'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Video Thumbnail Settings'),
-      '#element_validate' => array('_uploadfield_widget_settings_default_validate'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#weight' => 10
-  );
-  // Present a video image of the current default image.
-  if (!empty($widget['default_video_thumb'])) {
-    $form['default']['default_video_thumbnail'] = array(
-        '#type' => 'markup',
-        '#value' => theme('uploadfield_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
-        '#prefix' => '<div class="video_thumbnail">',
-        '#suffix' => '</div>'
-    );
-  }
-  $form['default']['default_video_thumb_upload'] = array(
-      '#type'  => 'file',
-      '#title' => empty($widget['default_video_thumb']) ? t('Upload video thumbnail') :  t('Replace video thumbnail with'),
-      '#description' => t('Choose a image that will be used as default video thumbnail.'),
-  );
-  // We set this value on 'validate' so we can get CCK to add it
-  // as a standard field setting.
-  $form['default_video_thumb'] = array(
-      '#type' => 'value',
-      '#value' => $widget['default_video_thumb'],
-  );
+  //default settings
+  $default = video_default_widget_settings($widget);
+  $form = $form + $default;
   return $form;
-}
-
-/**
- * Element specific validation for uploadfield default value.
- *
- * Validated in a separate function from uploadfield_field() to get access
- * to the $form_state variable.
- */
-function _uploadfield_widget_settings_default_validate($element, &$form_state) {
-// Verify the destination exists
-  $destination = file_directory_path() .'/video_thumb';
-  if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
-    form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
-    return;
-  }
-
-  $validators = array (
-      'file_validate_is_image' => array(),
-  );
-
-  // We save the upload here because we can't know the correct path until the file is saved.
-  if (!$file = file_save_upload('default_video_thumb_upload', $validators, $destination)) {
-  // No upload to save we hope... or file_save_upload() reported an error on its own.
-    return;
-  }
-
-  // Remove old image (if any) & clean up database.
-  $old_default = $form_state['values']['default_video_thumb'];
-  if (!empty($old_default['fid'])) {
-    if (file_delete(file_create_path($old_default['filepath']))) {
-      db_query('DELETE FROM {files} WHERE fid=%d', $old_default['fid']);
-    }
-  }
-
-  // Make the file permanent and store it in the form.
-  file_set_status($file, FILE_STATUS_PERMANENT);
-  $file->timestamp = time();
-  $form_state['values']['default_video_thumb'] = (array)$file;
 }
 
 /**

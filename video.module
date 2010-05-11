@@ -382,6 +382,13 @@ function video_widget_element_settings(&$element) {
        '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
        '#attributes' => array('class' => 'video-convert-video-on-save'),
       );
+      $element['data']['use_default_video_thumb'] = array(
+       '#type' => 'checkbox',
+       '#title' => t('Use the default thumbnail for this video?'),
+       '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : FALSE,
+       '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
+       '#attributes' => array('class' => 'video-use-default-video-thumb'),
+      );
     }
   }
 }
@@ -466,4 +473,110 @@ function video_get_player($element) {
   else {
     return theme($theme_function, $video, $node);
   }
+}
+
+function video_default_widget_settings($widget) {
+  $form = array();
+  // Default video settings.
+  $form['plugins'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Video Advanced Settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#weight' => 10
+  );
+  $form['plugins']['default_resolution'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default Video Resolution'),
+    '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
+    '#size' => 15,
+    '#maxlength' => 5,
+    '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
+  );
+  $form['plugins']['default_width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default Video Player Width'),
+    '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
+    '#size' => 15,
+    '#maxlength' => 5,
+    '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
+  );
+  $form['plugins']['autoconversion'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable video conversion.'),
+    '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
+    '#default_value' => $widget['autoconversion'],
+  );
+  $form['plugins']['autothumbnail'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable thumbnail creation.'),
+    '#description' => t('Use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings.'),
+    '#default_value' => $widget['autothumbnail'],
+  );
+  // Default thumbnail settings.
+  $form['default'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Video Thumbnail Settings'),
+      '#element_validate' => array('video_default_widget_settings_validate'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#weight' => 10
+  );
+  // Present a video image of the current default image.
+  if (!empty($widget['default_video_thumb'])) {
+    $form['default']['default_video_thumbnail'] = array(
+        '#type' => 'markup',
+        '#value' => theme('video_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
+        '#prefix' => '<div class="video_thumbnail">',
+        '#suffix' => '</div>'
+    );
+  }
+  $form['default']['default_video_thumb_upload'] = array(
+      '#type'  => 'file',
+      '#title' => empty($widget['default_video_thumb']) ? t('Upload video thumbnail') :  t('Replace video thumbnail with'),
+      '#description' => t('Choose a image that will be used as default video thumbnail.'),
+  );
+  // We set this value on 'validate' so we can get CCK to add it
+  // as a standard field setting.
+  $form['default_video_thumb'] = array(
+      '#type' => 'value',
+      '#value' => $widget['default_video_thumb'],
+  );
+  return $form;
+}
+
+/**
+ * Element specific validation for video default value.
+ *
+ */
+function video_default_widget_settings_validate($element, &$form_state) {
+  // Verify the destination exists
+  $destination = file_directory_path() .'/video_thumb';
+  if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
+    form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
+    return;
+  }
+
+  $validators = array (
+      'file_validate_is_image' => array(),
+  );
+
+  // We save the upload here because we can't know the correct path until the file is saved.
+  if (!$file = file_save_upload('default_video_thumb_upload', $validators, $destination)) {
+  // No upload to save we hope... or file_save_upload() reported an error on its own.
+    return;
+  }
+
+  // Remove old image (if any) & clean up database.
+  $old_default = $form_state['values']['default_video_thumb'];
+  if (!empty($old_default['fid'])) {
+    if (file_delete(file_create_path($old_default['filepath']))) {
+      db_query('DELETE FROM {files} WHERE fid=%d', $old_default['fid']);
+    }
+  }
+
+  // Make the file permanent and store it in the form.
+  file_set_status($file, FILE_STATUS_PERMANENT);
+  $file->timestamp = time();
+  $form_state['values']['default_video_thumb'] = (array)$file;
 }

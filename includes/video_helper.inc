@@ -33,6 +33,8 @@ class video_helper {
   }
 
   public function thumbnail_object($element) {
+    $field = content_fields($element['#field_name'], $element['#type_name']);
+    // Build our thumbnail object
     $thumbnail = new stdClass();
     $thumbnail->filepath = '';
     $thumbnail->url = '';
@@ -43,8 +45,8 @@ class video_helper {
 
     // Setup our thumbnail path.
     $use_default_img = $element['#item']['data']['use_default_video_thumb'];
-    if ($use_default_img) {
-      $thumbnail->filepath = $field['widget']['default_video_thumb'];
+    if ($use_default_img && !empty($field['widget']['default_video_thumb']['filepath'])) {
+      $thumbnail->filepath = $field['widget']['default_video_thumb']['filepath'];
     }
     elseif ($element['#item']['data']['video_thumb']) {
       $thumbnail->filepath = $element['#item']['data']['video_thumb'];
