@@ -143,7 +143,7 @@ function video_theme() {
   //We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
   //calling our flv template file.
   $theme['video_flv'] = array(
-    'arguments' => array('element' => NULL),
+    'arguments' => array('video' => NULL, 'node' => NULL),
     'file' => 'video_formatter.inc'
   );
   
