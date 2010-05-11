@@ -218,6 +218,22 @@ function video_cron() {
   }
 }
 
+function video_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    $form['buttons']['submit']['#submit'][] = 'video_node_update_submit';
+  }
+}
+
+function video_node_update_submit($form, &$form_state) {
+  //lets update our video rending table to include the node id created
+  if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
+    foreach($form_state['values']['video_id'] as $fid) {
+      //lets update our table to include the nid
+      db_query("UPDATE {video_rendering} SET pid=%d WHERE fid=%d", $form_state['nid'], $fid);
+    }
+  }
+}
+
 /*
  * Utility function that will add a preview of thumbnails for you to select when uploading videos.
  */
@@ -307,6 +323,8 @@ function video_convert_process(&$element) {
     }
     elseif ($convert) {
       drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for display.'));
+      //lets set que our node status to unpublished.
+      $element['#unpublish'] = true;
     }
   }
 }

@@ -35,7 +35,7 @@ class video_conversion {
   private function select_queue() {
     $total_jobs = variable_get('video_ffmpeg_instances', 5);
     $jobs = array();
-    $result = db_query_range('SELECT f.* FROM {video_rendering} vr LEFT JOIN {files} f ON vr.fid = f.fid WHERE vr.status = %d AND f.status = %d ORDER BY f.timestamp',
+    $result = db_query_range('SELECT f.*, vr.pid FROM {video_rendering} vr LEFT JOIN {files} f ON vr.fid = f.fid WHERE vr.status = %d AND f.status = %d ORDER BY f.timestamp',
     VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_jobs);
 
     while ($row = db_fetch_object($result)) {
@@ -91,6 +91,12 @@ class video_conversion {
         drupal_write_record('files', $job);
         // Update our status to completed for the original file id we overwrote with the converted video
         $this->change_status($file->fid, VIDEO_RENDERING_COMPLETE);
+        // Update our node to published once converted.
+        if ($job->pid) {
+          $node = node_load($job->pid);
+          $node->status = 1;
+          node_save($node);
+        }
         // Why are we clearing cache?
         cache_clear_all('*', 'cache_content', true);
         watchdog('video_conversion', 'Successfully converted %orig to %dest', array('%orig' => $job->filepath, '%dest' => $file->filepath), WATCHDOG_INFO);
@@ -139,7 +145,7 @@ class video_conversion {
    *   Integer of the file id to be loaded.
    */
   public function load_video($fid) {
-    $result = db_query('SELECT f.* FROM {video_rendering} vr LEFT JOIN {files} f ON vr.fid = f.fid WHERE f.fid=vr.fid AND f.fid = %d', $fid);
+    $result = db_query('SELECT f.*, vr.pid FROM {video_rendering} vr LEFT JOIN {files} f ON vr.fid = f.fid WHERE f.fid=vr.fid AND f.fid = %d', $fid);
     return db_fetch_object($result);
   }
 

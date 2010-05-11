@@ -255,6 +255,13 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
         // Auto convert our video file
         if($field['widget']['autoconversion']) {
           video_convert_process($element);
+          //lets set our node status to unpublished if our video is not converted.
+          if ($element['#unpublish']) {
+            //unpublish the node
+            $form_state['values']['status'] = 0;
+            //que up the file id to update the node id in the video rendering table.
+            $form_state['values']['video_id'][] = $item['fid'];
+          }
         }
         break;
       case 'node_form_build_preview':
@@ -264,7 +271,6 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
         break;
     }
   }
-  //print_r($element);
   return $element;
 }
 
@@ -291,8 +297,8 @@ function videoftp_save_upload($element) {
 
   //lets move our file from the ftp folder to the files directory
   if(file_copy($file)) { //@todo add file_move after we finish testing.
-  // Insert new record to the database.
-  drupal_write_record('files', $file);
+    // Insert new record to the database.
+    drupal_write_record('files', $file);
   }
   _field_file_cache($file); // cache the file in order to minimize load queries
   return $file->fid;

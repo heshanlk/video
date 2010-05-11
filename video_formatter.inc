@@ -11,6 +11,9 @@
  * If not or the video is processed, then it will get the default player for the specific video type for output.
  */
 function theme_video_formatter_video_plain($element) {
+  //@todo, move this to a global function to be called from each theme function, or have a way to call this when needed.
+  //maybe a preprocess function?
+  module_load_include('inc', 'video', '/includes/conversion');
   if (empty($element['#item']['fid'])) return '';
   $result = db_query('SELECT vr.status FROM {video_rendering} vr INNER JOIN {files} f ON vr.fid = f.fid WHERE vr.fid = f.fid AND f.status = %d AND f.fid = %d', FILE_STATUS_PERMANENT, $element['#item']['fid']);
   $status = db_fetch_object($result);

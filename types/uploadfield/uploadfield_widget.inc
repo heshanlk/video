@@ -86,7 +86,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     video_widget_element_settings($element);
   }
   
-  // Create our thumbnails
+  // Create our thumbnails  
   if($field['widget']['autothumbnail']) {
     video_thumb_process($element);
   }
@@ -98,6 +98,10 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
         // Auto convert our video file
         if($field['widget']['autoconversion']) {
           video_convert_process($element);
+          //lets set our node status to unpublished if our video is not converted.
+          if ($element['#unpublish']) {
+            $form_state['values']['status'] = 0;
+          }
         }
         break;
       case 'node_form_build_preview':
