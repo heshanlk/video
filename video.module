@@ -19,6 +19,7 @@ function video_init() {
  */
 
 function video_perm() {
+  return array('bypass conversion video', 'convert on submission', 'override player width', 'use default thumb');
 }
 
 /**
@@ -389,21 +390,27 @@ function video_widget_element_settings(&$element) {
       $element['data']['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
-        '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : FALSE,
+        '#default_value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
         '#description' => t('This will bypass your auto conversion of videos.'),
         '#attributes' => array('class' => 'video-bypass-auto-conversion'),
       );
-      $element['data']['convert_video_on_save'] = array(
-       '#type' => 'checkbox',
-       '#title' => t('Convert video on save'),
-       '#default_value' => !empty($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : FALSE,
-       '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
-       '#attributes' => array('class' => 'video-convert-video-on-save'),
-      );
+    }
+
+    $convert_on_submission = user_access('convert on submission');
+    $element['data']['convert_video_on_save'] = array(
+     '#type' => $convert_on_submission ? 'checkbox' : 'value',
+     '#title' => t('Convert video on save'),
+     '#default_value' => !empty($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE),
+     '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
+     '#attributes' => array('class' => 'video-convert-video-on-save'),
+    );
+
+    $use_default_thumb = user_access('use default thumb');
+    if ($use_default_thumb) {
       $element['data']['use_default_video_thumb'] = array(
-       '#type' => 'checkbox',
+       '#type' => $use_default_thumb ? 'checkbox' : 'value',
        '#title' => t('Use the default thumbnail for this video?'),
-       '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : FALSE,
+       '#default_value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE),
        '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
        '#attributes' => array('class' => 'video-use-default-video-thumb'),
       );

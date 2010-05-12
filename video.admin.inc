@@ -37,6 +37,24 @@ function video_general_admin_settings() {
       '#default_value' => variable_get('video_autobuffering', TRUE),
       '#description' => t('Start buffering video when the page and video loads')
   );
+  $form['video_bypass_conversion'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Bypass Video Converion'),
+      '#default_value' => variable_get('video_bypass_conversion', FALSE),
+      '#description' => t('Bypass video converion when crating videos.')
+  );
+  $form['video_convert_on_save'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Video Convert on Node Submit'),
+      '#default_value' => variable_get('video_convert_on_save', FALSE),
+      '#description' => t('Convert videos on node submit.')
+  );
+  $form['video_use_default_thumb'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Override Auto Thumbnails with Default'),
+      '#default_value' => variable_get('video_use_default_thumb', FALSE),
+      '#description' => t('Override auto thumbnails with default thumbnail.')
+  );
   return system_settings_form($form);
 }
 
