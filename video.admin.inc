@@ -39,7 +39,7 @@ function video_general_admin_settings() {
   );
   $form['video_bypass_conversion'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Bypass Video Converion'),
+      '#title' => t('Bypass Video Conversion'),
       '#default_value' => variable_get('video_bypass_conversion', FALSE),
       '#description' => t('Bypass video conversion when creating videos.')
   );
