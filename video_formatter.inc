@@ -108,7 +108,7 @@ function theme_video_formatter_video_media_js($element) {
   $video_helper = new video_helper;
   $video = $video_helper->video_object($element);
   //lets output the link to be overtaken by jmedia
-  $link = l($video->filename, $video->filename, array('attributes' => array('class' => 'jmedia {width: '. $video->width .', height: '. $video->height .', autoplay: '. $video->autoplay .'}')));
+  $link = l($video->filename, $video->url, array('attributes' => array('class' => 'jmedia {width: '. $video->width .', height: '. $video->height .', autoplay: '. $video->autoplay .'}')));
   return $link;
 }
 
@@ -134,7 +134,7 @@ function theme_video_flv($video, $node) {
         'height' => $video->height,
       ),
       'othervars' => array(
-        'image' => $video->thumbnail->swfthumb,
+        //'image' => $video->thumbnail->swfthumb,
       ),
     );
     $themed_output = swf($video->url, $options);

@@ -30,20 +30,6 @@ function uploadfield_widget_settings_validate($widget) {
   if(!video_web_extensions($widget['file_extensions'])) {
     form_set_error('file_extensions', t('Only web-standard videos are supported through the videoftp widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
   }
-
-  // Check that set video resolutions are valid.
-  foreach (array('default_width') as $numerics) {
-    if (!empty($widget[$numerics]) && !preg_match('/^[0-9]+$/', $widget[$numerics])) {
-      form_set_error($numerics, t('Please specify default width in integers only (e.g. 640).'));
-    }
-  }
-
-  // Check that set resolutions are valid.
-  foreach (array('default_resolution') as $resolution) {
-    if (!empty($widget[$resolution]) && !preg_match('/^[0-9]+:[0-9]+$/', $widget[$resolution])) {
-      form_set_error($resolution, t('Please specify a resolution in the format WIDTH:HEIGHT (e.g. 16:9).'));
-    }
-  }
 }
 
 /**
@@ -51,7 +37,7 @@ function uploadfield_widget_settings_validate($widget) {
  */
 function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
-  return array_merge($filefield_settings, array('default_video_thumb', 'default_width', 'default_resolution', 'autoconversion', 'autothumbnail'));
+  return array_merge($filefield_settings, array('default_video_thumb', 'default_dimensions', 'autoconversion', 'autothumbnail'));
 }
 
 /**

@@ -19,7 +19,7 @@ function video_init() {
  */
 
 function video_perm() {
-  return array('bypass conversion video', 'convert on submission', 'override player width', 'use default thumb');
+  return array('bypass conversion video', 'convert on submission', 'override player dimensions', 'use default thumb');
 }
 
 /**
@@ -373,17 +373,14 @@ function video_widget_element_settings(&$element) {
   $file = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Check if using the default width and replace tokens.
-  $default_width = user_access('override player width');
-  $element['data']['width'] = array(
-      '#type' => $default_width ? 'textfield' : 'value',
-      '#title' => t('Width for Player'),
-      '#value' => !isset($file['data']['width']) || empty($file['data']['width']) ? $field['widget']['default_width'] : $file['data']['width'],
+  $default_dimensions = user_access('override player dimensions');
+  $element['data']['dimensions'] = array(
+      '#type' => $default_dimensions ? 'select' : 'value',
+      '#title' => t('Dimensions for Player'),
+      '#value' => !isset($file['data']['dimensions']) || empty($file['data']['dimensions']) ? $field['widget']['default_dimensions'] : $file['data']['dimensions'],
       '#description' => t('Set player width(in px) here, make sure your video has good resolution to fit on larger values.'),
-      '#size' => 15,
-      '#maxlength' => 5,
-      '#attributes' => array('class' => 'video-width-text'),
+      '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
   );
-
   // only in preview mode and then create thumbnails
   if($field['widget']['autoconversion']) {
     if (user_access('bypass conversion video')) {
@@ -395,7 +392,6 @@ function video_widget_element_settings(&$element) {
         '#attributes' => array('class' => 'video-bypass-auto-conversion'),
       );
     }
-
     $convert_on_submission = user_access('convert on submission');
     $element['data']['convert_video_on_save'] = array(
      '#type' => $convert_on_submission ? 'checkbox' : 'value',
@@ -404,7 +400,6 @@ function video_widget_element_settings(&$element) {
      '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
      '#attributes' => array('class' => 'video-convert-video-on-save'),
     );
-
     $use_default_thumb = user_access('use default thumb');
     if ($use_default_thumb) {
       $element['data']['use_default_video_thumb'] = array(
@@ -418,6 +413,9 @@ function video_widget_element_settings(&$element) {
   }
 }
 
+/*
+ * Return our list of video extensions and their associated player.
+ */
 function video_video_extensions() {
   $extensions = array(
     'divx' => 'video_play_divx',
@@ -442,6 +440,9 @@ function video_video_extensions() {
   return $extensions;
 }
 
+/*
+ * Return our supported video players.
+ */
 function video_video_players() {
   $players = array(
     'video_play_divx' => t('Divx Player'),
@@ -456,6 +457,9 @@ function video_video_players() {
   return $players;
 }
 
+/*
+ * Return our possible flash players.
+ */
 function video_video_flv_players() {
   $options = array();
   if(module_exists('swftools')) {
@@ -510,21 +514,12 @@ function video_default_widget_settings($widget) {
     '#collapsed' => FALSE,
     '#weight' => 10
   );
-  $form['plugins']['default_resolution'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Default Video Resolution'),
-    '#default_value' => !empty($widget['default_resolution']) ? $widget['default_resolution'] : '16:9',
-    '#size' => 15,
-    '#maxlength' => 5,
-    '#description' => t('Default player resolution WIDTH:HEIGHT in px. eg : 16:9 for widescreen or 4:3 for general screen'),
-  );
-  $form['plugins']['default_width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Default Video Player Width'),
-    '#default_value' => !empty($widget['default_width']) ? $widget['default_width'] : 640,
-    '#size' => 15,
-    '#maxlength' => 5,
-    '#description' => t('Default player WIDTH:HEIGHT in px. eg : 640 for 640X480 player size if resolution it 4:3'),
+  $form['plugins']['default_dimensions'] = array(
+    '#type' => 'select',
+    '#title' => t('Default Video Player Dimensions'),
+    '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : 640,
+    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
+    '#description' => t('Default player WIDTHxHEIGHT in px.'),
   );
   $form['plugins']['autoconversion'] = array(
     '#type' => 'checkbox',
@@ -547,6 +542,7 @@ function video_default_widget_settings($widget) {
       '#collapsed' => FALSE,
       '#weight' => 10
   );
+  // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
   // Present a video image of the current default image.
   if (!empty($widget['default_video_thumb'])) {
     $form['default']['default_video_thumbnail'] = array(
@@ -604,4 +600,23 @@ function video_default_widget_settings_validate($element, &$form_state) {
   file_set_status($file, FILE_STATUS_PERMANENT);
   $file->timestamp = time();
   $form_state['values']['default_video_thumb'] = (array)$file;
+}
+
+/*
+ * #options helper function to set our key=value for the form api.
+ */
+function video_explode($delimeter, $dimensions) {
+  $options = array();
+  $values = explode($delimeter, $dimensions);
+  foreach($values as $value) {
+    $options[$value] = $value;
+  }
+  return $options;
+}
+
+/*
+ * Default video dimensions.
+ */
+function video_default_dimensions() {
+  return "1280x720\n800x600\n640x480";
 }

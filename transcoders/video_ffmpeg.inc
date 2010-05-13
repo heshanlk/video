@@ -33,8 +33,10 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function run_command($options) {
+    $command = $this->nice .' '. $this->params['cmd_path'].' '.$options.'  2>&1';
+    watchdog('video_ffmpeg', 'Executing command: '. $command, array(), WATCHDOG_DEBUG);
     ob_start();
-    passthru($this->nice .' '. $this->params['cmd_path'].' '.$options.'  2>&1', $command_return);
+    passthru($command, $command_return);
     $output = ob_get_contents();
     ob_end_clean();
     return $output;
@@ -63,10 +65,11 @@ class video_ffmpeg implements transcoder_interface {
     $videofile = escapeshellarg($video['filepath']);
     //get the playtime from the current transcoder
     $duration = $this->get_playtime($video);
+    $dimensions = $this->get_dimensions($video);
 
     $files = NULL;
     for($i = 1; $i <= $total_thumbs; $i++) {
-      $seek = ($duration/$total_thumbs) * $i;
+      $seek = ($duration/$total_thumbs) * $i -1;  //adding minus one to prevent seek times equaling the last second of the video
       $filename = "/video-thumb-for-$fid-$i.jpg";
       $thumbfile = $final_thumb_path . $filename;
       //skip files already exists, this will save ffmpeg traffic
@@ -161,6 +164,23 @@ class video_ffmpeg implements transcoder_interface {
     $minutes = $hmsmm[1];
     return $seconds + ($hours * 3600) + ($minutes * 60);
   }
+  
+  /*
+   * Return the dimensions of a video
+   */
+  public function get_dimensions($video) {  
+    $ffmpeg_output = $this->get_video_info($video);
+    $res = array('width' => 0,'height' => 0);
+    // Get dimensions
+    $regex = ereg ('[0-9]?[0-9][0-9][0-9]x[0-9][0-9][0-9][0-9]?', $ffmpeg_output, $regs );
+    if(isset($regs[0])) {
+      $dimensions = explode("x", $regs[0]);
+      $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
+      $res['height'] = $dimensions[1] ? $dimensions[1] : NULL;
+
+    }
+    return $res;
+  } 
 
   /**
    * Interface Implementations

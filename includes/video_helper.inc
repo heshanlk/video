@@ -10,6 +10,14 @@ class video_helper {
 
   public function video_object($element) {
     $field = content_fields($element['#field_name'], $element['#type_name']);
+    //setup our width x height
+    $dimensions = explode("x", $element['#item']['data']['dimensions']);
+    if(!isset($dimensions[0]) || !isset($dimensions[1])) {
+      $dimensions = explode("x", $field['widget']['default_dimensions']);
+      if(!isset($dimensions[0]) || !isset($dimensions[1])) {
+        drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions if the form of WxH.', 'error'));
+      }  
+    }
     //setup our resolution and fix our height.
     $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
     $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
@@ -20,8 +28,8 @@ class video_helper {
     $video->filepath = $element['#item']['filepath'];
     $video->url = file_create_url($element['#item']['filepath']);
     $video->extension = $file['extension'];
-    $video->width = isset($element['#item']['data']['width']) && !empty($element['#item']['data']['width']) ? $element['#item']['data']['width'] : '350';
-    $video->height = isset($element['#item']['data']['height']) && !empty($element['#item']['data']['height']) ? $element['#item']['data']['height'] : '285';
+    $video->width = $dimensions[0];
+    $video->height = $dimensions[1];
     $video->thumbnail = $this->thumbnail_object($element);
     $video->formatter = $element['#formatter'];
     $video->autoplay = variable_get('video_autoplay', TRUE);

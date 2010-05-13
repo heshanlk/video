@@ -8,7 +8,9 @@
 
 module_load_include('inc', 'videoftp', 'videoftp_widget');
 
-  
+/*
+ * Implementation of hook_menu().
+ */
 function videoftp_menu() {
   $items = array();
   $items['videoftp/ahah/%/%/%'] = array(
