@@ -26,14 +26,15 @@ class video_transcoder {
     return $this->transcoder->generate_thumbnails($video);
   }
 
-  public function convert_video(&$job) {
-    $this->transcoder->convert_video($job);
+  public function convert_video($video, $converted) {
+    $output = $this->transcoder->convert_video($video, $converted);
     // If they are using metadata.
     if (variable_get('video_metadata', FALSE)) {
       module_load_include('inc', 'video', '/includes/metadata');
       $metadata = new video_metadata;
-      $metadata->process($job->converted->filepath);
+      $metadata->process($converted);
     }
+    return $output;
   }
 
   public function admin_settings() {
@@ -79,7 +80,7 @@ class video_transcoder {
 interface transcoder_interface {
   public function run_command($command);
   public function generate_thumbnails($video);
-  public function convert_video(&$job);
+  public function convert_video($video, $converted);
   public function get_playtime($video);
   public function get_name();
   public function get_value();

@@ -18,24 +18,32 @@ class video_helper {
         drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions if the form of WxH.', 'error'));
       }  
     }
-    //setup our resolution and fix our height.
-    $resolution = array_filter(explode(':', $field['widget']['default_resolution']));
-    $element['#item']['data']['height'] = $element['#item']['data']['width'] * ($resolution[1]/$resolution[0]);
-    //get our extension
-    $file = pathinfo($element['#item']['filename']);
     // Build our video object for all types.
     $video = new stdClass();
+    $video->original = $element['#item'];
     $video->filepath = $element['#item']['filepath'];
     $video->url = file_create_url($element['#item']['filepath']);
-    $video->extension = $file['extension'];
+    $video->extension = pathinfo($element['#item']['filename'], PATHINFO_EXTENSION);
     $video->width = $dimensions[0];
     $video->height = $dimensions[1];
     $video->thumbnail = $this->thumbnail_object($element);
     $video->formatter = $element['#formatter'];
     $video->autoplay = variable_get('video_autoplay', TRUE);
     $video->autobuffering = variable_get('video_autobuffering', TRUE);
-    $video->flash_player = variable_get('video_extension_'.$file['extension'].'_flash_player', '');
+    $video->flash_player = variable_get('video_extension_'.$video->extension.'_flash_player', '');
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
+    
+    //lets find out if we are overriding this video with a converted one.
+    if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
+      module_load_include('inc', 'video', '/includes/conversion');
+      $conversion = new video_conversion;
+      $converted = $conversion->load_converted_video($element['#item']['fid']);
+      $video->filepath = $converted->filepath;
+      $video->url = file_create_url($converted->filepath);
+      $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+      $video->flash_player = variable_get('video_extension_'.$video->extension.'_flash_player', '');
+    }
+    
     // Return our object
     return $video;
   }

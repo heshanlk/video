@@ -13,25 +13,62 @@
  * Implementation of hook_schema().
  */
 function video_schema() {
-  $schema['video_rendering'] = array(
+  $schema['video_files'] = array(
     'description' => t('Store video transcoding queue'),
     'fields' => array(
+  	  'vid' => array(
+        'description' => t('Video id'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
       'fid' => array(
-        'description' => t('original file id'),
+        'description' => t('Original file id'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-      'pid' => array(
-        'description' => t('Process ID'),
+      'nid' => array(
+        'description' => t('Node id'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
+      ),
+	  'filename' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filename of the video.'),
+      ),
+	  'filepath' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filepath of the video.'),
+      ),
+	  'filemime' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filemime of the video.'),
+      ),
+      'filesize' => array(
+        'description' => t('Filesize of the video.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'dimensions' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The dimensions of the video.'),
       ),
       'status' => array(
-        'description' => t('status of the transcoding'),
+        'description' => t('Status of the transcoding'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -49,16 +86,12 @@ function video_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'serialized_data' => array(
-        'description' => t('Informations related to the videos'),
-        'type' => 'text',
-        'not null' => FALSE,
-      ),
     ),
     'indexes' => array(
       'status' => array('status'),
+      'file' => array('fid'),
     ),
-    'primary key' => array('fid'),
+    'primary key' => array('vid'),
   );
   return $schema;
 }
@@ -79,12 +112,15 @@ function video_uninstall() {
 }
 
 /**
- * Update 6001
- * adding new field to keep transcoder type zencoder
+ * Update 6400
+ * dropping video_rendering table and creating video_files
  * @return <type>
  */
-function video_update_6000() {
+function video_update_6405() {
   $ret = array();
-  $ret[] = update_sql("ALTER TABLE {video_rendering} ADD transcoder VARCHAR( 240 ) NOT NULL");
+  $ret[] = update_sql("DROP TABLE IF EXISTS {video_rendering}");
+  $ret[] = update_sql("DROP TABLE IF EXISTS {video_files}");
+  $table = video_schema();
+  db_create_table(&$ret, 'video_files', $table['video_files']);
   return $ret;
 }

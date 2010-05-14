@@ -230,7 +230,7 @@ function video_node_update_submit($form, &$form_state) {
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
     foreach($form_state['values']['video_id'] as $fid) {
       //lets update our table to include the nid
-      db_query("UPDATE {video_rendering} SET pid=%d WHERE fid=%d", $form_state['nid'], $fid);
+      db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
     }
   }
 }
@@ -267,7 +267,7 @@ function video_thumb_process(&$element) {
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (!empty($file['data']['video_thumb'])) {
+    if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
       $large_thumb = array('filepath' => $file['data']['video_thumb']);
     }
     elseif (!empty($field['widget']['default_video_thumb'])) {
@@ -301,31 +301,37 @@ function video_convert_process(&$element) {
     $video_conversion = new video_conversion;
     // Is this is an update?
     $old_fid = $element['#default_value']['fid'];
-    $serialized_data['old_file'] = $old_fid;
     if ($old_fid != $fid) {
-      db_query('DELETE FROM {video_rendering} WHERE fid = %d', $old_fid);
+      db_query("DELETE FROM {video_files} WHERE fid = %d", $old_fid);
     }
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
     if(!$video = $video_conversion->load_video($fid)) {
-      // Video has not been added to the que yet so lets add it.
-      db_query('INSERT INTO {video_rendering} (fid, pid, status, started, completed, serialized_data) VALUES (%d, %d, %d, %d, %d, \'%s\')', $fid, 0, VIDEO_RENDERING_PENDING, 0, 0, serialize($serialized_data));
+      // Video has not been added to the queue yet so lets add it.
+      db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $fid, VIDEO_RENDERING_PENDING, $file['data']['dimensions']);
       $convert = true;
+      //lets queue our node status to unpublished.
+      $element['#unpublish'] = true;
+    }
+    elseif($video->video_status != VIDEO_RENDERING_COMPLETE) {
+      //lets queue our node status to unpublished.
+      $element['#unpublish'] = true;
     }
 
     // Our video should be in the database pending, lets see if we need to convert it now.
     // Check if we are going from unselected to selected or if this is a new video and we have checked the checkbox
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save']) && $file['data']['convert_video_on_save']) || ($convert && $file['data']['convert_video_on_save'])) {
-      if (!$video_conversion->process($fid)) {
+      $return = $video_conversion->process($fid);
+      if ($return === FALSE) {
         drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
       }
-      else {
+      elseif($return === TRUE) {
+        //we are always unpublished until we are converted.
+        unset($element['#unpublish']);
         drupal_set_message(t('Successfully converted your video.'));
       }
     }
     elseif ($convert) {
       drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for display.'));
-      //lets set que our node status to unpublished.
-      $element['#unpublish'] = true;
     }
   }
 }
@@ -334,7 +340,19 @@ function video_convert_process(&$element) {
  * Implementation of hook_file_delete().
  */
 function video_file_delete($file) {
-  db_query('DELETE FROM {video_rendering} WHERE fid = %d', $file->fid);
+  //lets get all our videos and unlink them
+  $sql = db_query("SELECT filepath FROM {video_files} WHERE fid=%d", $file->fid);
+  //we loop here as future development will include multiple video types (HTML 5)
+  while($row = db_fetch_object($sql)) {
+    if(file_exists($row->filepath)) unlink($row->filepath);
+  }
+  //now delete our rows.
+  db_query('DELETE FROM {video_files} WHERE fid = %d', $file->fid);
+  //now lets delete our video thumbnails and folder.
+  $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+  $thumb_folder = file_directory_path(). '/' . $video_thumb_path . '/' . $file->fid;
+  // Recursively delete our folder and files
+  rmdirr($thumb_folder);
 }
 
 /**
@@ -387,7 +405,7 @@ function video_widget_element_settings(&$element) {
       $element['data']['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
-        '#value' => !empty($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
+        '#default_value' => isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
         '#description' => t('This will bypass your auto conversion of videos.'),
         '#attributes' => array('class' => 'video-bypass-auto-conversion'),
       );
@@ -396,7 +414,7 @@ function video_widget_element_settings(&$element) {
     $element['data']['convert_video_on_save'] = array(
      '#type' => $convert_on_submission ? 'checkbox' : 'value',
      '#title' => t('Convert video on save'),
-     '#value' => !empty($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE),
+     '#default_value' => isset($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE),
      '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
      '#attributes' => array('class' => 'video-convert-video-on-save'),
     );
@@ -405,7 +423,7 @@ function video_widget_element_settings(&$element) {
       $element['data']['use_default_video_thumb'] = array(
        '#type' => $use_default_thumb ? 'checkbox' : 'value',
        '#title' => t('Use the default thumbnail for this video?'),
-       '#value' => !empty($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE),
+       '#default_value' => isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE),
        '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
        '#attributes' => array('class' => 'video-use-default-video-thumb'),
       );
@@ -475,26 +493,15 @@ function video_video_flv_players() {
  * Get the object for the suitable player for the parameter resource
  */
 function video_get_player($element) {
-  // Get extension of the video file so we know how to output it.
-  $file = pathinfo($element['#item']['filename']);
-  $op = $file['extension'];
-  
-  // Lets spit out our theme based on the extension
-  $defaults = video_video_extensions();
-  $theme_function = variable_get('video_extension_'.$op, $defaults[$op]);
-  
   // Setup our node object to be passed along with the player.
-  $node = $element['#node'];
-  
-  //setup our video object
+  $node = $element['#node'];  
+  // Setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
   $video = $video_helper->video_object($element);
-  
-  //@todo Each player/object output potentially has different heights.  How are we going to handle that?
-  //players tab maybe?  Then add our height in?
-  //$video->height += player_tab_height()?
-  
+  // Lets spit out our theme based on the extension
+  $defaults = video_video_extensions();
+  $theme_function = variable_get('video_extension_'. $video->extension, $defaults[$video->extension]);
   // Lets do some special handling for our flv files to accomdate multiple players.
   if($theme_function == 'video_play_flv') {
     return theme('video_flv', $video, $node);
@@ -511,7 +518,7 @@ function video_default_widget_settings($widget) {
     '#type' => 'fieldset',
     '#title' => t('Video Advanced Settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
     '#weight' => 10
   );
   $form['plugins']['default_dimensions'] = array(
@@ -539,7 +546,7 @@ function video_default_widget_settings($widget) {
       '#title' => t('Video Thumbnail Settings'),
       '#element_validate' => array('video_default_widget_settings_validate'),
       '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
+      '#collapsed' => TRUE,
       '#weight' => 10
   );
   // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
@@ -602,6 +609,11 @@ function video_default_widget_settings_validate($element, &$form_state) {
   $form_state['values']['default_video_thumb'] = (array)$file;
 }
 
+function video_widget_settings_file_path_validate($element, &$form_state) {
+  //lets prepend our video folder to the path settings.  first truncate videos/ off the end if it exists.
+  $form_state['values']['file_path'] = 'videos/'. $form_state['values']['file_path'];
+}
+
 /*
  * #options helper function to set our key=value for the form api.
  */
@@ -619,4 +631,16 @@ function video_explode($delimeter, $dimensions) {
  */
 function video_default_dimensions() {
   return "1280x720\n800x600\n640x480";
+}
+
+/*
+ * Utility function to remove all files and directories recursively.
+ */
+function rmdirr($dir) {
+  if($objs = glob($dir."/*")){
+    foreach($objs as $obj) {
+      is_dir($obj)? rmdirr($obj) : unlink($obj);
+    }
+  }
+  rmdir($dir);
 }

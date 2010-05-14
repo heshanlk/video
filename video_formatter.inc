@@ -11,21 +11,22 @@
  * If not or the video is processed, then it will get the default player for the specific video type for output.
  */
 function theme_video_formatter_video_plain($element) {
-  //@todo, move this to a global function to be called from each theme function, or have a way to call this when needed.
-  //maybe a preprocess function?
-  module_load_include('inc', 'video', '/includes/conversion');
   if (empty($element['#item']['fid'])) return '';
-  $result = db_query('SELECT vr.status FROM {video_rendering} vr INNER JOIN {files} f ON vr.fid = f.fid WHERE vr.fid = f.fid AND f.status = %d AND f.fid = %d', FILE_STATUS_PERMANENT, $element['#item']['fid']);
-  $status = db_fetch_object($result);
-  if($status->status == VIDEO_RENDERING_ACTIVE || $status->status == VIDEO_RENDERING_PENDING) {
-    return theme('video_inprogress');
+  // Get our field information to determine if we are checking conversion
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  // Only needs to be ran if they are converting videos
+  if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
+    module_load_include('inc', 'video', '/includes/conversion');
+    $conversion = new video_conversion;
+    $video = $conversion->load_video($element['#item']['fid']);
+    if($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
+      return theme('video_inprogress');
+    }
+    else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+      return theme('video_encoding_failed');
+    }
   }
-  else if ($status->status == VIDEO_RENDERING_FAILED) {
-    return theme('video_encoding_failed');
-  }
-  else {
-    return video_get_player($element);
-  }
+  return video_get_player($element);
 }
 
 /*
@@ -48,7 +49,7 @@ function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
 /*
  * Renders the video thumbnail linked to the absolute filepath of the video.  Colorbox is introduced to handle
  * the video in an overlay.
- * 
+ *
  * @todo Very unstable, need better methods of integration.  Seems hackish right now to find out what flv player is being
  * used.  We are also using jmedia for all other filetypes.
  */
@@ -58,15 +59,15 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
     drupal_set_message(t('You must download and enable !colorbox for this formatter.', array('!colorbox' => l(t('Colorbox'), 'http://www.drupal.org/project/colorbox'))), 'error');
     return theme('video_formatter_video_nodelink', $element);
   }
-  
+
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) return '';
-  
+
   //load up our media plugins
   drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
   drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
   drupal_add_js(drupal_get_path('module', 'video') .'/js/flowplayer-3.2.0.min.js');
-  
+
   //setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
@@ -86,7 +87,7 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
     'autobuffer' => $video->autobuffering,
     'player' => $player,
   ));
-  drupal_add_js($settings, 'setting');  
+  drupal_add_js($settings, 'setting');
   $image = theme('video_image', $video->thumbnail, $video->thumbnail->alt, $video->thumbnail->title, '', TRUE, $imagecache);
   $class = 'video-box video-'. $element['#field_name'] .'{width:\''.$video->width.'px\', height:\''.$video->height.'px\', player:\''.$player.'\'}';
   return l($image, $video->url, array('attributes' => array('class' => $class), 'html' => TRUE));
@@ -94,10 +95,10 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
 
 /*
  * We are using the jMedia library to output our video files.
- * 
+ *
  * @todo Does not work with flv files as this requires an actual flv player.  Need to figure out how to best integrate the player
  * into this function.
- * 
+ *
  * We are outputing an anchor to the videofile.  The jMedia functions will overtake this anchor and setup our object/embed tags.
  */
 function theme_video_formatter_video_media_js($element) {
@@ -132,9 +133,10 @@ function theme_video_flv($video, $node) {
       'params' => array(
         'width' => $video->width,
         'height' => $video->height,
-      ),
+    ),
       'othervars' => array(
-        //'image' => $video->thumbnail->swfthumb,
+      //@todo: swftools bug, can't enable this until they fix their pathing for the images.
+      //'image' => $video->thumbnail->swfthumb,
       ),
     );
     $themed_output = swf($video->url, $options);
@@ -165,7 +167,7 @@ function theme_video_formatter_imagecache($element) {
   if (empty($element['#item']['fid'])) {
     return '';
   }
-  
+
   // Extract the preset name from the formatter name.
   list($namespace, $theme_function) = explode('__', $element['#formatter'], 2);
   if ($preset = imagecache_preset_by_name($namespace)) {

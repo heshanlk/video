@@ -80,7 +80,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     return $files;
   }
 
-  public function convert_video(&$job) {
+  public function convert_video($video, $converted) {
     $ffmpeg_object = new stdClass();
     // check configuration are pass of then use global $conf
     if (empty($params)) {
@@ -88,105 +88,58 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       $params = $conf;
     }
 
-    $input_file = getcwd() .'/'. $job->filepath;
     // first error check, make sure that we can decode this kind of file
-    if (!ffmpeg_wrapper_can_decode($input_file)) {
+    if (!ffmpeg_wrapper_can_decode($video->filepath)) {
       $message = 'FFmpeg Wrapper can not decode this file: !file';
-      $variables = array('!file' => l($input_file, file_create_url($input_file)));
+      $variables = array('!file' => l($video->filepath, file_create_url($video->filepath)));
       watchdog('video_render', $message, $variables, WATCHDOG_ERROR);
       return false;
     }
-    // build the output file path if we don't have one. Use the output type as the extension.
-    $output_file = file_create_filename(basename($input_file) .'.'. $params['ffmpeg_output_type'], ($output_file_path ? $output_file_path : dirname($input_file)));
 
     // did the admin define a specific FFmpeg comand to run?
     //  we only run what the admin specified
     if ($params['ffmpeg_video_custom']) {
-      $options[] = str_replace(array('%in_file', '%out_file'), array($input_file, $output_file), $params['ffmpeg_video_custom_command']);
+      $options[] = str_replace(array('%in_file', '%out_file'), array($video->filepath, $converted), $params['ffmpeg_video_custom_command']);
     }
     // build a standard configuration
     else {
       // build the ffmpeg command structure out
       $options = array();
       // input file
-      $options[] = "-i '". $input_file ."'";
+      $options[] = "-i '". $video->filepath ."'";
       // build the watermark config
-      if ($params['ffmpeg_video_wm']) {
-        $options[] = "-vhook '". ffmpeg_wrapper_path_to_vhook('watermark.so') ." -f ". $params['ffmpeg_video_wm_file'] ."'";
-      }
+      if ($params['ffmpeg_video_wm']) $options[] = "-vhook '". ffmpeg_wrapper_path_to_vhook('watermark.so') ." -f ". $params['ffmpeg_video_wm_file'] ."'";
       // build the audio config
       if ($params['ffmpeg_audio_advanced']) {
         // use a specifc codec?
-        if ($params['ffmpeg_audio_acodec']) {
-          $options[] =  '-acodec '. $params['ffmpeg_audio_acodec'];
-        }
+        if ($params['ffmpeg_audio_acodec']) $options[] =  '-acodec '. $params['ffmpeg_audio_acodec'];
         // use a specific sample rate?
-        if ($params['ffmpeg_audio_ar'] ) {
-          $options[] = '-ar '. $params['ffmpeg_audio_ar'];
-        }
+        if ($params['ffmpeg_audio_ar']) $options[] = '-ar '. $params['ffmpeg_audio_ar'];
         // use a specific bit rate?
-        if ($params['ffmpeg_audio_ab']) {
-          $options[] = '-ab '. $params['ffmpeg_audio_ab'];
-        }
+        if ($params['ffmpeg_audio_ab']) $options[] = '-ab '. $params['ffmpeg_audio_ab'];
       }
+      
+      //custom sizing per video
+      if ($video->dimensions) $options[] = '-s '. $video->dimensions;
 
       // build the video config
       if ($params['ffmpeg_video_advanced']) {
         // is codec set?
-        if ($params['ffmpeg_video_vcodec']) {
-          $options[] = '-vcodec '. $params['ffmpeg_video_vcodec'];
-        }
-        // is frame size set?
-        if ($params['ffmpeg_video_size']) {
-          $options[] = '-s '. $params[$params['ffmpeg_video_size'] == 'other' ? 'ffmpeg_video_size_other' : 'ffmpeg_video_size'];
-        }
+        if ($params['ffmpeg_video_vcodec']) $options[] = '-vcodec '. $params['ffmpeg_video_vcodec'];
         // is the bit rate set?
-        if ($params['ffmpeg_video_br']) {
-          $options[] = '-b '. $params['ffmpeg_video_br'];
-        }
+        if ($params['ffmpeg_video_br']) $options[] = '-b '. $params['ffmpeg_video_br'];
         // is frame rate set?
-        if ($params['ffmpeg_video_fps']) {
-          $options[] = '-r '. $params['ffmpeg_video_fps'];
-        }
+        if ($params['ffmpeg_video_fps']) $options[] = '-r '. $params['ffmpeg_video_fps'];
       }
       // implement truncating
-      if ($params['ffmpeg_time_advanced']) {
-        $options[] = '-t '. $params['ffmpeg_time'];
-      }
+      if ($params['ffmpeg_time_advanced']) $options[] = '-t '. $params['ffmpeg_time'];
       // add the output file
-      $options[] = "'". $output_file ."'";
+      $options[] = "'". $converted ."'";
     }
     $ffmpeg_object->command = implode(" ", $options);
-
-    // run ffmpeg with error checking
-    if (!$success = $this->run_command($ffmpeg_object->command)) {
-      watchdog('video_conversion', 'video conversion failed. ffmpeg reported the following output: ' . $success);
-      return false;
-    }
-
-    // successful convert, make a note in the log
-    $message = 'FFmpeg converted this file: @file';
-    $message .= '<br />'. 'FFmpeg ran this command: <br /><pre> !command </pre>';
-    $variables = array('@file' => $output_file, '!command' =>  $ffmpeg_object->command);
-    watchdog('video_transcoder', $message, $variables, WATCHDOG_NOTICE);
-
-    $ffmpeg_object->output_file = $output_file;
-
-    if (!file_exists($output_file) || !filesize($output_file)) {
-      watchdog('video_transcoder', 'Video conversion failed. FFmpeg reported the following output: ' . $command_output);
-    }
-    else {
-      $file_name = basename($output_file);
-      $file = new stdClass();
-      $file->uid      = $job->uid;
-      $file->status   = FILE_STATUS_PERMANENT;
-      $file->filename = basename($file_name);
-      $file->filepath = $output_file;
-      $file->filemime = file_get_mimetype($file_name);
-      $file->filesize = filesize($output_file);
-      $file->timestamp = time();
-      $job->converted = $file;
-    }
+    
+    // run our command and return the output.
+    return $this->run_command($ffmpeg_object->command);
   }
    
   /**

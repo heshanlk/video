@@ -19,13 +19,28 @@ function videoftp_widget_settings_form($widget) {
     '#description' => t('Extensions a user can attach to this field.  Separate extensions with a space and do not include the leading dot.  Leaving this blank will allow attachment of a file with any extension.'),
     '#weight' => 1
   );
-  $form['ftp_path'] = array(
+  $form['path_settings'] = array(
+    '#type' => 'fieldset',
+   	'#title' => t('Path settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 2,
+  );
+  $form['path_settings']['file_path'] = array(
+    '#type' => 'textfield',
+    '#size' => 64,
+    '#title' => t('File path'),
+    '#default_value' => ltrim(ltrim($widget['file_path'], "videos"), "/"),
+    '#description' => t('Optional subdirectory within the "<em>files/videos/</em>" directory where files will be moved and stored. Do not include preceding or trailing slashes.'),
+    '#element_validate' => array('video_widget_settings_file_path_validate', '_filefield_widget_settings_file_path_validate'),
+  );  
+  $form['path_settings']['ftp_path'] = array(
     '#type' => 'textfield',
     '#title' => t('FTP Filepath'),
     '#default_value' => !empty($widget['ftp_path']) ? $widget['ftp_path'] : 'ftpvideos',
     '#description' => t('The subdirectory within the "<em>files/</em>" directory where you have upload the videos for attachment.  Once the video is attached it will be moved from this directory to the main files directory.'),
     '#required' => TRUE,
-    '#weight' => 2,
+    '#weight' => 3,
   );
   //default settings
   $default = video_default_widget_settings($widget);
@@ -52,7 +67,7 @@ function videoftp_widget_settings_validate($widget) {
  * Implementation of CCK's hook_widget_settings($op = 'save').
  */
 function videoftp_widget_settings_save($widget) {
-  return array('file_extensions', 'ftp_path', 'autothumbnail','autoconversion', 'default_dimensions', 'default_video_thumb');
+  return array('file_extensions', 'file_path', 'ftp_path', 'autothumbnail','autoconversion', 'default_dimensions', 'default_video_thumb');
 }
 
 /**
@@ -245,9 +260,9 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
           if ($element['#unpublish']) {
             //unpublish the node
             $form_state['values']['status'] = 0;
-            //que up the file id to update the node id in the video rendering table.
-            $form_state['values']['video_id'][] = $item['fid'];
           }
+          //queue up the file id to update the node id in the video rendering table.
+          $form_state['values']['video_id'][] = $item['fid'];
         }
         break;
       case 'node_form_build_preview':
@@ -262,12 +277,20 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
 
 function videoftp_save_upload($element) {
   global $user;
+  $upload_name = $element['#field_name'] .'_'. $element['#delta'];
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $video = $element['#post'][$field['field_name']][$delta]['ftpselect'];
   $ftp_path = file_directory_path().'/'.$field['widget']['ftp_path'];
 
   if (empty($video) || !file_exists($ftp_path.'/'.$video)) {
+    return 0;
+  }
+  
+  $dest = filefield_widget_file_path($field);
+  if (!field_file_check_directory($dest, FILE_CREATE_DIRECTORY)) {
+    watchdog('filefield', 'The upload directory %directory for the file field %field (content type %type) could not be created or is not accessible. A newly uploaded file could not be saved in this directory as a consequence, and the upload was canceled.', array('%directory' => $dest, '%field' => $element['#field_name'], '%type' => $element['#type_name']));
+    form_set_error($upload_name, t('The file could not be uploaded.'));
     return 0;
   }
 
@@ -282,7 +305,7 @@ function videoftp_save_upload($element) {
   $file->timestamp = time();
 
   //lets move our file from the ftp folder to the files directory
-  if(file_copy($file)) { //@todo add file_move after we finish testing.
+  if(file_move($file, $dest)) {
     // Insert new record to the database.
     drupal_write_record('files', $file);
   }

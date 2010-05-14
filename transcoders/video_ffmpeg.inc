@@ -25,7 +25,7 @@ class video_ffmpeg implements transcoder_interface {
   public function __construct() {
     $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
     $this->params['videobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', $this->video_bitrate);
-    $this->params['convertfile'] = tempnam(file_directory_temp(), uniqid('video-rendering'));
+    //@todo: move this to the actual widget and save in video_files table.
     $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
     $this->params['command'] = variable_get('video_ffmpeg_helper_auto_cvr_options', $this->command);
     $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
@@ -101,36 +101,17 @@ class video_ffmpeg implements transcoder_interface {
     return $files;
   }
   
-  public function convert_video(&$job) {
-    //get current directory for absolute filepath
-    $filepath = getcwd() .'/'. $job->filepath;
+  public function convert_video($video, $converted) {
+    // Setup our command to be run.
     $command = t($this->params['command'], array(
-      '!videofile' => escapeshellarg($filepath),
+      '!videofile' => $video->filepath,
       '!audiobitrate' => $this->params['audiobitrate'],
-      '!size' => $this->params['size'],
+      '!size' => $video->dimensions,
       '!videobitrate' => $this->params['videobitrate'],
-      '!convertfile' => $this->params['convertfile']
+      '!convertfile' => $converted
     ));
     //Convert the video with our transcoder.
-    $command_output = $this->run_command($command);
-    //lets check to make sure our file exists, if not error out
-    if(!file_exists($this->params['convertfile']) || !filesize($this->params['convertfile'])) {
-      watchdog('video_transcoder', 'Video conversion failed.  FFMPEG reported the following output: '.$command_output, array(), WATCHDOG_ERROR);
-    }
-    else {
-      $file_name = basename($job->filename . ".flv");
-      //lets build our files object
-      $file = new stdClass();
-      $file->uid      = $job->uid;
-      $file->status   = FILE_STATUS_PERMANENT;
-      $file->filename = basename($file_name);
-      $file->filepath = $this->params['convertfile'];
-      $file->filemime = file_get_mimetype($file_name);
-      $file->filesize = filesize($this->params['convertfile']);
-      $file->timestamp = time();
-      //put our file object into the job object
-      $job->converted = $file;
-    }
+    return $this->run_command($command);
   }
 
   /**
