@@ -141,9 +141,82 @@ class video_conversion {
    *   TRUE or FALSE
    */
   private function convert_video($video, $converted) {
+    //get our dimensions and pass them along.
+    $dimensions = $this->dimensions($video);
     module_load_include('inc', 'video', '/includes/transcoder');
     $transcoder = new video_transcoder;
-    return $transcoder->convert_video($video, $converted);
+    return $transcoder->convert_video($video, $converted, $dimensions);
+  }
+  
+  /*
+   * Function determines the dimensions you want and compares with the actual wxh of the video.
+   * 
+   * If they are not exact or the aspect ratio does not match, we then figure out how much padding
+   * we should add.  We will either add a black bar on the top/bottom or on the left/right.
+   * 
+   * @TODO I need to look more at this function.  I don't really like the guess work here.  Need to implement
+   * a better way to check the end WxH.  Maybe compare the final resolution to our defaults?  I don't think
+   * that just checking to make sure the final number is even is accurate enough.
+   */
+  public function dimensions($video) {
+    //lets setup our dimensions.  Make sure our aspect ratio matches the dimensions to be used, if not lets add black bars.
+    $aspect_ratio = _video_aspect_ratio($video->filepath);
+    $ratio = $aspect_ratio['ratio'];
+    $width = $aspect_ratio ['width'];
+    $height = $aspect_ratio['height'];
+    
+    $wxh = explode('x', $video->dimensions);
+    $output_width = $wxh[0];
+    $output_height = $wxh[1];
+    $output_ratio = number_format($output_width / $output_height, 4);
+    
+    if($output_ratio != $ratio && $width && $height) {
+      $options = array();      
+      // Figure out our black bar padding.
+      if ($ratio < $output_width / $output_height) {
+        $end_width = $output_height * $ratio;
+        $end_height = $output_height;
+      }
+      else {
+        $end_height = $output_width / $ratio;
+        $end_width = $output_width;
+      }
+      
+      // We need to get back to an even resolution and maybe compare with our defaults?
+      // @TODO Make this more exact on actual video dimensions instead of making sure the wxh are even numbers
+      
+      if ($end_width == $output_width) {
+        // We need to pad the top/bottom of the video
+        $padding = round($output_height - $end_height);
+        $pad1 = $pad2 = floor($padding / 2);
+        if ($pad1 %2 !== 0) {
+          $pad1++;
+          $pad2--;
+        }
+        $options[] = '-padtop '. $pad1;
+        $options[] = '-padbottom '. $pad2;
+      }
+      else {
+        // We are padding the left/right of the video.
+        $padding = round($output_width - $end_width);
+        $pad1 = $pad2 = floor($padding / 2);  //@todo does padding need to be an even number?
+        if ($pad1 %2 !== 0) {
+          $pad1++;
+          $pad2--;
+        }
+        $options[] = '-padleft '. $pad1;
+        $options[] = '-padright '. $pad2;
+      }
+      
+      $end_width = round($end_width) %2 !==0 ? round($end_width) + 1 : round($end_width);
+      $end_height = round($end_height) %2 !==0 ? round($end_height) + 1 : round($end_height);
+      //add our size to the beginning to make sure it hits our -s
+      array_unshift($options, $end_width .'x'. $end_height);
+      return implode(' ', $options);
+    }
+    else {
+      return $video->dimensions;
+    }
   }
 
   /**

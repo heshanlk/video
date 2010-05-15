@@ -48,7 +48,47 @@ function uploadfield_widget_settings_save($widget) {
  * Element #value_callback function.
  */
 function uploadfield_widget_value($element, $edit = FALSE) {
-  $item = filefield_widget_value($element, $edit);
+  //copied from filefield_widget_value with one change to reset our data array
+    if (!$edit) {
+    $file = field_file_load($element['#default_value']['fid']);
+    $item = $element['#default_value'];
+  }
+  else {
+    $item = array_merge($element['#default_value'], $edit);
+    $field = content_fields($element['#field_name'], $element['#type_name']);
+
+    // Uploads take priority over value of fid text field.
+    if ($fid = filefield_save_upload($element)) {
+      $item['fid'] = $fid;
+      $item['data'] = array(); //reset our data array for thumbnails and values.
+    }
+    // Check for #filefield_value_callback values.
+    // Because FAPI does not allow multiple #value_callback values like it does
+    // for #element_validate and #process, this fills the missing functionality
+    // to allow FileField to be extended purely through FAPI.
+    elseif (isset($element['#filefield_value_callback'])) {
+      foreach ($element['#filefield_value_callback'] as $callback) {
+        $callback($element, $item);
+      }
+    }
+
+    // Load file if the FID has changed so that it can be saved by CCK.
+    $file = field_file_load($item['fid']);
+
+    // If the file entry doesn't exist, don't save anything.
+    if (empty($file)) {
+      $item = array();
+    }
+
+    // Checkboxes loose their value when empty.
+    // If the list field is present make sure its unchecked value is saved.
+    if (!empty($field['list_field']) && empty($edit['list'])) {
+      $item['list'] = 0;
+    }
+  }
+  // Merge file and item data so it is available to all widgets.
+  $item = array_merge($item, $file);
+
   return $item;
 }
 
@@ -70,15 +110,15 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   if ($field['multiple'] > 0) {
     unset($element['#title']);
   }
+    
+  // Create our thumbnails  
+  if($field['widget']['autothumbnail']) {
+    video_thumb_process($element);
+  }
   
   // Add our extra fields if in preview mode
   if(!empty($item['fid'])) {
     video_widget_element_settings($element);
-  }
-  
-  // Create our thumbnails  
-  if($field['widget']['autothumbnail']) {
-    video_thumb_process($element);
   }
 
   // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...

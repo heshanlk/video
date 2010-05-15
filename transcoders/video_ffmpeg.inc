@@ -64,8 +64,7 @@ class video_ffmpeg implements transcoder_interface {
     $total_thumbs = variable_get('no_of_video_thumbs', 5);
     $videofile = escapeshellarg($video['filepath']);
     //get the playtime from the current transcoder
-    $duration = $this->get_playtime($video);
-    $dimensions = $this->get_dimensions($video);
+    $duration = $this->get_playtime($video['filepath']);
 
     $files = NULL;
     for($i = 1; $i <= $total_thumbs; $i++) {
@@ -101,16 +100,16 @@ class video_ffmpeg implements transcoder_interface {
     return $files;
   }
   
-  public function convert_video($video, $converted) {
-    // Setup our command to be run.
+  public function convert_video($video, $converted, $dimensions) {
+    // Setup our default command to be run.
     $command = t($this->params['command'], array(
       '!videofile' => $video->filepath,
       '!audiobitrate' => $this->params['audiobitrate'],
-      '!size' => $video->dimensions,
+      '!size' => $dimensions,
       '!videobitrate' => $this->params['videobitrate'],
       '!convertfile' => $converted
     ));
-    //Convert the video with our transcoder.
+    // Process our video
     return $this->run_command($command);
   }
 
@@ -121,7 +120,7 @@ class video_ffmpeg implements transcoder_interface {
     static $command_ouput;
     if(!empty($command_output)) return $command_output;
 
-    $file = escapeshellarg($video['filepath']);
+    $file = escapeshellarg($video);
     // Execute the command
     $options = ' -i ' . $file;
     $command_output = $this->run_command($options);

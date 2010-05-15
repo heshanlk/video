@@ -18,6 +18,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   }
 
   public function run_command($options) {
+    watchdog('video_ffmpeg_wrapper', 'Sending options: '. $options, array(), WATCHDOG_DEBUG);
     $output = ffmpeg_wrapper_run_command($options);
     return $output;
   }
@@ -48,7 +49,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
 
     $files = NULL;
     for($i = 1; $i <= $total_thumbs; $i++) {
-      $seek = ($duration/$total_thumbs) * $i;
+      $seek = ($duration/$total_thumbs) * $i - 1;
       $filename = "/video-thumb-for-$fid-$i.jpg";
       $thumbfile = $final_thumb_path . $filename;
       //skip files already exists, this will save ffmpeg traffic
@@ -80,7 +81,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     return $files;
   }
 
-  public function convert_video($video, $converted) {
+  public function convert_video($video, $converted, $dimensions) {
     $ffmpeg_object = new stdClass();
     // check configuration are pass of then use global $conf
     if (empty($params)) {
@@ -120,7 +121,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       }
       
       //custom sizing per video
-      if ($video->dimensions) $options[] = '-s '. $video->dimensions;
+      $options[] = '-s '. $dimensions;
 
       // build the video config
       if ($params['ffmpeg_video_advanced']) {
@@ -148,6 +149,20 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   public function get_playtime($video) {
     $ffmpeg_output = ffmpeg_wrapper_file_data($video['filepath']);
     return $ffmpeg_output['duration'];
+  }
+  
+  /**
+   * Return the dimensions of a video
+   */
+  public function get_dimensions($video) {
+    $ffmpeg_output = ffmpeg_wrapper_file_data($video);
+    $res = array('width' => 0,'height' => 0);
+    if($ffmpeg_output['video']['s']) {
+      $dimensions = explode("x", $ffmpeg_output['video']['s']);
+      $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
+      $res['height'] = $dimensions[1] ? $dimensions[1] : NULL;
+    }
+    return $res;
   }
 
   /**

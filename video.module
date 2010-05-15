@@ -113,10 +113,10 @@ function video_theme() {
     'arguments' => array('element' => NULL, 'imagecache' => NULL),
     'file' => 'video_formatter.inc',
   );
-  $theme['video_formatter_video_colorbox'] = array(
-    'arguments' => array('element' => NULL, 'imagecache' => NULL),
-    'file' => 'video_formatter.inc',
-  );
+  //$theme['video_formatter_video_colorbox'] = array(
+  //  'arguments' => array('element' => NULL, 'imagecache' => NULL),
+  //  'file' => 'video_formatter.inc',
+  //);
   $theme['video_formatter_video_media_js'] = array(
     'arguments' => array('element' => NULL),
     'file' => 'video_formatter.inc',
@@ -152,7 +152,7 @@ function video_theme() {
   if(module_exists('imagecache')) {
     //we need formatters for each of our thumbnails.
     //@todo create a function to check for our colorbox module and only add theme elements that could be used.
-    $thumb_types = array('video_colorbox', 'video_nodelink');
+    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
     foreach($thumb_types as $types) {
       foreach (imagecache_presets() as $preset) {
         $theme['video_formatter_'. $preset['presetname'] .'__'. $types] = array(
@@ -181,11 +181,11 @@ function video_field_formatter_info() {
       'field types' => array('filefield'),
       'description' => t('Displays the video thumbnail and links to the node.'),
     ),
-    'video_colorbox' => array(
-      'label' => t('Video Thumbnail to Colorbox'),
-      'field types' => array('filefield'),
-      'description' => t('Displays the video thumbnail and adds colorbox support.'),
-    ),
+    //'video_colorbox' => array(
+    //  'label' => t('Video Thumbnail to Colorbox'),
+    //  'field types' => array('filefield'),
+    //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
+    //),
     'video_media_js' => array(
       'label' => t('Video inject with jMedia'),
       'field types' => array('filefield'),
@@ -195,7 +195,7 @@ function video_field_formatter_info() {
   //setup our imagecache presets
   if(module_exists('imagecache')) {
     //we need formatters for each of our thumbnails.
-    $thumb_types = array('video_colorbox', 'video_nodelink');
+    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
     foreach($thumb_types as $types) {
       foreach (imagecache_presets() as $preset) {
         $formatters[$preset['presetname'] .'__'. $types] = array(
@@ -299,11 +299,6 @@ function video_convert_process(&$element) {
     //setup our conversion class and check for the fid existence.
     module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
-    // Is this is an update?
-    $old_fid = $element['#default_value']['fid'];
-    if ($old_fid != $fid) {
-      db_query("DELETE FROM {video_files} WHERE fid = %d", $old_fid);
-    }
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
     if(!$video = $video_conversion->load_video($fid)) {
       // Video has not been added to the queue yet so lets add it.
@@ -389,15 +384,42 @@ function video_views_api() {
 
 function video_widget_element_settings(&$element) {
   $file = $element['#value'];
+  $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Check if using the default width and replace tokens.
   $default_dimensions = user_access('override player dimensions');
+  $description = t('Set your video dimensions.  This will create your player with these dimensions.');
+  // Lets figure out our dimensions for our video and add astericks next to our options.
+  $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
+  if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
+    $video_info = _video_dimensions_options($options, $file['filepath']);
+    $description = t('Set your video dimensions.  This will create your player and transcode your video with these dimensions.  Your video size is !size, if you choose a higher resolution, this could cause video distortion.  You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] .'x'. $video_info['height']));
+    //setup our default display of dimensions.
+    $dimensions = '';
+    //drupal_set_message('Default? '. $file['data']['dimensions']);
+    if(isset($file['data']['dimensions']) && !empty($file['data']['dimensions'])) {
+      $dimensions = $file['data']['dimensions'];
+    }
+    else {
+      //lets go through our options looking for a matching resolution
+      foreach($options as $key => $value) {
+        if(stristr($value, t('(Matches Resolution)')) == TRUE) {
+          $dimensions = $key;
+          break;
+        }
+      }
+      //if our dimensions are still empty, make them the admin default.
+      if(empty($dimensions)) {
+        $dimensions = $field['widget']['default_dimensions'];
+      }
+    }
+  }
   $element['data']['dimensions'] = array(
       '#type' => $default_dimensions ? 'select' : 'value',
       '#title' => t('Dimensions for Player'),
-      '#value' => !isset($file['data']['dimensions']) || empty($file['data']['dimensions']) ? $field['widget']['default_dimensions'] : $file['data']['dimensions'],
-      '#description' => t('Set player width(in px) here, make sure your video has good resolution to fit on larger values.'),
-      '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
+      '#default_value' => $dimensions,
+      '#description' => $description,
+      '#options' => $options,
   );
   // only in preview mode and then create thumbnails
   if($field['widget']['autoconversion']) {
@@ -429,6 +451,61 @@ function video_widget_element_settings(&$element) {
       );
     }
   }
+}
+
+/*
+ * Function updates our options list to show matching aspect ratios and if we have a matching resolution.
+ * 
+ * We will update the options array by reference and return the aspect ratio of the file.
+ */
+function _video_dimensions_options(&$options, $video) {
+  $aspect_ratio = _video_aspect_ratio($video);
+  //loop through our options and find matching ratio's and also the exact width/height
+  foreach($options as $key => $value) {
+    $wxh = explode('x', $key);
+    //lets check our width and height first
+    if($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
+      $options[$key] = $value .' '.t('(Matches Resolution)');
+    }
+    else {
+      //now lets check our ratio's
+      $ratio = number_format($wxh[0] / $wxh[1], 4);
+      if($ratio == $aspect_ratio['ratio']) {
+        $options[$key] = $value .' '.t('(Matches Ratio)');
+      }
+    }      
+  }
+  return $aspect_ratio;
+}
+
+/*
+ * Returns the width/height and aspect ratio of the video
+ * 
+ * @todo: move this to the transcoder class instead?
+ */
+function _video_aspect_ratio($video) {
+  //lets get our video dimensions from the file
+  module_load_include('inc', 'video', '/includes/transcoder');
+  $transcoder = new video_transcoder;
+  $wxh = $transcoder->get_dimensions($video);
+  $width = $wxh['width'];
+  $height = $wxh['height'];
+  
+  if(!$width || !$height) {
+    //no width and height found just return.
+    watchdog('video_conversion', 'We could not determine the height and width of the video: '.$video, array(), WATCHDOG_DEBUG);
+    drupal_set_message(t('The system counld not determine the width and height of your video: !video.  If transcoding, the system could have problems.', array('!video' => $video)));
+    return;
+  }
+
+  //now lets get aspect ratio and compare our options in the select dropdown then add an asterick if any to each option representing a matching aspect ratio.
+  $ratio = number_format($width / $height, 4);
+  $aspect_ratio = array(
+    'width' => $width,
+    'height' => $height,
+    'ratio' => $ratio,
+  );
+  return $aspect_ratio;
 }
 
 /*
@@ -630,7 +707,7 @@ function video_explode($delimeter, $dimensions) {
  * Default video dimensions.
  */
 function video_default_dimensions() {
-  return "1280x720\n800x600\n640x480";
+  return "176x144\n352x288\n704x576\n1408x1152\n128x96\n160x120\n320x240\n640x480\n800x600\n1024x768\n1600x1200\n2048x1024\n1280x1024\n2560x2048\n5120x4096\n852x480\n1366x768\n1600x1024\n1920x1200\n2560x1600\n3200x2048\n3840x2400\n6400x4096\n7680x4800\n320x200\n640x350\n852x480\n1280x720\n1920x1080";
 }
 
 /*
@@ -642,5 +719,5 @@ function rmdirr($dir) {
       is_dir($obj)? rmdirr($obj) : unlink($obj);
     }
   }
-  rmdir($dir);
+  @rmdir($dir);
 }

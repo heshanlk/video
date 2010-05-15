@@ -26,8 +26,8 @@ class video_transcoder {
     return $this->transcoder->generate_thumbnails($video);
   }
 
-  public function convert_video($video, $converted) {
-    $output = $this->transcoder->convert_video($video, $converted);
+  public function convert_video($video, $converted, $dimensions) {
+    $output = $this->transcoder->convert_video($video, $converted, $dimensions);
     // If they are using metadata.
     if (variable_get('video_metadata', FALSE)) {
       module_load_include('inc', 'video', '/includes/metadata');
@@ -75,12 +75,16 @@ class video_transcoder {
     $form['admin_settings']['autoconv'] = $autoconv;
     return $form;
   }
+  
+  public function get_dimensions($video) {
+    return $this->transcoder->get_dimensions($video);
+  }
 }
 
 interface transcoder_interface {
   public function run_command($command);
   public function generate_thumbnails($video);
-  public function convert_video($video, $converted);
+  public function convert_video($video, $converted, $dimensions);
   public function get_playtime($video);
   public function get_name();
   public function get_value();
