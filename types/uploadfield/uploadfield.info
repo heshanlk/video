@@ -2,6 +2,7 @@
 name = Video Upload
 description = Handle video upload for video module using filefield and CCK.
 core = 6.x
+version = 6.x-4.x-dev
 dependencies[] = content
 dependencies[] = filefield
 dependencies[] = video

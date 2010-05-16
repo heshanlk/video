@@ -20,6 +20,7 @@ class video_helper {
     }
     // Build our video object for all types.
     $video = new stdClass();
+    $video->fid = $element['#item']['fid'];
     $video->original = $element['#item'];
     $video->filepath = $element['#item']['filepath'];
     $video->url = file_create_url($element['#item']['filepath']);
@@ -29,20 +30,36 @@ class video_helper {
     $video->thumbnail = $this->thumbnail_object($element);
     $video->formatter = $element['#formatter'];
     $video->autoplay = variable_get('video_autoplay', TRUE);
-    $video->autobuffering = variable_get('video_autobuffering', TRUE);
-    $video->flash_player = variable_get('video_extension_'.$video->extension.'_flash_player', '');
+    $video->autobuffering = variable_get('video_autobuffering', TRUE);    
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
     
-    //lets find out if we are overriding this video with a converted one.
-    if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
-      module_load_include('inc', 'video', '/includes/conversion');
-      $conversion = new video_conversion;
-      $converted = $conversion->load_converted_video($element['#item']['fid']);
-      $video->filepath = $converted->filepath;
-      $video->url = file_create_url($converted->filepath);
-      $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
-      $video->flash_player = variable_get('video_extension_'.$video->extension.'_flash_player', '');
+    // Lets find out if we have pushed this file to the cdn if enabled.
+    $cdn = false;
+    if(variable_get('amazon_s3', FALSE)) {
+      module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+      $s3 = new video_amazon_s3;
+      if($amazon = $s3->get($video->fid)) {
+        $cdn = true;
+        // Fix our filepath
+        $video->filepath = $amazon->filepath;
+        $video->url = $amazon->filepath;
+        $video->extension = pathinfo($amazon->filepath, PATHINFO_EXTENSION);
+      }
     }
+    // If no cdn, lets find out if we have transcoded this file and update our paths.
+    if(!$cdn) {
+      //lets find out if we are overriding this video with a converted one.
+      if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
+        module_load_include('inc', 'video', '/includes/conversion');
+        $conversion = new video_conversion;
+        $converted = $conversion->load_converted_video($video->fid);
+        $video->filepath = $converted->filepath;
+        $video->url = file_create_url($converted->filepath);
+        $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+      }
+    }
+    // Moved to last to recheck incase we changed our extension above.
+    $video->flash_player = variable_get('video_extension_'.$video->extension.'_flash_player', '');
     
     // Return our object
     return $video;

@@ -261,9 +261,13 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
             //unpublish the node
             $form_state['values']['status'] = 0;
           }
-          //queue up the file id to update the node id in the video rendering table.
-          $form_state['values']['video_id'][] = $item['fid'];
-        }
+        }        
+        // Add video to cdn que if enabled.
+        if(variable_get('amazon_s3', FALSE)) {
+          video_s3_process($element);
+        }        
+        //queue up the file id to update the node id in the video rendering / cdn tables.
+        $form_state['values']['video_id'][] = $item['fid'];
         break;
       case 'node_form_build_preview':
         break;

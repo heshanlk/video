@@ -1,0 +1,109 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Provides wrapper functions for the s3 amazon webservices.
+ */
+
+/*
+ * Implementation of hook_perm().
+ */
+function video_s3_perm() {
+  return array('administer amazon s3');
+}
+/*
+ * Implmentation of hook_help().
+ */
+function video_s3_help($path, $arg) {
+  switch($path) {
+    case 'admin/settings/video/amazon_s3':
+      $output = t('Use Amazon Simple Storage Service (Amazon S3) to store your video files.  This free\'s up bandwidth from your site, providing a faster experience for your users.  Simply enable this module and enter your authentication details and your done!');
+      return $output;
+  }
+}
+
+/*
+ * Implementation of hook_menu().
+ */
+function video_s3_menu() {
+  $items = array();
+  $items['admin/settings/video/amazon_s3'] = array(
+    'title' => 'Amazon S3',
+    'description' => 'Configure your Amazon S3 settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_s3_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video_s3.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  $items['admin/settings/video/amazon_s3/bucket/%/delete'] = array(
+    'title' => 'Delete Bucket',
+    'page callback' => 'video_s3_bucket_delete',
+    'page arguments' => array(5),
+    'access arguments' => array('administer amazon s3'),
+    'file' => 'video_s3.admin.inc',
+    'type' => MENU_CALLBACK,  
+  );
+  return $items;
+}
+
+/*
+ * Implementation of hook_cron().
+ */
+function video_s3_cron() {
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  $s3->connect();
+  // Lets run our queue.
+  $s3->queue();
+}
+
+/**
+ * Implementation of hook_file_delete().
+ */
+function video_s3_file_delete($file) {
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  $s3->connect();
+  // Lets run our queue.
+  $s3->delete($file->fid);
+}
+
+/*
+ * Implementation of hook_form_alter().
+ */
+function video_s3_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    $form['buttons']['submit']['#submit'][] = 'video_s3_node_update_submit';
+  }
+}
+
+/*
+ * Submit hanlder to update our s3 table to include the node id.
+ */
+function video_s3_node_update_submit($form, &$form_state) {
+  //lets update our video rending table to include the node id created
+  if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
+    foreach($form_state['values']['video_id'] as $fid) {
+      //lets update our table to include the nid
+      db_query("UPDATE {video_s3} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+    }
+  }
+}
+
+function video_s3_process($element) {
+  $file = $element['#value'];
+  //we need to check if this fid has already been added to the database AND that there is in fact a fid
+  if (is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
+    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+    $s3 = new video_amazon_s3;
+    $s3->connect();
+    // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
+    if(!$video = $s3->verify($file['fid'])) {
+      // Video has not been added to the queue yet so lets add it.
+      $s3->insert($file['fid']);
+      drupal_set_message(t('Video submission queued for transfer to your Amazon S3 server.'));
+    }
+  }
+}
