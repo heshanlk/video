@@ -106,26 +106,32 @@ function video_menu() {
       'type' => MENU_NORMAL_ITEM,
     );
 
-    if (arg(0) == 'node' && is_numeric(arg(1))) {
-      if ($node = node_load(arg(1)) and $node->type == 'video') {
-
-        //enable the download tab only if it is supported
-        if (video_support_download($node)) {
-          
-          $menu_type = (variable_get('video_displaydownloadmenutab', 1)) ? MENU_LOCAL_TASK : MENU_CALLBACK;
-          $items['node/'.$node->nid.'/download'] = array(
+          $items['node/%/download'] = array(
             'title' => 'Download',
             'page callback' => 'video_download',
-            'page arguments' => array($node),
-            'access arguments' => array('access video') && node_access('view', $node, $user->uid),
+            'page arguments' => array(1),
+            'access callback' => 'video_download_access',
+            'access arguments' => array('access video'),
             'weight' => 5,
-            'type' => $menu_type);
-        }
-      }
-    }
+            'type' => MENU_CALLBACK );
+  
   return $items;
 }
 
+// GMM: Access Callback to check if user has rights to download page, throw access denied rather
+//      than blank page (in case /download appended to URL some non-video node)
+function video_download_access()
+{
+    if (arg(0) == 'node' && is_numeric(arg(1))) {
+        $node = node_load(arg(1));
+        if ($node->type == 'video' && $node->vidfile && user_access('access video')) {
+            //If the video is of type youtube and multi-file downloads aren't turned on don't show the download tab.
+            if (video_support_download($node) && $node->disable_multidownload != 1) 
+                return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Internal Drupal links hook
@@ -1107,21 +1113,22 @@ function video_block_list($delta = 0) {
 /**
  * Redirects to download the video file.
  */
-function video_download($node) {
+function video_download($nodeid) {
   // $node as been loaded by video_menu
   //print_r($node);
   //exit;
-  if ($node) {
-    if (video_support_download($node) && _video_allow_download($node)) { //Make sure the video type is not youtube before downloading.
-      _video_download_goto($node);
+  if ($node = node_load($nodeid) and $node->type == 'video') {
+    if (node_access('view', $node, $user->uid)) {
+      if (video_support_download($node) && _video_allow_download($node)) { //Make sure the video type is not youtube before downloading.
+        _video_download_goto($node);
+      }
+      else { //If video is type youtube then it can't be downloaded.
+        drupal_set_message(t('There are no files to download for this video.'), 'error');
+        print theme('page', '');
+      }
     }
-    else { //If video is type youtube then it can't be downloaded.
-      drupal_set_message(t('There are no files to download for this video.'), 'error');
-      print theme('page', '');
-    }
-  }
-  else {
-    drupal_not_found();
+    else 
+      drupal_not_found();
   }
 }
 
