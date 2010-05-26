@@ -15,7 +15,7 @@ class video_helper {
     if(!isset($dimensions[0]) || !isset($dimensions[1])) {
       $dimensions = explode("x", $field['widget']['default_dimensions']);
       if(!isset($dimensions[0]) || !isset($dimensions[1])) {
-        drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions if the form of WxH.', 'error'));
+        drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions if the form of WxH.'), 'error');
       }  
     }
     // Build our video object for all types.

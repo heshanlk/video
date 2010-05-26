@@ -87,9 +87,10 @@ class video_conversion {
       }
 
       $original = $original .'/'. $video->filename;
-      $converted = $converted .'/'. $pathinfo['filename'] .'.flv';
       //lets move our video and then convert it.
       if(file_move($video, $original)) {
+        //update our filename after the move to maintain filename uniqueness.
+        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.flv';
         // Update our filepath since we moved it
         $update = drupal_write_record('files', $video, 'fid');
         //call our transcoder

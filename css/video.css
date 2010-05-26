@@ -113,6 +113,8 @@ br.video_image_clear {
   max-width:70%;
 }
 
+.widget-edit .form-item { white-space: normal !important; }
+
 .admin_flv_player_wrapper { display: none; }
 /*
  * VIDEO OJBECT FIXES CROSS BROWSER

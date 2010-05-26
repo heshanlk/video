@@ -241,6 +241,7 @@ function video_node_update_submit($form, &$form_state) {
 function video_thumb_process(&$element) {
   // Developed for ffmpeg support
   $file = $element['#value'];
+  $delta = $file['fid'];
   if (isset($element['preview']) && $file['fid'] != 0) {
     module_load_include('inc', 'video', '/includes/transcoder');
     $transcoder = new video_transcoder;
@@ -262,7 +263,7 @@ function video_thumb_process(&$element) {
       '#options' => $thumbss,
       '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
       '#weight' => 10,
-      '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()'),
+      '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-'.$delta),
     );
 
     // Setup our large thumbnail that is on the left.
@@ -277,7 +278,7 @@ function video_thumb_process(&$element) {
       $large_thumb = array('filepath' => $default_thumb);
     }
     // @todo Integrate the thumbnails with imagecache.
-    $element['preview']['#suffix'] = '<div class="video_large_thumbnail">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) .'</div>';
+    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-'.$delta.'">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) .'</div>';
   }
 }
 
@@ -389,31 +390,27 @@ function video_widget_element_settings(&$element) {
   // Check if using the default width and replace tokens.
   $default_dimensions = user_access('override player dimensions');
   $description = t('Set your video dimensions.  This will create your player with these dimensions.');
+  //setup our default dimensions.
+  $dimensions = $field['widget']['default_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
   if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
     $video_info = _video_dimensions_options($options, $file['filepath']);
     $description = t('Set your video dimensions.  This will create your player and transcode your video with these dimensions.  Your video size is !size, if you choose a higher resolution, this could cause video distortion.  You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] .'x'. $video_info['height']));
     //setup our default display of dimensions.
-    $dimensions = '';
-    //drupal_set_message('Default? '. $file['data']['dimensions']);
-    if(isset($file['data']['dimensions']) && !empty($file['data']['dimensions'])) {
-      $dimensions = $file['data']['dimensions'];
-    }
-    else {
-      //lets go through our options looking for a matching resolution
-      foreach($options as $key => $value) {
-        if(stristr($value, t('(Matches Resolution)')) == TRUE) {
-          $dimensions = $key;
-          break;
-        }
-      }
-      //if our dimensions are still empty, make them the admin default.
-      if(empty($dimensions)) {
-        $dimensions = $field['widget']['default_dimensions'];
+    //lets go through our options looking for a matching resolution
+    foreach($options as $key => $value) {
+      if(stristr($value, t('(Matches Resolution)')) == TRUE) {
+        $dimensions = $key;
+        break;
       }
     }
   }
+  // Override our dimensions to the user selected.
+  if(isset($file['data']['dimensions']) && !empty($file['data']['dimensions'])) {
+    $dimensions = $file['data']['dimensions'];
+  }
+    
   $element['data']['dimensions'] = array(
       '#type' => $default_dimensions ? 'select' : 'value',
       '#title' => t('Dimensions for Player'),
@@ -656,7 +653,7 @@ function video_default_widget_settings($widget) {
  */
 function video_default_widget_settings_validate($element, &$form_state) {
   // Verify the destination exists
-  $destination = file_directory_path() .'/video_thumb';
+  $destination = file_directory_path() .'/video_thumbs';
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;

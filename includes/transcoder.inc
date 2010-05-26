@@ -38,7 +38,6 @@ class video_transcoder {
   }
 
   public function admin_settings() {
-    drupal_add_js(drupal_get_path('module', 'video'). '/js/admin.js');
     $form = array();
     $options = $this->_transcoders();
     $form['vid_convertor'] = array(

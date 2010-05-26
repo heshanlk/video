@@ -124,3 +124,11 @@ function video_update_6405() {
   db_create_table(&$ret, 'video_files', $table['video_files']);
   return $ret;
 }
+
+function video_update_6406() {
+  drupal_set_message('The system has reset your thumbnail and ffmpeg command settings to their original state.  If you made adjustments to these commands, you will have to reset them up.');
+  //lets reset our ffmpeg system command variables.
+  variable_set('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
+  variable_set('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile');
+  return array();
+}

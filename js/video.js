@@ -76,7 +76,8 @@ function videoftp_thumbnail_change() {
 	$(".video-thumbnails input").each(function() {
 		var path = $(this).val();
 		if($(this).is(':checked')) {
-			$('.video_large_thumbnail img').attr('src', Drupal.settings.basePath + path);
+			var holder = $(this).attr('rel');
+			$('.'+holder+' img').attr('src', Drupal.settings.basePath + path);
 		}
 	});
 

@@ -19,8 +19,8 @@ class video_ffmpeg implements transcoder_interface {
   protected $video_height = 480;
   protected $command = '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile';
   protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
-  protected $nice = 'nice -n 19';
   protected $ffmpeg = '/usr/bin/ffmpeg';
+  protected $nice;
 
   public function __construct() {
     $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
@@ -30,6 +30,7 @@ class video_ffmpeg implements transcoder_interface {
     $this->params['command'] = variable_get('video_ffmpeg_helper_auto_cvr_options', $this->command);
     $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
+    $this->nice = variable_get('video_ffmpeg_nice_enable', TRUE) ? 'nice -n 19' : '';
   }
 
   public function run_command($options) {
@@ -204,6 +205,12 @@ class video_ffmpeg implements transcoder_interface {
       '#description' => t('Number of thumbnails to display from video.'),
       '#default_value' => variable_get('no_of_video_thumbs', 5),
     );
+    $form['video_ffmpeg_nice_enable'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable the use of nice when calling the ffmpeg command.'),
+      '#default_value' => variable_get('video_ffmpeg_nice_enable', TRUE),
+      '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
+  );
     // Thumbnail Videos We need to put this stuff last.
     $form['autothumb'] = array(
         '#type' => 'fieldset',
