@@ -263,9 +263,12 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
           }
         }        
         // Add video to cdn que if enabled.
+        // TODO : Add this to a hook_video_process
         if(variable_get('amazon_s3', FALSE)) {
           video_s3_process($element);
-        }        
+          if(module_exists('video_zencoder'))
+            video_zencoder_process($element);
+        }
         //queue up the file id to update the node id in the video rendering / cdn tables.
         $form_state['values']['video_id'][] = $item['fid'];
         break;
