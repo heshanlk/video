@@ -33,7 +33,6 @@ function theme_video_formatter_video_plain($element) {
  * Renders the video thumbnail as a link to the node page.
  */
 function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
-  $field = content_fields($element['#field_name'], $element['#type_name']);
   // Inside a view $element may contain null data. In that case, just return.
   if (empty($element['#item']['fid'])) return '';
   //setup our thumbnail object
