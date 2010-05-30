@@ -11,9 +11,12 @@ class video_helper {
   public function video_object($element) {
     $field = content_fields($element['#field_name'], $element['#type_name']);
     //setup our width x height
-    $dimensions = explode("x", $element['#item']['data']['dimensions']);
+    $dimentions_all = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
+    $dimention_selected = $dimentions_all[$element['#item']['data']['dimensions']];
+    $dimensions = explode("x", $dimention_selected);
     if(!isset($dimensions[0]) || !isset($dimensions[1])) {
-      $dimensions = explode("x", $field['widget']['default_dimensions']);
+      $dimention_selected = $dimentions_all[$field['widget']['default_dimensions']];
+      $dimensions = explode("x", $dimention_selected);
       if(!isset($dimensions[0]) || !isset($dimensions[1])) {
         drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions if the form of WxH.'), 'error');
       }  
