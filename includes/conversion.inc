@@ -165,8 +165,8 @@ class video_conversion {
     $ratio = $aspect_ratio['ratio'];
     $width = $aspect_ratio ['width'];
     $height = $aspect_ratio['height'];
-    
-    $wxh = explode('x', $video->dimensions);
+    $dimentions_all = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
+    $wxh = explode('x', $dimentions_all[$video->dimensions]);
     $output_width = $wxh[0];
     $output_height = $wxh[1];
     $output_ratio = number_format($output_width / $output_height, 4);

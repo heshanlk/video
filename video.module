@@ -458,19 +458,21 @@ function video_widget_element_settings(&$element) {
 function _video_dimensions_options(&$options, $video) {
   $aspect_ratio = _video_aspect_ratio($video);
   //loop through our options and find matching ratio's and also the exact width/height
+  $i = 0;
   foreach($options as $key => $value) {
-    $wxh = explode('x', $key);
+    $wxh = explode('x', $value);
     //lets check our width and height first
     if($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
-      $options[$key] = $value .' '.t('(Matches Resolution)');
+      $options[$i] = $value .' '.t('(Matches Resolution)');
     }
     else {
       //now lets check our ratio's
       $ratio = number_format($wxh[0] / $wxh[1], 4);
       if($ratio == $aspect_ratio['ratio']) {
-        $options[$key] = $value .' '.t('(Matches Ratio)');
+        $options[$i] = $value .' '.t('(Matches Ratio)');
       }
     }
+    $i++;
   }
   return $aspect_ratio;
 }
