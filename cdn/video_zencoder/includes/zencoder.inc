@@ -35,7 +35,7 @@ class video_zencoder_api {
     // API Key
     $api_key = variable_get('zencoder_api_key', '');
     // File details
-    $filename = $file->name;
+    $filename = $file->filename;
     // New Encoding Job
     //28022009063.mp4
     //    "input": "s3://' . $bucket . '/' . $filename . '"
@@ -75,45 +75,49 @@ class video_zencoder_api {
 
     $bucket = $this->bucket;
 
+    // Job details
+    $input_name = $bucket . '/' . $filename;
+    watchdog('zencoder', $input_name);
+
     $encoding_job = new ZencoderJob('
 {
-  "input":"s3://' . $bucket . '/' . $filename . '",
+  "input":"s3://' . $input_name . '",
   "output":[{
-      "label":"' . $lable . '",
-      "base_url":"s3://' . $bucket . '",
-      "filename":"output.flv",
-      "width":' . $width . ',
-      "height":' . $height . ',
-      "quality":' . $quality . ',
-      "speed":' . $speed . ',
-      "upscale":' . $upscale . ',
-      "stretch":' . $stretch . ',
-      "frame_rate":' . $frame_rate . ',
-      "max_frame_rate":' . $max_frame_rate . ',
-      "keyframe_interval":' . $keyframe_interval . ',
-      "video_bitrate":' . $video_bitrate . ',
-      "bitrate_cap":' . $bitrate_cap . ',
-      "buffer_size":' . $buffer_size . ',
-      "h264_profile":"' . $h264_profile . '",
-      "h264_level":' . $h264_level . ',
-      "skip_video":' . $skip_video . ',
-      "audio_codec":"' . $audio_codec . '",
-      "audio_bitrate":' . $audio_bitrate .',
-      "audio_channels":' . $audio_channels . ',
-      "audio_sample_rate":' . $audio_sample_rate . ',
-      "skip_audio":' . $skip_audio . ',
+      ' . !empty($lable) ? '"label":"' . $lable . '"' : '' . ',
+      ' . !empty($bucket) ? '"base_url":"s3://' . $bucket . '"' : '' . ',
+      ' . !empty($bucket) ? '"filename":"output.flv"' : '' . ',
+      ' . !empty($width) ? '"width":' . $width . '' : '' . ',
+      ' . !empty($height) ? '"height":' . $height . '' : '' . ',
+      ' . !empty($quality) ? '"quality":' . $quality . '' : '' . ',
+      ' . !empty($speed) ? '"speed":' . $speed . '' : '' . ',
+      ' . !empty($upscale) ? '"upscale":' . $upscale . '' : '' . ',
+      ' . !empty($frame_rate) ? '"frame_rate":' . $frame_rate . '' : '' . ',
+      ' . !empty($frame_rate) ? '"max_frame_rate":' . $frame_rate . '' : '' . ',
+      ' . !empty($keyframe_interval) ? '"keyframe_interval":' . $keyframe_interval . '' : '' . ',
+      ' . !empty($video_bitrate) ? '"video_bitrate":' . $video_bitrate . '' : '' . ',
+      ' . !empty($bitrate_cap) ? '"bitrate_cap":' . $bitrate_cap . '' : '' . ',
+      ' . !empty($buffer_size) ? '"buffer_size":' . $buffer_size . '' : '' . ',
+      ' . !empty($h264_profile) ? '"h264_profile":' . $h264_profile . '' : '' . ',
+      ' . !empty($h264_level) ? '"h264_level":' . $h264_level . '' : '' . ',
+      ' . !empty($skip_video) ? '"skip_video":' . $skip_video . '' : '' . ',
+      ' . !empty($audio_codec) ? '"audio_codec":' . $audio_codec . '' : '' . ',
+      ' . !empty($audio_bitrate) ? '"audio_bitrate":' . $audio_bitrate . '' : '' . ',
+      ' . !empty($audio_channels) ? '"audio_channels":' . $audio_channels . '' : '' . ',
+      ' . !empty($audio_sample_rate) ? '"audio_sample_rate":' . $audio_sample_rate . '' : '' . ',
+      ' . !empty($skip_audio) ? '"skip_audio":' . $skip_audio . '' : '' . ',
+
       "thumbnails":{
-        "number":' . $thumn_no . ',
-        "size":"' . $thumb_size . '",
-        "base_url":"s3://' . $bucket . '",
-        "prefix":"' . $lable . '"
+      ' . !empty($thumn_no) ? '"number":' . $thumn_no . '' : '' . ',
+      ' . !empty($thumb_size) ? '"number":' . $thumb_size . '' : '' . ',
+      ' . !empty($bucket) ? '"base_url":"s3://' . $bucket . '"' : '' . ',
+      ' . !empty($lable) ? '"prefix":' . $lable . '' : '' . ',
       },
       "notifications":[
-        "' . $notify_url . '",
-        "'. $notify_email .'"
+      ' . !empty($notify_url) ? '"' . $notify_url . '"' : '' . ',
+      ' . !empty($notify_email) ? '"' . $notify_email . '"' : '' . ',
       ],
-      "start_clip":' . $start_clip . ',
-      "clip_length":' . $clip_length .'
+      ' . !empty($start_clip) ? '"start_clip":' . $start_clip . '' : '' . ',
+      ' . !empty($clip_length) ? '"clip_length":' . $clip_length . '' : '' . ',
     }
   ],
   "api_key":"' . $this->access_key . '"
@@ -121,6 +125,7 @@ class video_zencoder_api {
 
     // Check if it worked
     if ($encoding_job->created) {
+//      watchdog('zencoder', $encoding_job->id);
       return $encoding_job;
 //      $this->jobid = $encoding_job->id;
 //      // Success
@@ -130,7 +135,8 @@ class video_zencoder_api {
 //      watchdog('video_render', 'success');
 //          exit;
       // Store Job/Output IDs to update their status when notified or to check their progress.
-    } else {
+    }
+    else {
       // Failed
       //    echo "Fail :(\n\n";
       //    echo "Errors:\n";
@@ -223,7 +229,7 @@ class video_zencoder_api {
         $this->working($row->vid);
         $filepath = $video->filepath;
         $filename = basename($video->filepath);
-        if ($encoded_job = $this->create($video)) {
+        if ($encoding_job = $this->create($video)) {
           // Update our table.
           $video->bucket = $this->bucket;
           $video->vid = $row->vid;
