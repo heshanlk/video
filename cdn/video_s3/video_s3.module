@@ -103,7 +103,7 @@ function video_s3_process($element) {
     if(!$video = $s3->verify($file['fid'])) {
       // Video has not been added to the queue yet so lets add it.
       $s3->insert($file['fid']);
-      drupal_set_message(t('Video submission queued for transfer to your Amazon S3 server.'));
+      drupal_set_message(t('Video submission queued for transfer to your Amazon S3 server. Will be there shortly.'));
     }
   }
 }
