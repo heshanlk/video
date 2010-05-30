@@ -44,22 +44,21 @@ function video_zencoder_menu() {
  * Implementation of hook_cron().
  */
 function video_zencoder_cron() {
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
-  $s3->connect();
-  // Lets run our queue.
-  $s3->queue();
+  module_load_include('inc', 'video_zencoder', '/includes/zencoder');
+  $zc = new video_zencoder_api;
+//  $s3->connect();
+//  // Lets run our queue.
+  $zc->queue();
 }
 
 /**
  * Implementation of hook_file_delete().
  */
 function video_zencoder_file_delete($file) {
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
-  $s3->connect();
-  // Lets run our queue.
-  $s3->delete($file->fid);
+  module_load_include('inc', 'video_zencoder', '/includes/zencoder');
+  $zc = new video_zencoder_api;
+  // Lets run delete.
+  $zc->delete($file->fid);
 }
 
 /*
@@ -67,7 +66,7 @@ function video_zencoder_file_delete($file) {
  */
 function video_zencoder_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
-    $form['buttons']['submit']['#submit'][] = 'video_s3_node_update_submit';
+    $form['buttons']['submit']['#submit'][] = 'video_zencoder_node_update_submit';
   }
 }
 
@@ -79,7 +78,7 @@ function video_zencoder_node_update_submit($form, &$form_state) {
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
     foreach($form_state['values']['video_id'] as $fid) {
       //lets update our table to include the nid
-      db_query("UPDATE {video_s3} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+      db_query("UPDATE {video_zencoder} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
     }
   }
 }
@@ -88,14 +87,13 @@ function video_zencoder_process($element) {
   $file = $element['#value'];
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
   if (is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
-    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-    $s3 = new video_amazon_s3;
-    $s3->connect();
+    module_load_include('inc', 'video_zencoder', '/includes/zencoder');
+    $zc = new video_zencoder_api;
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-    if(!$video = $s3->verify($file['fid'])) {
+    if(!$video = $zc->verify($file['fid'])) {
       // Video has not been added to the queue yet so lets add it.
-      $s3->insert($file['fid']);
-      drupal_set_message(t('Video submission queued for transfer to your Amazon S3 server.'));
+      $zc->insert($file['fid'], $jobid);
+      drupal_set_message(t('Video submission queued for transfer to your Zencoder Transcoding server. Will be there shortly.'));
     }
   }
 }

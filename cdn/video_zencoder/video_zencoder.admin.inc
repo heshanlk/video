@@ -27,10 +27,10 @@ function video_zencoder_admin_settings() {
 //          '#default_value' => variable_get('agree_terms_zencoder', TRUE),
 //          '#description' => t('Read terms and conditions on !link.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com'))),
 //  );
-  $form['zencoder_info']['zencoder_apikey'] = array(
+  $form['zencoder_info']['zencoder_api_key'] = array(
           '#type' => 'textfield',
           '#title' => t('Zencoder API Key'),
-          '#default_value' => variable_get('zencoder_apikey', ''),
+          '#default_value' => variable_get('zencoder_api_key', ''),
           '#size' => 50,
           '#description' => t('Zencoder API Key if you don\'t have API key click here to generate one.')
   );

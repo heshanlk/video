@@ -49,7 +49,7 @@ function uploadfield_widget_settings_save($widget) {
  */
 function uploadfield_widget_value($element, $edit = FALSE) {
   //copied from filefield_widget_value with one change to reset our data array
-    if (!$edit) {
+  if (!$edit) {
     $file = field_file_load($element['#default_value']['fid']);
     $item = $element['#default_value'];
   }
@@ -101,7 +101,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $element['#theme'] = 'uploadfield_widget_item';
-  
+
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
     $element['preview']['#value'] = theme('video_widget_preview', $element['#value']);
   }
@@ -110,12 +110,12 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   if ($field['multiple'] > 0) {
     unset($element['#title']);
   }
-    
-  // Create our thumbnails  
+
+  // Create our thumbnails
   if($field['widget']['autothumbnail']) {
     video_thumb_process($element);
   }
-  
+
   // Add our extra fields if in preview mode
   if(!empty($item['fid'])) {
     video_widget_element_settings($element);
@@ -123,9 +123,9 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
 
   // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
   if($form_state['submitted'] == 1) {
-    switch($form_state['clicked_button']['#submit'][0]) {      
+    switch($form_state['clicked_button']['#submit'][0]) {
       case 'node_form_submit':
-        // Auto convert our video file
+      // Auto convert our video file
         if($field['widget']['autoconversion']) {
           video_convert_process($element);
           //lets set our node status to unpublished if our video is not converted.
@@ -135,8 +135,11 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
           }
         }
         // Add video to cdn que if enabled.
+        // TODO : Add this to a hook_video_process
         if(variable_get('amazon_s3', FALSE)) {
           video_s3_process($element);
+          if(module_exists('video_zencoder'))
+            video_zencoder_process($element);
         }
         //queue up the file id to update the node id in the video rendering / cdn tables.
         $form_state['values']['video_id'][] = $item['fid'];
@@ -144,7 +147,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
       case 'node_form_build_preview':
         break;
       case 'node_form_delete_submit':
-        //moved to hook_file_delete in video module.
+      //moved to hook_file_delete in video module.
         break;
     }
   }
