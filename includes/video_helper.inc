@@ -81,7 +81,8 @@ class video_helper {
 
     // Setup our thumbnail path.
     $use_default_img = $element['#item']['data']['use_default_video_thumb'];
-    if ($use_default_img && !empty($field['widget']['default_video_thumb']['filepath'])) {
+    if ($use_default_img && !empty($field['widget']['default_video_thumb']['filepath'])
+            || empty($element['#item']['data']['video_thumb'])) {
       $thumbnail->filepath = $field['widget']['default_video_thumb']['filepath'];
     }
     elseif ($element['#item']['data']['video_thumb']) {
