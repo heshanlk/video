@@ -121,7 +121,7 @@ function video_update_6405() {
   $ret[] = update_sql("DROP TABLE IF EXISTS {video_rendering}");
   $ret[] = update_sql("DROP TABLE IF EXISTS {video_files}");
   $table = video_schema();
-  db_create_table(&$ret, 'video_files', $table['video_files']);
+  db_create_table($ret, 'video_files', $table['video_files']);
   return $ret;
 }
 
