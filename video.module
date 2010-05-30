@@ -597,12 +597,15 @@ function video_default_widget_settings($widget) {
           '#collapsed' => FALSE,
           '#weight' => 10
   );
+  $acpect_ratio[] = t('4:3 -> This is the standard television format used throughout the second half of the 20th Century.');
+  $acpect_ratio[] = t('16:9 -> This format has gained acceptance as the new standard for widescreen TV, DVD and high-definition video.');
+  $acpect_ratio[] = t('21:9 -> A very wide screen format used for theatrical release movies.');
   $form['plugins']['default_dimensions'] = array(
           '#type' => 'select',
           '#title' => t('Default Video Player Dimensions'),
           '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : 640,
           '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-          '#description' => t('Default player WIDTHxHEIGHT in px.')
+          '#description' => t('Default player WIDTHxHEIGHT in px.') . theme('item_list', $acpect_ratio)
   );
   $form['plugins']['autoconversion'] = array(
           '#type' => 'checkbox',
