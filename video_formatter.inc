@@ -156,7 +156,7 @@ function theme_video_flv($video, $node) {
     );
   }
   else {
-    $themed_output = t('No flash player has been setup.');
+    $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
   }
   return theme('video_play_flv', $video, $node, $themed_output);
 }
