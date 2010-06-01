@@ -127,9 +127,6 @@ function theme_video_encoding_failed() {
 }
 
 function theme_video_flv($video, $node) {
-  $height = trim($video->height);
-  $width = trim($video->width);
-
   if ($video->flash_player == 'swftools') {
     $options = array(
             'params' => array(

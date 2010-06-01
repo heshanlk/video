@@ -458,21 +458,19 @@ function video_widget_element_settings(&$element) {
 function _video_dimensions_options(&$options, $video) {
   $aspect_ratio = _video_aspect_ratio($video);
   //loop through our options and find matching ratio's and also the exact width/height
-  $i = 0;
   foreach($options as $key => $value) {
     $wxh = explode('x', $value);
     //lets check our width and height first
     if($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
-      $options[$i] = $value .' '.t('(Matches Resolution)');
+      $options[$key] = $value .' '.t('(Matches Resolution)');
     }
     else {
       //now lets check our ratio's
       $ratio = number_format($wxh[0] / $wxh[1], 4);
       if($ratio == $aspect_ratio['ratio']) {
-        $options[$i] = $value .' '.t('(Matches Ratio)');
+        $options[$key] = $value .' '.t('(Matches Ratio)');
       }
     }
-    $i++;
   }
   return $aspect_ratio;
 }
@@ -597,15 +595,12 @@ function video_default_widget_settings($widget) {
           '#collapsed' => FALSE,
           '#weight' => 10
   );
-  $acpect_ratio[] = t('4:3 -> This is the standard television format used throughout the second half of the 20th Century.');
-  $acpect_ratio[] = t('16:9 -> This format has gained acceptance as the new standard for widescreen TV, DVD and high-definition video.');
-  $acpect_ratio[] = t('21:9 -> A very wide screen format used for theatrical release movies.');
   $form['plugins']['default_dimensions'] = array(
           '#type' => 'select',
           '#title' => t('Default Video Player Dimensions'),
-          '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : 640,
+          '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
           '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-          '#description' => t('Default player WIDTHxHEIGHT in px.') . theme('item_list', $acpect_ratio)
+          '#description' => t('Default player WIDTHxHEIGHT in px.')
   );
   $form['plugins']['autoconversion'] = array(
           '#type' => 'checkbox',
@@ -700,7 +695,7 @@ function video_explode($delimeter, $dimensions) {
   $options = array();
   $values = explode($delimeter, $dimensions);
   foreach($values as $value) {
-    $options[] = $value;
+    $options[$value] = $value;
   }
   return $options;
 }
