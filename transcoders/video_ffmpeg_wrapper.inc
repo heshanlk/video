@@ -18,7 +18,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   }
 
   public function run_command($options) {
-    watchdog('video_ffmpeg_wrapper', 'Sending options: '. $options, array(), WATCHDOG_DEBUG);
+    watchdog('ffmpeg_wrapper', 'Sending options: '. $options, array(), WATCHDOG_DEBUG);
     $output = ffmpeg_wrapper_run_command($options);
     return $output;
   }
