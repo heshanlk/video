@@ -695,9 +695,19 @@ function video_explode($delimeter, $dimensions) {
   $options = array();
   $values = explode($delimeter, $dimensions);
   foreach($values as $value) {
-    $options[$value] = $value;
+    //lets check we have a value and its in the right format
+    if(!empty($value) && video_format_right($value)) {
+      $options[trim($value)] = trim($value);
+    }
   }
   return $options;
+}
+
+function video_format_right($value) {
+  $format = explode("x", $value);
+  if(!isset($format[0]) || !is_numeric(trim($format[0]))) return false; 
+  if(!isset($format[1]) || !is_numeric(trim($format[1]))) return false;
+  return true;
 }
 
 /*
