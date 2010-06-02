@@ -129,30 +129,30 @@ function theme_video_encoding_failed() {
 function theme_video_flv($video, $node) {
   if ($video->flash_player == 'swftools') {
     $options = array(
-            'params' => array(
-                    'width' => $width,
-                    'height' => $height,
-            ),
-            'othervars' => array(
-            //@todo: swftools bug, can't enable this until they fix their pathing for the images.
-            //'image' => $video->thumbnail->swfthumb,
-            ),
+  	  'params' => array(
+        'width' => $video->width,
+        'height' => $video->height,
+      ),
+      'othervars' => array(
+        //@todo: swftools bug, can't enable this until they fix their pathing for the images.
+        //'image' => $video->thumbnail->swfthumb,
+      ),
     );
     $themed_output = swf($video->url, $options);
   }
   elseif ($video->flash_player == 'flowplayer') {
     $options = array(
-            'clip' => array(
-                    'url' => $video->url,
-                    'autoPlay' => $video->autoplay,
-                    'autoBuffering' => $video->autobuffering,
-            ),
+      'clip' => array(
+        'url' => $video->url,
+        'autoPlay' => $video->autoplay,
+        'autoBuffering' => $video->autobuffering,
+      ),
     );
     $themed_output = theme(
-            'flowplayer',
-            $options,
-            $video->formatter,
-            array('style' => 'width:' . $width . 'px;height:' . $height . 'px;')
+      'flowplayer',
+      $options,
+      $video->formatter,
+      array('style' => 'width:' . $video->width . 'px;height:' . $video->height . 'px;')
     );
   }
   else {
