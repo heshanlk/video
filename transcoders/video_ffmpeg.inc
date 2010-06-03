@@ -21,6 +21,7 @@ class video_ffmpeg implements transcoder_interface {
   protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
   protected $ffmpeg = '/usr/bin/ffmpeg';
   protected $nice;
+  protected $video_ext = 'flv';
 
   public function __construct() {
     $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
@@ -31,6 +32,7 @@ class video_ffmpeg implements transcoder_interface {
     $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
     $this->nice = variable_get('video_ffmpeg_nice_enable', TRUE) ? 'nice -n 19' : '';
+    $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
   }
 
   public function run_command($options) {
@@ -112,6 +114,10 @@ class video_ffmpeg implements transcoder_interface {
     ));
     // Process our video
     return $this->run_command($command);
+  }
+  
+  public function video_converted_extension() {
+    return $this->params['videoext'];
   }
 
   /**
@@ -245,6 +251,14 @@ class video_ffmpeg implements transcoder_interface {
         '#collapsed' => TRUE,
         '#prefix' => '<div id="video_ffmpeg">',
         '#suffix' => '</div>'
+    );
+    $form['autoconv']['video_ffmpeg_ext'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Video Extension'),
+        '#size' => 10,
+        '#maxlength' => 10,
+        '#default_value' => variable_get('video_ffmpeg_ext', 'flv'),
+        '#description' => t('The video extensions without the period you want the converted file to contain.')
     );
     $form['autoconv']['video_ffmpeg_width'] = array(
         '#type' => 'textfield',

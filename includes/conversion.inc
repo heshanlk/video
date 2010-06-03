@@ -90,7 +90,7 @@ class video_conversion {
       //lets move our video and then convert it.
       if(file_move($video, $original)) {
         //update our filename after the move to maintain filename uniqueness.
-        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.flv';
+        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
         // Update our filepath since we moved it
         $update = drupal_write_record('files', $video, 'fid');
         //call our transcoder
@@ -148,13 +148,19 @@ class video_conversion {
     $transcoder = new video_transcoder;
     return $transcoder->convert_video($video, $converted, $dimensions);
   }
-  
+
+  private function video_extension() {
+    module_load_include('inc', 'video', '/includes/transcoder');
+    $transcoder = new video_transcoder;
+    return $transcoder->video_converted_extension();
+  }
+
   /*
    * Function determines the dimensions you want and compares with the actual wxh of the video.
-   * 
+   *
    * If they are not exact or the aspect ratio does not match, we then figure out how much padding
    * we should add.  We will either add a black bar on the top/bottom or on the left/right.
-   * 
+   *
    * @TODO I need to look more at this function.  I don't really like the guess work here.  Need to implement
    * a better way to check the end WxH.  Maybe compare the final resolution to our defaults?  I don't think
    * that just checking to make sure the final number is even is accurate enough.
@@ -165,14 +171,14 @@ class video_conversion {
     $ratio = $aspect_ratio['ratio'];
     $width = $aspect_ratio ['width'];
     $height = $aspect_ratio['height'];
-    
+
     $wxh = explode('x', $video->dimensions);
     $output_width = $wxh[0];
     $output_height = $wxh[1];
     $output_ratio = number_format($output_width / $output_height, 4);
-    
+
     if($output_ratio != $ratio && $width && $height) {
-      $options = array();      
+      $options = array();
       // Figure out our black bar padding.
       if ($ratio < $output_width / $output_height) {
         $end_width = $output_height * $ratio;
@@ -182,10 +188,10 @@ class video_conversion {
         $end_height = $output_width / $ratio;
         $end_width = $output_width;
       }
-      
+
       // We need to get back to an even resolution and maybe compare with our defaults?
       // @TODO Make this more exact on actual video dimensions instead of making sure the wxh are even numbers
-      
+
       if ($end_width == $output_width) {
         // We need to pad the top/bottom of the video
         $padding = round($output_height - $end_height);
@@ -208,7 +214,7 @@ class video_conversion {
         $options[] = '-padleft '. $pad1;
         $options[] = '-padright '. $pad2;
       }
-      
+
       $end_width = round($end_width) %2 !==0 ? round($end_width) + 1 : round($end_width);
       $end_height = round($end_height) %2 !==0 ? round($end_height) + 1 : round($end_height);
       //add our size to the beginning to make sure it hits our -s

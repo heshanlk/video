@@ -10,6 +10,7 @@
 class video_ffmpeg_wrapper implements transcoder_interface {
   private $name = 'FFmpeg Wrapper';
   private $value = 'video_ffmpeg_wrapper';
+  private $video_ext = 'flv';
 
   protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
 
@@ -20,6 +21,9 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   public function run_command($options) {
     watchdog('ffmpeg_wrapper', 'Sending options: '. $options, array(), WATCHDOG_DEBUG);
     $output = ffmpeg_wrapper_run_command($options);
+    if(is_object($output) && ISSET($output->errors)) {
+      return implode("\n", $output->errors);
+    }
     return $output;
   }
 
@@ -81,6 +85,14 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     return $files;
   }
 
+  public function video_converted_extension() {
+    global $conf;
+    if(isset($conf['ffmpeg_output_type']) && !empty($conf['ffmpeg_output_type'])) {
+      return $conf['ffmpeg_output_type'];
+    }
+    return $this->video_ext;
+  }
+
   public function convert_video($video, $converted, $dimensions) {
     $ffmpeg_object = new stdClass();
     // check configuration are pass of then use global $conf
@@ -119,7 +131,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
         // use a specific bit rate?
         if ($params['ffmpeg_audio_ab']) $options[] = '-ab '. $params['ffmpeg_audio_ab'];
       }
-      
+
       //custom sizing per video
       $options[] = '-s '. $dimensions;
 
@@ -138,7 +150,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       $options[] = "'". $converted ."'";
     }
     $ffmpeg_object->command = implode(" ", $options);
-    
+
     // run our command and return the output.
     return $this->run_command($ffmpeg_object->command);
   }
@@ -147,15 +159,15 @@ class video_ffmpeg_wrapper implements transcoder_interface {
    * Return the playtime seconds of a video
    */
   public function get_playtime($video) {
-    $ffmpeg_output = ffmpeg_wrapper_file_data($video['filepath']);
+    $ffmpeg_output = ffmpeg_wrapper_get_file_data($video['filepath']);
     return $ffmpeg_output['duration'];
   }
-  
+
   /**
    * Return the dimensions of a video
    */
   public function get_dimensions($video) {
-    $ffmpeg_output = ffmpeg_wrapper_file_data($video);
+    $ffmpeg_output = ffmpeg_wrapper_get_file_data($video);
     $res = array('width' => 0,'height' => 0);
     if($ffmpeg_output['video']['s']) {
       $dimensions = explode("x", $ffmpeg_output['video']['s']);

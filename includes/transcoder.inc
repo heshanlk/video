@@ -74,9 +74,13 @@ class video_transcoder {
     $form['admin_settings']['autoconv'] = $autoconv;
     return $form;
   }
-  
+
   public function get_dimensions($video) {
     return $this->transcoder->get_dimensions($video);
+  }
+
+  public function video_converted_extension() {
+    return $this->transcoder->video_converted_extension();
   }
 }
 
