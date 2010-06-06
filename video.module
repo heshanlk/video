@@ -293,6 +293,10 @@ function video_thumb_process(&$element) {
  */
 function video_convert_process(&$element) {
   $file = $element['#value'];
+  // Add default dimensions from our default_value if needed
+  if(!isset($file['data']['dimensions'])) {
+    $file['data']['dimensions'] = $element['#default_value']['data']['dimensions'];
+  }
   $convert = false;
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
   if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !$file['data']['bypass_autoconversion']) {
@@ -407,19 +411,25 @@ function video_widget_element_settings(&$element) {
     }
   }
   // Override our dimensions to the user selected.
-  if(isset($file['data']['dimensions']) && !empty($file['data']['dimensions'])) {
+  if (isset($file['data']['dimensions']) && !empty($file['data']['dimensions'])) {
     $dimensions = $file['data']['dimensions'];
   }
 
   $element['data']['dimensions'] = array(
-          '#type' => $default_dimensions ? 'select' : 'value',
+          '#type' => 'select',
           '#title' => t('Dimensions for Player'),
           '#default_value' => $dimensions,
           '#description' => $description,
           '#options' => $options,
   );
+  // If users cannot change the default dimensions, lets change this to a value.
+  if (!$default_dimensions) {
+    $element['data']['dimensions']['#type'] = 'value';
+    $element['data']['dimensions']['#value'] = $dimensions;
+  }
+  
   // only in preview mode and then create thumbnails
-  if($field['widget']['autoconversion']) {
+  if ($field['widget']['autoconversion']) {
     if (user_access('bypass conversion video')) {
       $element['data']['bypass_autoconversion'] = array(
               '#type' => 'checkbox',
