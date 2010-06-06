@@ -36,10 +36,6 @@ class video_zencoder_api {
     $api_key = variable_get('zencoder_api_key', '');
     // File details
     $filename = $file->filename;
-    // New Encoding Job
-    //28022009063.mp4
-    //    "input": "s3://' . $bucket . '/' . $filename . '"
-    //    "input": "s3://heidi_test/28022009063.mp4"
     // Get varialbes
     $lable = 'VIDEO_' . $file->fid;
     $base_url = $folder;
