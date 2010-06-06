@@ -10,11 +10,11 @@
  * 
  */
 ?> 
-<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="<?php print $video->width; ?>" height="<?php print $video->height; ?>" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
+<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
   <param name="movie" value="<?php print $video->url; ?>" />
   <param name="autoplay" value="<?php print $video->autoplay; ?>" />
   <param name="wmode" value="transparent" />
-  <object class="video-object" type="application/x-shockwave-flash" data="<?php print $video->url; ?>" width="<?php print $video->width; ?>" height="<?php print $video->height; ?>">
+  <object class="video-object" type="application/x-shockwave-flash" data="<?php print $video->url; ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">
     <?php print t('No video?  Get the Adobe Flash !plugin', array('!plugin' => l(t('Plugin'), 'http://get.adobe.com/flashplayer/'))); ?>
   </object>
 </object>

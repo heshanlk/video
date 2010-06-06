@@ -41,7 +41,7 @@ function uploadfield_widget_settings_validate($widget) {
  */
 function uploadfield_widget_settings_save($widget) {
   $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
-  return array_merge($filefield_settings, array('default_video_thumb', 'default_dimensions', 'autoconversion', 'autothumbnail'));
+  return array_merge($filefield_settings, array('default_video_thumb', 'default_dimensions', 'default_player_dimensions', 'autoconversion', 'autothumbnail'));
 }
 
 /**

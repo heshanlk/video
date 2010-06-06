@@ -15,7 +15,7 @@
  * </script>
  */
 ?>
-<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab#version=7,3,0,0"  width="<?php print $video->width; ?>" height="<?php print $video->height; ?>">
+<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab#version=7,3,0,0"  width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">
   <param name="src" value="<?php print $video->url; ?>" />
   <param name="controller" value="true" />
   <param name="scale" value="tofit" />
@@ -24,8 +24,8 @@
   <embed src="<?php print $video->url; ?>"
   	type="video/quicktime"
     pluginspage="http://www.apple.com/quicktime/download/" 
-    width="<?php print $video->width; ?>" 
-    height="<?php print $video->height; ?>" 
+    width="<?php print $video->player_width; ?>" 
+    height="<?php print $video->player_height; ?>" 
     autostart="<?php print $video->autoplay ? 'true' : 'false'; ?>" 
     controller="true" >
   </embed>

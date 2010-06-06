@@ -11,7 +11,7 @@
  */
 ?>
 
-<object type="video/x-ms-wmv" data="<?php print $video->url; ?>" width="<?php print $video->width; ?>" height="<?php print $video->height; ?>">
+<object type="video/x-ms-wmv" data="<?php print $video->url; ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">
     <param name="src" value="<?php print $video->url; ?>" valuetype="ref" type="<?php print $video->url; ?>">
     <param name="animationatStart" value="true">
     <param name="transparentatStart" value="true">

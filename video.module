@@ -396,6 +396,7 @@ function video_widget_element_settings(&$element) {
   $description = t('Set your video dimensions.  This will create your player with these dimensions.');
   //setup our default dimensions.
   $dimensions = $field['widget']['default_dimensions'];
+  $player_dimensions = $field['widget']['default_player_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
   if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
@@ -415,46 +416,60 @@ function video_widget_element_settings(&$element) {
     $dimensions = $file['data']['dimensions'];
   }
 
+  // Override our player dimensions to the user selected.
+  if (isset($file['data']['player_dimensions']) && !empty($file['data']['player_dimensions'])) {
+    $player_dimensions = $file['data']['player_dimensions'];
+  }
+  
   $element['data']['dimensions'] = array(
-          '#type' => 'select',
-          '#title' => t('Dimensions for Player'),
-          '#default_value' => $dimensions,
-          '#description' => $description,
-          '#options' => $options,
+    '#type' => 'select',
+    '#title' => t('Dimensions for Video Transcoding'),
+    '#default_value' => $dimensions,
+    '#description' => $description,
+    '#options' => $options,
+  );
+  $element['data']['player_dimensions'] = array(
+    '#type' => 'select',
+    '#title' => t('Dimensions for Video Player'),
+    '#default_value' => $player_dimensions,
+    '#description' => t('WxH of your video player.'),
+    '#options' => $options,
   );
   // If users cannot change the default dimensions, lets change this to a value.
   if (!$default_dimensions) {
     $element['data']['dimensions']['#type'] = 'value';
     $element['data']['dimensions']['#value'] = $dimensions;
+    $element['data']['player_dimensions']['#type'] = 'value';
+    $element['data']['player_dimensions']['#value'] = $player_dimensions;
   }
   
   // only in preview mode and then create thumbnails
   if ($field['widget']['autoconversion']) {
     if (user_access('bypass conversion video')) {
       $element['data']['bypass_autoconversion'] = array(
-              '#type' => 'checkbox',
-              '#title' => t('Bypass auto conversion'),
-              '#default_value' => isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
-              '#description' => t('This will bypass your auto conversion of videos.'),
-              '#attributes' => array('class' => 'video-bypass-auto-conversion'),
+        '#type' => 'checkbox',
+        '#title' => t('Bypass auto conversion'),
+        '#default_value' => isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
+        '#description' => t('This will bypass your auto conversion of videos.'),
+        '#attributes' => array('class' => 'video-bypass-auto-conversion'),
       );
     }
     $convert_on_submission = user_access('convert on submission');
     $element['data']['convert_video_on_save'] = array(
-            '#type' => $convert_on_submission ? 'checkbox' : 'value',
-            '#title' => t('Convert video on save'),
-            '#default_value' => isset($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE),
-            '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
-            '#attributes' => array('class' => 'video-convert-video-on-save'),
+        '#type' => $convert_on_submission ? 'checkbox' : 'value',
+        '#title' => t('Convert video on save'),
+        '#default_value' => isset($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE),
+        '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
+        '#attributes' => array('class' => 'video-convert-video-on-save'),
     );
     $use_default_thumb = user_access('use default thumb');
     if ($use_default_thumb) {
       $element['data']['use_default_video_thumb'] = array(
-              '#type' => $use_default_thumb ? 'checkbox' : 'value',
-              '#title' => t('Use the default thumbnail for this video?'),
-              '#default_value' => isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE),
-              '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
-              '#attributes' => array('class' => 'video-use-default-video-thumb'),
+        '#type' => $use_default_thumb ? 'checkbox' : 'value',
+        '#title' => t('Use the default thumbnail for this video?'),
+        '#default_value' => isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE),
+        '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
+        '#attributes' => array('class' => 'video-use-default-video-thumb'),
       );
     }
   }
@@ -520,24 +535,24 @@ function _video_aspect_ratio($video) {
 */
 function video_video_extensions() {
   $extensions = array(
-          'divx'  => 'video_play_divx',
-          'mov'   => 'video_play_quicktime',
-          '3gp'   => 'video_play_quicktime',
-          '3g2'   => 'video_play_quicktime',
-          'mp4'   => 'video_play_quicktime',
-          'rm'    => 'video_play_realmedia',
-          'f4v'   => 'video_play_flv',
-          'flv'   => 'video_play_flv',
-          'swf'   => 'video_play_flash',
-          'dir'   => 'video_play_dcr',
-          'dcr'   => 'video_play_dcr',
-          'asf'   => 'video_play_windowsmedia',
-          'wmv'   => 'video_play_windowsmedia',
-          'avi'   => 'video_play_windowsmedia',
-          'mpg'   => 'video_play_windowsmedia',
-          'mpeg'  => 'video_play_windowsmedia',
-          'ogg'   => 'video_play_theora',
-          'ogv'   => 'video_play_theora',
+    'divx'  => 'video_play_divx',
+    'mov'   => 'video_play_quicktime',
+    '3gp'   => 'video_play_quicktime',
+    '3g2'   => 'video_play_quicktime',
+    'mp4'   => 'video_play_quicktime',
+    'rm'    => 'video_play_realmedia',
+    'f4v'   => 'video_play_flv',
+    'flv'   => 'video_play_flv',
+    'swf'   => 'video_play_flash',
+    'dir'   => 'video_play_dcr',
+    'dcr'   => 'video_play_dcr',
+    'asf'   => 'video_play_windowsmedia',
+    'wmv'   => 'video_play_windowsmedia',
+    'avi'   => 'video_play_windowsmedia',
+    'mpg'   => 'video_play_windowsmedia',
+    'mpeg'  => 'video_play_windowsmedia',
+    'ogg'   => 'video_play_theora',
+    'ogv'   => 'video_play_theora',
   );
   return $extensions;
 }
@@ -547,14 +562,14 @@ function video_video_extensions() {
 */
 function video_video_players() {
   $players = array(
-          'video_play_divx' => t('Divx Player'),
-          'video_play_quicktime' => t('Quicktime'),
-          'video_play_realmedia' => t('Real Media Player'),
-          'video_play_flv' => t('FLV Flash Players'),
-          'video_play_flash' => t('SWF Flash Player'),
-          'video_play_dcr' => t('Director/Shockwave'),
-          'video_play_windowsmedia' => t('Windows Media Player'),
-          'video_play_theora' => t('Theora Player'),
+    'video_play_divx' => t('Divx Player'),
+    'video_play_quicktime' => t('Quicktime'),
+    'video_play_realmedia' => t('Real Media Player'),
+    'video_play_flv' => t('FLV Flash Players'),
+    'video_play_flash' => t('SWF Flash Player'),
+    'video_play_dcr' => t('Director/Shockwave'),
+    'video_play_windowsmedia' => t('Windows Media Player'),
+    'video_play_theora' => t('Theora Player'),
   );
   return $players;
 }
@@ -599,60 +614,67 @@ function video_default_widget_settings($widget) {
   $form = array();
   // Default video settings.
   $form['plugins'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Video Advanced Settings'),
-          '#collapsible' => TRUE,
-          '#collapsed' => FALSE,
-          '#weight' => 10
+    '#type' => 'fieldset',
+    '#title' => t('Video Advanced Settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#weight' => 10
   );
   $form['plugins']['default_dimensions'] = array(
-          '#type' => 'select',
-          '#title' => t('Default Video Player Dimensions'),
-          '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
-          '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-          '#description' => t('Default player WIDTHxHEIGHT in px.')
+    '#type' => 'select',
+    '#title' => t('Default Video Resolution Dimensions'),
+    '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
+    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
+    '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that FFMPEG will use to transcode your video files.')
+  );
+  $form['plugins']['default_player_dimensions'] = array(
+    '#type' => 'select',
+    '#title' => t('Default Video Player Dimensions'),
+    '#default_value' => !empty($widget['default_player_dimensions']) ? $widget['default_player_dimensions'] : '',
+    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
+    '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.')
   );
   $form['plugins']['autoconversion'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Enable video conversion.'),
-          '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
-          '#default_value' => $widget['autoconversion'],
+    '#type' => 'checkbox',
+    '#title' => t('Enable video conversion.'),
+    '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
+    '#default_value' => $widget['autoconversion'],
   );
   $form['plugins']['autothumbnail'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Enable thumbnail creation.'),
-          '#description' => t('Use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings.'),
-          '#default_value' => $widget['autothumbnail'],
+    '#type' => 'checkbox',
+    '#title' => t('Enable thumbnail creation.'),
+    '#description' => t('Use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings.'),
+    '#default_value' => $widget['autothumbnail'],
   );
   // Default thumbnail settings.
   $form['default'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Video Thumbnail Settings'),
-          '#element_validate' => array('video_default_widget_settings_validate'),
-          '#collapsible' => TRUE,
-          '#collapsed' => FALSE,
-          '#weight' => 11
+    '#type' => 'fieldset',
+    '#title' => t('Video Thumbnail Settings'),
+    '#element_validate' => array('video_default_widget_settings_validate'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#weight' => 11
   );
   // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
   // Present a video image of the current default image.
   if (!empty($widget['default_video_thumb'])) {
     $form['default']['default_video_thumbnail'] = array(
-            '#type' => 'markup',
-            '#value' => theme('video_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
-            '#prefix' => '<div class="video_thumbnail">',
-            '#suffix' => '</div>'
+      '#type' => 'markup',
+      '#value' => theme('video_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
+      '#prefix' => '<div class="video_thumbnail">',
+      '#suffix' => '</div>'
     );
   }
   $form['default']['default_video_thumb_upload'] = array(
-          '#type'  => 'file',
-          '#title' => empty($widget['default_video_thumb']) ? t('Upload default video thumbnail') :  t('Replace default video thumbnail with'),
-          '#description' => t('Choose a image that will be used as video thumbnail when you don\'t have video thumbnails for videos.'),
+    '#type'  => 'file',
+    '#title' => empty($widget['default_video_thumb']) ? t('Upload default video thumbnail') :  t('Replace default video thumbnail with'),
+    '#description' => t('Choose a image that will be used as video thumbnail when you don\'t have video thumbnails for videos.'),
   );
   // We set this value on 'validate' so we can get CCK to add it
   // as a standard field setting.
   $form['default_video_thumb'] = array(
-          '#type' => 'value',
-          '#value' => $widget['default_video_thumb'],
+    '#type' => 'value',
+    '#value' => $widget['default_video_thumb'],
   );
   return $form;
 }
@@ -670,7 +692,7 @@ function video_default_widget_settings_validate($element, &$form_state) {
   }
 
   $validators = array (
-          'file_validate_is_image' => array(),
+    'file_validate_is_image' => array(),
   );
 
   // We save the upload here because we can't know the correct path until the file is saved.

@@ -67,7 +67,7 @@ function videoftp_widget_settings_validate($widget) {
  * Implementation of CCK's hook_widget_settings($op = 'save').
  */
 function videoftp_widget_settings_save($widget) {
-  return array('file_extensions', 'file_path', 'ftp_path', 'autothumbnail','autoconversion', 'default_dimensions', 'default_video_thumb');
+  return array('file_extensions', 'file_path', 'ftp_path', 'autothumbnail','autoconversion', 'default_dimensions', 'default_player_dimensions', 'default_video_thumb');
 }
 
 /**
