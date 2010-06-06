@@ -83,41 +83,41 @@ class video_zencoder_api {
 {
   "input":"s3://' . $input_name . '",
   "output":[{
-      ' . !empty($lable) ? '"label":"' . $lable . '"' : '' . ',
-      ' . !empty($bucket) ? '"base_url":"s3://' . $bucket . '"' : '' . ',
-      ' . !empty($bucket) ? '"filename":"output.flv"' : '' . ',
-      ' . !empty($width) ? '"width":' . $width . '' : '' . ',
-      ' . !empty($height) ? '"height":' . $height . '' : '' . ',
-      ' . !empty($quality) ? '"quality":' . $quality . '' : '' . ',
-      ' . !empty($speed) ? '"speed":' . $speed . '' : '' . ',
-      ' . !empty($upscale) ? '"upscale":' . $upscale . '' : '' . ',
-      ' . !empty($frame_rate) ? '"frame_rate":' . $frame_rate . '' : '' . ',
-      ' . !empty($frame_rate) ? '"max_frame_rate":' . $frame_rate . '' : '' . ',
-      ' . !empty($keyframe_interval) ? '"keyframe_interval":' . $keyframe_interval . '' : '' . ',
-      ' . !empty($video_bitrate) ? '"video_bitrate":' . $video_bitrate . '' : '' . ',
-      ' . !empty($bitrate_cap) ? '"bitrate_cap":' . $bitrate_cap . '' : '' . ',
-      ' . !empty($buffer_size) ? '"buffer_size":' . $buffer_size . '' : '' . ',
-      ' . !empty($h264_profile) ? '"h264_profile":' . $h264_profile . '' : '' . ',
-      ' . !empty($h264_level) ? '"h264_level":' . $h264_level . '' : '' . ',
-      ' . !empty($skip_video) ? '"skip_video":' . $skip_video . '' : '' . ',
-      ' . !empty($audio_codec) ? '"audio_codec":' . $audio_codec . '' : '' . ',
-      ' . !empty($audio_bitrate) ? '"audio_bitrate":' . $audio_bitrate . '' : '' . ',
-      ' . !empty($audio_channels) ? '"audio_channels":' . $audio_channels . '' : '' . ',
-      ' . !empty($audio_sample_rate) ? '"audio_sample_rate":' . $audio_sample_rate . '' : '' . ',
-      ' . !empty($skip_audio) ? '"skip_audio":' . $skip_audio . '' : '' . ',
+      ' . !empty($lable) ? '"label":"' . $lable . ',"' : '' . '
+      ' . !empty($bucket) ? '"base_url":"s3://' . $bucket . ',"' : '' . '
+      ' . !empty($bucket) ? '"filename":"output.flv",' : '' . '
+      ' . !empty($width) ? '"width":' . $width . ',' : '' . '
+      ' . !empty($height) ? '"height":' . $height . ',' : '' . '
+      ' . !empty($quality) ? '"quality":' . $quality . ',' : '' . '
+      ' . !empty($speed) ? '"speed":' . $speed . ',' : '' . '
+      ' . !empty($upscale) ? '"upscale":' . $upscale . ',' : '' . '
+      ' . !empty($frame_rate) ? '"frame_rate":' . $frame_rate . ',' : '' . '
+      ' . !empty($frame_rate) ? '"max_frame_rate":' . $frame_rate . ',' : '' . '
+      ' . !empty($keyframe_interval) ? '"keyframe_interval":' . $keyframe_interval . ',' : '' . '
+      ' . !empty($video_bitrate) ? '"video_bitrate":' . $video_bitrate . ',' : '' . '
+      ' . !empty($bitrate_cap) ? '"bitrate_cap":' . $bitrate_cap . ',' : '' . '
+      ' . !empty($buffer_size) ? '"buffer_size":' . $buffer_size . ',' : '' . '
+      ' . !empty($h264_profile) ? '"h264_profile":' . $h264_profile . ',' : '' . '
+      ' . !empty($h264_level) ? '"h264_level":' . $h264_level . ',' : '' . '
+      ' . !empty($skip_video) ? '"skip_video":' . $skip_video . ',' : '' . '
+      ' . !empty($audio_codec) ? '"audio_codec":' . $audio_codec . ',' : '' . '
+      ' . !empty($audio_bitrate) ? '"audio_bitrate":' . $audio_bitrate . ',' : '' . '
+      ' . !empty($audio_channels) ? '"audio_channels":' . $audio_channels . ',' : '' . '
+      ' . !empty($audio_sample_rate) ? '"audio_sample_rate":' . $audio_sample_rate . ',' : '' . '
+      ' . !empty($skip_audio) ? '"skip_audio":' . $skip_audio . ',' : '' . '
 
       "thumbnails":{
-      ' . !empty($thumn_no) ? '"number":' . $thumn_no . '' : '' . ',
-      ' . !empty($thumb_size) ? '"number":' . $thumb_size . '' : '' . ',
-      ' . !empty($bucket) ? '"base_url":"s3://' . $bucket . '"' : '' . ',
-      ' . !empty($lable) ? '"prefix":' . $lable . '' : '' . ',
+      ' . !empty($thumn_no) ? '"number":' . $thumn_no . ',' : '' . '
+      ' . !empty($thumb_size) ? '"number":' . $thumb_size . ',' : '' . '
+      ' . !empty($bucket) ? '"base_url":"s3://' . $bucket . '",' : '' . '
+      ' . !empty($lable) ? '"prefix":' . $lable . ',' : '' . '
       },
       "notifications":[
-      ' . !empty($notify_url) ? '"' . $notify_url . '"' : '' . ',
-      ' . !empty($notify_email) ? '"' . $notify_email . '"' : '' . ',
+      ' . !empty($notify_url) ? '"' . $notify_url . '",' : '' . '
+      ' . !empty($notify_email) ? '"' . $notify_email . '",' : '' . '
       ],
-      ' . !empty($start_clip) ? '"start_clip":' . $start_clip . '' : '' . ',
-      ' . !empty($clip_length) ? '"clip_length":' . $clip_length . '' : '' . ',
+      ' . !empty($start_clip) ? '"start_clip":' . $start_clip . ',' : '' . '
+      ' . !empty($clip_length) ? '"clip_length":' . $clip_length . ',' : '' . '
     }
   ],
   "api_key":"' . $this->access_key . '"
