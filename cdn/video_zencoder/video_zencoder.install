@@ -39,6 +39,13 @@ function video_zencoder_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'outputid' => array(
+        'description' => t('Job Output id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'bucket' => array(
         'type' => 'varchar',
         'length' => '255',

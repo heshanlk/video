@@ -19,7 +19,8 @@ if(!function_exists('json_encode')) {
 
 class ZencoderJob {
 
-  var $new_job_url = "https://zencoder-staging.heroku.com/api/jobs";
+  var $new_job_url = "https://app.zencoder.com/api/jobs"; //https://app.zencoder.com/api/jobs
+  //https://zencoder-staging.heroku.com/api/jobs
   var $new_job_params = array();
   var $new_job_json;
   var $created = false;

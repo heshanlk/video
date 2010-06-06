@@ -142,6 +142,8 @@ class video_zencoder_api {
 
 
     $encoding_job_json = array(
+            'test' => 1,
+//            'download_connections' => -1,
             'api_key' => $this->access_key,
             'input' => 's3://' . $input_name . '',
             'output' => $zc_output
@@ -178,8 +180,8 @@ class video_zencoder_api {
    * Updates the database after a successful transfer to amazon.
   */
   public function update($video) {
-    $result = db_query("UPDATE {video_zencoder} SET jobid=%d, bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', status=%d, completed=%d WHERE vid=%d",
-            $video->jobid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_ZC_ACTIVE, time(), $video->vid);
+    $result = db_query("UPDATE {video_zencoder} SET jobid = %d, outputid = %d, bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', status=%d, completed=%d WHERE vid=%d",
+            $video->jobid, $video->outputid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_ZC_ACTIVE, time(), $video->vid);
     return $result;
   }
 
@@ -230,7 +232,7 @@ class video_zencoder_api {
       if($sql_video_row = db_fetch_object($sql_video)) {
         // This is a s3 file, lets verify it has been pushed and if so lets push Zencoder queue.
         module_load_include('inc', 'video', '/includes/conversion');
-        if($sql_video_row->status == VIDEO_S3_ACTIVE) {
+        if($sql_video_row->status == VIDEO_ZC_ACTIVE) {
           $video = $sql_video_row;
         }
       }
@@ -243,6 +245,10 @@ class video_zencoder_api {
       }
       // If we have a video lets go ahead and send it.
       if($video) {
+        // Get Output file info
+        // API Key
+        $api_key = variable_get('zencoder_api_key', '');
+
         // Update our status to working.
         $this->working($row->vid);
         $filepath = $video->filepath;
@@ -250,10 +256,13 @@ class video_zencoder_api {
         if ($encoding_job = $this->create($video)) {
           // Update our table.
           $video->bucket = $this->bucket;
+          $video->filename = $filename . '.flv';
+          $video->filemime = 'video/x-flv';
           $video->vid = $row->vid;
           $video->jobid = $encoding_job->id;
+          $video->outputid = $encoding_job->outputs["VIDEO" . $video->fid]->id;
           $prefix = $this->ssl ? 'https://' : 'http://';
-          $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename;
+          $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename . '.flv';
           if($this->update($video)) {
             watchdog('zencoder', t('Successfully created trancoding job on file: !file into the bucket %bucket on Zencoder.', array('!file' => $filepath, '%bucket' => $this->bucket)), array(), WATCHDOG_INFO);
           }
