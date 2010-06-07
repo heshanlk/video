@@ -295,7 +295,7 @@ function video_convert_process(&$element) {
   $file = $element['#value'];
   // Add default dimensions from our default_value if needed
   if(!isset($file['data']['dimensions'])) {
-    $file['data']['dimensions'] = $element['#default_value']['data']['dimensions'];
+    $file['data']['dimensions'] = $element['data']['dimensions']['#value'];
   }
   $convert = false;
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
