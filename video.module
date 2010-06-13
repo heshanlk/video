@@ -15,6 +15,21 @@ function video_init() {
 }
 
 /**
+ * Invokes hook_video_action() in every module.
+ *
+ * We cannot use module_invoke() for this, because the arguments need to
+ * be passed by reference.
+ */
+function video_module_invoke($action, &$array, &$video, $other = NULL) {
+  foreach (module_list() as $module) {
+    $function = $module . '_video_' . $action;
+    if (function_exists($function)) {
+      $function($array, $video, $other);
+    }
+  }
+}
+
+/**
  * Implementation of hook_perm().
  */
 
@@ -387,6 +402,10 @@ function video_views_api() {
   );
 }
 
+/**
+ * Process elements loads on settings
+ * @param <type> $element 
+ */
 function video_widget_element_settings(&$element) {
   $file = $element['#value'];
   $delta = $element['#delta'];
