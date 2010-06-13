@@ -16,6 +16,12 @@ function video_init() {
 
 /**
  * Invokes hook_video_action() in every module.
+ * Eg :
+ * hook_video_submit()
+ * hook_video_insert()
+ * hook_video_preview()
+ * hook_video_delete()
+ * hook_video_load()
  *
  * We cannot use module_invoke() for this, because the arguments need to
  * be passed by reference.
