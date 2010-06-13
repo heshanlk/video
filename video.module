@@ -15,7 +15,7 @@ function video_init() {
 }
 
 /**
- * Invokes hook_video_action() in every module.
+ * Invokes hook_video_*action*() in every module.
  * Eg :
  * hook_video_submit()
  * hook_video_insert()
