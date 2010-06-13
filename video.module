@@ -22,6 +22,7 @@ function video_init() {
  * hook_video_preview()
  * hook_video_delete()
  * hook_video_load()
+ * hook_video_form() - to show values once upload is completed eg. Resolution, and Convert on Save etc
  *
  * We cannot use module_invoke() for this, because the arguments need to
  * be passed by reference.
