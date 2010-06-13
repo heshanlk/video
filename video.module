@@ -516,7 +516,7 @@ function video_widget_process($element, &$form_state) {
         }
       }
       // Call hook_video_submit API
-      video_module_invoke('submit', &$element, &$form_state);
+      video_module_invoke('submit', $element, $form_state);
       //
       //queue up the file id to update the node id in the video rendering / cdn tables.
       $form_state['values']['video_id'][] = $item['fid'];

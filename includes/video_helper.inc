@@ -43,6 +43,7 @@ class video_helper {
     $video->autobuffering = variable_get('video_autobuffering', TRUE);
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
 
+    // TODO : add hook_video_load API to load videos
     // Lets find out if we have pushed this file to the cdn if enabled.
     $cdn = false;
     if(variable_get('amazon_s3', FALSE)) {
