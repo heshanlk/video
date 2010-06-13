@@ -123,33 +123,7 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
 
   // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
   if($form_state['submitted'] == 1) {
-    switch($form_state['clicked_button']['#submit'][0]) {
-      case 'node_form_submit':
-      // Auto convert our video file
-        if($field['widget']['autoconversion']) {
-          video_convert_process($element);
-          //lets set our node status to unpublished if our video is not converted.
-          if ($element['#unpublish']) {
-            //unpublish the node
-            $form_state['values']['status'] = 0;
-          }
-        }
-        // Add video to cdn que if enabled.
-        // TODO : Add this to a hook_video_process
-        if(variable_get('amazon_s3', FALSE)) {
-          video_s3_process($element);
-          if(module_exists('video_zencoder'))
-            video_zencoder_process($element);
-        }
-        //queue up the file id to update the node id in the video rendering / cdn tables.
-        $form_state['values']['video_id'][] = $item['fid'];
-        break;
-      case 'node_form_build_preview':
-        break;
-      case 'node_form_delete_submit':
-      //moved to hook_file_delete in video module.
-        break;
-    }
+    video_widget_process($element, $form_state);
   }
   return $element;
 }

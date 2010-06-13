@@ -501,6 +501,36 @@ function video_widget_element_settings(&$element) {
   }
 }
 
+
+function video_widget_process($element, &$form_state) {
+  $item = $element['#value'];
+  switch($form_state['clicked_button']['#submit'][0]) {
+    case 'node_form_submit':
+    // Auto convert our video file
+      if($field['widget']['autoconversion']) {
+        video_convert_process($element);
+        //lets set our node status to unpublished if our video is not converted.
+        if ($element['#unpublish']) {
+          //unpublish the node
+          $form_state['values']['status'] = 0;
+        }
+      }
+      // Call hook_video_submit API
+      video_module_invoke('submit', &$element, &$form_state);
+      //
+      //queue up the file id to update the node id in the video rendering / cdn tables.
+      $form_state['values']['video_id'][] = $item['fid'];
+      break;
+    case 'node_form_build_preview':
+    // Call hook_video_preview API
+      video_module_invoke('preview', &$element, &$form_state);
+      break;
+    case 'node_form_delete_submit':
+    //moved to hook_file_delete in video module.
+      break;
+  }
+}
+
 /*
  * Function updates our options list to show matching aspect ratios and if we have a matching resolution.
  * 
