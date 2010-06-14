@@ -502,6 +502,11 @@ function video_widget_element_settings(&$element) {
 }
 
 
+/**
+ * Video_widgi_process for API handlers for any video types.
+ * @param <type> $element
+ * @param <type> $form_state
+ */
 function video_widget_process($element, &$form_state) {
   $item = $element['#value'];
   switch($form_state['clicked_button']['#submit'][0]) {
