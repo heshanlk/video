@@ -2,7 +2,7 @@
 // $Id$
 /**
  * @file
- * Provide installation functions for video.module .
+ * Provides installation functions for video.module.
  *
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
  *                              <heshanmw at gmail dot com>
@@ -13,136 +13,86 @@
  * Implementation of hook_schema().
  */
 function video_schema() {
-  $schema['video'] = array(
-    'description' => t('Store video files informations'),
+  $schema['video_files'] = array(
+    'description' => t('Store video transcoding queue'),
     'fields' => array(
-      'vid' => array(
-        'description' => t('Prmary Key: {video}.vid of the video node'),
+  	  'vid' => array(
+        'description' => t('Video id'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => t('Original file id'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
       'nid' => array(
-        'description' => t('Node id, index to the {node}.nid'),
+        'description' => t('Node id'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-      ),      
-      'vtype' => array(
-        'description' => t('The type of the video'),
+      ),
+	  'filename' => array(
         'type' => 'varchar',
-        'length' => 32,
-        'not null' => TRUE,
+        'length' => '255',
         'default' => '',
+        'description' => t('The filename of the video.'),
       ),
-      'vidfile' => array(
-        'description' => t('Video file name / path'),
-        'type' => 'text',
-        'not null' => FALSE,
-        'default' => '',
-      ),
-      'videox' => array(
-        'description' => t('resolution : x'),
-        'type' => 'int',
-        'size' => 'small',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'videoy' => array(
-        'description' => t('resolution : y'),
-        'type' => 'int',
-        'size' => 'small',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'size' => array(
-        'description' => t('size of the video file'),
-        'type' => 'int',
-        'size' => 'big',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ),
-      'download_counter' => array(
-        'description' => t('No. of downloads of the video'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'play_counter' => array(
-        'description' => t('No. of play times per video'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'video_bitrate' => array(
-        'description' => t('Bit rate of the video'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ),
-      'audio_bitrate' => array(
-        'description' => t('Bit rate of the audio'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ),
-      'audio_sampling_rate' => array(
-        'description' => t('Sampling rate of the video'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ),
-      'audio_channels' => array(
-        'description' => t('Chenells of the audio'),
-        'type' => 'text',
-        'not null' => FALSE,
-      ),
-      'playtime_seconds' => array(
-        'description' => t('Play time of the video'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ),
-      'download_folder' => array(
-        'description' => t('download folder'),
+	  'filepath' => array(
         'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filepath of the video.'),
       ),
-      'disable_multidownload' => array(
-        'description' => t('enable/disable multi download'),
+	  'filemime' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filemime of the video.'),
+      ),
+      'filesize' => array(
+        'description' => t('Filesize of the video.'),
         'type' => 'int',
-        'size' => 'tiny',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-      'use_play_folder' => array(
-        'description' => t('use play folder'),
+      'dimensions' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The dimensions of the video.'),
+      ),
+      'status' => array(
+        'description' => t('Status of the transcoding'),
         'type' => 'int',
-        'size' => 'tiny',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-      'serialized_data' => array(
-        'description' => t('Informations related to the videos'),
-        'type' => 'text',
-        'not null' => FALSE,
+      'started' => array(
+        'description' => t('Started transcodings'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => t('Transcoding completed'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
       ),
     ),
-     'indexes' => array(
-     'nid' => array('nid'),
+    'indexes' => array(
+      'status' => array('status'),
+      'file' => array('fid'),
     ),
     'primary key' => array('vid'),
   );
-
   return $schema;
 }
 
@@ -150,13 +100,7 @@ function video_schema() {
  * Implementation of hook_install().
  */
 function video_install() {
-	drupal_install_schema('video');
-  
-  // default values for some variables use for resolution stuff
-  variable_set('video_resolution_1_name', '16:9 - Widescreen');
-  variable_set('video_resolution_1_value', '400x226');
-  variable_set('video_resolution_2_name', '4:3 - Television');
-  variable_set('video_resolution_2_value', '400x300');
+  drupal_install_schema('video');
 }
 
 /**
@@ -164,8 +108,27 @@ function video_install() {
  */
 function video_uninstall() {
   drupal_uninstall_schema('video');
-  variable_del('video_resolution_1_name');
-  variable_del('video_resolution_1_value');
-  variable_del('video_resolution_2_name');
-  variable_del('video_resolution_2_value');
+  //@todo Need to drop all variables used in this module here.
+}
+
+/**
+ * Update 6405
+ * dropping video_rendering table and creating video_files
+ * @return <type>
+ */
+function video_update_6405() {
+  $ret = array();
+  $ret[] = update_sql("DROP TABLE IF EXISTS {video_rendering}");
+  $ret[] = update_sql("DROP TABLE IF EXISTS {video_files}");
+  $table = video_schema();
+  db_create_table($ret, 'video_files', $table['video_files']);
+  return $ret;
+}
+
+function video_update_6406() {
+  drupal_set_message('The system has reset your thumbnail and ffmpeg command settings to their original state.  If you made adjustments to these commands, you will have to reset them up.');
+  //lets reset our ffmpeg system command variables.
+  variable_set('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
+  variable_set('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile');
+  return array();
 }
