@@ -253,6 +253,8 @@ function video_node_update_submit($form, &$form_state) {
     foreach($form_state['values']['video_id'] as $fid) {
       //lets update our table to include the nid
       db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+      // Lets other module to know to update
+      video_module_invoke('update', $form, $form_state);
     }
   }
 }
@@ -375,6 +377,8 @@ function video_file_delete($file) {
   $thumb_folder = file_directory_path(). '/' . $video_thumb_path . '/' . $file->fid;
   // Recursively delete our folder and files
   rmdirr($thumb_folder);
+  // Let other modules to know about the file delete
+  video_module_invoke('delete', $file);
 }
 
 /**
