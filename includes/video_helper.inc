@@ -4,7 +4,7 @@
  * @file
  * Class file used to create our video and thumbnail objects.
  *
- */
+*/
 
 class video_helper {
 
@@ -44,31 +44,23 @@ class video_helper {
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
 
     // TODO : add hook_video_load API to load videos
+    
+    // lets find out if we are overriding this video with a converted one.
+    // lets find out if we have transcoded this file and update our paths.
+    if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion']
+            && !$element['#item']['data']['bypass_autoconversion']) {
+      module_load_include('inc', 'video', '/includes/conversion');
+      $conversion = new video_conversion;
+      $converted = $conversion->load_converted_video($video->fid);
+      $video->filepath = $converted->filepath;
+      $video->url = file_create_url($converted->filepath);
+      $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+    }
+
+    // Let othere module to load the video files by referance
     // Lets find out if we have pushed this file to the cdn if enabled.
-    $cdn = false;
-    if(variable_get('amazon_s3', FALSE)) {
-      module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-      $s3 = new video_amazon_s3;
-      if($amazon = $s3->get($video->fid)) {
-        $cdn = true;
-        // Fix our filepath
-        $video->filepath = $amazon->filepath;
-        $video->url = $amazon->filepath;
-        $video->extension = pathinfo($amazon->filepath, PATHINFO_EXTENSION);
-      }
-    }
-    // If no cdn, lets find out if we have transcoded this file and update our paths.
-    if(!$cdn) {
-      //lets find out if we are overriding this video with a converted one.
-      if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
-        module_load_include('inc', 'video', '/includes/conversion');
-        $conversion = new video_conversion;
-        $converted = $conversion->load_converted_video($video->fid);
-        $video->filepath = $converted->filepath;
-        $video->url = file_create_url($converted->filepath);
-        $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
-      }
-    }
+    video_module_invoke('load', $video);
+
     // Moved to last to recheck incase we changed our extension above.
     $video->flash_player = variable_get('video_extension_'.$video->extension.'_flash_player', '');
 

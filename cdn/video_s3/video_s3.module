@@ -7,13 +7,13 @@
 
 /*
  * Implementation of hook_perm().
- */
+*/
 function video_s3_perm() {
   return array('administer amazon s3');
 }
 /*
  * Implmentation of hook_help().
- */
+*/
 function video_s3_help($path, $arg) {
   switch($path) {
     case 'admin/settings/video/amazon_s3':
@@ -24,33 +24,33 @@ function video_s3_help($path, $arg) {
 
 /*
  * Implementation of hook_menu().
- */
+*/
 function video_s3_menu() {
   $items = array();
   $items['admin/settings/video/amazon_s3'] = array(
-    'title' => 'Amazon S3',
-    'description' => 'Configure your Amazon S3 settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_s3_admin_settings'),
-    'access arguments' => array('administer site configuration'),
-    'file' => 'video_s3.admin.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
+          'title' => 'Amazon S3',
+          'description' => 'Configure your Amazon S3 settings.',
+          'page callback' => 'drupal_get_form',
+          'page arguments' => array('video_s3_admin_settings'),
+          'access arguments' => array('administer site configuration'),
+          'file' => 'video_s3.admin.inc',
+          'type' => MENU_LOCAL_TASK,
+          'weight' => 10,
   );
   $items['admin/settings/video/amazon_s3/bucket/%/delete'] = array(
-    'title' => 'Delete Bucket',
-    'page callback' => 'video_s3_bucket_delete',
-    'page arguments' => array(5),
-    'access arguments' => array('administer amazon s3'),
-    'file' => 'video_s3.admin.inc',
-    'type' => MENU_CALLBACK,  
+          'title' => 'Delete Bucket',
+          'page callback' => 'video_s3_bucket_delete',
+          'page arguments' => array(5),
+          'access arguments' => array('administer amazon s3'),
+          'file' => 'video_s3.admin.inc',
+          'type' => MENU_CALLBACK,
   );
   return $items;
 }
 
 /*
  * Implementation of hook_cron().
- */
+*/
 function video_s3_cron() {
   module_load_include('inc', 'video_s3', '/includes/amazon_s3');
   $s3 = new video_amazon_s3;
@@ -60,7 +60,7 @@ function video_s3_cron() {
 }
 
 /**
- * Implementation of hook_video_delete().
+ * Implementation of hook_video_delete.
  * we can use hook_file_delete()
  */
 function video_s3_video_delete($file) {
@@ -73,9 +73,9 @@ function video_s3_video_delete($file) {
 
 
 /*
- * Implementation of hook_video_update().
+ * Implementation of hook_video_update.
  * Submit hanlder to update our s3 table to include the node id.
- */
+*/
 function video_s3_video_update($form, &$form_state) {
   //lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
@@ -87,7 +87,7 @@ function video_s3_video_update($form, &$form_state) {
 }
 
 /**
- * Implementing hook_video_submit
+ * Implementing hook_video_insert
  * @param <type> $element
  * @param <type> $form_state
  */
@@ -105,4 +105,21 @@ function video_s3_video_insert(&$element, &$form_state) {
       drupal_set_message(t('Video submission queued for transfer to your Amazon S3 server. Will be there shortly.'));
     }
   }
+}
+
+/**
+ * Implementing hook_video_load
+ * @param <type> $element
+ * @param <type> $form_state
+ */
+function video_s3_video_load(&$video) {
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  if($amazon = $s3->get($video->fid)) {
+    // Fix our filepath
+    $video->filepath = $amazon->filepath;
+    $video->url = $amazon->filepath;
+    $video->extension = pathinfo($amazon->filepath, PATHINFO_EXTENSION);
+  }
+
 }
