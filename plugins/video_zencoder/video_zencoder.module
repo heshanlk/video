@@ -84,11 +84,11 @@ function video_zencoder_node_update_submit($form, &$form_state) {
 }
 
 /**
- * Implementing hook_video_submit
+ * Implementing hook_video_insert
  * @param <type> $element
  * @param <type> $form_state
  */
-function video_zencoder_video_submit(&$element, &$form_state) {
+function video_zencoder_video_insert(&$element, &$form_state) {
   $file = $element['#value'];
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
   if (is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
