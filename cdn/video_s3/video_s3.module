@@ -73,6 +73,7 @@ function video_s3_video_delete($file) {
 
 
 /*
+ * Implementation of hook_video_update().
  * Submit hanlder to update our s3 table to include the node id.
  */
 function video_s3_video_update($form, &$form_state) {

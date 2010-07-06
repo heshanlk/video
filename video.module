@@ -27,7 +27,7 @@ function video_init() {
  * We cannot use module_invoke() for this, because the arguments need to
  * be passed by reference.
  */
-function video_module_invoke($action, &$array, &$video, $other = NULL) {
+function video_module_invoke($action, &$array, &$video = NULL, $other = NULL) {
   foreach (module_list() as $module) {
     $function = $module . '_video_' . $action;
     if (function_exists($function)) {
