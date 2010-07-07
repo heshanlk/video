@@ -1,11 +1,5 @@
 // $Id$
 ------------
-//TODO
-
-
-This module add the possibility to create
-video nodes which are containers to embed
-videos into drupal pages.
 
  to embed videos into drupal pages, using CCK and filefield support.
 This module add the possibility to create video nodes which are containers
@@ -26,5 +20,10 @@ Maintainers
 -----------
 
 	Heshan Wanigasooriya :heshan at heidisoft dot com, heshanmw at gmail dot com
+<<<<<<< README.txt
         Dennis : http://drupal.org/user/384543
         Glen Marianko : http://drupal.org/usr/527446 http://linkedin.com/in/glenergetic twitter: @glenergetic
+=======
+        Dennis : http://drupal.org/user/384543
+        Glen Marianko : http://drupal.org/usr/527446 http://linkedin.com/in/glenergetic twitter: @glenergetic
+>>>>>>> 1.8.4.5.4.5.2.3

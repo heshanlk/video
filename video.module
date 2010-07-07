@@ -27,7 +27,7 @@ function video_init() {
  * We cannot use module_invoke() for this, because the arguments need to
  * be passed by reference.
  */
-function video_module_invoke($action, &$array, &$video, $other = NULL) {
+function video_module_invoke($action, &$array, &$video = NULL, $other = NULL) {
   foreach (module_list() as $module) {
     $function = $module . '_video_' . $action;
     if (function_exists($function)) {
@@ -253,6 +253,8 @@ function video_node_update_submit($form, &$form_state) {
     foreach($form_state['values']['video_id'] as $fid) {
       //lets update our table to include the nid
       db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+      // Lets other module to know to update
+      video_module_invoke('update', $form, $form_state);
     }
   }
 }
@@ -375,6 +377,8 @@ function video_file_delete($file) {
   $thumb_folder = file_directory_path(). '/' . $video_thumb_path . '/' . $file->fid;
   // Recursively delete our folder and files
   rmdirr($thumb_folder);
+  // Let other modules to know about the file delete
+  video_module_invoke('delete', $file);
 }
 
 /**
@@ -521,7 +525,7 @@ function video_widget_process($element, &$form_state) {
         }
       }
       // Call hook_video_submit API
-      video_module_invoke('submit', $element, $form_state);
+      video_module_invoke('insert', $element, $form_state);
       //
       //queue up the file id to update the node id in the video rendering / cdn tables.
       $form_state['values']['video_id'][] = $item['fid'];
