@@ -5,9 +5,10 @@ description = Allows Creation of CCK Video Fields.
 package = "Video"
 dependencies[] = content
 dependencies[] = filefield
-core = 6.x
-<<<<<<< video.info
-version = 6.x-4.x-dev
-=======
-version = 6.x-4.x-dev
->>>>>>> 1.3.4.1.4.1.2.2
+core = 7.x
+files[]=video.module
+files[]=video.install
+files[]=video.admin.inc
+files[]=video.theme.inc
+files[]=video_formatter.inc
+
