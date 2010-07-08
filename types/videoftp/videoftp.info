@@ -1,8 +1,11 @@
 ; $Id$
 name = Video FTP
 description = Allows you to attach videos uploaded through FTP to nodes.
-core = 6.x
-version = 6.x-4.x-dev
+core = 7.x
+files[]=videoftp.module
+files[]=videoftp.install
+files[]=videoftp.theme.inc
+files[]=videoftp_widget.inc
 dependencies[] = content
 dependencies[] = filefield
 dependencies[] = video

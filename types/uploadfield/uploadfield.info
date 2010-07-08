@@ -1,7 +1,16 @@
 ; $Id$
 name = Video Upload
 description = handle video upload for video module using filefield and CCK.
-core = 6.x
+core = 7.x
+files[]= uploadfield.module
+files[]= uploadfield.install
+files[]= uploadfield.theme.inc
+files[]= uploadfield_convert.inc
+files[]= uploadfield_file.inc
+files[]= uploadfield_formatter.inc
+files[]= uploadfield_thumb.inc
+files[]= uploadfield_transcode.inc
+files[]= uploadfield_widget.inc
 dependencies[] = content
 dependencies[] = filefield
 dependencies[] = video
