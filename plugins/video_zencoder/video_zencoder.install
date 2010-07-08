@@ -105,6 +105,8 @@ function video_zencoder_schema() {
  */
 function video_zencoder_install() {
   drupal_install_schema('video_zencoder');
+  // set the module weight to low since we need this to load later time than in S3
+  db_query("UPDATE {system} SET weight = '-50' WHERE name = 'video_zencoder'");
 }
 
 /**

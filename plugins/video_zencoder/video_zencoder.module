@@ -95,3 +95,20 @@ function video_zencoder_video_insert(&$element, &$form_state) {
     }
   }
 }
+
+/**
+ * Implementing hook_video_load
+ * @param <type> $element
+ * @param <type> $form_state
+ */
+function video_zencoder_video_load(&$video) {
+  module_load_include('inc', 'video_zencoder', '/includes/zencoder');
+  $zc = new video_zencoder_api;
+  if($zencoder = $zc->get($video->fid)) {
+    // Fix our filepath
+    $video->filepath = $zencoder->filepath;
+    $video->url = $zencoder->filepath;
+    $video->extension = pathinfo($zencoder->filepath, PATHINFO_EXTENSION);
+  }
+
+}

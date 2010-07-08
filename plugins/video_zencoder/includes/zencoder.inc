@@ -227,6 +227,7 @@ class video_zencoder_api {
     $video = false;
     $sql = db_query("SELECT vid, fid FROM {video_zencoder} WHERE status=%d LIMIT %d", VIDEO_ZC_PENDING, $this->limit);
     while($row = db_fetch_object($sql)) {
+      $video = false;
       // We need to check if this file id exists in our S3 table to avoid filenot found error.
       $sql_video = db_query("SELECT * FROM {video_s3} WHERE fid=%d", $row->fid);
       if($sql_video_row = db_fetch_object($sql_video)) {
@@ -252,7 +253,7 @@ class video_zencoder_api {
         // Update our status to working.
         $this->working($row->vid);
         $filepath = $video->filepath;
-        $filename = basename($video->filepath);
+        $filename = $video->filename;
         if ($encoding_job = $this->create($video)) {
           // Update our table.
           $video->bucket = $this->bucket;

@@ -100,6 +100,7 @@ class video_amazon_s3 {
     $video = false;
     $sql = db_query("SELECT vid, fid FROM {video_s3} WHERE status=%d LIMIT %d", VIDEO_S3_PENDING, $this->limit);
     while($row = db_fetch_object($sql)) {
+      $video = false;
       // We need to check if this file id exists in our transcoding table.
       $sql_video = db_query("SELECT * FROM {video_files} WHERE fid=%d", $row->fid);
       if($sql_video_row = db_fetch_object($sql_video)) {
@@ -121,7 +122,10 @@ class video_amazon_s3 {
         // Update our status to working.
         $this->working($row->vid);
         $filepath = $video->filepath;
-        $filename = basename($video->filepath);
+        // get the folder path as file object
+        $filename = $video->filepath;
+        // use the file object as file name
+        $video->filename = $filename;
         if ($this->s3->putObjectFile($filepath, $this->bucket, $filename, S3::ACL_PUBLIC_READ)) {
           // Update our table.
           $video->bucket = $this->bucket;
