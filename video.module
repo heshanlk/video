@@ -532,7 +532,7 @@ function video_widget_process($element, &$form_state) {
       break;
     case 'node_form_build_preview':
     // Call hook_video_preview API
-      video_module_invoke('preview', &$element, &$form_state);
+      video_module_invoke('preview', $element, $form_state);
       break;
     case 'node_form_delete_submit':
     //moved to hook_file_delete in video module.
