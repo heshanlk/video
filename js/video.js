@@ -56,7 +56,7 @@ $(document).ready(function() {
 			  } else {
 				$('#video-overlay').media({ flashvars: {autostart: Drupal.settings.video.autoplay}, width:width, height:height }); 
 			  }
-			},
+			}
 		});
 	});
 });
