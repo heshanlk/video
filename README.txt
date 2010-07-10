@@ -20,5 +20,5 @@ Maintainers
 -----------
 
 	Heshan Wanigasooriya :heshan at heidisoft dot com, heshanmw at gmail dot com
-        Dennis : http://drupal.org/user/384543
-        Glen Marianko : http://drupal.org/usr/527446 http://linkedin.com/in/glenergetic twitter: @glenergetic
+  Dennis : http://drupal.org/user/384543
+  Glen Marianko : http://drupal.org/usr/527446 http://linkedin.com/in/glenergetic twitter: @glenergetic
