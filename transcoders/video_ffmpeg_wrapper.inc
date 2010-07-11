@@ -167,7 +167,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
    * Return the dimensions of a video
    */
   public function get_dimensions($video) {
-    $ffmpeg_output = ffmpeg_wrapper_file_data($video['filepath']);
+    $ffmpeg_output = ffmpeg_wrapper_file_data($video);
     $res = array('width' => 0,'height' => 0);
     if($ffmpeg_output['video']['s']) {
       $dimensions = explode("x", $ffmpeg_output['video']['s']);
