@@ -507,12 +507,13 @@ function video_widget_element_settings(&$element) {
 
 
 /**
- * Video_widgi_process for API handlers for any video types.
+ * Video_widget_process for API handlers for any video types.
  * @param <type> $element
  * @param <type> $form_state
  */
 function video_widget_process($element, &$form_state) {
   $item = $element['#value'];
+  $field = content_fields($element['#field_name'], $element['#type_name']);
   switch($form_state['clicked_button']['#submit'][0]) {
     case 'node_form_submit':
     // Auto convert our video file
