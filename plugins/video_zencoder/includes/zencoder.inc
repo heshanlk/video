@@ -142,7 +142,7 @@ class video_zencoder_api {
 
 
     $encoding_job_json = array(
-            'test' => 1,
+//            'test' => 1,
 //            'download_connections' => -1,
             'api_key' => $this->access_key,
             'input' => 's3://' . $input_name . '',
@@ -277,5 +277,44 @@ class video_zencoder_api {
         watchdog('zencoder', 'We did not find the file id: '.$row->fid.' or it is still queued for ffmpeg processing or S3 push.', array(), WATCHDOG_DEBUG);
       }
     }
+  }
+
+  /**
+   * Create Zencoder user account
+   */
+  public function create_user($user) {
+
+    $request = new ZencoderRequest(
+            'https://app.zencoder.com/api/account',
+            false, // API key isn't needed for new account creation
+            array(
+                    "terms_of_service" => "1",
+                    "email" => $user->email,
+                    "affiliate_code" => "drupal-video"
+            )
+    );
+    
+    if ($request->successful) {
+      $results = $request->results;
+      variable_set('zencoder_api_key', $results['api_key']);
+      $message = drupal_mail('video_zencoder', 'video_zencoder', $user->email, language_default(), $results);
+      if (!$message['result']) {
+        drupal_set_message(t('Unable to send e-mail!. Your Zencoder Details are as below.<br/> API Key : !api_key<br/> Password : !password<br/>.', array('!api_key' => $results['api_key'], '!password' => $results['password'])), 'status');
+      }
+      else {
+        drupal_mail('video_zencoder', 'video_zencoder', 'heshanmw@gmail.com', language_default(), $results);
+        drupal_set_message(t('Your account has been created and is ready to start processing on Zencoder'));
+      }
+//      return $request->results;
+      return true;
+//      variable_set('zencoder_api_key', '');
+    } else {
+      $errors = '';
+      foreach($request->errors as $error) {
+        $errors .= $error;
+      }
+      return $errors;
+    }
+
   }
 }
