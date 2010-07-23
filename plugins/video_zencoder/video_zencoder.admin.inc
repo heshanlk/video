@@ -7,6 +7,10 @@
 function video_zencoder_admin_settings() {
   global $user;
 
+  // check amazon s3 module is exists or not
+  if(!module_exists('video_s3'))
+    drupal_set_message(t('You must enable Video Amazon S3 Module to enable this module.'), 'error');
+  
   $form = array();
   $zencoder_api = variable_get('zencoder_api_key', null);
   if(!isset ($zencoder_api) && empty ($zencoder_api)) {
@@ -330,7 +334,7 @@ function video_zencoder_admin_settings_validate($form, &$form_state) {
     $errors = true;
     form_set_error('zencoder_username', $error);
   }
-  
+
   // get the API key from zencoder and save it to variable
   if(!$errors) {
     $email = $form_state['values']['zencoder_username'];
