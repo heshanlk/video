@@ -69,7 +69,7 @@ class video_amazon_s3 {
    */
   public function update($video) {
     $result = db_query("UPDATE {video_s3} SET bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', status=%d, completed=%d WHERE vid=%d",
-      $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_S3_ACTIVE, time(), $video->vid);
+      $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_S3_ACTIVE, REQUEST_TIME, $video->vid);
     return $result;
   }
 

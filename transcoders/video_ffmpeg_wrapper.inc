@@ -79,7 +79,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       $file->filepath = $thumbfile;
       $file->filemime = file_get_mimetype($filename);
       $file->filesize = filesize($thumbfile);
-      $file->timestamp = time();
+      $file->timestamp = REQUEST_TIME;
       $files[] = $file;
     }
     return $files;

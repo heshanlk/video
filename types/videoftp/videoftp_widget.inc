@@ -283,7 +283,7 @@ function videoftp_save_upload($element) {
   $file->filemime = file_get_mimetype($file->filename);
   $file->filesize = filesize($file->filepath);
   $file->status = FILE_STATUS_TEMPORARY;
-  $file->timestamp = time();
+  $file->timestamp = REQUEST_TIME;
 
   //lets move our file from the ftp folder to the files directory
   if(file_move($file, $dest)) {

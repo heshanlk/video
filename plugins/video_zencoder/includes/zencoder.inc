@@ -181,7 +181,7 @@ class video_zencoder_api {
   */
   public function update($video) {
     $result = db_query("UPDATE {video_zencoder} SET jobid = %d, outputid = %d, bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', status=%d, completed=%d WHERE vid=%d",
-            $video->jobid, $video->outputid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_ZC_ACTIVE, time(), $video->vid);
+            $video->jobid, $video->outputid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_ZC_ACTIVE, REQUEST_TIME, $video->vid);
     return $result;
   }
 

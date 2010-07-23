@@ -749,7 +749,7 @@ class S3 {
 	* @return string
 	*/
 	public static function getAuthenticatedURL($bucket, $uri, $lifetime, $hostBucket = false, $https = false) {
-		$expires = time() + $lifetime;
+		$expires = REQUEST_TIME + $lifetime;
 		$uri = str_replace('%2F', '/', rawurlencode($uri)); // URI should be encoded (thanks Sean O'Dea)
 		return sprintf(($https ? 'https' : 'http').'://%s/%s?AWSAccessKeyId=%s&Expires=%u&Signature=%s',
 		$hostBucket ? $bucket : $bucket.'.s3.amazonaws.com', $uri, self::$__accessKey, $expires,
@@ -773,7 +773,7 @@ class S3 {
 	public static function getHttpUploadPostParams($bucket, $uriPrefix = '', $acl = self::ACL_PRIVATE, $lifetime = 3600, $maxFileSize = 5242880, $successRedirect = "201", $amzHeaders = array(), $headers = array(), $flashVars = false) {
 		// Create policy object
 		$policy = new stdClass;
-		$policy->expiration = gmdate('Y-m-d\TH:i:s\Z', (time() + $lifetime));
+		$policy->expiration = gmdate('Y-m-d\TH:i:s\Z', (REQUEST_TIME + $lifetime));
 		$policy->conditions = array();
 		$obj = new stdClass; $obj->bucket = $bucket; array_push($policy->conditions, $obj);
 		$obj = new stdClass; $obj->acl = $acl; array_push($policy->conditions, $obj);

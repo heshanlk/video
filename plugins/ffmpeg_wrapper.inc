@@ -190,7 +190,7 @@ function ffmpeg_wrapper_auto_thumbnail($vidfile) {
     $file->filepath = $thumbfile;
     $file->filemime = file_get_mimetype("video-thumb-for-$fid-$i.png");
     $file->filesize = filesize($thumbfile);
-    $file->timestamp = time();
+    $file->timestamp = REQUEST_TIME;
     $files[] = $file;
   }
   return $files;
@@ -233,7 +233,7 @@ function ffmpeg_wrapper_check_exe_path($path = NULL) {
 //
 //  //print('executing ' . $command); die;
 //  watchdog('video_render', 'executing: ' . $options);
-////   watchdog('video_render', 'Starting : ' . time());
+////   watchdog('video_render', 'Starting : ' . REQUEST_TIME);
 //  //execute the command
 ////  ob_start();
 ////  passthru($command." 2>&1", $command_return);
@@ -256,7 +256,7 @@ function ffmpeg_wrapper_check_exe_path($path = NULL) {
 //    $file->filepath = $job->convfile;
 //    $file->filemime = file_get_mimetype($file_name);
 //    $file->filesize = filesize($job->convfile);
-//    $file->timestamp = time();
+//    $file->timestamp = REQUEST_TIME;
 //
 //    $job->converted = $file;
 //  }
@@ -399,7 +399,7 @@ function ffmpeg_wrapper_auto_convert(&$job) {
     $file->filepath = $output_file;
     $file->filemime = file_get_mimetype($file_name);
     $file->filesize = filesize($output_file);
-    $file->timestamp = time();
+    $file->timestamp = REQUEST_TIME;
 
     $job->converted = $file;
   }

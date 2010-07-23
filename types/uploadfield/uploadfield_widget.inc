@@ -136,7 +136,7 @@ function _uploadfield_widget_settings_default_validate($element, &$form_state) {
 
   // Make the file permanent and store it in the form.
   file_set_status($file, FILE_STATUS_PERMANENT);
-  $file->timestamp = time();
+  $file->timestamp = REQUEST_TIME;
   $form_state['values']['default_video_thumb'] = (array)$file;
 }
 

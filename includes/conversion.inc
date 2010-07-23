@@ -111,7 +111,7 @@ class video_conversion {
         $video->converted->filemime = file_get_mimetype($converted);
         $video->converted->filesize = filesize($converted);
         $video->converted->status = VIDEO_RENDERING_COMPLETE;
-        $video->converted->completed = time();
+        $video->converted->completed = REQUEST_TIME;
         //clear our cache so our video path is updated.
         cache_clear_all('*', 'cache_content', true);
         // Update our video_files table with the converted video information.

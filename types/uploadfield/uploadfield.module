@@ -500,7 +500,7 @@ function uploadfield_v_video($op, &$element) {
         $file->filepath = $vid_path;
         $file->filemime = file_get_mimetype($vid_name);
         $file->filesize = filesize($vid_path);
-        $file->timestamp = time();
+        $file->timestamp = REQUEST_TIME;
 
         if($op == 'update') {
           $old_fid = $element['#default_value']['data']['video_thumb_fid'];
