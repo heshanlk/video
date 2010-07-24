@@ -264,6 +264,7 @@ class video_zencoder_api {
           $video->outputid = $encoding_job->outputs["VIDEO" . $video->fid]->id;
           $prefix = $this->ssl ? 'https://' : 'http://';
           $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename . '.flv';
+//          $video->filepath = $this->s3_private_url($video->bucket, $video->filename);
           if($this->update($video)) {
             watchdog('zencoder', t('Successfully created trancoding job on file: !file into the bucket %bucket on Zencoder.', array('!file' => $filepath, '%bucket' => $this->bucket)), array(), WATCHDOG_INFO);
           }
@@ -293,7 +294,7 @@ class video_zencoder_api {
                     "affiliate_code" => "drupal-video"
             )
     );
-    
+
     if ($request->successful) {
       $results = $request->results;
       variable_set('zencoder_api_key', $results['api_key']);
@@ -317,4 +318,41 @@ class video_zencoder_api {
     }
 
   }
+
+  /**
+   *
+   * @param string $bucket
+   * @param string $object
+   * @param int $lifetime_in_seconds This allows a year before the policy expires,
+   *                                 in which case you can just form another one.
+   *                                 The number is seconds from the current time.
+   * @return <type>
+   */
+  public function s3_private_url($bucket, $object, $lifetime_in_seconds = 7200) {
+    $aws_s3_key = variable_get('amazon_s3_access_key', '');
+    $aws_s3_secret = variable_get('amazon_s3_secret_access_key', '');
+
+    if(strlen($object) == 0)
+      return;
+
+    $lifetime_in_seconds = strtotime("+$lifetime_in_seconds seconds");
+    $string_to_sign = "GET\n\n\n{$lifetime_in_seconds}\n/{$bucket}/{$object}";
+    $signature = urlencode(base64_encode((hash_hmac("sha1", utf8_encode($string_to_sign), $aws_s3_secret, TRUE))));
+
+    $authentication_params = "AWSAccessKeyId=" . $aws_s3_key;
+    $authentication_params.= "&Expires={$lifetime_in_seconds}";
+    $authentication_params.= "&Signature={$signature}";
+
+    // Create the return filepath. We add the bucket file path if
+    // the a custom domain is not being used
+    // Create the return filepath.
+    // We add the bucket file path if http(s)://s3.amazonaws.com is being used as the s3 url
+    $default_s3_url = variable_get('s3_api_default_server_url', "http://s3.amazonaws.com/");
+    preg_match('@^(?:https?://)?([^/]+)@i', $default_s3_url, $domain);
+    if ($domain[1] == 's3.amazonaws.com') {
+      $s3_filename = $bucket . '/' . $object;
+    }
+    return $default_s3_url . $s3_filename . "?{$authentication_params}";
+  }
+
 }
