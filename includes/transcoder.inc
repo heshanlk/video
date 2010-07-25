@@ -12,7 +12,8 @@ class video_transcoder {
 
   public function __construct($transcoder = null) {
     //get our configured transcoder.
-    $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
+    if(!isset ($transcoder))
+      $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
 //    module_load_include('inc', 'video', '/transcoders/' . $transcoder);
     if(!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
       $modules = module_list();
@@ -69,6 +70,10 @@ class video_transcoder {
     return $form;
   }
 
+  public function admin_settings_validate($form, &$form_state) {
+    return $this->transcoder->admin_settings_validate($form, &$form_state);
+  }
+
   private function _transcoders() {
     // Lets find our transcoder classes and build our radio options
     // We do this by scanning our transcoders folder
@@ -112,6 +117,7 @@ class video_transcoder {
   public function is_wsod() {
     return $this->transcoder->is_wsod();
   }
+
 }
 
 interface transcoder_interface {
@@ -124,4 +130,5 @@ interface transcoder_interface {
   public function get_help();
   public function is_wsod();
   public function admin_settings();
+  public function admin_settings_validate($form, &$form_state);
 }

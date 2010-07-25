@@ -22,38 +22,11 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
     form_set_error('vid_convertor', t('You need to download and install the !ffmpeg_wrapper module to enable this option.' , array('!ffmpeg_wrapper' => l(t('FFMPEG Wrapper'), 'http://drupal.org/project/ffmpeg_wrapper'))));
   }
 
-  // @TODO : add validation with the API call back move to the API class
-  $zencoder_api = variable_get('zencoder_api_key', null);
-  if(isset ($zencoder_api) && !empty ($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder')
-    return true;
-
-  $errors = false;
-  // check terms and condition
-  if($form_state['values']['agree_terms_zencoder'] == 0) {
-    $errors = true;
-    form_set_error('agree_terms_zencoder', t('You must agree terms and conditions.' , array()));
-  }
-  // check for email exists
-  // Validate the e-mail address:
-  if ($error = user_validate_mail($form_state['values']['zencoder_username'])) {
-    $errors = true;
-    form_set_error('zencoder_username', $error);
-  }
-
-  // get the API key from zencoder and save it to variable
-  if(!$errors) {
-    $email = $form_state['values']['zencoder_username'];
-    module_load_include('inc', 'video_zencoder', '/includes/zencoder');
-    $zc = new video_zencoder_api;
-//    if(!($error = $zc->create_user($user)))
-//            form_set_error('zencoder_username', $error);
-    $user = new stdClass;
-    $user->email = $email;
-    $result = $zc->create_user($user);
-    if($result !== true)
-      form_set_error('zencoder_username', $result);
-
-  }
+  // add vallidations by trnacoder interface
+  $transcoder = $form_state['values']['vid_convertor'];
+  module_load_include('inc', 'video', '/includes/transcoder');
+  $transcoder = new video_transcoder($transcoder);
+  $transcoder->admin_settings_validate($form, $form_state);
 }
 
 function video_general_admin_settings() {

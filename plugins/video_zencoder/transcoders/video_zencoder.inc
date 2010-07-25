@@ -167,7 +167,7 @@ class video_zencoder implements transcoder_interface {
       $form['zencoder_user']['zencoder_username'] = array(
         '#type' => 'textfield',
         '#title' => t('Your email address'),
-        '#default_value' => variable_get('zencoder_username', $user->mail),
+        '#default_value' => variable_get('zencoder_username', 'me@localhost'),
         '#size' => 50,
         '#description' => t('Make sure the email is accurate, since we will send all the password details to manage transcoding online and API key details to this.')
       );
@@ -192,7 +192,7 @@ class video_zencoder implements transcoder_interface {
         '#title' => t('Zencoder API Key'),
         '#default_value' => variable_get('zencoder_api_key', ''),
         '#size' => 50,
-        '#description' => t('Zencoder API Key if you don\'t have API key click here to generate one.')
+        '#description' => t('Zencoder API Key.')
       );
 
       $form['zencoder'] = array(
@@ -473,6 +473,47 @@ class video_zencoder implements transcoder_interface {
     return $form;
   }
 
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
+   */
+  public function admin_settings_validate($form, &$form_state) {
+    $zencoder_api = variable_get('zencoder_api_key', null);
+    if(isset ($zencoder_api) && !empty ($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder')
+      return;
+
+    $errors = false;
+    // check terms and condition
+    if($form_state['values']['agree_terms_zencoder'] == 0) {
+      $errors = true;
+      form_set_error('agree_terms_zencoder', t('You must agree terms and conditions.' , array()));
+    }
+    // check for email exists
+    // Validate the e-mail address:
+    if ($error = user_validate_mail($form_state['values']['zencoder_username'])) {
+      $errors = true;
+      form_set_error('zencoder_username', $error);
+    }
+
+    // get the API key from zencoder and save it to variable
+    if(!$errors) {
+      $email = $form_state['values']['zencoder_username'];
+      module_load_include('inc', 'video_zencoder', '/includes/zencoder');
+      $zc = new video_zencoder_api;
+//    if(!($error = $zc->create_user($user)))
+//            form_set_error('zencoder_username', $error);
+      $user = new stdClass;
+      $user->email = $email;
+      $result = $zc->create_user($user);
+      if($result !== true)
+        form_set_error('zencoder_username', $result);
+    }
+  }
+
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#is_wsod()
+   */
   public function is_wsod() {
     return $this->is_wsod;
   }

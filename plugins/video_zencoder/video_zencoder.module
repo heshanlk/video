@@ -101,14 +101,15 @@ function video_zencoder_video_load(&$video) {
     $video->url = urlencode(video_s3_get_authenticated_url($zencoder->filename));
     $video->extension = pathinfo($zencoder->filepath, PATHINFO_EXTENSION);
   }
+}
 
-  /**
-   * Implementation of hook_mail().
-   */
-  function video_zencoder_mail($key, &$message, $params) {
-    $language = $message['language'];
-    $message['subject'] .= 'Zencoder Registration Details for Drupal Video';
-    $message['body'][] = '<div class="ii gt" id=":wv">Welcome to Zencoder for Drupal<br>
+/**
+ * Implementation of hook_mail().
+ */
+function video_zencoder_mail($key, &$message, $params) {
+  $language = $message['language'];
+  $message['subject'] .= 'Zencoder Registration Details for Drupal Video';
+  $message['body'][] = '<div>Welcome to Zencoder for Drupal<br>
           -------------------<br>
           <br>
           Your account has been created and is ready to start processing.<br>
@@ -132,6 +133,5 @@ function video_zencoder_video_load(&$video) {
           Thanks,<br>
           <font color="#888888">Zencoder for Drupal Support<br>
           </font></div>';
-  }
-
 }
+

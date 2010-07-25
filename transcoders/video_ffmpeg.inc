@@ -318,6 +318,14 @@ class video_ffmpeg implements transcoder_interface {
     return $form;
   }
 
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
+   */
+  public function admin_settings_validate($form, &$form_state) {
+    return;
+  }
+
   public function is_wsod() {
     return $this->is_wsod;
   }
