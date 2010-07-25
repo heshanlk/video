@@ -6,31 +6,6 @@
  */
 
 /*
- * Implementation of hook_perm().
-*/
-function video_zencoder_perm() {
-  return array('administer zencoder');
-}
-/*
- * Implmentation of hook_help().
-*/
-function video_zencoder_help($path, $arg) {
-  switch($path) {
-    case 'admin/settings/video/amazon_s3':
-      $output = t('Use Amazon Simple Storage Service (Amazon S3) to store your video files.  This free\'s up bandwidth from your site, providing a faster experience for your users.  Simply enable this module and enter your authentication details and your done!');
-      return $output;
-  }
-}
-
-/*
- * Implementation of hook_menu().
-*/
-function video_zencoder_menu() {
-  $items = array();
-  return $items;
-}
-
-/*
  * Implementation of hook_cron().
 */
 function video_zencoder_cron() {
