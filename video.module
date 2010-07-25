@@ -277,7 +277,7 @@ function video_thumb_process(&$element) {
       if(is_array($thumbs)) {
         foreach($thumbs as $fid => $img) {
           // if file object contain url then use file name to identify object
-          $key = ($img->source == 'URL') ? $img->filename : $img->filepath;
+          $key = $img->filepath;
           $thumbss[$key] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
         }
       }

@@ -256,6 +256,7 @@ class video_zencoder_api {
         // Get Output file info
         // API Key
         $api_key = variable_get('zencoder_api_key', '');
+        $filetype = variable_get('video_zencoder_ext', 'flv');
 
         // Update our status to working.
         $this->working($row->vid);
@@ -270,7 +271,7 @@ class video_zencoder_api {
           $video->jobid = $encoding_job->id;
           $video->outputid = $encoding_job->outputs["VIDEO" . $video->fid]->id;
           $prefix = $this->ssl ? 'https://' : 'http://';
-          $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename . '.flv';
+          $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename . $filetype;
 //          $video->filepath = $this->s3_private_url($video->bucket, $video->filename);
           if($this->update($video)) {
             watchdog('zencoder', t('Successfully created trancoding job on file: !file into the bucket %bucket on Zencoder.', array('!file' => $filepath, '%bucket' => $this->bucket)), array(), WATCHDOG_INFO);

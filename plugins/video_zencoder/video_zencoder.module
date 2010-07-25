@@ -132,6 +132,7 @@ function video_zencoder_mail($key, &$message, $params) {
           <br>
           Thanks,<br>
           <font color="#888888">Zencoder for Drupal Support<br>
-          </font></div>';
+          </font>
+          </div>';
 }
 
