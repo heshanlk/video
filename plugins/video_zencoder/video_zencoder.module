@@ -109,29 +109,29 @@ function video_zencoder_video_load(&$video) {
     $language = $message['language'];
     $message['subject'] .= 'Zencoder Registration Details for Drupal Video';
     $message['body'][] = '<div class="ii gt" id=":wv">Welcome to Zencoder for Drupal<br>
--------------------<br>
-<br>
-Your account has been created and is ready to start processing.<br>
-<br>
-Your account details are as below.<br>
-<br>
-API Key : '.$params['api_key'].'<br>
-Password : '.$params['password'].'<br>
-<br>
-Login URL:<br>
-<a target="_blank" href="https://app.zencoder.com/login">https://app.zencoder.com/login</a><br>
-<br>
-You can get help at the following places:<br>
-<br>
-* Our chat room at <a target="_blank" href="http://zencoder.com/chat">http://zencoder.com/chat</a><br>
-* Customer forums at <a target="_blank" href="https://help.zencoder.com/forums">https://help.zencoder.com/<wbr></wbr>forums</a><br>
-* The help desk at <a target="_blank" href="https://help.zencoder.com/tickets/new">https://help.zencoder.com/<wbr></wbr>tickets/new</a><br>
-<br>
-We\'d love to hear from you. Let us know how we can help. Thanks!<br>
-<br>
-Thanks,<br>
-<font color="#888888">Zencoder for Drupal Support<br>
-</font></div>';
+          -------------------<br>
+          <br>
+          Your account has been created and is ready to start processing.<br>
+          <br>
+          Your account details are as below.<br>
+          <br>
+          API Key : '.$params['api_key'].'<br>
+          Password : '.$params['password'].'<br>
+          <br>
+          Login URL:<br>
+          <a target="_blank" href="https://app.zencoder.com/login">https://app.zencoder.com/login</a><br>
+          <br>
+          You can get help at the following places:<br>
+          <br>
+          * Our chat room at <a target="_blank" href="http://zencoder.com/chat">http://zencoder.com/chat</a><br>
+          * Customer forums at <a target="_blank" href="https://help.zencoder.com/forums">https://help.zencoder.com/<wbr></wbr>forums</a><br>
+          * The help desk at <a target="_blank" href="https://help.zencoder.com/tickets/new">https://help.zencoder.com/<wbr></wbr>tickets/new</a><br>
+          <br>
+          We\'d love to hear from you. Let us know how we can help. Thanks!<br>
+          <br>
+          Thanks,<br>
+          <font color="#888888">Zencoder for Drupal Support<br>
+          </font></div>';
   }
 
 }
