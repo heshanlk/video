@@ -98,7 +98,7 @@ function video_zencoder_video_load(&$video) {
     // Fix our filepath
     $video->filepath = $zencoder->filepath;
     // use urlencode to transfer videos.
-    $video->url = urlencode($zc->s3_private_url($zencoder->bucket, $zencoder->filename));
+    $video->url = urlencode(video_s3_get_authenticated_url($zencoder->filename));
     $video->extension = pathinfo($zencoder->filepath, PATHINFO_EXTENSION);
   }
 
