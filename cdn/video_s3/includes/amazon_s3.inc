@@ -146,4 +146,18 @@ class video_amazon_s3 {
       }
     }
   }
+
+  public function get_object_info($object){
+    return $this->s3->getObjectInfo($this->bucket, $object);
+  }
+
+  public function get_authenticated_url($object){
+    $lifetime = 1800;
+    return $this->s3->getAuthenticatedURL($this->bucket, $object, $lifetime);
+  }
+
+  
+  public function get_object($object, $saveTo = false){
+    return $this->s3->getObject($this->bucket, $object, $saveTo);
+  }
 }

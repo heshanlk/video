@@ -4,14 +4,15 @@
  * @file
  * Transcoder class file to handle ffmpeg settings and conversions.
  *
- */
+*/
 
 
 class video_ffmpeg implements transcoder_interface {
   // Naming for our radio options.  Makes it easy to extend our transcoders.
   private $name = 'FFmpeg';
   private $value = 'video_ffmpeg';
-  
+  private $is_wsod = false; // web service on demand service
+
   protected $params = array();
   protected $audio_bitrate = 64;
   protected $video_bitrate = 200;
@@ -44,7 +45,7 @@ class video_ffmpeg implements transcoder_interface {
     ob_end_clean();
     return $output;
   }
-  
+
   public function generate_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
@@ -102,7 +103,7 @@ class video_ffmpeg implements transcoder_interface {
     }
     return $files;
   }
-  
+
   public function convert_video($video, $converted, $dimensions) {
     // Setup our default command to be run.
     $command = t($this->params['command'], array(
@@ -115,7 +116,7 @@ class video_ffmpeg implements transcoder_interface {
     // Process our video
     return $this->run_command($command);
   }
-  
+
   public function video_converted_extension() {
     return $this->params['videoext'];
   }
@@ -151,11 +152,11 @@ class video_ffmpeg implements transcoder_interface {
     $minutes = $hmsmm[1];
     return $seconds + ($hours * 3600) + ($minutes * 60);
   }
-  
+
   /*
    * Return the dimensions of a video
-   */
-  public function get_dimensions($video) {  
+  */
+  public function get_dimensions($video) {
     $ffmpeg_output = $this->get_video_info($video);
     $res = array('width' => 0,'height' => 0);
     // Get dimensions
@@ -167,7 +168,7 @@ class video_ffmpeg implements transcoder_interface {
 
     }
     return $res;
-  } 
+  }
 
   /**
    * Interface Implementations
@@ -199,6 +200,11 @@ class video_ffmpeg implements transcoder_interface {
    */
   public function admin_settings() {
     $form = array();
+    $form['video_ffmpeg_start'] = array(
+      '#type' => 'markup',
+      '#value' => '<div id="video_ffmpeg">',
+    );
+
     $form['video_transcoder_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to Video Transcoder'),
@@ -216,97 +222,104 @@ class video_ffmpeg implements transcoder_interface {
       '#title' => t('Enable the use of nice when calling the ffmpeg command.'),
       '#default_value' => variable_get('video_ffmpeg_nice_enable', TRUE),
       '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
-  );
+    );
     // Thumbnail Videos We need to put this stuff last.
     $form['autothumb'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Video Thumbnails'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
+      '#type' => 'fieldset',
+      '#title' => t('Video Thumbnails'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
     );
     $form['autothumb']['video_thumb_path'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Path to save thumbnails'),
-        '#description' => t('Path to save video thumbnails extracted from the videos.'),
-        '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
+      '#type' => 'textfield',
+      '#title' => t('Path to save thumbnails'),
+      '#description' => t('Path to save video thumbnails extracted from the videos.'),
+      '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
     );
     $form['autothumb']['advanced'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Advanced Settings'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE
+      '#type' => 'fieldset',
+      '#title' => t('Advanced Settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
     );
     $form['autothumb']['advanced']['video_ffmpeg_thumbnailer_options'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Video thumbnailer options'),
-        '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ').'<ol><li>'.t('!videofile (the video file to thumbnail)').'<li>'.t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
-        '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile'),
+      '#type' => 'textarea',
+      '#title' => t('Video thumbnailer options'),
+      '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ').'<ol><li>'.t('!videofile (the video file to thumbnail)').'<li>'.t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
+      '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile'),
     );
 
     // Video conversion settings.
     $form['autoconv'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Video Conversion'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#prefix' => '<div id="video_ffmpeg">',
-        '#suffix' => '</div>'
+      '#type' => 'fieldset',
+      '#title' => t('Video Conversion'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
     );
     $form['autoconv']['video_ffmpeg_ext'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Video Extension'),
-        '#size' => 10,
-        '#maxlength' => 10,
-        '#default_value' => variable_get('video_ffmpeg_ext', 'flv'),
-        '#description' => t('The video extensions without the period you want the converted file to contain.')
+      '#type' => 'textfield',
+      '#title' => t('Video Extension'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_ext', 'flv'),
+      '#description' => t('The video extensions without the period you want the converted file to contain.')
     );
     $form['autoconv']['video_ffmpeg_width'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Video Width'),
-        '#size' => 10,
-        '#maxlength' => 10,
-        '#default_value' => variable_get('video_ffmpeg_width', 640),
+      '#type' => 'textfield',
+      '#title' => t('Video Width'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_width', 640),
     );
     $form['autoconv']['video_ffmpeg_height'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Video height'),
-        '#size' => 10,
-        '#maxlength' => 10,
-        '#default_value' => variable_get('video_ffmpeg_height', 480),
+      '#type' => 'textfield',
+      '#title' => t('Video height'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_height', 480),
     );
     $form['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Video bitrate'),
-        '#description' => t('The video bitrate in bit/s of the converted video.'),
-        '#size' => 10,
-        '#maxlength' => 10,
-        '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200000),
+      '#type' => 'textfield',
+      '#title' => t('Video bitrate'),
+      '#description' => t('The video bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200000),
     );
     $form['autoconv']['video_ffmpeg_helper_auto_cvr_audio_bitrate'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Audio bitrate'),
-        '#description' => t('The audio bitrate in bit/s of the converted video.'),
-        '#size' => 10,
-        '#maxlength' => 10,
-        '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
+      '#type' => 'textfield',
+      '#title' => t('Audio bitrate'),
+      '#description' => t('The audio bitrate in bit/s of the converted video.'),
+      '#size' => 10,
+      '#maxlength' => 10,
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
     );
     $form['autoconv']['advanced'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Advanced Settings'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE
+      '#type' => 'fieldset',
+      '#title' => t('Advanced Settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
     );
     $form['autoconv']['advanced']['video_ffmpeg_helper_auto_cvr_options'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Video converter options'),
-        '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ul>'.
+      '#type' => 'textarea',
+      '#title' => t('Video converter options'),
+      '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ').'<ul>'.
         '<li>'.t('!videofile (the video file to convert)').
         '<li>'.t('!convertfile (a newly created file to store the converted file)').
         '<li>'.t('!size (video resolution of the converted file)').
         '</ul>'.t('For further informations refer to the !ffmpegdoc', array('!ffmpegdoc' => l(t('Official FFMpeg documentation.'), 'http://ffmpeg.mplayerhq.hu/ffmpeg-doc.html', array('fragment' => TRUE)))),
-        '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile'),
+      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile'),
+    );
+
+    $form['video_ffmpeg_end'] = array(
+      '#type' => 'markup',
+      '#value' => '</div>',
     );
     return $form;
+  }
+
+  public function is_wsod() {
+    return $this->is_wsod;
   }
 }
 ?>

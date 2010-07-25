@@ -5,15 +5,31 @@
  * Class file used to wrap the transcoder functions.
  *
  * @todo need more commenting
- */
+*/
 
 class video_transcoder {
   private $transcoder;
 
-  public function __construct() {
+  public function __construct($transcoder = null) {
     //get our configured transcoder.
     $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
-    module_load_include('inc', 'video', '/transcoders/' . $transcoder);
+//    module_load_include('inc', 'video', '/transcoders/' . $transcoder);
+    if(!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
+      $modules = module_list();
+      foreach($modules as $module) {
+        $mobule_files = array();
+        $module_path = drupal_get_path('module', $module) .'/transcoders';
+        $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
+        if(is_array($mobule_files)) {
+          foreach($mobule_files as $file) {
+            if($file->name == $transcoder)
+              require_once $file->filename;
+          }
+
+        }
+//        
+      }
+    }
     if(class_exists($transcoder)) {
       $this->transcoder = new $transcoder;
     }
@@ -59,19 +75,29 @@ class video_transcoder {
     $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
     $path = drupal_get_path('module', 'video') .'/transcoders';
     $files = file_scan_directory($path, '^.*\.inc$');
+    // check inside sub modules
+    $modules = module_list();
+    foreach($modules as $module) {
+      $mobule_files = array();
+      $module_path = drupal_get_path('module', $module) .'/transcoders';
+      $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
+    }
+    $files = array_merge($files, $mobule_files);
     foreach($files as $file) {
-      module_load_include('inc', 'video', '/transcoders/' . $file->name);
+      if(!module_load_include('inc', 'video', '/transcoders/' . $file->name))
+        require_once $file->filename;
       $focus = new $file->name;
       $form['radios'][$focus->get_value()] = $focus->get_name();
       $form['help'][] = $focus->get_help();
       $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings();
     }
-    //we need to move our video/thumbnail fieldsets to the bottom of our form as they are used for each trancoder
-    $autothumb = $form['admin_settings']['autothumb'];
-    $autoconv = $form['admin_settings']['autoconv'];
-    unset($form['admin_settings']['autothumb'], $form['admin_settings']['autoconv']);
-    $form['admin_settings']['autothumb'] = $autothumb;
-    $form['admin_settings']['autoconv'] = $autoconv;
+//    //we need to move our video/thumbnail fieldsets to the bottom of our form as they are used for each trancoder
+//    $autothumb = $form['admin_settings']['autothumb'];
+//    $autoconv = $form['admin_settings']['autoconv'];
+//    unset($form['admin_settings']['autothumb'], $form['admin_settings']['autoconv']);
+//    if(!$this->transcoder->is_wsod())
+//    $form['admin_settings']['autothumb'] = $autothumb;
+//    $form['admin_settings']['autoconv'] = $autoconv;
     return $form;
   }
 
@@ -81,6 +107,10 @@ class video_transcoder {
 
   public function video_converted_extension() {
     return $this->transcoder->video_converted_extension();
+  }
+
+  public function is_wsod() {
+    return $this->transcoder->is_wsod();
   }
 }
 
@@ -92,5 +122,6 @@ interface transcoder_interface {
   public function get_name();
   public function get_value();
   public function get_help();
+  public function is_wsod();
   public function admin_settings();
 }

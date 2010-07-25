@@ -44,17 +44,19 @@ class video_helper {
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
 
     // TODO : add hook_video_load API to load videos
-    
+
     // lets find out if we are overriding this video with a converted one.
     // lets find out if we have transcoded this file and update our paths.
     if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion']
-            && !$element['#item']['data']['bypass_autoconversion']) {
+      && !$element['#item']['data']['bypass_autoconversion']) {
       module_load_include('inc', 'video', '/includes/conversion');
       $conversion = new video_conversion;
       $converted = $conversion->load_converted_video($video->fid);
-      $video->filepath = $converted->filepath;
-      $video->url = file_create_url($converted->filepath);
-      $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+      if(!$conversion->transcoder_is_wsod()) {
+        $video->filepath = $converted->filepath;
+        $video->url = file_create_url($converted->filepath);
+        $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+      }
     }
 
     // Let othere module to load the video files by referance

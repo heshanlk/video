@@ -27,16 +27,6 @@ function video_zencoder_help($path, $arg) {
 */
 function video_zencoder_menu() {
   $items = array();
-  $items['admin/settings/video/zencoder'] = array(
-          'title' => 'Zencoder',
-          'description' => 'Configure your Zencoder API settings.',
-          'page callback' => 'drupal_get_form',
-          'page arguments' => array('video_zencoder_admin_settings'),
-          'access arguments' => array('administer site configuration'),
-          'file' => 'video_zencoder.admin.inc',
-          'type' => MENU_LOCAL_TASK,
-          'weight' => 10,
-  );
   return $items;
 }
 

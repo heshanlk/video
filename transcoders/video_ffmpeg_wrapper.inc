@@ -4,13 +4,14 @@
  * @file
  * Transcoder class file to handle ffmpeg_wrapper settings and conversions.
  *
- */
+*/
 
 
 class video_ffmpeg_wrapper implements transcoder_interface {
   private $name = 'FFmpeg Wrapper';
   private $value = 'video_ffmpeg_wrapper';
   private $video_ext = 'flv';
+  private $is_wsod = false; // web service on demand service
 
   protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
 
@@ -154,7 +155,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     // run our command and return the output.
     return $this->run_command($ffmpeg_object->command);
   }
-   
+
   /**
    * Return the playtime seconds of a video
    */
@@ -216,10 +217,10 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     if (!module_exists('ffmpeg_wrapper')) {
       $markup = t('You must download and install the !ffmpeg_wrapper to use the FFmpeg Wrapper as a transcoder.', array('!ffmpeg_wrapper' => l(t('FFmpeg Wrapper Module'), 'http://www.drupal.org/project/ffmpeg_wrapper')));
       $form['video_wrapper_info'] = array(
-      '#type' => 'markup',
-      '#value' => $markup,
-      '#prefix' => '<div id="'. $this->value .'">',
-      '#suffix' => '</div>',
+        '#type' => 'markup',
+        '#value' => $markup,
+        '#prefix' => '<div id="'. $this->value .'">',
+        '#suffix' => '</div>',
       );
     }
     else {
@@ -227,17 +228,68 @@ class video_ffmpeg_wrapper implements transcoder_interface {
         '#type' => 'markup',
         '#value' => '<div id="video_ffmpeg_wrapper">',
       );
+      // adding auto thumbnail and transcoder path from video_ffmpeg
+      // @TODO : move these to a common area
+      $form['ffmpeg_wrapper']['video_transcoder_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Path to Video Transcoder'),
+        '#description' => t('Absolute path to ffmpeg.'),
+        '#default_value' => variable_get('video_transcoder_path', '/usr/bin/ffmpeg'),
+      );
+      $form['ffmpeg_wrapper']['no_of_video_thumbs'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Number of thumbnails'),
+        '#description' => t('Number of thumbnails to display from video.'),
+        '#default_value' => variable_get('no_of_video_thumbs', 5),
+      );
+      $form['ffmpeg_wrapper']['video_ffmpeg_nice_enable'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enable the use of nice when calling the ffmpeg command.'),
+        '#default_value' => variable_get('video_ffmpeg_nice_enable', TRUE),
+        '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
+      );
+      // Thumbnail Videos We need to put this stuff last.
+      $form['ffmpeg_wrapper']['autothumb'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Video Thumbnails'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $form['ffmpeg_wrapper']['autothumb']['video_thumb_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Path to save thumbnails'),
+        '#description' => t('Path to save video thumbnails extracted from the videos.'),
+        '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
+      );
+      $form['ffmpeg_wrapper']['autothumb']['advanced'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Advanced Settings'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE
+      );
+      $form['ffmpeg_wrapper']['autothumb']['advanced']['video_ffmpeg_thumbnailer_options'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Video thumbnailer options'),
+        '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ').'<ol><li>'.t('!videofile (the video file to thumbnail)').'<li>'.t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
+        '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile'),
+      );
+
       if(module_exists('ffmpeg_wrapper_ui')) {
         $ffmpeg_admin_form = ffmpeg_wrapper_ui_configuration_form($conf);
       } else if (module_exists('ffmpeg_wrapper')) {
         $ffmpeg_admin_form = ffmpeg_wrapper_configuration_form($conf);
       }
       $form = array_merge($form, $ffmpeg_admin_form['ffmpeg_wrapper']);
+
       $form['video_ffmpeg_wrapper_end'] = array(
         '#type' => 'markup',
         '#value' => '</div>',
       );
     }
     return $form;
+  }
+
+  public function is_wsod() {
+    return $this->is_wsod;
   }
 }

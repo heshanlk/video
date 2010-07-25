@@ -28,22 +28,22 @@ function video_s3_help($path, $arg) {
 function video_s3_menu() {
   $items = array();
   $items['admin/settings/video/amazon_s3'] = array(
-          'title' => 'Amazon S3',
-          'description' => 'Configure your Amazon S3 settings.',
-          'page callback' => 'drupal_get_form',
-          'page arguments' => array('video_s3_admin_settings'),
-          'access arguments' => array('administer site configuration'),
-          'file' => 'video_s3.admin.inc',
-          'type' => MENU_LOCAL_TASK,
-          'weight' => 10,
+    'title' => 'Amazon S3',
+    'description' => 'Configure your Amazon S3 settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_s3_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video_s3.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
   );
   $items['admin/settings/video/amazon_s3/bucket/%/delete'] = array(
-          'title' => 'Delete Bucket',
-          'page callback' => 'video_s3_bucket_delete',
-          'page arguments' => array(5),
-          'access arguments' => array('administer amazon s3'),
-          'file' => 'video_s3.admin.inc',
-          'type' => MENU_CALLBACK,
+    'title' => 'Delete Bucket',
+    'page callback' => 'video_s3_bucket_delete',
+    'page arguments' => array(5),
+    'access arguments' => array('administer amazon s3'),
+    'file' => 'video_s3.admin.inc',
+    'type' => MENU_CALLBACK,
   );
   return $items;
 }
@@ -122,4 +122,27 @@ function video_s3_video_load(&$video) {
     $video->extension = pathinfo($amazon->filepath, PATHINFO_EXTENSION);
   }
 
+}
+
+
+function video_s3_get_object_info($object) {
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  $s3->connect();
+  return $s3->get_object_info($object);
+}
+
+function video_s3_get_authenticated_url($object) {
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  $s3->connect();
+  return $s3->get_authenticated_url($object);
+}
+
+
+function video_s3_get_object($object, $save_to = false) {
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  $s3->connect();
+  return $s3->get_object($object, $save_to);
 }

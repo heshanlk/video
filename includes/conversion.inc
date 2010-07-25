@@ -4,7 +4,7 @@
  * @file
  * Class file to handle video conversion using ffmpeg.
  *
- */
+*/
 define('VIDEO_RENDERING_PENDING', 1);
 define('VIDEO_RENDERING_ACTIVE', 5);
 define('VIDEO_RENDERING_COMPLETE', 10);
@@ -33,7 +33,7 @@ class video_conversion {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
-    VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
+      VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
 
     while ($row = db_fetch_object($result)) {
       $videos[] = $row;
@@ -116,7 +116,7 @@ class video_conversion {
         cache_clear_all('*', 'cache_content', true);
         // Update our video_files table with the converted video information.
         $result = db_query("UPDATE {video_files} SET filename='%s', filepath='%s', filemime='%s', filesize=%d, status=%d, completed=%d WHERE vid=%d",
-        $video->converted->filename, $video->converted->filepath, $video->converted->filemime, $video->converted->filesize, $video->converted->status, $video->converted->completed, $video->converted->vid);
+          $video->converted->filename, $video->converted->filepath, $video->converted->filemime, $video->converted->filesize, $video->converted->status, $video->converted->completed, $video->converted->vid);
 
         // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
         db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $video->nid);
@@ -164,7 +164,7 @@ class video_conversion {
    * @TODO I need to look more at this function.  I don't really like the guess work here.  Need to implement
    * a better way to check the end WxH.  Maybe compare the final resolution to our defaults?  I don't think
    * that just checking to make sure the final number is even is accurate enough.
-   */
+  */
   public function dimensions($video) {
     //lets setup our dimensions.  Make sure our aspect ratio matches the dimensions to be used, if not lets add black bars.
     $aspect_ratio = _video_aspect_ratio($video->filepath);
@@ -257,6 +257,17 @@ class video_conversion {
    */
   public function change_status($vid, $status) {
     $result = db_query('UPDATE {video_files} SET status = %d WHERE vid = %d ', $status, $vid);
+  }
+
+  /**
+   * Check whether the enabled transcoder is web service
+   *
+   * @return (bool) true/false
+   */
+  public function transcoder_is_wsod() {
+    module_load_include('inc', 'video', '/includes/transcoder');
+    $transcoder = new video_transcoder;
+    return $transcoder->is_wsod();
   }
 }
 ?>

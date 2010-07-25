@@ -36,6 +36,8 @@ class video_zencoder_api {
     $api_key = variable_get('zencoder_api_key', '');
     // File details
     $filename = $file->filename;
+    //file type
+    $filetype = variable_get('video_zencoder_ext', 'flv');
     // Get varialbes
     $lable = 'VIDEO_' . $file->fid;
     $base_url = $folder;
@@ -79,7 +81,7 @@ class video_zencoder_api {
     if(!empty($lable))
       $zc_output['label'] = $lable;
     if(!empty($bucket))
-      $zc_output['url'] = 's3://' . $bucket . '/' . $filename . '.flv';
+      $zc_output['url'] = 's3://' . $bucket . '/' . $filename . '.' . $filetype;
     if(!empty($width))
       $zc_output['width'] = $width;
     if(!empty($height))
@@ -123,14 +125,18 @@ class video_zencoder_api {
     if(!empty($clip_length))
       $zc_output['clip_length'] = $clip_length;
 
-// thumbnails
+  // thumbnails
+    // Setup our thmbnail path.
+    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+    $final_thumb_path = file_directory_path(). '/' . $video_thumb_path . '/' . $file->fid;
+
     $thumbnails['number'] = $thumb_no;
     if(!empty($thumb_size))
       $thumbnails['thumb_size'] = $thumb_size;
     if(!empty($bucket))
-      $thumbnails['base_url'] = 's3://' . $bucket;
-    if(!empty($lable))
-      $thumbnails['prefix'] = $lable;
+      $thumbnails['base_url'] = 's3://' . $bucket . '/' . $final_thumb_path;
+    if(!empty($file->fid))
+      $thumbnails['prefix'] = $file->fid;
     $zc_output['thumbnails'] = $thumbnails;
 
     // Notifications
@@ -144,9 +150,9 @@ class video_zencoder_api {
     $encoding_job_json = array(
 //            'test' => 1,
 //            'download_connections' => -1,
-            'api_key' => $this->access_key,
-            'input' => 's3://' . $input_name . '',
-            'output' => $zc_output
+      'api_key' => $this->access_key,
+      'input' => 's3://' . $input_name . '',
+      'output' => $zc_output
     );
 
 
@@ -181,7 +187,7 @@ class video_zencoder_api {
   */
   public function update($video) {
     $result = db_query("UPDATE {video_zencoder} SET jobid = %d, outputid = %d, bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', status=%d, completed=%d WHERE vid=%d",
-            $video->jobid, $video->outputid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_ZC_ACTIVE, time(), $video->vid);
+      $video->jobid, $video->outputid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_ZC_ACTIVE, time(), $video->vid);
     return $result;
   }
 
@@ -208,6 +214,7 @@ class video_zencoder_api {
       db_query("DELETE FROM {video_zencoder} WHERE vid=%d", $video->vid);
     }
   }
+
   public function get_job_id() {
     return $this->jobid;
   }
@@ -257,8 +264,8 @@ class video_zencoder_api {
         if ($encoding_job = $this->create($video)) {
           // Update our table.
           $video->bucket = $this->bucket;
-          $video->filename = $filename . '.flv';
-          $video->filemime = 'video/x-flv';
+          $video->filename = $filename . '.' . $filetype;
+          $video->filemime = file_get_mimetype($filename . '.' . $filetype);
           $video->vid = $row->vid;
           $video->jobid = $encoding_job->id;
           $video->outputid = $encoding_job->outputs["VIDEO" . $video->fid]->id;
@@ -286,13 +293,13 @@ class video_zencoder_api {
   public function create_user($user) {
 
     $request = new ZencoderRequest(
-            'https://app.zencoder.com/api/account',
-            false, // API key isn't needed for new account creation
-            array(
-                    "terms_of_service" => "1",
-                    "email" => $user->email,
-                    "affiliate_code" => "drupal-video"
-            )
+      'https://app.zencoder.com/api/account',
+      false, // API key isn't needed for new account creation
+      array(
+        "terms_of_service" => "1",
+        "email" => $user->email,
+        "affiliate_code" => "drupal-video"
+      )
     );
 
     if ($request->successful) {
