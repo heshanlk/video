@@ -18,12 +18,7 @@ class video_zencoder implements transcoder_interface {
   }
 
   public function run_command($options) {
-    watchdog('ffmpeg_wrapper', 'Sending options: '. $options, array(), WATCHDOG_DEBUG);
-    $output = ffmpeg_wrapper_run_command($options);
-    if(is_object($output) && ISSET($output->errors)) {
-      return implode("\n", $output->errors);
-    }
-    return $output;
+    return;
   }
 
   public function generate_thumbnails($video) {
