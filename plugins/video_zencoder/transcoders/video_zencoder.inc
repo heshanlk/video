@@ -54,7 +54,7 @@ class video_zencoder implements transcoder_interface {
           $s3_get_object = video_s3_get_object($thumbfile, $thumbfile);
         else {
           $thumbfile = $final_thumb_path . '/no-thumb.png';
-          file_copy($default, $thumbfile);
+          file_copy($default, $thumbfile, FILE_EXISTS_REPLACE);
         }
 //          $thumbfile = drupal_get_path('module', 'video') . '/images/no_thumb.gif';
         if (!file_exists($thumbfile)) {

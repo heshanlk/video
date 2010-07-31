@@ -271,7 +271,7 @@ class video_zencoder_api {
           $video->jobid = $encoding_job->id;
           $video->outputid = $encoding_job->outputs["VIDEO" . $video->fid]->id;
           $prefix = $this->ssl ? 'https://' : 'http://';
-          $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename . $filetype;
+          $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename . '.' . $filetype;
 //          $video->filepath = $this->s3_private_url($video->bucket, $video->filename);
           if($this->update($video)) {
             watchdog('zencoder', t('Successfully created trancoding job on file: !file into the bucket %bucket on Zencoder.', array('!file' => $filepath, '%bucket' => $this->bucket)), array(), WATCHDOG_INFO);
