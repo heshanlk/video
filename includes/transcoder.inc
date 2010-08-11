@@ -75,6 +75,7 @@ class video_transcoder {
   }
 
   private function _transcoders() {
+    $files = array();
     // Lets find our transcoder classes and build our radio options
     // We do this by scanning our transcoders folder
     $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
@@ -86,8 +87,9 @@ class video_transcoder {
       $mobule_files = array();
       $module_path = drupal_get_path('module', $module) .'/transcoders';
       $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
+      $files = array_merge($files, $mobule_files);
     }
-    $files = array_merge($files, $mobule_files);
+    
     foreach($files as $file) {
       if(!module_load_include('inc', 'video', '/transcoders/' . $file->name))
         require_once $file->filename;
