@@ -71,7 +71,7 @@ class video_transcoder {
   }
 
   public function admin_settings_validate($form, &$form_state) {
-    return $this->transcoder->admin_settings_validate($form, &$form_state);
+    return $this->transcoder->admin_settings_validate($form, $form_state);
   }
 
   private function _transcoders() {
