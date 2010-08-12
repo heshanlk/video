@@ -156,7 +156,7 @@ class video_zencoder_api {
     );
 
 
-    watchdog('zencoder', json_encode($encoding_job_json));
+//    watchdog('zencoder', json_encode($encoding_job_json));
 
     $encoding_job = new ZencoderJob(json_encode($encoding_job_json));
 

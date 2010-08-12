@@ -266,31 +266,59 @@ function video_thumb_process(&$element) {
   // Developed for ffmpeg support
   $file = $element['#value'];
   $delta = $file['fid'];
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $gen_fail = FALSE;
+  
   if (isset($element['preview']) && $file['fid'] != 0) {
-    module_load_include('inc', 'video', '/includes/transcoder');
-    $transcoder = new video_transcoder;
-    if($thumbs = $transcoder->generate_thumbnails($file)) {
-      $default_thumb = '';
-      $rnd_img = rand(0, variable_get('no_of_video_thumbs', 5) - 1);
-      $default_thumb = $thumbs[$rnd_img]->filepath;
+    if (in_array($field['widget']['autothumbnail'], array('auto', 'auto_fallback'))) { 
+    
+      module_load_include('inc', 'video', '/includes/transcoder');
+      $transcoder = new video_transcoder;
+      if($thumbs = $transcoder->generate_thumbnails($file)) {
+        $default_thumb = '';
+        $rnd_img = rand(0, variable_get('no_of_video_thumbs', 5) - 1);
+        $default_thumb = $thumbs[$rnd_img]->filepath;
 
-      if(is_array($thumbs)) {
-        foreach($thumbs as $fid => $img) {
-          // if file object contain url then use file name to identify object
-          $key = $img->filepath;
-          $thumbss[$key] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
+        if(is_array($thumbs)) {
+          foreach($thumbs as $fid => $img) {
+            // if file object contain url then use file name to identify object
+            $key = $img->filepath;
+            $thumbss[$key] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
+          }
         }
       }
+      
+      if (!empty($thumbss)) {
+        $element['data']['video_thumb'] = array(
+          '#type' => 'radios',
+          '#title' => t('Video Thumbnails'),
+          '#options' => $thumbss,
+          '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
+          '#weight' => 10,
+          '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-'.$delta),
+        );
+      }
+      else {
+        $gen_fail = TRUE;
+      } 
     }
+    
+    if ((!empty($gen_fail) && $field['widget']['autothumbnail'] == 'auto_fallback') || 
+       $field['widget']['autothumbnail'] == 'manual_upload') {    
 
-    $element['data']['video_thumb'] = array(
-      '#type' => 'radios',
-      '#title' => t('Video Thumbnails'),
-      '#options' => $thumbss,
-      '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
-      '#weight' => 10,
-      '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-'.$delta),
-    );
+       $element['data']['video_thumb_file'] = array(
+         '#name' => 'files['. $element['#field_name'] .'_'. $element['#delta'] .'_thumbs]',
+         '#type'  => 'file',
+         '#size' => '40',
+         '#title' => !empty($file['data']['video_thumb']) ? t('Replace the video thumbnail') :  t('Upload a video thumbnail'),
+         '#description' => t('This thumbnail will be uploaded when the node is saved.'),
+       );   
+       
+       $element['data']['video_thumb'] = array(
+         '#type' => 'value',
+         '#value' => $file['data']['video_thumb'],
+       );  
+    }                    
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
@@ -518,7 +546,7 @@ function video_widget_element_settings(&$element) {
  * @param <type> $element
  * @param <type> $form_state
  */
-function video_widget_process($element, &$form_state) {
+function video_widget_process(&$element, &$form_state) {
   $item = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   switch($form_state['clicked_button']['#submit'][0]) {
@@ -532,6 +560,13 @@ function video_widget_process($element, &$form_state) {
           $form_state['values']['status'] = 0;
         }
       }
+      
+      // Save manually uploaded thumbs (if they exist) and add them to element
+      if(is_array($_FILES['files']['name']))
+        if (array_key_exists($field['field_name'] .'_'. $element['#delta'] .'_thumbs' , $_FILES['files']['name'])) {
+          video_upload_manual_thumb($element);
+        }  
+      
       // Call hook_video_submit API
       video_module_invoke('insert', $element, $form_state);
       //
@@ -546,6 +581,38 @@ function video_widget_process($element, &$form_state) {
     //moved to hook_file_delete in video module.
       break;
   }
+}
+
+
+/**
+ * Handle saving of manual thumbs
+ */
+function video_upload_manual_thumb(&$element) {
+  
+  $destination = file_directory_path() .'/video_thumbs/'. $element['#value']['fid'];
+  if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
+    form_set_error('video_thumb_upload', t('The thumbnail image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
+    return;
+  }
+  $validators = array (
+    'file_validate_is_image' => array(),
+  );
+
+  if (!$file = file_save_upload($element['#field_name'] .'_'. $element['#delta'] .'_thumbs' , $validators, $destination)) {
+    // No upload to save we hope... or file_save_upload() reported an error on its own.
+    return;
+  }
+
+  // Remove old image (if any) & clean up database.
+  $old_thumb = $element['data']['video_thumb']['#value'];
+  if (!empty($old_thumb)) {
+    if (file_delete($old_thumb)) {
+      db_query('DELETE FROM {files} WHERE filepath=%d', $old_thumb);
+    }
+  }
+  // Make the file permanent and store it in the form.
+  file_set_status($file, FILE_STATUS_PERMANENT);
+  $element['data']['video_thumb']['#value'] = $file->filepath;
 }
 
 /*
@@ -713,12 +780,7 @@ function video_default_widget_settings($widget) {
     '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
     '#default_value' => $widget['autoconversion'],
   );
-  $form['plugins']['autothumbnail'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable thumbnail creation.'),
-    '#description' => t('Use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings.'),
-    '#default_value' => $widget['autothumbnail'],
-  );
+  
   // Default thumbnail settings.
   $form['default'] = array(
     '#type' => 'fieldset',
@@ -728,6 +790,23 @@ function video_default_widget_settings($widget) {
     '#collapsed' => FALSE,
     '#weight' => 11
   );
+  
+  $thumb_options = array(
+     'auto' => 'Automatically generate thumbnails',
+     'auto_fallback' => 'Automatically generate thumbnails, with fallback to manual upload',
+     'manual_upload' => 'Manually upload a thumbnail',
+     'no' => 'Don\'t create thumbnail',
+  );
+  
+  $form['default']['autothumbnail'] = array(
+    '#type' => 'radios',
+    '#title' => t('Thumbnail Generation'),
+    '#options' => $thumb_options,
+    '#description' => t('To use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings before using ffmpeg to create thumbnails.'),
+    '#default_value' => isset($widget['autothumbnail']) ? $widget['autothumbnail'] : 'no',
+  );    
+  
+  
   // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
   // Present a video image of the current default image.
   if (!empty($widget['default_video_thumb'])) {
