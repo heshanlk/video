@@ -84,21 +84,21 @@ function video_zencoder_video_load(&$video) {
 function video_zencoder_mail($key, &$message, $params) {
   $language = $message['language'];
   $message['subject'] .= 'Zencoder Registration Details for Drupal Video';
-  $message['body'][] = video_zencoder_mail_default();
+  $message['body'][] = video_zencoder_mail_default($params);
 }
 
 
-function video_zencoder_mail_default() {
+function video_zencoder_mail_default($params) {
   return t(
 'Welcome to Zencoder for Drupal
--------------------
+-------------------------------
 
 Your account has been created and is ready to start processing.
 
 Your account details are as below.
 
-API Key : '.$params['api_key'].'
-Password : '.$params['password'].'
+API Key : %api_key
+Password : %password
 
 * Login URL: https://app.zencoder.com/login
 
@@ -111,6 +111,6 @@ You can get help at the following places:
 We\'d love to hear from you. Let us know how we can help. Thanks!
 
 Thanks,
--- Zencoder for Drupal Team');
+-Zencoder for Drupal Team', array('%api_key' => $params['api_key'], '%password'=>$params['password']));
 }
 
