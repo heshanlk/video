@@ -17,7 +17,7 @@ function videoftp_menu() {
     'page callback' => 'videoftp_js',
     'page arguments' => array(2, 3, 4),
     //'access callback' => 'videoftp_edit_access',
-    'access arguments' => array(3),
+    'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
   $items['videoftp/progress'] = array(
