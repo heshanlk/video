@@ -377,8 +377,10 @@ function video_convert_process(&$element) {
 
     // Our video should be in the database pending, lets see if we need to convert it now.
     // Check if we are going from unselected to selected or if this is a new video and we have checked the checkbox
+    $convert_video_on_save = $element['data']['convert_video_on_save']['#value'] || $file['data']['convert_video_on_save'];
+    
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])
-        && $file['data']['convert_video_on_save']) || ($convert && $file['data']['convert_video_on_save'])) {
+        && $convert_video_on_save) || ($convert && $convert_video_on_save)) {
       $return = $video_conversion->process($fid);
       if ($return === FALSE) {
         drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
@@ -519,22 +521,45 @@ function video_widget_element_settings(&$element) {
         '#attributes' => array('class' => 'video-bypass-auto-conversion'),
       );
     }
-    $convert_on_submission = user_access('convert on submission');
-    $element['data']['convert_video_on_save'] = array(
-      '#type' => $convert_on_submission ? 'checkbox' : 'value',
-      '#title' => t('Convert video on save'),
-      '#default_value' => isset($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE),
-      '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
-      '#attributes' => array('class' => 'video-convert-video-on-save'),
-    );
-    $use_default_thumb = user_access('use default thumb');
-    if ($use_default_thumb) {
+
+    $convert = isset($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE);
+    if (user_access('convert on submission')) {
+      $element['data']['convert_video_on_save'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Convert video on save'),
+        '#default_value' => $convert,
+        '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
+        '#attributes' => array('class' => 'video-convert-video-on-save'),
+      );
+
+      if ($convert) {
+        $element['data']['convert_video_on_save']['#attributes']['checked'] = 'checked';
+      }
+    }
+    else {
+      $element['data']['convert_video_on_save'] = array(
+        '#type' => 'value',
+        '#value' => $convert,
+      );
+    }
+
+    $default_thumb = isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE);
+    if (user_access('use default thumb')) {
       $element['data']['use_default_video_thumb'] = array(
-        '#type' => $use_default_thumb ? 'checkbox' : 'value',
+        '#type' => 'checkbox',
         '#title' => t('Use the default thumbnail for this video?'),
-        '#default_value' => isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE),
+        '#default_value' => $default_thumb,
         '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
         '#attributes' => array('class' => 'video-use-default-video-thumb'),
+      );
+      if ($default_thumb ) {
+        $element['data']['use_default_video_thumb']['#attributes']['checked'] = 'checked';
+      }
+    }
+    else {
+      $element['data']['use_default_video_thumb'] = array(
+        '#type' => 'value',
+        '#value' => $default_thumb,
       );
     }
   }
