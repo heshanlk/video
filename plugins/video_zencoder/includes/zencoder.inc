@@ -67,7 +67,7 @@ class video_zencoder_api {
     $thumb_base = $baseurl;
     $thumb_prefix = $filename;
     $notify_url = variable_get('zc_notify_url', '');
-    $notify_email = variable_get('zc_notify_email', 'heshanmw@gmail.com');
+    $notify_email = variable_get('zc_notify_email', '');
     $start_clip = variable_get('zc_start_clip', '');
     $clip_length = variable_get('zc_clip_length', '');
 
@@ -311,7 +311,7 @@ class video_zencoder_api {
         drupal_set_message(t('Unable to send e-mail!. Your Zencoder Details are as below.<br/> API Key : !api_key<br/> Password : !password<br/>.', array('!api_key' => $results['api_key'], '!password' => $results['password'])), 'status');
       }
       else {
-        drupal_mail('video_zencoder', 'video_zencoder', 'heshanmw@gmail.com', language_default(), $results);
+//        drupal_mail('video_zencoder', 'video_zencoder', 'heshanmw@gmail.com', language_default(), $results);
         drupal_set_message(t('Your account has been created and is ready to start processing on Zencoder'));
       }
 //      return $request->results;
