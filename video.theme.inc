@@ -7,7 +7,13 @@
  *
  */
 
-function theme_video_thumbnails($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
+function theme_video_thumbnails($variables) {
+  $file = $variables['file'];
+  $alt = $variables['alt'];
+  $title = $variables['title'];
+  $attributes = $variables['attributes'];
+  $getsize = $variables['getsize'];
+  
   $file = (array)$file;
   //  return $file['filepath'];
   if (!is_file($file['filepath'])) {

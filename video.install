@@ -98,17 +98,9 @@ function video_schema() {
 }
 
 /**
- * Implementation of hook_install().
- */
-function video_install() {
-  drupal_install_schema('video');
-}
-
-/**
  * Implementation of hook_uninstall().
  */
 function video_uninstall() {
-  drupal_uninstall_schema('video');
   //@todo Need to drop all variables used in this module here.
 }
 
