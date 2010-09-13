@@ -152,7 +152,7 @@ class video_amazon_s3 {
   }
 
   public function get_authenticated_url($object){
-    $lifetime = 1800;
+    $lifetime = variable_get('amazon_s3_lifetime', '1800');
     return $this->s3->getAuthenticatedURL($this->bucket, $object, $lifetime);
   }
 
