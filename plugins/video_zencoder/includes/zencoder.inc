@@ -41,7 +41,7 @@ class video_zencoder_api {
     // Get varialbes
     $lable = 'VIDEO_' . $file->fid;
     $base_url = $folder;
-    $public = (variable_get('amazon_s3_private', FALSE))?0:1;
+    $public = (variable_get('amazon_s3_private', FALSE)) ? 0 : 1;
     $width = variable_get('zc_width', '');
     $height = variable_get('zc_height', '');
     $quality = variable_get('zc_quality', 3);
