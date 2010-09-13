@@ -41,6 +41,7 @@ class video_zencoder_api {
     // Get varialbes
     $lable = 'VIDEO_' . $file->fid;
     $base_url = $folder;
+    $public = (variable_get('amazon_s3_private', FALSE))?0:1;
     $width = variable_get('zc_width', '');
     $height = variable_get('zc_height', '');
     $quality = variable_get('zc_quality', 3);
@@ -82,6 +83,8 @@ class video_zencoder_api {
       $zc_output['label'] = $lable;
     if(!empty($bucket))
       $zc_output['url'] = 's3://' . $bucket . '/' . $filename . '.' . $filetype;
+    if(!empty($public))
+      $zc_output['public'] = $public;
     if(!empty($width))
       $zc_output['width'] = $width;
     if(!empty($height))
