@@ -40,7 +40,7 @@ class video_views_handler_field_data extends content_handler_field {
     $item['filepath'] = $filepath;
     $item['filename'] = $file['basename'];
     $item['filemime'] = file_get_mimetype($file['basename']);
-    $item['filesize'] = filesize($filepath);
+    $item['filesize'] = is_readable($filepath) ? filesize($filepath) : 0;
 
     // Render items.
     $formatter_name = $options['format'];
