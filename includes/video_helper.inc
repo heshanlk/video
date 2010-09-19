@@ -53,11 +53,11 @@ class video_helper {
       $conversion = new video_conversion;
       $converted = $conversion->load_converted_video($video->fid);
       if(!$conversion->transcoder_is_wsod()) {
-        $video->filepath = $converted->filepath;
-        $video->url = file_create_url($converted->filepath);
-        $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+          $video->filepath = $converted->filepath;
+          $video->url = file_create_url($converted->filepath);
+          $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+        }
       }
-    }
 
     // Let othere module to load the video files by referance
     // Lets find out if we have pushed this file to the cdn if enabled.
@@ -82,11 +82,11 @@ class video_helper {
     $thumbnail->description = '';
 
     // Setup our thumbnail path.
-    $use_default_img = $element['#item']['data']['use_default_video_thumb'];
+    $use_default_img = isset($element['#item']['data']['use_default_video_thumb']) ? $element['#item']['data']['use_default_video_thumb'] : false;
     if ($use_default_img && !empty($field['widget']['default_video_thumb']['filepath'])) {
       $thumbnail->filepath = $field['widget']['default_video_thumb']['filepath'];
     }
-    elseif ($element['#item']['data']['video_thumb']) {
+    elseif (isset($element['#item']['data']['video_thumb'])? $element['#item']['data']['video_thumb'] : false) {
       $thumbnail->filepath = $element['#item']['data']['video_thumb'];
     }
     else {

@@ -143,7 +143,7 @@ function theme_video_flv($video, $node) {
   elseif ($video->flash_player == 'flowplayer') {
     $options = array(
       'clip' => array(
-        'url' => $video->url,
+        'url' => urlencode($video->url),
         'autoPlay' => $video->autoplay,
         'autoBuffering' => $video->autobuffering,
     ),

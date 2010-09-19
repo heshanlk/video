@@ -32,7 +32,7 @@ class video_ffmpeg implements transcoder_interface {
     $this->params['command'] = variable_get('video_ffmpeg_helper_auto_cvr_options', $this->command);
     $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
-    $this->nice = variable_get('video_ffmpeg_nice_enable', TRUE) ? 'nice -n 19' : '';
+    $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19' : '';
     $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
   }
 
@@ -73,7 +73,7 @@ class video_ffmpeg implements transcoder_interface {
     $files = NULL;
     for($i = 1; $i <= $total_thumbs; $i++) {
       $seek = ($duration/$total_thumbs) * $i -1;  //adding minus one to prevent seek times equaling the last second of the video
-      $filename = "/video-thumb-for-$fid-$i.jpg";
+      $filename = "/video-thumb-for-" . $video['fid'] . "-$i.jpg";
       $thumbfile = $final_thumb_path . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {

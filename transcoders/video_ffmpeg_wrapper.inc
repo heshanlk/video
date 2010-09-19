@@ -1,18 +1,19 @@
 <?php
+
 //$Id$
 /*
  * @file
  * Transcoder class file to handle ffmpeg_wrapper settings and conversions.
  *
-*/
+ */
 
 
 class video_ffmpeg_wrapper implements transcoder_interface {
+
   private $name = 'FFmpeg Wrapper';
   private $value = 'video_ffmpeg_wrapper';
   private $video_ext = 'flv';
   private $is_wsod = false; // web service on demand service
-
   protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
 
   public function __construct() {
@@ -20,9 +21,9 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   }
 
   public function run_command($options) {
-    watchdog('ffmpeg_wrapper', 'Sending options: '. $options, array(), WATCHDOG_DEBUG);
+    watchdog('ffmpeg_wrapper', 'Sending options: ' . $options, array(), WATCHDOG_DEBUG);
     $output = ffmpeg_wrapper_run_command($options);
-    if(is_object($output) && ISSET($output->errors)) {
+    if (is_object($output) && ISSET($output->errors)) {
       return implode("\n", $output->errors);
     }
     return $output;
@@ -32,7 +33,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     global $user;
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path(). '/' . $video_thumb_path . '/' . $video['fid'];
+    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video['fid'];
 
     // Ensure the destination directory exists and is writable.
     $directories = explode('/', $final_thumb_path);
@@ -53,9 +54,9 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     $duration = $this->get_playtime($video);
 
     $files = NULL;
-    for($i = 1; $i <= $total_thumbs; $i++) {
-      $seek = ($duration/$total_thumbs) * $i - 1;
-      $filename = "/video-thumb-for-$fid-$i.jpg";
+    for ($i = 1; $i <= $total_thumbs; $i++) {
+      $seek = ($duration / $total_thumbs) * $i - 1;
+      $filename = "/video-thumb-for-" . $video['fid'] . "-$i.jpg";
       $thumbfile = $final_thumb_path . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {
@@ -67,15 +68,15 @@ class video_ffmpeg_wrapper implements transcoder_interface {
           $error_param = array('%file' => $thumbfile, '%cmd' => $command, '%out' => $command_output);
           $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
           // Log the error message.
-          watchdog('video_transcoder',$error_msg, array(), WATCHDOG_ERROR);
+          watchdog('video_transcoder', $error_msg, array(), WATCHDOG_ERROR);
           continue;
         }
       }
       // Begin building the file object.
       // @TODO : use file_munge_filename()
       $file = new stdClass();
-      $file->uid      = $user->uid;
-      $file->status   = FILE_STATUS_TEMPORARY;
+      $file->uid = $user->uid;
+      $file->status = FILE_STATUS_TEMPORARY;
       $file->filename = trim($filename);
       $file->filepath = $thumbfile;
       $file->filemime = file_get_mimetype($filename);
@@ -88,7 +89,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
 
   public function video_converted_extension() {
     global $conf;
-    if(isset($conf['ffmpeg_output_type']) && !empty($conf['ffmpeg_output_type'])) {
+    if (isset($conf['ffmpeg_output_type']) && !empty($conf['ffmpeg_output_type'])) {
       return $conf['ffmpeg_output_type'];
     }
     return $this->video_ext;
@@ -120,35 +121,43 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       // build the ffmpeg command structure out
       $options = array();
       // input file
-      $options[] = "-i '". $video->filepath ."'";
+      $options[] = "-i '" . $video->filepath . "'";
       // build the watermark config
-      if ($params['ffmpeg_video_wm']) $options[] = "-vhook '". ffmpeg_wrapper_path_to_vhook('watermark.so') ." -f ". $params['ffmpeg_video_wm_file'] ."'";
+      if ($params['ffmpeg_video_wm'])
+        $options[] = "-vhook '" . ffmpeg_wrapper_path_to_vhook('watermark.so') . " -f " . $params['ffmpeg_video_wm_file'] . "'";
       // build the audio config
       if ($params['ffmpeg_audio_advanced']) {
         // use a specifc codec?
-        if ($params['ffmpeg_audio_acodec']) $options[] =  '-acodec '. $params['ffmpeg_audio_acodec'];
+        if ($params['ffmpeg_audio_acodec'])
+          $options[] = '-acodec ' . $params['ffmpeg_audio_acodec'];
         // use a specific sample rate?
-        if ($params['ffmpeg_audio_ar']) $options[] = '-ar '. $params['ffmpeg_audio_ar'];
+        if ($params['ffmpeg_audio_ar'])
+          $options[] = '-ar ' . $params['ffmpeg_audio_ar'];
         // use a specific bit rate?
-        if ($params['ffmpeg_audio_ab']) $options[] = '-ab '. $params['ffmpeg_audio_ab'];
+        if ($params['ffmpeg_audio_ab'])
+          $options[] = '-ab ' . $params['ffmpeg_audio_ab'];
       }
 
       //custom sizing per video
-      $options[] = '-s '. $dimensions;
+      $options[] = '-s ' . $dimensions;
 
       // build the video config
       if ($params['ffmpeg_video_advanced']) {
         // is codec set?
-        if ($params['ffmpeg_video_vcodec']) $options[] = '-vcodec '. $params['ffmpeg_video_vcodec'];
+        if ($params['ffmpeg_video_vcodec'])
+          $options[] = '-vcodec ' . $params['ffmpeg_video_vcodec'];
         // is the bit rate set?
-        if ($params['ffmpeg_video_br']) $options[] = '-b '. $params['ffmpeg_video_br'];
+        if ($params['ffmpeg_video_br'])
+          $options[] = '-b ' . $params['ffmpeg_video_br'];
         // is frame rate set?
-        if ($params['ffmpeg_video_fps']) $options[] = '-r '. $params['ffmpeg_video_fps'];
+        if ($params['ffmpeg_video_fps'])
+          $options[] = '-r ' . $params['ffmpeg_video_fps'];
       }
       // implement truncating
-      if ($params['ffmpeg_time_advanced']) $options[] = '-t '. $params['ffmpeg_time'];
+      if ($params['ffmpeg_time_advanced'])
+        $options[] = '-t ' . $params['ffmpeg_time'];
       // add the output file
-      $options[] = "'". $converted ."'";
+      $options[] = "'" . $converted . "'";
     }
     $ffmpeg_object->command = implode(" ", $options);
 
@@ -169,8 +178,8 @@ class video_ffmpeg_wrapper implements transcoder_interface {
    */
   public function get_dimensions($video) {
     $ffmpeg_output = ffmpeg_wrapper_file_data($video);
-    $res = array('width' => 0,'height' => 0);
-    if($ffmpeg_output['video']['s']) {
+    $res = array('width' => 0, 'height' => 0);
+    if ($ffmpeg_output['video']['s']) {
       $dimensions = explode("x", $ffmpeg_output['video']['s']);
       $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
       $res['height'] = $dimensions[1] ? $dimensions[1] : NULL;
@@ -201,8 +210,8 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   public function get_help() {
     $help = l(t('FFMPEG Wrapper'), 'http://drupal.org/project/ffmpeg_wrapper');
     // If the module isn't loaded, show an error next to the link.
-    if(!module_exists('ffmpeg_wrapper')) {
-      $help .= ' <span class="error">'.t('You currently do not have this installed.').'</span>';
+    if (!module_exists('ffmpeg_wrapper')) {
+      $help .= ' <span class="error">' . t('You currently do not have this installed.') . '</span>';
     }
     return $help;
   }
@@ -219,11 +228,10 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       $form['video_wrapper_info'] = array(
         '#type' => 'markup',
         '#value' => $markup,
-        '#prefix' => '<div id="'. $this->value .'">',
+        '#prefix' => '<div id="' . $this->value . '">',
         '#suffix' => '</div>',
       );
-    }
-    else {
+    } else {
       $form['video_ffmpeg_wrapper_start'] = array(
         '#type' => 'markup',
         '#value' => '<div id="video_ffmpeg_wrapper">',
@@ -270,11 +278,11 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       $form['ffmpeg_wrapper']['autothumb']['advanced']['video_ffmpeg_thumbnailer_options'] = array(
         '#type' => 'textarea',
         '#title' => t('Video thumbnailer options'),
-        '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ').'<ol><li>'.t('!videofile (the video file to thumbnail)').'<li>'.t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
+        '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ') . '<ol><li>' . t('!videofile (the video file to thumbnail)') . '<li>' . t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
         '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile'),
       );
 
-      if(module_exists('ffmpeg_wrapper_ui')) {
+      if (module_exists('ffmpeg_wrapper_ui')) {
         $ffmpeg_admin_form = ffmpeg_wrapper_ui_configuration_form($conf);
       } else if (module_exists('ffmpeg_wrapper')) {
         $ffmpeg_admin_form = ffmpeg_wrapper_configuration_form($conf);
@@ -296,8 +304,9 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   public function admin_settings_validate($form, &$form_state) {
     return;
   }
-  
+
   public function is_wsod() {
     return $this->is_wsod;
   }
+
 }

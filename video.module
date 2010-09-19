@@ -1,17 +1,17 @@
 <?php
+
 //$Id$
 /**
  *
  * @file video.module
  *
  */
-
 /*
  * Implementation of hook_init().
-*/
+ */
 function video_init() {
-  drupal_add_css(drupal_get_path('module', 'video'). '/css/video.css');
-  drupal_add_js(drupal_get_path('module', 'video'). '/js/video.js');
+  drupal_add_css(drupal_get_path('module', 'video') . '/css/video.css');
+  drupal_add_js(drupal_get_path('module', 'video') . '/js/video.js');
 }
 
 /**
@@ -28,7 +28,7 @@ function video_init() {
  * be passed by reference.
  */
 function video_module_invoke($action, &$array, &$video = NULL, $other = NULL) {
-  foreach (module_list() as $module) {
+  foreach (module_list () as $module) {
     $function = $module . '_video_' . $action;
     if (function_exists($function)) {
       $function($array, $video, $other);
@@ -39,7 +39,6 @@ function video_module_invoke($action, &$array, &$video = NULL, $other = NULL) {
 /**
  * Implementation of hook_perm().
  */
-
 function video_perm() {
   return array('bypass conversion video', 'convert on submission', 'override player dimensions', 'use default thumb');
 }
@@ -152,10 +151,10 @@ function video_theme() {
     'file' => 'video_formatter.inc',
   );
 
-  $path = drupal_get_path('module', 'video'). '/theme';
+  $path = drupal_get_path('module', 'video') . '/theme';
   //Lets setup our themes for our players
   $players = video_video_players();
-  foreach($players as $tpl => $value) {
+  foreach ($players as $tpl => $value) {
     $theme[$tpl] = array(
       'arguments' => array('video' => NULL, 'node' => NULL, 'themed_output' => NULL),
       'file' => 'video_formatter.inc',
@@ -171,13 +170,13 @@ function video_theme() {
   );
 
   //setup our imagecache presets
-  if(module_exists('imagecache')) {
+  if (module_exists('imagecache')) {
     //we need formatters for each of our thumbnails.
     //@todo create a function to check for our colorbox module and only add theme elements that could be used.
     $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
-    foreach($thumb_types as $types) {
-      foreach (imagecache_presets() as $preset) {
-        $theme['video_formatter_'. $preset['presetname'] .'__'. $types] = array(
+    foreach ($thumb_types as $types) {
+      foreach (imagecache_presets () as $preset) {
+        $theme['video_formatter_' . $preset['presetname'] . '__' . $types] = array(
           'arguments' => array('element' => NULL),
           'function' => 'theme_video_formatter_imagecache',
           'file' => 'video_formatter.inc'
@@ -215,12 +214,12 @@ function video_field_formatter_info() {
     ),
   );
   //setup our imagecache presets
-  if(module_exists('imagecache')) {
+  if (module_exists('imagecache')) {
     //we need formatters for each of our thumbnails.
     $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
-    foreach($thumb_types as $types) {
-      foreach (imagecache_presets() as $preset) {
-        $formatters[$preset['presetname'] .'__'. $types] = array(
+    foreach ($thumb_types as $types) {
+      foreach (imagecache_presets () as $preset) {
+        $formatters[$preset['presetname'] . '__' . $types] = array(
           'label' => t('@preset @label', array('@preset' => $preset['presetname'], '@label' => $formatters[$types]['label'])),
           'field types' => array('filefield'),
         );
@@ -232,7 +231,8 @@ function video_field_formatter_info() {
 
 /*
  * Implmentation of hook_cron().
-*/
+ */
+
 function video_cron() {
   if (variable_get('video_cron', FALSE)) {
     module_load_include('inc', 'video', '/includes/conversion');
@@ -242,7 +242,7 @@ function video_cron() {
 }
 
 function video_form_alter(&$form, &$form_state, $form_id) {
-  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] . '_node_form' == $form_id) {
     $form['buttons']['submit']['#submit'][] = 'video_node_update_submit';
   }
 }
@@ -250,7 +250,7 @@ function video_form_alter(&$form, &$form_state, $form_id) {
 function video_node_update_submit($form, &$form_state) {
   //lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
-    foreach($form_state['values']['video_id'] as $fid) {
+    foreach ($form_state['values']['video_id'] as $fid) {
       //lets update our table to include the nid
       db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
       // Lets other module to know to update
@@ -261,33 +261,34 @@ function video_node_update_submit($form, &$form_state) {
 
 /*
  * Utility function that will add a preview of thumbnails for you to select when uploading videos.
-*/
+ */
+
 function video_thumb_process(&$element) {
   // Developed for ffmpeg support
   $file = $element['#value'];
   $delta = $file['fid'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $gen_fail = FALSE;
-  
+
   if (isset($element['preview']) && $file['fid'] != 0) {
-    if (in_array($field['widget']['autothumbnail'], array('auto', 'auto_fallback'))) { 
-    
+    $default_thumb = '';
+    if (in_array($field['widget']['autothumbnail'], array('auto', 'auto_fallback'))) {
+
       module_load_include('inc', 'video', '/includes/transcoder');
       $transcoder = new video_transcoder;
-      if($thumbs = $transcoder->generate_thumbnails($file)) {
-        $default_thumb = '';
+      if ($thumbs = $transcoder->generate_thumbnails($file)) {
         $rnd_img = rand(0, variable_get('no_of_video_thumbs', 5) - 1);
         $default_thumb = $thumbs[$rnd_img]->filepath;
 
-        if(is_array($thumbs)) {
-          foreach($thumbs as $fid => $img) {
+        if (is_array($thumbs)) {
+          foreach ($thumbs as $fid => $img) {
             // if file object contain url then use file name to identify object
             $key = $img->filepath;
             $thumbss[$key] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
           }
         }
       }
-      
+
       if (!empty($thumbss)) {
         $element['data']['video_thumb'] = array(
           '#type' => 'radios',
@@ -295,44 +296,41 @@ function video_thumb_process(&$element) {
           '#options' => $thumbss,
           '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
           '#weight' => 10,
-          '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-'.$delta),
+          '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
         );
-      }
-      else {
+      } else {
         $gen_fail = TRUE;
-      } 
+      }
     }
-    
-    if ((!empty($gen_fail) && $field['widget']['autothumbnail'] == 'auto_fallback') || 
-       $field['widget']['autothumbnail'] == 'manual_upload') {    
 
-       $element['data']['video_thumb_file'] = array(
-         '#name' => 'files['. $element['#field_name'] .'_'. $element['#delta'] .'_thumbs]',
-         '#type'  => 'file',
-         '#size' => '40',
-         '#title' => !empty($file['data']['video_thumb']) ? t('Replace the video thumbnail') :  t('Upload a video thumbnail'),
-         '#description' => t('This thumbnail will be uploaded when the node is saved.'),
-       );   
-       
-       $element['data']['video_thumb'] = array(
-         '#type' => 'value',
-         '#value' => $file['data']['video_thumb'],
-       );  
-    }                    
+    if ((!empty($gen_fail) && $field['widget']['autothumbnail'] == 'auto_fallback') ||
+        $field['widget']['autothumbnail'] == 'manual_upload') {
+
+      $element['data']['video_thumb_file'] = array(
+        '#name' => 'files[' . $element['#field_name'] . '_' . $element['#delta'] . '_thumbs]',
+        '#type' => 'file',
+        '#size' => '40',
+        '#title' => !empty($file['data']['video_thumb']) ? t('Replace the video thumbnail') : t('Upload a video thumbnail'),
+        '#description' => t('This thumbnail will be uploaded when the node is saved.'),
+      );
+
+      $element['data']['video_thumb'] = array(
+        '#type' => 'value',
+        '#value' => isset($file['data']['video_thumb']) ? $file['data']['video_thumb'] : false,
+      );
+    }
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
     if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
       $large_thumb = array('filepath' => $file['data']['video_thumb']);
-    }
-    elseif (!empty($field['widget']['default_video_thumb'])) {
+    } elseif (!empty($field['widget']['default_video_thumb'])) {
       $large_thumb = $field['widget']['default_video_thumb'];
-    }
-    else {
+    } else {
       $large_thumb = array('filepath' => $default_thumb);
     }
     // @todo Integrate the thumbnails with imagecache.
-    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-'.$delta.'">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) .'</div>';
+    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) . '</div>';
   }
 }
 
@@ -348,50 +346,48 @@ function video_thumb_process(&$element) {
 function video_convert_process(&$element) {
   $file = $element['#value'];
   // Add default dimensions from our default_value if needed
-  if(!isset($file['data']['dimensions'])) {
+  if (!isset($file['data']['dimensions'])) {
     $file['data']['dimensions'] = $element['data']['dimensions']['#value'];
   }
   $convert = false;
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
-  if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !$file['data']['bypass_autoconversion']) {
+  if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !isset($file['data']['bypass_autoconversion'])) {
     $fid = $file['fid'];
     //setup our conversion class and check for the fid existence.
     module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
     // if transcoder is web service then skip adding to video_files local transcode queue
     // @TODO : Move all these below insert video to video_files to transcoder class
-    if($video_conversion->transcoder_is_wsod())
+    if ($video_conversion->transcoder_is_wsod())
       return;
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-    if(!$video = $video_conversion->load_video($fid)) {
+    if (!$video = $video_conversion->load_video($fid)) {
       // Video has not been added to the queue yet so lets add it.
       db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $fid, VIDEO_RENDERING_PENDING, $file['data']['dimensions']);
       $convert = true;
       //lets queue our node status to unpublished.
       $element['#unpublish'] = true;
-    }
-    elseif($video->video_status != VIDEO_RENDERING_COMPLETE) {
+    } elseif ($video->video_status != VIDEO_RENDERING_COMPLETE) {
       //lets queue our node status to unpublished.
       $element['#unpublish'] = true;
     }
 
     // Our video should be in the database pending, lets see if we need to convert it now.
     // Check if we are going from unselected to selected or if this is a new video and we have checked the checkbox
-    $convert_video_on_save = $element['data']['convert_video_on_save']['#value'] || $file['data']['convert_video_on_save'];
-    
+    $convert_video_on_save = false;
+    if (isset($element['data']['convert_video_on_save']['#value']))
+      $convert_video_on_save = $element['data']['convert_video_on_save']['#value'] || $file['data']['convert_video_on_save'];
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])
         && $convert_video_on_save) || ($convert && $convert_video_on_save)) {
       $return = $video_conversion->process($fid);
       if ($return === FALSE) {
         drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
-      }
-      elseif($return === TRUE) {
+      } elseif ($return === TRUE) {
         //we are always unpublished until we are converted.
         unset($element['#unpublish']);
         drupal_set_message(t('Successfully converted your video.'));
       }
-    }
-    elseif ($convert) {
+    } elseif ($convert) {
       drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for display.'));
     }
   }
@@ -404,14 +400,15 @@ function video_file_delete($file) {
   //lets get all our videos and unlink them
   $sql = db_query("SELECT filepath FROM {video_files} WHERE fid=%d", $file->fid);
   //we loop here as future development will include multiple video types (HTML 5)
-  while($row = db_fetch_object($sql)) {
-    if(file_exists($row->filepath)) unlink($row->filepath);
+  while ($row = db_fetch_object($sql)) {
+    if (file_exists($row->filepath))
+      unlink($row->filepath);
   }
   //now delete our rows.
   db_query('DELETE FROM {video_files} WHERE fid = %d', $file->fid);
   //now lets delete our video thumbnails and folder.
   $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-  $thumb_folder = file_directory_path(). '/' . $video_thumb_path . '/' . $file->fid;
+  $thumb_folder = file_directory_path() . '/' . $video_thumb_path . '/' . $file->fid;
   // Recursively delete our folder and files
   rmdirr($thumb_folder);
   // Let other modules to know about the file delete
@@ -468,11 +465,11 @@ function video_widget_element_settings(&$element) {
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
   if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
     $video_info = _video_dimensions_options($options, $file['filepath']);
-    $description = t('Set your video dimensions.  This will create your player and transcode your video with these dimensions.  Your video size is !size, if you choose a higher resolution, this could cause video distortion.  You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] .'x'. $video_info['height']));
+    $description = t('Set your video dimensions.  This will create your player and transcode your video with these dimensions.  Your video size is !size, if you choose a higher resolution, this could cause video distortion.  You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] . 'x' . $video_info['height']));
     //setup our default display of dimensions.
     //lets go through our options looking for a matching resolution
-    foreach($options as $key => $value) {
-      if(stristr($value, t('(Matches Resolution)')) == TRUE) {
+    foreach ($options as $key => $value) {
+      if (stristr($value, t('(Matches Resolution)')) == TRUE) {
         $dimensions = $key;
         break;
       }
@@ -535,8 +532,7 @@ function video_widget_element_settings(&$element) {
       if ($convert) {
         $element['data']['convert_video_on_save']['#attributes']['checked'] = 'checked';
       }
-    }
-    else {
+    } else {
       $element['data']['convert_video_on_save'] = array(
         '#type' => 'value',
         '#value' => $convert,
@@ -552,11 +548,10 @@ function video_widget_element_settings(&$element) {
         '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
         '#attributes' => array('class' => 'video-use-default-video-thumb'),
       );
-      if ($default_thumb ) {
+      if ($default_thumb) {
         $element['data']['use_default_video_thumb']['#attributes']['checked'] = 'checked';
       }
-    }
-    else {
+    } else {
       $element['data']['use_default_video_thumb'] = array(
         '#type' => 'value',
         '#value' => $default_thumb,
@@ -564,7 +559,6 @@ function video_widget_element_settings(&$element) {
     }
   }
 }
-
 
 /**
  * Video_widget_process for API handlers for any video types.
@@ -574,10 +568,10 @@ function video_widget_element_settings(&$element) {
 function video_widget_process(&$element, &$form_state) {
   $item = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
-  switch($form_state['clicked_button']['#submit'][0]) {
+  switch ($form_state['clicked_button']['#submit'][0]) {
     case 'node_form_submit':
-    // Auto convert our video file
-      if($field['widget']['autoconversion']) {
+      // Auto convert our video file
+      if ($field['widget']['autoconversion']) {
         video_convert_process($element);
         //lets set our node status to unpublished if our video is not converted.
         if ($element['#unpublish']) {
@@ -585,13 +579,13 @@ function video_widget_process(&$element, &$form_state) {
           $form_state['values']['status'] = 0;
         }
       }
-      
+
       // Save manually uploaded thumbs (if they exist) and add them to element
-      if(is_array($_FILES['files']['name']))
-        if (array_key_exists($field['field_name'] .'_'. $element['#delta'] .'_thumbs' , $_FILES['files']['name'])) {
+      if (isset($_FILES['files']) && is_array($_FILES['files']['name']))
+        if (array_key_exists($field['field_name'] . '_' . $element['#delta'] . '_thumbs', $_FILES['files']['name'])) {
           video_upload_manual_thumb($element);
-        }  
-      
+        }
+
       // Call hook_video_submit API
       video_module_invoke('insert', $element, $form_state);
       //
@@ -599,31 +593,30 @@ function video_widget_process(&$element, &$form_state) {
       $form_state['values']['video_id'][] = $item['fid'];
       break;
     case 'node_form_build_preview':
-    // Call hook_video_preview API
+      // Call hook_video_preview API
       video_module_invoke('preview', $element, $form_state);
       break;
     case 'node_form_delete_submit':
-    //moved to hook_file_delete in video module.
+      //moved to hook_file_delete in video module.
       break;
   }
 }
-
 
 /**
  * Handle saving of manual thumbs
  */
 function video_upload_manual_thumb(&$element) {
-  
-  $destination = file_directory_path() .'/video_thumbs/'. $element['#value']['fid'];
+
+  $destination = file_directory_path() . '/video_thumbs/' . $element['#value']['fid'];
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('video_thumb_upload', t('The thumbnail image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
   }
-  $validators = array (
+  $validators = array(
     'file_validate_is_image' => array(),
   );
 
-  if (!$file = file_save_upload($element['#field_name'] .'_'. $element['#delta'] .'_thumbs' , $validators, $destination)) {
+  if (!$file = file_save_upload($element['#field_name'] . '_' . $element['#delta'] . '_thumbs', $validators, $destination)) {
     // No upload to save we hope... or file_save_upload() reported an error on its own.
     return;
   }
@@ -644,21 +637,21 @@ function video_upload_manual_thumb(&$element) {
  * Function updates our options list to show matching aspect ratios and if we have a matching resolution.
  * 
  * We will update the options array by reference and return the aspect ratio of the file.
-*/
+ */
+
 function _video_dimensions_options(&$options, $video) {
   $aspect_ratio = _video_aspect_ratio($video);
   //loop through our options and find matching ratio's and also the exact width/height
-  foreach($options as $key => $value) {
+  foreach ($options as $key => $value) {
     $wxh = explode('x', $value);
     //lets check our width and height first
-    if($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
-      $options[$key] = $value .' '.t('(Matches Resolution)');
-    }
-    else {
+    if ($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
+      $options[$key] = $value . ' ' . t('(Matches Resolution)');
+    } else {
       //now lets check our ratio's
       $ratio = number_format($wxh[0] / $wxh[1], 4);
-      if($ratio == $aspect_ratio['ratio']) {
-        $options[$key] = $value .' '.t('(Matches Ratio)');
+      if ($ratio == $aspect_ratio['ratio']) {
+        $options[$key] = $value . ' ' . t('(Matches Ratio)');
       }
     }
   }
@@ -669,7 +662,8 @@ function _video_dimensions_options(&$options, $video) {
  * Returns the width/height and aspect ratio of the video
  * 
  * @todo: move this to the transcoder class instead?
-*/
+ */
+
 function _video_aspect_ratio($video) {
   //lets get our video dimensions from the file
   module_load_include('inc', 'video', '/includes/transcoder');
@@ -678,9 +672,9 @@ function _video_aspect_ratio($video) {
   $width = $wxh['width'];
   $height = $wxh['height'];
 
-  if(!$width || !$height) {
+  if (!$width || !$height) {
     //no width and height found just return.
-    watchdog('video_conversion', 'We could not determine the height and width of the video: '.$video, array(), WATCHDOG_DEBUG);
+    watchdog('video_conversion', 'We could not determine the height and width of the video: ' . $video, array(), WATCHDOG_DEBUG);
     drupal_set_message(t('The system counld not determine the width and height of your video: !video.  If transcoding, the system could have problems.', array('!video' => $video)));
     return;
   }
@@ -697,34 +691,36 @@ function _video_aspect_ratio($video) {
 
 /*
  * Return our list of video extensions and their associated player.
-*/
+ */
+
 function video_video_extensions() {
   $extensions = array(
-    'divx'  => 'video_play_divx',
-    'mov'   => 'video_play_quicktime',
-    '3gp'   => 'video_play_quicktime',
-    '3g2'   => 'video_play_quicktime',
-    'mp4'   => 'video_play_quicktime',
-    'rm'    => 'video_play_realmedia',
-    'f4v'   => 'video_play_flv',
-    'flv'   => 'video_play_flv',
-    'swf'   => 'video_play_flash',
-    'dir'   => 'video_play_dcr',
-    'dcr'   => 'video_play_dcr',
-    'asf'   => 'video_play_windowsmedia',
-    'wmv'   => 'video_play_windowsmedia',
-    'avi'   => 'video_play_windowsmedia',
-    'mpg'   => 'video_play_windowsmedia',
-    'mpeg'  => 'video_play_windowsmedia',
-    'ogg'   => 'video_play_theora',
-    'ogv'   => 'video_play_theora',
+    'divx' => 'video_play_divx',
+    'mov' => 'video_play_quicktime',
+    '3gp' => 'video_play_quicktime',
+    '3g2' => 'video_play_quicktime',
+    'mp4' => 'video_play_quicktime',
+    'rm' => 'video_play_realmedia',
+    'f4v' => 'video_play_flv',
+    'flv' => 'video_play_flv',
+    'swf' => 'video_play_flash',
+    'dir' => 'video_play_dcr',
+    'dcr' => 'video_play_dcr',
+    'asf' => 'video_play_windowsmedia',
+    'wmv' => 'video_play_windowsmedia',
+    'avi' => 'video_play_windowsmedia',
+    'mpg' => 'video_play_windowsmedia',
+    'mpeg' => 'video_play_windowsmedia',
+    'ogg' => 'video_play_theora',
+    'ogv' => 'video_play_theora',
   );
   return $extensions;
 }
 
 /*
  * Return our supported video players.
-*/
+ */
+
 function video_video_players() {
   $players = array(
     'video_play_divx' => t('Divx Player'),
@@ -741,13 +737,14 @@ function video_video_players() {
 
 /*
  * Return our possible flash players.
-*/
+ */
+
 function video_video_flv_players() {
   $options = array();
-  if(module_exists('swftools')) {
+  if (module_exists('swftools')) {
     $options['swftools'] = t('SWF Tools');
   }
-  if(module_exists('flowplayer')) {
+  if (module_exists('flowplayer')) {
     $options['flowplayer'] = t('Flowplayer');
   }
   return $options;
@@ -765,12 +762,11 @@ function video_get_player($element) {
   $video = $video_helper->video_object($element);
   // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
-  $theme_function = variable_get('video_extension_'. $video->extension, $defaults[$video->extension]);
+  $theme_function = variable_get('video_extension_' . $video->extension, $defaults[$video->extension]);
   // Lets do some special handling for our flv files to accomdate multiple players.
-  if($theme_function == 'video_play_flv') {
+  if ($theme_function == 'video_play_flv') {
     return theme('video_flv', $video, $node);
-  }
-  else {
+  } else {
     return theme($theme_function, $video, $node);
   }
 }
@@ -805,7 +801,7 @@ function video_default_widget_settings($widget) {
     '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
     '#default_value' => $widget['autoconversion'],
   );
-  
+
   // Default thumbnail settings.
   $form['default'] = array(
     '#type' => 'fieldset',
@@ -815,23 +811,23 @@ function video_default_widget_settings($widget) {
     '#collapsed' => FALSE,
     '#weight' => 11
   );
-  
+
   $thumb_options = array(
-     'auto' => 'Automatically generate thumbnails',
-     'auto_fallback' => 'Automatically generate thumbnails, with fallback to manual upload',
-     'manual_upload' => 'Manually upload a thumbnail',
-     'no' => 'Don\'t create thumbnail',
+    'auto' => 'Automatically generate thumbnails',
+    'auto_fallback' => 'Automatically generate thumbnails, with fallback to manual upload',
+    'manual_upload' => 'Manually upload a thumbnail',
+    'no' => 'Don\'t create thumbnail',
   );
-  
+
   $form['default']['autothumbnail'] = array(
     '#type' => 'radios',
     '#title' => t('Thumbnail Generation'),
     '#options' => $thumb_options,
     '#description' => t('To use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings before using ffmpeg to create thumbnails.'),
     '#default_value' => isset($widget['autothumbnail']) ? $widget['autothumbnail'] : 'no',
-  );    
-  
-  
+  );
+
+
   // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
   // Present a video image of the current default image.
   if (!empty($widget['default_video_thumb'])) {
@@ -843,8 +839,8 @@ function video_default_widget_settings($widget) {
     );
   }
   $form['default']['default_video_thumb_upload'] = array(
-    '#type'  => 'file',
-    '#title' => empty($widget['default_video_thumb']) ? t('Upload default video thumbnail') :  t('Replace default video thumbnail with'),
+    '#type' => 'file',
+    '#title' => empty($widget['default_video_thumb']) ? t('Upload default video thumbnail') : t('Replace default video thumbnail with'),
     '#description' => t('Choose a image that will be used as video thumbnail when you don\'t have video thumbnails for videos.'),
   );
   // We set this value on 'validate' so we can get CCK to add it
@@ -862,13 +858,13 @@ function video_default_widget_settings($widget) {
  */
 function video_default_widget_settings_validate($element, &$form_state) {
   // Verify the destination exists
-  $destination = file_directory_path() .'/video_thumbs';
+  $destination = file_directory_path() . '/video_thumbs';
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
   }
 
-  $validators = array (
+  $validators = array(
     'file_validate_is_image' => array(),
   );
 
@@ -889,23 +885,24 @@ function video_default_widget_settings_validate($element, &$form_state) {
   // Make the file permanent and store it in the form.
   file_set_status($file, FILE_STATUS_PERMANENT);
   $file->timestamp = time();
-  $form_state['values']['default_video_thumb'] = (array)$file;
+  $form_state['values']['default_video_thumb'] = (array) $file;
 }
 
 function video_widget_settings_file_path_validate($element, &$form_state) {
   //lets prepend our video folder to the path settings.  first truncate videos/ off the end if it exists.
-  $form_state['values']['file_path'] = 'videos/'. $form_state['values']['file_path'];
+  $form_state['values']['file_path'] = 'videos/' . $form_state['values']['file_path'];
 }
 
 /*
  * #options helper function to set our key=value for the form api.
-*/
+ */
+
 function video_explode($delimeter, $dimensions) {
   $options = array();
   $values = explode($delimeter, $dimensions);
-  foreach($values as $value) {
+  foreach ($values as $value) {
     //lets check we have a value and its in the right format
-    if(!empty($value) && video_format_right($value)) {
+    if (!empty($value) && video_format_right($value)) {
       $options[trim($value)] = trim($value);
     }
   }
@@ -914,25 +911,29 @@ function video_explode($delimeter, $dimensions) {
 
 function video_format_right($value) {
   $format = explode("x", $value);
-  if(!isset($format[0]) || !is_numeric(trim($format[0]))) return false;
-  if(!isset($format[1]) || !is_numeric(trim($format[1]))) return false;
+  if (!isset($format[0]) || !is_numeric(trim($format[0])))
+    return false;
+  if (!isset($format[1]) || !is_numeric(trim($format[1])))
+    return false;
   return true;
 }
 
 /*
  * Default video dimensions.
-*/
+ */
+
 function video_default_dimensions() {
   return "176x144\n352x288\n704x576\n1408x1152\n128x96\n160x120\n320x240\n640x480\n800x600\n1024x768\n1600x1200\n2048x1024\n1280x1024\n2560x2048\n5120x4096\n852x480\n1366x768\n1600x1024\n1920x1200\n2560x1600\n3200x2048\n3840x2400\n6400x4096\n7680x4800\n320x200\n640x350\n852x480\n1280x720\n1920x1080";
 }
 
 /*
  * Utility function to remove all files and directories recursively.
-*/
+ */
+
 function rmdirr($dir) {
-  if($objs = glob($dir."/*")) {
-    foreach($objs as $obj) {
-      is_dir($obj)? rmdirr($obj) : unlink($obj);
+  if ($objs = glob($dir . "/*")) {
+    foreach ($objs as $obj) {
+      is_dir($obj) ? rmdirr($obj) : unlink($obj);
     }
   }
   @rmdir($dir);
