@@ -59,28 +59,30 @@ function video_s3_admin_settings() {
   //lets show our buckets in table format with a delete link.
   //@todo add permissions
   //were enabled, that means they have successfully connected and created a bucket.
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
-  $s3->connect();
-  $buckets = $s3->s3->listBuckets();
-  // Setup our header.
-  $header = array(t('Bucket Name'), t('Total Objects'), t('Actions'));
-  $rows = array();
-  foreach ($buckets as $bucket) {
-    $objects = count($s3->s3->getBucket($bucket));
-    $actions = l(t('Delete'), 'admin/settings/video/amazon_s3/bucket/' . $bucket . '/delete');
-    $rows[] = array($bucket, $objects, $actions);
+  if(variable_get('amazon_s3_access_key', false)) {
+    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+    $s3 = new video_amazon_s3;
+    $s3->connect();
+    $buckets = $s3->s3->listBuckets();
+    // Setup our header.
+    $header = array(t('Bucket Name'), t('Total Objects'), t('Actions'));
+    $rows = array();
+    foreach ($buckets as $bucket) {
+      $objects = count($s3->s3->getBucket($bucket));
+      $actions = l(t('Delete'), 'admin/settings/video/amazon_s3/bucket/' . $bucket . '/delete');
+      $rows[] = array($bucket, $objects, $actions);
+    }
+    $form['amazon_info'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Amazon S3 Information'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['amazon_info']['buckets'] = array(
+      '#type' => 'markup',
+      '#value' => theme('table', $header, $rows),
+    );
   }
-  $form['amazon_info'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Amazon S3 Information'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-  );
-  $form['amazon_info']['buckets'] = array(
-    '#type' => 'markup',
-    '#value' => theme('table', $header, $rows),
-  );
 
   return system_settings_form($form);
 }
