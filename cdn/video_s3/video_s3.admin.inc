@@ -59,7 +59,7 @@ function video_s3_admin_settings() {
   //lets show our buckets in table format with a delete link.
   //@todo add permissions
   //were enabled, that means they have successfully connected and created a bucket.
-  if(variable_get('amazon_s3_access_key', false)) {
+  if (variable_get('amazon_s3_access_key', false)) {
     module_load_include('inc', 'video_s3', '/includes/amazon_s3');
     $s3 = new video_amazon_s3;
     $s3->connect();
@@ -115,6 +115,16 @@ function video_s3_admin_settings_validate(&$form, &$form_state) {
       if (!$buckets || !(in_array($bucket, $buckets))) {
         // Create a bucket with public read access
         if ($s3->s3->putBucket($bucket, S3::ACL_PUBLIC_READ)) {
+          // set access control policy to zencoder if module is enabled
+          // @TODO : Add this to video_zencoder module
+          if (module_exists('video_zencoder')) {
+            $acp['acl'][] = array(
+              'type' => 'AmazonCustomerByEmail',
+              'email' => 'aws@zencoder.com',
+              'permission' => 'WRITE'
+            );
+            $s3->s3->setAccessControlPolicy($bucket, '', $acp);
+          }
           drupal_set_message(t('Successfully created the bucket %bucket.', array('%bucket' => $bucket)));
         } else {
           form_set_error('amazon_s3_bucket', t('Could not verify or create the bucket %bucket.', array('%bucket' => $bucket)));
