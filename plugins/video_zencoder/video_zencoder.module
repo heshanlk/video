@@ -55,7 +55,7 @@ function video_zencoder_video_insert(&$element, &$form_state) {
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
     if(!$video = $zc->verify($file['fid'])) {
       // Video has not been added to the queue yet so lets add it.
-      $zc->insert($file['fid'], $jobid);
+      $zc->insert($file['fid']);
       drupal_set_message(t('Video submission queued for transfer to your Zencoder Transcoding server. Will be there shortly.'));
     }
   }
@@ -73,7 +73,7 @@ function video_zencoder_video_load(&$video) {
     // Fix our filepath
     $video->filepath = $zencoder->filepath;
     // use urlencode to transfer videos.
-    if(!variable_get('amazon_s3_private', FALSE))
+    if(variable_get('amazon_s3_private', FALSE))
         $video->url = video_s3_get_authenticated_url($zencoder->filename);
     else
         $video->url = $zencoder->filepath;
