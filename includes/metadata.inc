@@ -56,7 +56,7 @@ class video_metadata {
       '#title' => t('Video Metadata'),
       '#default_value' => variable_get('vid_metadata', 'flvtool2'),
       '#options' => $options['radios'],
-      '#description' => t('Selecting a video metadata extractor will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', $options['help']))),
+      '#description' => t('!list', array('!list' => theme('item_list', $options['help']))),
       '#prefix' => '<div id="metadata-radios">',
       '#suffix' => '</div>',
     );

@@ -1,11 +1,11 @@
 <?php
+
 // $Id$
 
 /**
  * @file
  * Provides the administration settings for the Video Drupal module.
  */
-
 function video_transcoder_admin_settings() {
   module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;
@@ -19,7 +19,7 @@ function video_transcoder_admin_settings() {
 function video_transcoder_admin_settings_validate($form, &$form_state) {
   // check ffmpeg_wrapper module installed or not
   if ($form_state['values']['vid_convertor'] == 'video_ffmpeg_wrapper' && !module_exists('ffmpeg_wrapper')) {
-    form_set_error('vid_convertor', t('You need to download and install the !ffmpeg_wrapper module to enable this option.' , array('!ffmpeg_wrapper' => l(t('FFMPEG Wrapper'), 'http://drupal.org/project/ffmpeg_wrapper'))));
+    form_set_error('vid_convertor', t('You need to download and install the !ffmpeg_wrapper module to enable this option.', array('!ffmpeg_wrapper' => l(t('FFMPEG Wrapper'), 'http://drupal.org/project/ffmpeg_wrapper'))));
   }
 
   // add vallidations by trnacoder interface
@@ -76,23 +76,23 @@ function video_players_admin_settings() {
   $players = video_video_players();
   $flv_players = video_video_flv_players();
 
-  foreach($extensions as $ext => $player) {
-    $form['extensions']['video_extension_'.$ext] = array(
+  foreach ($extensions as $ext => $player) {
+    $form['extensions']['video_extension_' . $ext] = array(
       '#type' => 'select',
-      '#title' => t('Extension:'). '  '.$ext,
-      '#default_value' => variable_get('video_extension_'.$ext, $player),
+      '#title' => t('Extension:') . '  ' . $ext,
+      '#default_value' => variable_get('video_extension_' . $ext, $player),
       '#options' => $players,
-      '#prefix' => '<div class="video_select" rel="'.$ext.'">',
+      '#prefix' => '<div class="video_select" rel="' . $ext . '">',
       '#suffix' => '</div>',
     );
 
-    $form['extensions']['video_extension_'.$ext.'_flash_player'] = array(
+    $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
       '#type' => !empty($flv_players) ? 'radios' : 'markup',
-      '#title' => t('Flash Player for').' '.$ext,
-      '#value' => !empty($flv_players) ? '' : t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools') , 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
+      '#title' => t('Flash Player for') . ' ' . $ext,
+      '#value' => !empty($flv_players) ? '' : t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools'), 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
       '#options' => $flv_players,
-      '#default_value' => variable_get('video_extension_'.$ext.'_flash_player', ''),
-      '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_'.$ext.'">',
+      '#default_value' => variable_get('video_extension_' . $ext . '_flash_player', ''),
+      '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
       '#suffix' => '</div>',
     );
   }
@@ -104,6 +104,14 @@ function video_metadata_admin_settings() {
   $metadata = new video_metadata;
   $form = $metadata->admin_settings();
   return system_settings_form($form);
+}
+
+function video_metadata_admin_settings_validate($form, &$form_state) {
+  // add vallidations by metadata interface
+  $metadata = $form_state['values']['vid_metadata'];
+  module_load_include('inc', 'video', '/includes/metadata');
+  $metadata = new video_metadata($metadata);
+  $metadata->admin_settings_validate($form, $form_state);
 }
 
 function video_cron_admin_settings() {
