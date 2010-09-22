@@ -132,7 +132,7 @@ class video_amazon_s3 {
         $filename = $video->filepath;
         // use the file object as file name
         $video->filename = $filename;
-        $perm = variable_get('amazon_s3_private', FALSE) ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE;
+        $perm = (variable_get('amazon_s3_private', FALSE) == FALSE) ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE;
 
         if ($this->s3->putObjectFile($filepath, $this->bucket, $filename, $perm)) {
           // Update our table.
