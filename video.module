@@ -251,8 +251,10 @@ function video_node_update_submit($form, &$form_state) {
   //lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
     foreach ($form_state['values']['video_id'] as $fid) {
-      //lets update our table to include the nid
-      db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+      module_load_include('inc', 'video', '/includes/transcoder');
+      $transcoder = new video_transcoder;
+      $video = array('nid' => $form_state['nid'], 'fid' => $fid);
+      $transcoder->update_job($video);
       // Lets other module to know to update
       video_module_invoke('update', $form, $form_state);
     }
@@ -356,14 +358,13 @@ function video_convert_process(&$element) {
     //setup our conversion class and check for the fid existence.
     module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
-    // if transcoder is web service then skip adding to video_files local transcode queue
-    // @TODO : Move all these below insert video to video_files to transcoder class
-    if ($video_conversion->transcoder_is_wsod())
-      return;
+
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-    if (!$video = $video_conversion->load_video($fid)) {
+    if (!$video = $video_conversion->load_job($fid)) {
       // Video has not been added to the queue yet so lets add it.
-      db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $fid, VIDEO_RENDERING_PENDING, $file['data']['dimensions']);
+      $video = array('fid' => $fid, 'dimensions' => $file['data']['dimensions']);
+      if (!($video_conversion->create_job($video)))
+        drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
       $convert = true;
       //lets queue our node status to unpublished.
       $element['#unpublish'] = true;
@@ -397,15 +398,11 @@ function video_convert_process(&$element) {
  * Implementation of hook_file_delete().
  */
 function video_file_delete($file) {
-  //lets get all our videos and unlink them
-  $sql = db_query("SELECT filepath FROM {video_files} WHERE fid=%d", $file->fid);
-  //we loop here as future development will include multiple video types (HTML 5)
-  while ($row = db_fetch_object($sql)) {
-    if (file_exists($row->filepath))
-      unlink($row->filepath);
-  }
-  //now delete our rows.
-  db_query('DELETE FROM {video_files} WHERE fid = %d', $file->fid);
+  // delete the transcoder job
+  module_load_include('inc', 'video', '/includes/transcoder');
+  $transcoder = new video_transcoder;
+  $transcoder->delete_job($file);
+
   //now lets delete our video thumbnails and folder.
   $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
   $thumb_folder = file_directory_path() . '/' . $video_thumb_path . '/' . $file->fid;

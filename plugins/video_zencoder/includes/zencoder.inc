@@ -165,7 +165,7 @@ class video_zencoder_api {
 
     // Check if it worked
     if ($encoding_job->created) {
-//      watchdog('zencoder', $encoding_job->id);
+      watchdog('zencoder', serialize($encoding_job));
       return $encoding_job;
     }
     else {
@@ -175,7 +175,6 @@ class video_zencoder_api {
       }
       return false;
     }
-
   }
 
   /*
@@ -272,7 +271,7 @@ class video_zencoder_api {
           $video->filemime = file_get_mimetype($filename . '.' . $filetype);
           $video->vid = $row->vid;
           $video->jobid = $encoding_job->id;
-          $video->outputid = $encoding_job->outputs["VIDEO" . $video->fid]->id;
+          $video->outputid = $encoding_job->outputs->id;
           $prefix = $this->ssl ? 'https://' : 'http://';
           $video->filepath = $prefix . $video->bucket .'.s3.amazonaws.com/'. $filename . '.' . $filetype;
 //          $video->filepath = $this->s3_private_url($video->bucket, $video->filename);
