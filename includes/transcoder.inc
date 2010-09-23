@@ -6,12 +6,12 @@
  * Class file used to wrap the transcoder functions.
  *
  * @todo need more commenting
- * Add singalot for this
+ * 
  */
 
 class video_transcoder {
 
-  private $transcoder;
+  private static $transcoder;
 
   public function __construct($transcoder = null) {
     //get our configured transcoder.
@@ -34,7 +34,12 @@ class video_transcoder {
       }
     }
     if (class_exists($transcoder)) {
-      $this->transcoder = new $transcoder;
+      // add singalton pattern
+      if (!isset(self::$transcoder)) {
+        $c = __CLASS__;
+        self::$transcoder = new $c;
+      }
+//      $this->transcoder = new $transcoder;
     } else {
       drupal_set_message(t('The transcoder is not configured properly.'), 'error');
     }
@@ -149,9 +154,9 @@ interface transcoder_interface {
 
   public function create_job($video);
 
-  public function update_job($fid);
+  public function update_job($video);
 
-  public function delete_job($fid);
+  public function delete_job($video);
 
   public function load_job($fid);
 
