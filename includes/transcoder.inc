@@ -6,40 +6,51 @@
  * Class file used to wrap the transcoder functions.
  *
  * @todo need more commenting
+ * Add autoloading
+ * # http://stackoverflow.com/questions/3343208/php-class-lazy-loading
+ * # http://php.net/manual/en/language.oop5.autoload.php
  * 
  */
 
 class video_transcoder {
 
-  private static $transcoder;
+  private $transcoder;
 
   public function __construct($transcoder = null) {
+    $this->transcoder = $this->get_instance($transcoder);
+  }
+
+  /**
+   *
+   * @param <type> $transcoder 
+   */
+  private function get_instance($transcoder = null) {
     //get our configured transcoder.
     if (!isset($transcoder))
       $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
 //    module_load_include('inc', 'video', '/transcoders/' . $transcoder);
     if (!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
       $modules = module_list();
+      $files = array();
       foreach ($modules as $module) {
-        $mobule_files = array();
         $module_path = drupal_get_path('module', $module) . '/transcoders';
-        $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
-        if (is_array($mobule_files)) {
-          foreach ($mobule_files as $file) {
-            if ($file->name == $transcoder)
-              require_once $file->filename;
-          }
+        $inc_files = file_scan_directory($module_path, '^.*\.inc$');
+        if (!empty($inc_files))
+          $files[$module] = $inc_files;
+      }
+      // @TODO : add lazy load
+      foreach ($files as $module => $_files) {
+        foreach ($_files as $file) {
+          if ($file->name == $transcoder)
+            module_load_include('inc', $module, '/transcoders/' . $file->name);
         }
-//        
       }
     }
+
     if (class_exists($transcoder)) {
-      // add singalton pattern
-      if (!isset(self::$transcoder)) {
-        $c = __CLASS__;
-        self::$transcoder = new $c;
-      }
-//      $this->transcoder = new $transcoder;
+      $transcoder_instance = new $transcoder;
+      $this->transcoder = $transcoder_instance;
+      return $transcoder_instance;
     } else {
       drupal_set_message(t('The transcoder is not configured properly.'), 'error');
     }
@@ -49,7 +60,7 @@ class video_transcoder {
     return $this->transcoder->generate_thumbnails($video);
   }
 
-  public function convert_video($video, $converted) {
+  public function convert_video($video) {
     $output = $this->transcoder->convert_video($video, $converted);
     // If they are using metadata.
     if (variable_get('video_metadata', FALSE)) {
