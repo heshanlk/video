@@ -166,8 +166,6 @@ class video_ffmpeg implements transcoder_interface {
       $result = db_query("UPDATE {video_files} SET filename='%s', filepath='%s', filemime='%s', filesize=%d, status=%d, completed=%d WHERE vid=%d",
               $video->converted->filename, $video->converted->filepath, $video->converted->filemime, $video->converted->filesize, $video->converted->status, $video->converted->completed, $video->converted->vid);
 
-      // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
-      db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $video->nid);
       watchdog('video_conversion', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
       return TRUE;
     } else {

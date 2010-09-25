@@ -4,6 +4,7 @@
 /*
  * @file
  * Transcoder class file to handle ffmpeg_wrapper settings and conversions.
+ * @todo : add one parent class for ffmpeg and ffmpeg_wrapper classes
  *
  */
 
@@ -13,7 +14,6 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   private $name = 'FFmpeg Wrapper';
   private $value = 'video_ffmpeg_wrapper';
   private $video_ext = 'flv';
-  private $is_wsod = false; // web service on demand service
   protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
 
   public function __construct() {
@@ -96,73 +96,132 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   }
 
   public function convert_video($video) {
-    $ffmpeg_object = new stdClass();
-    // check configuration are pass of then use global $conf
-    if (empty($params)) {
-      global $conf;
-      $params = $conf;
-    }
+    // This will update our current video status to active.
+    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+    // Get the converted file object
+    //we are going to move our video to an "original" folder
+    //we are going to transcode the video to the "converted" folder
+    $pathinfo = pathinfo($video->filepath);
+    $original = $pathinfo['dirname'] . '/original';
+    $converted = $pathinfo['dirname'] . '/converted';
 
-    // first error check, make sure that we can decode this kind of file
-    if (!ffmpeg_wrapper_can_decode($video->filepath)) {
-      $message = 'FFmpeg Wrapper can not decode this file: !file';
-      $variables = array('!file' => l($video->filepath, file_create_url($video->filepath)));
-      watchdog('video_render', $message, $variables, WATCHDOG_ERROR);
+    if (!field_file_check_directory($original, FILE_CREATE_DIRECTORY)) {
+      watchdog('video_transcoder', 'Video conversion failed.  Could not create the directory: ' . $orginal, array(), WATCHDOG_ERROR);
+      return false;
+    }
+    if (!field_file_check_directory($converted, FILE_CREATE_DIRECTORY)) {
+      watchdog('video_transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted, array(), WATCHDOG_ERROR);
       return false;
     }
 
-    // did the admin define a specific FFmpeg comand to run?
-    //  we only run what the admin specified
-    if ($params['ffmpeg_video_custom']) {
-      $options[] = str_replace(array('%in_file', '%out_file'), array($video->filepath, $converted), $params['ffmpeg_video_custom_command']);
-    }
-    // build a standard configuration
-    else {
-      // build the ffmpeg command structure out
-      $options = array();
-      // input file
-      $options[] = "-i '" . $video->filepath . "'";
-      // build the watermark config
-      if ($params['ffmpeg_video_wm'])
-        $options[] = "-vhook '" . ffmpeg_wrapper_path_to_vhook('watermark.so') . " -f " . $params['ffmpeg_video_wm_file'] . "'";
-      // build the audio config
-      if ($params['ffmpeg_audio_advanced']) {
-        // use a specifc codec?
-        if ($params['ffmpeg_audio_acodec'])
-          $options[] = '-acodec ' . $params['ffmpeg_audio_acodec'];
-        // use a specific sample rate?
-        if ($params['ffmpeg_audio_ar'])
-          $options[] = '-ar ' . $params['ffmpeg_audio_ar'];
-        // use a specific bit rate?
-        if ($params['ffmpeg_audio_ab'])
-          $options[] = '-ab ' . $params['ffmpeg_audio_ab'];
+    $original = $original . '/' . $video->filename;
+    //lets move our video and then convert it.
+    if (file_move($video, $original)) {
+      //update our filename after the move to maintain filename uniqueness.
+//        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
+      $converted = file_create_filename(pathinfo($video->filepath, PATHINFO_FILENAME) . '.' . $this->video_converted_extension(), $converted);
+      // Update our filepath since we moved it
+      $update = drupal_write_record('files', $video, 'fid');
+      //call our transcoder
+//        $command_output = $this->convert_video($video, $converted);
+      $dimensions = $this->dimensions($video);
+      // Setup our default command to be run.
+      $ffmpeg_object = new stdClass();
+      // check configuration are pass of then use global $conf
+      if (empty($params)) {
+        global $conf;
+        $params = $conf;
       }
 
-      //custom sizing per video
-      $options[] = '-s ' . $dimensions;
-
-      // build the video config
-      if ($params['ffmpeg_video_advanced']) {
-        // is codec set?
-        if ($params['ffmpeg_video_vcodec'])
-          $options[] = '-vcodec ' . $params['ffmpeg_video_vcodec'];
-        // is the bit rate set?
-        if ($params['ffmpeg_video_br'])
-          $options[] = '-b ' . $params['ffmpeg_video_br'];
-        // is frame rate set?
-        if ($params['ffmpeg_video_fps'])
-          $options[] = '-r ' . $params['ffmpeg_video_fps'];
+      // first error check, make sure that we can decode this kind of file
+      if (!ffmpeg_wrapper_can_decode($video->filepath)) {
+        $message = 'FFmpeg Wrapper can not decode this file: !file';
+        $variables = array('!file' => l($video->filepath, file_create_url($video->filepath)));
+        watchdog('video_render', $message, $variables, WATCHDOG_ERROR);
+        return false;
       }
-      // implement truncating
-      if ($params['ffmpeg_time_advanced'])
-        $options[] = '-t ' . $params['ffmpeg_time'];
-      // add the output file
-      $options[] = "'" . $converted . "'";
-    }
-    $ffmpeg_object->command = implode(" ", $options);
 
-    // run our command and return the output.
-    return $this->run_command($ffmpeg_object->command);
+      // did the admin define a specific FFmpeg comand to run?
+      //  we only run what the admin specified
+      if ($params['ffmpeg_video_custom']) {
+        $options[] = str_replace(array('%in_file', '%out_file'), array($video->filepath, $converted), $params['ffmpeg_video_custom_command']);
+      }
+      // build a standard configuration
+      else {
+        // build the ffmpeg command structure out
+        $options = array();
+        // input file
+        $options[] = "-i '" . $video->filepath . "'";
+        // build the watermark config
+        if ($params['ffmpeg_video_wm'])
+          $options[] = "-vhook '" . ffmpeg_wrapper_path_to_vhook('watermark.so') . " -f " . $params['ffmpeg_video_wm_file'] . "'";
+        // build the audio config
+        if ($params['ffmpeg_audio_advanced']) {
+          // use a specifc codec?
+          if ($params['ffmpeg_audio_acodec'])
+            $options[] = '-acodec ' . $params['ffmpeg_audio_acodec'];
+          // use a specific sample rate?
+          if ($params['ffmpeg_audio_ar'])
+            $options[] = '-ar ' . $params['ffmpeg_audio_ar'];
+          // use a specific bit rate?
+          if ($params['ffmpeg_audio_ab'])
+            $options[] = '-ab ' . $params['ffmpeg_audio_ab'];
+        }
+
+        //custom sizing per video
+        $options[] = '-s ' . $dimensions;
+
+        // build the video config
+        if ($params['ffmpeg_video_advanced']) {
+          // is codec set?
+          if ($params['ffmpeg_video_vcodec'])
+            $options[] = '-vcodec ' . $params['ffmpeg_video_vcodec'];
+          // is the bit rate set?
+          if ($params['ffmpeg_video_br'])
+            $options[] = '-b ' . $params['ffmpeg_video_br'];
+          // is frame rate set?
+          if ($params['ffmpeg_video_fps'])
+            $options[] = '-r ' . $params['ffmpeg_video_fps'];
+        }
+        // implement truncating
+        if ($params['ffmpeg_time_advanced'])
+          $options[] = '-t ' . $params['ffmpeg_time'];
+        // add the output file
+        $options[] = "'" . $converted . "'";
+      }
+      $ffmpeg_object->command = implode(" ", $options);
+
+      // run our command and return the output.
+      $command_output = $this->run_command($ffmpeg_object->command);
+
+      //lets check to make sure our file exists, if not error out
+      if (!file_exists($converted) || !filesize($converted)) {
+        watchdog('video_conversion', 'Video conversion failed.  FFMPEG reported the following output: ' . $command_output, array(), WATCHDOG_ERROR);
+        $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+        return FALSE;
+      }
+      // Setup our converted video object
+      $video_info = pathinfo($converted);
+      //update our converted video
+      $video->converted = new stdClass();
+      $video->converted->vid = $video->vid;
+      $video->converted->filename = $video_info['basename'];
+      $video->converted->filepath = $converted;
+      $video->converted->filemime = file_get_mimetype($converted);
+      $video->converted->filesize = filesize($converted);
+      $video->converted->status = VIDEO_RENDERING_COMPLETE;
+      $video->converted->completed = time();
+      // Update our video_files table with the converted video information.
+      $result = db_query("UPDATE {video_files} SET filename='%s', filepath='%s', filemime='%s', filesize=%d, status=%d, completed=%d WHERE vid=%d",
+              $video->converted->filename, $video->converted->filepath, $video->converted->filemime, $video->converted->filesize, $video->converted->status, $video->converted->completed, $video->converted->vid);
+
+      watchdog('video_conversion', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
+      return TRUE;
+    } else {
+      watchdog('video_conversion', 'Cound not move the video to the original folder.', array(), WATCHDOG_ERROR);
+      $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+      return FALSE;
+    }
   }
 
   /**
@@ -310,11 +369,15 @@ class video_ffmpeg_wrapper implements transcoder_interface {
   }
 
   public function update_job($video) {
+    if (!$this->load_job($video['fid']))
+      return;
     //lets update our table to include the nid
-    db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+    db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $video['nid'], $video['fid']);
   }
 
   public function delete_job($video) {
+    if (!$this->load_job($video->fid))
+      return;
     //lets get all our videos and unlink them
     $sql = db_query("SELECT filepath FROM {video_files} WHERE fid=%d", $video->fid);
     //we loop here as future development will include multiple video types (HTML 5)
@@ -323,12 +386,17 @@ class video_ffmpeg_wrapper implements transcoder_interface {
         unlink($row->filepath);
     }
     //now delete our rows.
-    db_query('DELETE FROM {video_files} WHERE fid = %d', $file->fid);
+    db_query('DELETE FROM {video_files} WHERE fid = %d', $video->fid);
   }
 
   public function load_job($fid) {
+    $job = null;
     $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
-    return db_fetch_object($result);
+    $job = db_fetch_object($result);
+    if (!empty($job))
+      return $job;
+    else
+      return FALSE;
   }
 
   public function load_job_queue() {
@@ -352,7 +420,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
     return db_fetch_object($result);
   }
-  
+
   /**
    * Change the status of the file.
    *
@@ -431,4 +499,5 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       return $video->dimensions;
     }
   }
+
 }

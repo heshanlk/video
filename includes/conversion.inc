@@ -70,7 +70,7 @@ class video_conversion {
     }
     // Make sure this video is pending or do nothing.
     if ($video->video_status == VIDEO_RENDERING_PENDING) {
-      $this->transcoder->convert_video($video);
+      return $this->transcoder->convert_video($video);
     }
     return NULL;
   }
