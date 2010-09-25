@@ -1,17 +1,17 @@
 <?php
+
 //$Id$
 /*
  * @file
  * Transcoder class file to handle ffmpeg_wrapper settings and conversions.
  *
-*/
+ */
 
 
 class video_zencoder implements transcoder_interface {
+
   private $name = 'Zencoder';
   private $value = 'video_zencoder';
-  private $is_wsod = true; // web service on demand service
-
 
   public function run_command($options) {
     return;
@@ -21,7 +21,7 @@ class video_zencoder implements transcoder_interface {
     global $user;
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path(). '/' . $video_thumb_path . '/' . $video['fid'];
+    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video['fid'];
 
     // Ensure the destination directory exists and is writable.
     $directories = explode('/', $final_thumb_path);
@@ -38,15 +38,15 @@ class video_zencoder implements transcoder_interface {
     $files = array();
     // no thumbnails to generate
     $number_of_thumbs = variable_get('no_of_video_thumbs', 5);
-    for($i = 0; $i < $number_of_thumbs; $i++) {
+    for ($i = 0; $i < $number_of_thumbs; $i++) {
       // @TODO Remove hard coded file types
-      $filename = $video['fid'] .'_'. sprintf("%04d", $i) . '.png';
+      $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
       $thumbfile = $final_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {
         $default = drupal_get_path('module', 'video') . '/images/no-thumb.png';
         // Download generated thumbnails from S3.
-        if(video_s3_get_object_info($thumbfile))
+        if (video_s3_get_object_info($thumbfile))
           $s3_get_object = video_s3_get_object($thumbfile, $thumbfile);
         else {
           $thumbfile = $final_thumb_path . '/no-thumb.png';
@@ -57,15 +57,15 @@ class video_zencoder implements transcoder_interface {
           $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
           $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
           // Log the error message.
-          watchdog('video_transcoder',$error_msg, array(), WATCHDOG_ERROR);
+          watchdog('video_transcoder', $error_msg, array(), WATCHDOG_ERROR);
           continue;
         }
       }
       // Begin building the file object.
       // @TODO : use file_munge_filename()
       $file = new stdClass();
-      $file->uid      = $user->uid;
-      $file->status   = FILE_STATUS_TEMPORARY;
+      $file->uid = $user->uid;
+      $file->status = FILE_STATUS_TEMPORARY;
       $file->filename = trim($filename);
       $file->filepath = $thumbfile;
       $file->filemime = file_get_mimetype($filename);
@@ -80,7 +80,7 @@ class video_zencoder implements transcoder_interface {
     return variable_get('video_zencoder_ext', 'flv');
   }
 
-  public function convert_video($video, $converted) {
+  public function convert_video($video) {
     // @TODO :
   }
 
@@ -97,8 +97,8 @@ class video_zencoder implements transcoder_interface {
    */
   public function get_dimensions($video) {
     $ffmpeg_output = ffmpeg_wrapper_file_data($video);
-    $res = array('width' => 0,'height' => 0);
-    if($ffmpeg_output['video']['s']) {
+    $res = array('width' => 0, 'height' => 0);
+    if ($ffmpeg_output['video']['s']) {
       $dimensions = explode("x", $ffmpeg_output['video']['s']);
       $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
       $res['height'] = $dimensions[1] ? $dimensions[1] : NULL;
@@ -138,7 +138,7 @@ class video_zencoder implements transcoder_interface {
   public function admin_settings() {
     global $user;
     // check amazon s3 module is exists or not
-    if(!module_exists('video_s3'))
+    if (!module_exists('video_s3'))
       drupal_set_message(t('You must enable Video Amazon S3 Module to enable this module.'), 'error');
 
     $form = array();
@@ -147,7 +147,7 @@ class video_zencoder implements transcoder_interface {
       '#value' => '<div id="video_zencoder">',
     );
     $zencoder_api = variable_get('zencoder_api_key', null);
-    if(!isset ($zencoder_api) && empty ($zencoder_api)) {
+    if (!isset($zencoder_api) && empty($zencoder_api)) {
       $form['zencoder_user'] = array(
         '#type' => 'fieldset',
         '#title' => t('Zencoder User'),
@@ -169,8 +169,7 @@ class video_zencoder implements transcoder_interface {
         '#default_value' => variable_get('agree_terms_zencoder', TRUE),
         '#description' => t('Read terms and conditions on !link.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com'))),
       );
-    }
-    else {
+    } else {
       // Zencoder API is exists
       $form['zencoder_info'] = array(
         '#type' => 'fieldset',
@@ -226,11 +225,11 @@ class video_zencoder implements transcoder_interface {
         '#size' => 12,
       );
       $quality = array(
-        1=>'1 - Poor Quality (Smaller file)',
-        2=>2,
-        3=>'3 - Default',
-        4=>4,
-        5=>'5 - High Quality (Larger file)'
+        1 => '1 - Poor Quality (Smaller file)',
+        2 => 2,
+        3 => '3 - Default',
+        4 => 4,
+        5 => '5 - High Quality (Larger file)'
       );
       $form['zencoder']['basic_video']['zc_quality'] = array(
         '#type' => 'select',
@@ -240,11 +239,11 @@ class video_zencoder implements transcoder_interface {
         '#description' => t('This is the desired output video quality. A higher quality setting will mean higher bitrates and higher file sizes. A quality setting of 5 will be nearly lossless and a setting of 1 will be quite compressed and may not look great. Higher quality encoding is also a bit slower than lower quality encoding. As a rule of thumb, lowering quality by a level will reduce file size by about 40%. A quality setting of 3-4 usually looks pretty good. Note that the actual bitrate will vary when using the quality setting, depending on the type of video. Even at the same quality setting, low-complexity video (like a screencast) will generally result in lower bitrates than high-complexity video (like a movie).'),
       );
       $speed = array(
-        1=>'1 - Slow (Better Compression)',
-        2=>2,
-        3=>'3 - Default',
-        4=>4,
-        5=>'5 - Fast (Worst Compression)'
+        1 => '1 - Slow (Better Compression)',
+        2 => 2,
+        3 => '3 - Default',
+        4 => 4,
+        5 => '5 - Fast (Worst Compression)'
       );
       $form['zencoder']['basic_video']['zc_speed'] = array(
         '#type' => 'select',
@@ -470,14 +469,14 @@ class video_zencoder implements transcoder_interface {
    */
   public function admin_settings_validate($form, &$form_state) {
     $zencoder_api = variable_get('zencoder_api_key', null);
-    if(isset ($zencoder_api) && !empty ($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder')
+    if (isset($zencoder_api) && !empty($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder')
       return;
 
     $errors = false;
     // check terms and condition
-    if($form_state['values']['agree_terms_zencoder'] == 0) {
+    if ($form_state['values']['agree_terms_zencoder'] == 0) {
       $errors = true;
-      form_set_error('agree_terms_zencoder', t('You must agree terms and conditions.' , array()));
+      form_set_error('agree_terms_zencoder', t('You must agree terms and conditions.', array()));
     }
     // check for email exists
     // Validate the e-mail address:
@@ -487,7 +486,7 @@ class video_zencoder implements transcoder_interface {
     }
 
     // get the API key from zencoder and save it to variable
-    if(!$errors) {
+    if (!$errors) {
       $email = $form_state['values']['zencoder_username'];
       module_load_include('inc', 'video_zencoder', '/includes/zencoder');
       $zc = new video_zencoder_api;
@@ -496,7 +495,7 @@ class video_zencoder implements transcoder_interface {
       $user = new stdClass;
       $user->email = $email;
       $result = $zc->create_user($user);
-      if($result !== true)
+      if ($result !== true)
         form_set_error('zencoder_username', $result);
     }
   }
@@ -537,6 +536,16 @@ class video_zencoder implements transcoder_interface {
       $videos[] = $row;
     }
     return $videos;
+  }
+
+  /**
+   * @todo : replace with the load job method
+   * @param <type> $video
+   * @return <type>
+   */
+  public function load_completed_job($video) {
+    $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
+    return db_fetch_object($result);
   }
 
   /**
@@ -617,4 +626,5 @@ class video_zencoder implements transcoder_interface {
       return $video->dimensions;
     }
   }
+
 }

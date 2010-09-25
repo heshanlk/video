@@ -241,6 +241,12 @@ function video_cron() {
   }
 }
 
+/**
+ * Implementation of hook_form_alter()
+ * @param string $form
+ * @param <type> $form_state
+ * @param <type> $form_id 
+ */
 function video_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] . '_node_form' == $form_id) {
     $form['buttons']['submit']['#submit'][] = 'video_node_update_submit';
@@ -251,6 +257,7 @@ function video_node_update_submit($form, &$form_state) {
   //lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
     foreach ($form_state['values']['video_id'] as $fid) {
+      // @TODO : check for enable trancoder
       module_load_include('inc', 'video', '/includes/transcoder');
       $transcoder = new video_transcoder;
       $video = array('nid' => $form_state['nid'], 'fid' => $fid);
@@ -398,6 +405,7 @@ function video_convert_process(&$element) {
  * Implementation of hook_file_delete().
  */
 function video_file_delete($file) {
+  // @TODO : check for enable trancoder
   // delete the transcoder job
   module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;

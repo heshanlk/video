@@ -28,6 +28,8 @@ class video_conversion {
       foreach ($videos as $video) {
         $this->process($video);
       }
+      //clear cache once completed the conversion to update the file paths
+      cache_clear_all('*', 'cache_content', true);
     }
   }
 
@@ -38,6 +40,7 @@ class video_conversion {
    *   An array containing all the videos to be proccessed.
    */
   private function load_job_queue() {
+    // @TODO : allow only limited jobs to process
     return $this->transcoder->load_job_queue();
   }
 
@@ -67,7 +70,7 @@ class video_conversion {
     }
     // Make sure this video is pending or do nothing.
     if ($video->video_status == VIDEO_RENDERING_PENDING) {
-      $this->transcoder->convert_video($video, $converted);
+      $this->transcoder->convert_video($video);
     }
     return NULL;
   }
@@ -79,9 +82,8 @@ class video_conversion {
    * @param $fid
    *   Integer of the file id to be loaded.
    */
-  public function load_converted_video($fid) {
-    $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $fid);
-    return db_fetch_object($result);
+  public function load_completed_job($video) {
+    return $this->transcoder->load_completed_job($video);
   }
 
   public function create_job($video) {

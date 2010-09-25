@@ -61,7 +61,7 @@ class video_transcoder {
   }
 
   public function convert_video($video) {
-    $output = $this->transcoder->convert_video($video, $converted);
+    $output = $this->transcoder->convert_video($video);
     // If they are using metadata.
     if (variable_get('video_metadata', FALSE)) {
       module_load_include('inc', 'video', '/includes/metadata');
@@ -133,10 +133,6 @@ class video_transcoder {
     return $this->transcoder->video_converted_extension();
   }
 
-  public function load_job_queue() {
-    return $this->transcoder->load_job_queue();
-  }
-
   public function create_job($video) {
     return $this->transcoder->create_job($video);
   }
@@ -159,6 +155,14 @@ class video_transcoder {
     return $this->transcoder->load_job($fid);
   }
 
+  public function load_job_queue() {
+    return $this->transcoder->load_job_queue();
+  }
+
+  public function load_completed_job($video) {
+    return $this->transcoder->load_completed_job($video);
+  }
+
 }
 
 interface transcoder_interface {
@@ -173,11 +177,13 @@ interface transcoder_interface {
 
   public function load_job_queue();
 
+  public function load_completed_job($video);
+
   public function change_status($vid, $status);
 
   public function generate_thumbnails($video);
 
-  public function convert_video($video, $converted);
+  public function convert_video($video);
 
   public function get_playtime($video);
 

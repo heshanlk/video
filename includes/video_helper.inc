@@ -1,10 +1,11 @@
 <?php
+
 //$Id$
 /*
  * @file
  * Class file used to create our video and thumbnail objects.
  *
-*/
+ */
 
 class video_helper {
 
@@ -13,15 +14,15 @@ class video_helper {
     //setup our width x height
     $dimensions = explode("x", $element['#item']['data']['dimensions']);
     $player_dimensions = explode("x", $element['#item']['data']['player_dimensions']);
-    if(!isset($dimensions[0]) || !isset($dimensions[1])) {
+    if (!isset($dimensions[0]) || !isset($dimensions[1])) {
       $dimensions = explode("x", $field['widget']['default_dimensions']);
-      if(!isset($dimensions[0]) || !isset($dimensions[1])) {
+      if (!isset($dimensions[0]) || !isset($dimensions[1])) {
         drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions in the form of WxH.'), 'error');
       }
     }
-    if(!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
+    if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
       $player_dimensions = explode("x", $field['widget']['default_player_dimensions']);
-      if(!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
+      if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
         drupal_set_message(t('Something is wrong with your player dimensions.  Make sure you enter the player dimensions in the form of WxH.'), 'error');
       }
     }
@@ -44,27 +45,24 @@ class video_helper {
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
 
     // TODO : add hook_video_load API to load videos
-
     // lets find out if we are overriding this video with a converted one.
     // lets find out if we have transcoded this file and update our paths.
     if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion']
-      && !$element['#item']['data']['bypass_autoconversion']) {
+        && !$element['#item']['data']['bypass_autoconversion']) {
       module_load_include('inc', 'video', '/includes/conversion');
       $conversion = new video_conversion;
-      $converted = $conversion->load_converted_video($video->fid);
-      if(!$conversion->transcoder_is_wsod()) {
-          $video->filepath = $converted->filepath;
-          $video->url = file_create_url($converted->filepath);
-          $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
-        }
-      }
+      $converted = $conversion->load_completed_job($video);
+      $video->filepath = $converted->filepath;
+      $video->url = file_create_url($converted->filepath);
+      $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+    }
 
     // Let othere module to load the video files by referance
     // Lets find out if we have pushed this file to the cdn if enabled.
     video_module_invoke('load', $video);
 
     // Moved to last to recheck incase we changed our extension above.
-    $video->flash_player = variable_get('video_extension_'.$video->extension.'_flash_player', '');
+    $video->flash_player = variable_get('video_extension_' . $video->extension . '_flash_player', '');
 
     // Return our object
     return $video;
@@ -85,11 +83,9 @@ class video_helper {
     $use_default_img = isset($element['#item']['data']['use_default_video_thumb']) ? $element['#item']['data']['use_default_video_thumb'] : false;
     if ($use_default_img && !empty($field['widget']['default_video_thumb']['filepath'])) {
       $thumbnail->filepath = $field['widget']['default_video_thumb']['filepath'];
-    }
-    elseif (isset($element['#item']['data']['video_thumb'])? $element['#item']['data']['video_thumb'] : false) {
+    } elseif (isset($element['#item']['data']['video_thumb']) ? $element['#item']['data']['video_thumb'] : false) {
       $thumbnail->filepath = $element['#item']['data']['video_thumb'];
-    }
-    else {
+    } else {
       //need some type of default if nothing is present
       //drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
     }
@@ -107,4 +103,5 @@ class video_helper {
     // Return our object
     return $thumbnail;
   }
+
 }

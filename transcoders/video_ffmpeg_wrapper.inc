@@ -95,7 +95,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     return $this->video_ext;
   }
 
-  public function convert_video($video, $converted) {
+  public function convert_video($video) {
     $ffmpeg_object = new stdClass();
     // check configuration are pass of then use global $conf
     if (empty($params)) {
@@ -343,6 +343,16 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     return $videos;
   }
 
+  /**
+   * @todo : replace with the load job method
+   * @param <type> $video
+   * @return <type>
+   */
+  public function load_completed_job($video) {
+    $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
+    return db_fetch_object($result);
+  }
+  
   /**
    * Change the status of the file.
    *

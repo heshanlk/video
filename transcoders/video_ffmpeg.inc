@@ -104,7 +104,7 @@ class video_ffmpeg implements transcoder_interface {
     return $files;
   }
 
-  public function convert_video($video, $converted) {
+  public function convert_video($video) {
     // This will update our current video status to active.
     $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     // Get the converted file object
@@ -128,7 +128,7 @@ class video_ffmpeg implements transcoder_interface {
     if (file_move($video, $original)) {
       //update our filename after the move to maintain filename uniqueness.
 //        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
-      $converted = file_create_filename(pathinfo($video->filepath, PATHINFO_FILENAME) . '.' . $this->video_extension(), $converted);
+      $converted = file_create_filename(pathinfo($video->filepath, PATHINFO_FILENAME) . '.' . $this->video_converted_extension(), $converted);
       // Update our filepath since we moved it
       $update = drupal_write_record('files', $video, 'fid');
       //call our transcoder
@@ -162,8 +162,6 @@ class video_ffmpeg implements transcoder_interface {
       $video->converted->filesize = filesize($converted);
       $video->converted->status = VIDEO_RENDERING_COMPLETE;
       $video->converted->completed = time();
-      //clear our cache so our video path is updated.
-      cache_clear_all('*', 'cache_content', true);
       // Update our video_files table with the converted video information.
       $result = db_query("UPDATE {video_files} SET filename='%s', filepath='%s', filemime='%s', filesize=%d, status=%d, completed=%d WHERE vid=%d",
               $video->converted->filename, $video->converted->filepath, $video->converted->filemime, $video->converted->filesize, $video->converted->status, $video->converted->completed, $video->converted->vid);
@@ -394,11 +392,15 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function update_job($video) {
+    if (!$this->load_job($video['fid']))
+      return;
     //lets update our table to include the nid
-    db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+    db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $video['nid'], $video['fid']);
   }
 
   public function delete_job($video) {
+    if (!$this->load_job($video->fid))
+      return;
     //lets get all our videos and unlink them
     $sql = db_query("SELECT filepath FROM {video_files} WHERE fid=%d", $video->fid);
     //we loop here as future development will include multiple video types (HTML 5)
@@ -407,12 +409,17 @@ class video_ffmpeg implements transcoder_interface {
         unlink($row->filepath);
     }
     //now delete our rows.
-    db_query('DELETE FROM {video_files} WHERE fid = %d', $file->fid);
+    db_query('DELETE FROM {video_files} WHERE fid = %d', $video->fid);
   }
 
   public function load_job($fid) {
+    $job = null;
     $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
-    return db_fetch_object($result);
+    $job = db_fetch_object($result);
+    if (!empty($job))
+      return $job;
+    else
+      return FALSE;
   }
 
   public function load_job_queue() {
@@ -425,6 +432,16 @@ class video_ffmpeg implements transcoder_interface {
       $videos[] = $row;
     }
     return $videos;
+  }
+
+  /**
+   * @todo : replace with the load job method
+   * @param <type> $video
+   * @return <type>
+   */
+  public function load_completed_job($video) {
+    $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
+    return db_fetch_object($result);
   }
 
   /**
