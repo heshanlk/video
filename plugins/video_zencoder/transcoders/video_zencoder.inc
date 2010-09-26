@@ -57,7 +57,7 @@ class video_zencoder implements transcoder_interface {
           $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
           $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
           // Log the error message.
-          watchdog('video_transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
           continue;
         }
       }

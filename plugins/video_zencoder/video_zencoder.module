@@ -35,11 +35,11 @@ function video_zencoder_menu() {
 }
 
 function _video_zencoder_postback_jobs() {
-  // get JSON post data
+// get JSON post data
   $data = file_get_contents("php://input");
 //  print_r($data);
   watchdog('zencoder', t('Postback received from the Zencoder Transcoding servers.'));
-  // get the file object by zenocder job id
+// get the file object by zenocder job id
   $video = json_decode($data);
 //  print_r($zc);
 //  $zc_job_id = $video->job->id;
@@ -52,14 +52,28 @@ function _video_zencoder_postback_jobs() {
   if ($zc_output_state == 'failed' || $zc_job_state == 'failed')
     $video->output->state = VIDEO_RENDERING_FAILED;
 
-  // update the Zencoder Job
+// update the Zencoder Job
   module_load_include('inc', 'video_zencoder', '/includes/zencoder');
   $zc = new video_zencoder_api;
-  // Lets run delete.
+// Lets run delete.
   if ($zc->update($video) && $video->output->state == VIDEO_RENDERING_COMPLETE) {
     $video = $zc->load_job($video->job->id);
     db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $video->nid);
-    // update the thumbanils
+// update the thumbanils
+// this will update the default thumbnails, if user want to select another one then they wil need to edit the node
+// Setup our thmbnail path.
+    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video->fid;
+    $i = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
+    $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
+    $thumbfile = $final_thumb_path . '/' . $filename;
+
+    if (video_s3_get_object_info($thumbfile)) {
+      $default = $final_thumb_path . '/no-thumb.png';
+      file_delete($default);
+      video_s3_get_object($thumbfile, $default);
+    }
+//      file_copy($default, $thumbfile, FILE_EXISTS_REPLACE);
   }
   watchdog('zencoder', t('Updated the Zencoder Job !id to states !states.', array('!id' => $video->job->id, '!states' => $zc_output_state)));
 }
