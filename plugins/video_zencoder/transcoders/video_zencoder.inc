@@ -101,7 +101,7 @@ class video_zencoder implements transcoder_interface {
     // If we have a video lets go ahead and send it.
     if (is_object($video_s3)) {
       // This will update our current video status to active.
-      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+//      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
       // Get Output file info
       $filetype = variable_get('video_zencoder_ext', 'flv');
       // bucket name
@@ -133,7 +133,7 @@ class video_zencoder implements transcoder_interface {
         }
       } else {
         watchdog('zencoder', 'Failed to queus our file to Zencoder.', array(), WATCHDOG_ERROR);
-        $this->failed($video->vid);
+        $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
         return FALSE;
       }
     } else {

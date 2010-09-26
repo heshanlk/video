@@ -144,7 +144,10 @@ class video_zencoder_api {
     // Notifications
 //    if(!empty($notify_url))
 //    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
-    $notifications[] = array('format' => 'json', 'url' => base_path() . 'postback/jobs');
+    global $base_url;
+//    print $base_url;
+    $url = $base_url . '/postback/jobs';
+    $notifications[] = array('format' => 'json', 'url' => $url);
 //    base_path()
 //    $notifications[] = 'http://123.231.9.136/drupal-6/postback/jobs';
     if (!empty($notify_email))
