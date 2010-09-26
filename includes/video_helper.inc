@@ -4,6 +4,7 @@
 /*
  * @file
  * Class file used to create our video and thumbnail objects.
+ * @todo : remove video_zencoder validation form the class
  *
  */
 
@@ -53,14 +54,14 @@ class video_helper {
       $conversion = new video_conversion;
       $converted = $conversion->load_completed_job($video);
       $video->filepath = $converted->filepath;
-      $video->url = file_create_url($converted->filepath);
+      $video->url = (!valid_url($converted->filepath)) ? file_create_url($converted->filepath) : $converted->filepath;
       $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
     }
 
     // Let othere module to load the video files by referance
     // Lets find out if we have pushed this file to the cdn if enabled.
-    video_module_invoke('load', $video);
-
+    if (!module_exists('video_zencoder'))
+      video_module_invoke('load', $video);
     // Moved to last to recheck incase we changed our extension above.
     $video->flash_player = variable_get('video_extension_' . $video->extension . '_flash_player', '');
 

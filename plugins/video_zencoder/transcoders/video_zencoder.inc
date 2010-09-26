@@ -4,18 +4,18 @@
 /*
  * @file
  * Transcoder class file to handle ffmpeg_wrapper settings and conversions.
+ * @TODO
+ * - Cancel transcode job when delete.
+ * - Add number of cronjobs pertime  set to 5 now.
+ * - Replace load_completed_job with load_job
+ * - Add a metadata extractor class to extract width and height
  *
  */
-
 
 class video_zencoder implements transcoder_interface {
 
   private $name = 'Zencoder';
   private $value = 'video_zencoder';
-
-  public function run_command($options) {
-    return;
-  }
 
   public function generate_thumbnails($video) {
     global $user;
@@ -81,29 +81,65 @@ class video_zencoder implements transcoder_interface {
   }
 
   public function convert_video($video) {
-    // @TODO :
-  }
+    // get the active jobs and check for the status
+    if ($video->video_status == VIDEO_RENDERING_ACTIVE) {
 
-  /**
-   * Return the playtime seconds of a video
-   */
-  public function get_playtime($video) {
-    $ffmpeg_output = ffmpeg_wrapper_file_data($video['filepath']);
-    return $ffmpeg_output['duration'];
-  }
-
-  /**
-   * Return the dimensions of a video
-   */
-  public function get_dimensions($video) {
-    $ffmpeg_output = ffmpeg_wrapper_file_data($video);
-    $res = array('width' => 0, 'height' => 0);
-    if ($ffmpeg_output['video']['s']) {
-      $dimensions = explode("x", $ffmpeg_output['video']['s']);
-      $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
-      $res['height'] = $dimensions[1] ? $dimensions[1] : NULL;
+      return;
     }
-    return $res;
+    // We need to check if this file id exists in our S3 table to avoid file not found error.
+    $s3_video = db_query("SELECT * FROM {video_s3} WHERE fid=%d", $video->fid);
+    if ($s3_file = db_fetch_object($s3_video)) {
+      // This is a s3 file, lets verify it has been pushed and if so lets push to Zencoder queue.
+      if ($s3_file->status == VIDEO_S3_COMPLETE) {
+        $video_s3 = $s3_file;
+      }
+    } else {
+      watchdog('zencoder', t('You must avtive the Video S3 module to work with Zencoder, file is not found in S3 tables', array()), array(), WATCHDOG_ERROR);
+//      return FALSE;
+    }
+
+    // If we have a video lets go ahead and send it.
+    if (is_object($video_s3)) {
+      // This will update our current video status to active.
+      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+      // Get Output file info
+      $filetype = variable_get('video_zencoder_ext', 'flv');
+      // bucket name
+      $bucket = variable_get('amazon_s3_bucket', '');
+      $ssl = variable_get('amazon_s3_ssl', FALSE);
+
+      $filepath = $video_s3->filepath;
+      $filename = $video_s3->filename;
+      module_load_include('inc', 'video_zencoder', '/includes/zencoder');
+      $zc = new video_zencoder_api;
+      if ($encoding_job = $zc->create($video_s3)) {
+//        print_r($encoding_jobxx);
+//        exit;
+        // Update our table.
+        $video->bucket = $bucket;
+        $video->filename = $filename . '.' . $filetype;
+        $video->filemime = file_get_mimetype($filename . '.' . $filetype);
+        $video->vid = $video->vid;
+        $video->jobid = $encoding_job->id;
+        // @TODO : add foreach for each outout and put insert save multiple files
+        $video->outputid = $encoding_job->outputs['VIDEO_' . $video->fid]->id;
+        $prefix = $ssl ? 'https://' : 'http://';
+        $video->filepath = $prefix . $video->bucket . '.s3.amazonaws.com/' . $filename . '.' . $filetype;
+//        print_r($video);
+//        exit;
+        if ($this->update($video)) {
+          watchdog('zencoder', t('Successfully created trancoding job on file: !file into the bucket %bucket on Zencoder.', array('!file' => $filepath, '%bucket' => $bucket)), array(), WATCHDOG_INFO);
+//          return TRUE;
+        }
+      } else {
+        watchdog('zencoder', 'Failed to queus our file to Zencoder.', array(), WATCHDOG_ERROR);
+        $this->failed($video->vid);
+        return FALSE;
+      }
+    } else {
+      watchdog('zencoder', 'We did not find the file id: ' . $video->fid . ' or it is still queued for ffmpeg processing or S3 push.', array(), WATCHDOG_DEBUG);
+//      return FALSE;
+    }
   }
 
   /**
@@ -419,12 +455,12 @@ class video_zencoder implements transcoder_interface {
         '#collapsible' => true,
         '#description' => t('')
       );
-      $form['zencoder']['notification']['zc_notify_url'] = array(
-        '#type' => 'textfield',
-        '#title' => t('URL'),
-        '#default_value' => variable_get('zc_notify_url', ''),
-        '#description' => t('We will POST a JSON notification to the URL provided. We will consider the notification successful if we receive a 200 OK response.'),
-      );
+//      $form['zencoder']['notification']['zc_notify_url'] = array(
+//        '#type' => 'textfield',
+//        '#title' => t('URL'),
+//        '#default_value' => variable_get('zc_notify_url', ''),
+//        '#description' => t('We will POST a JSON notification to the URL provided. We will consider the notification successful if we receive a 200 OK response.'),
+//      );
       $form['zencoder']['notification']['zc_notify_email'] = array(
         '#type' => 'textfield',
         '#title' => t('Email Address'),
@@ -500,36 +536,53 @@ class video_zencoder implements transcoder_interface {
     }
   }
 
+  /**
+   * Return the dimensions of a video
+   */
+  public function get_dimensions($video) {
+    // @TODO get object properties
+    return;
+  }
+
   public function create_job($video) {
-    return db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
+    return db_query("INSERT INTO {video_zencoder} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
   }
 
   public function update_job($video) {
+    if (!$this->load_job($video['fid']))
+      return;
     //lets update our table to include the nid
-    db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $form_state['nid'], $fid);
+    db_query("UPDATE {video_zencoder} SET nid=%d WHERE fid=%d", $video['nid'], $video['fid']);
   }
 
   public function delete_job($video) {
+    if (!$this->load_job($video->fid))
+      return;
     //lets get all our videos and unlink them
-    $sql = db_query("SELECT filepath FROM {video_files} WHERE fid=%d", $video->fid);
+    $sql = db_query("SELECT filepath FROM {video_zencoder} WHERE fid=%d", $video->fid);
     //we loop here as future development will include multiple video types (HTML 5)
     while ($row = db_fetch_object($sql)) {
-      if (file_exists($row->filepath))
-        unlink($row->filepath);
+      // @TODO : cancel the job to transcode
     }
     //now delete our rows.
-    db_query('DELETE FROM {video_files} WHERE fid = %d', $file->fid);
+    db_query('DELETE FROM {video_zencoder} WHERE fid = %d', $video->fid);
   }
 
   public function load_job($fid) {
-    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
-    return db_fetch_object($result);
+    $job = null;
+    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
+    $job = db_fetch_object($result);
+    if (!empty($job))
+      return $job;
+    else
+      return FALSE;
   }
 
   public function load_job_queue() {
-    $total_videos = variable_get('video_ffmpeg_instances', 5);
+    // load jobs with status as pending and active both
+    $total_videos = variable_get('video_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
+    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
             VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
 
     while ($row = db_fetch_object($result)) {
@@ -544,8 +597,16 @@ class video_zencoder implements transcoder_interface {
    * @return <type>
    */
   public function load_completed_job($video) {
-    $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
-    return db_fetch_object($result);
+    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+    $video = db_fetch_object(db_query('SELECT * FROM {video_zencoder} WHERE fid = %d', $video->fid));
+
+    $s3 = new video_amazon_s3;
+    if (variable_get('amazon_s3_private', FALSE))
+      $video->filepath = video_s3_get_authenticated_url($video->filename);
+    else
+      $video->filepath = $video->filepath;
+
+    return $video;
   }
 
   /**
@@ -555,76 +616,17 @@ class video_zencoder implements transcoder_interface {
    * @param (int) $status
    */
   public function change_status($vid, $status) {
-    $result = db_query('UPDATE {video_files} SET status = %d WHERE vid = %d ', $status, $vid);
+    $result = db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', $status, $vid);
   }
 
   /*
-   * Function determines the dimensions you want and compares with the actual wxh of the video.
-   *
-   * If they are not exact or the aspect ratio does not match, we then figure out how much padding
-   * we should add.  We will either add a black bar on the top/bottom or on the left/right.
-   *
-   * @TODO I need to look more at this function.  I don't really like the guess work here.  Need to implement
-   * a better way to check the end WxH.  Maybe compare the final resolution to our defaults?  I don't think
-   * that just checking to make sure the final number is even is accurate enough.
+   * Updates the database after a successful transfer to amazon.
    */
 
-  public function dimensions($video) {
-    //lets setup our dimensions.  Make sure our aspect ratio matches the dimensions to be used, if not lets add black bars.
-    $aspect_ratio = _video_aspect_ratio($video->filepath);
-    $ratio = $aspect_ratio['ratio'];
-    $width = $aspect_ratio ['width'];
-    $height = $aspect_ratio['height'];
-
-    $wxh = explode('x', $video->dimensions);
-    $output_width = $wxh[0];
-    $output_height = $wxh[1];
-    $output_ratio = number_format($output_width / $output_height, 4);
-
-    if ($output_ratio != $ratio && $width && $height) {
-      $options = array();
-      // Figure out our black bar padding.
-      if ($ratio < $output_width / $output_height) {
-        $end_width = $output_height * $ratio;
-        $end_height = $output_height;
-      } else {
-        $end_height = $output_width / $ratio;
-        $end_width = $output_width;
-      }
-
-      // We need to get back to an even resolution and maybe compare with our defaults?
-      // @TODO Make this more exact on actual video dimensions instead of making sure the wxh are even numbers
-
-      if ($end_width == $output_width) {
-        // We need to pad the top/bottom of the video
-        $padding = round($output_height - $end_height);
-        $pad1 = $pad2 = floor($padding / 2);
-        if ($pad1 % 2 !== 0) {
-          $pad1++;
-          $pad2--;
-        }
-        $options[] = '-padtop ' . $pad1;
-        $options[] = '-padbottom ' . $pad2;
-      } else {
-        // We are padding the left/right of the video.
-        $padding = round($output_width - $end_width);
-        $pad1 = $pad2 = floor($padding / 2);  //@todo does padding need to be an even number?
-        if ($pad1 % 2 !== 0) {
-          $pad1++;
-          $pad2--;
-        }
-        $options[] = '-padleft ' . $pad1;
-        $options[] = '-padright ' . $pad2;
-      }
-
-      $end_width = round($end_width) % 2 !== 0 ? round($end_width) + 1 : round($end_width);
-      $end_height = round($end_height) % 2 !== 0 ? round($end_height) + 1 : round($end_height);
-      //add our size to the beginning to make sure it hits our -s
-      array_unshift($options, $end_width . 'x' . $end_height);
-      return implode(' ', $options);
-    } else {
-      return $video->dimensions;
-    }
+  private function update($video) {
+    $result = db_query("UPDATE {video_zencoder} SET jobid = %d, outputid = %d, bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', completed=%d WHERE vid=%d",
+            $video->jobid, $video->outputid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, time(), $video->vid);
+    return $result;
   }
 
 }

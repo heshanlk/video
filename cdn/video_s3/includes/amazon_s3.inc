@@ -11,10 +11,10 @@
 if (!class_exists('S3'))
   require_once('S3.php');
 
-define('VIDEO_S3_PENDING', 0);
-define('VIDEO_S3_WORKING', 1);
-define('VIDEO_S3_ACTIVE', 2);
-define('VIDEO_S3_FAILED', 3);
+define('VIDEO_S3_PENDING', 1);
+define('VIDEO_S3_ACTIVE', 5);
+define('VIDEO_S3_COMPLETE', 10);
+define('VIDEO_S3_FAILED', 20);
 
 class video_amazon_s3 {
 
@@ -56,7 +56,7 @@ class video_amazon_s3 {
    */
 
   public function get($fid) {
-    $sql = db_query("SELECT * FROM {video_s3} WHERE fid=%d AND status=%d", $fid, VIDEO_S3_ACTIVE);
+    $sql = db_query("SELECT * FROM {video_s3} WHERE fid=%d AND status=%d", $fid, VIDEO_S3_COMPLETE);
     $row = db_fetch_object($sql);
     return $row;
   }
@@ -75,12 +75,12 @@ class video_amazon_s3 {
 
   public function update($video) {
     $result = db_query("UPDATE {video_s3} SET bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', status=%d, completed=%d WHERE vid=%d",
-            $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_S3_ACTIVE, time(), $video->vid);
+            $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_S3_COMPLETE, time(), $video->vid);
     return $result;
   }
 
   public function working($vid) {
-    db_query("UPDATE {video_s3} SET status=%d WHERE vid=%d", VIDEO_S3_WORKING, $vid);
+    db_query("UPDATE {video_s3} SET status=%d WHERE vid=%d", VIDEO_S3_ACTIVE, $vid);
   }
 
   public function failed($vid) {

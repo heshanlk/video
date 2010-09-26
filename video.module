@@ -579,7 +579,7 @@ function video_widget_process(&$element, &$form_state) {
       if ($field['widget']['autoconversion']) {
         video_convert_process($element);
         //lets set our node status to unpublished if our video is not converted.
-        if ($element['#unpublish']) {
+        if (isset($element['#unpublish']) && $element['#unpublish']) {
           //unpublish the node
           $form_state['values']['status'] = 0;
         }
@@ -680,7 +680,7 @@ function _video_aspect_ratio($video) {
   if (!$width || !$height) {
     //no width and height found just return.
     watchdog('video_conversion', 'We could not determine the height and width of the video: ' . $video, array(), WATCHDOG_DEBUG);
-    drupal_set_message(t('The system counld not determine the width and height of your video: !video.  If transcoding, the system could have problems.', array('!video' => $video)));
+//    drupal_set_message(t('The system counld not determine the width and height of your video: !video.  If transcoding, the system could have problems.', array('!video' => $video)));
     return;
   }
 

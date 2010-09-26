@@ -63,6 +63,7 @@ class video_transcoder {
 
   public function convert_video($video) {
     $output = $this->transcoder->convert_video($video);
+    // if successfully converted the video then update the status to publish
     if ($output)
     // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
       db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $video->nid);
@@ -190,8 +191,6 @@ interface transcoder_interface {
   public function generate_thumbnails($video);
 
   public function convert_video($video);
-
-  public function get_playtime($video);
 
   public function get_name();
 
