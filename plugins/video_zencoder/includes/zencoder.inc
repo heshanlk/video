@@ -31,6 +31,7 @@ class video_zencoder_api {
    * create transcoding job on Zencoder.com
    */
   public function create($file) {
+    global $base_url;
     // API Key
     $api_key = variable_get('zencoder_api_key', '');
     // File details
@@ -144,7 +145,6 @@ class video_zencoder_api {
     // Notifications
 //    if(!empty($notify_url))
 //    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
-    global $base_url;
 //    print $base_url;
     $url = $base_url . '/postback/jobs';
     $notifications[] = array('format' => 'json', 'url' => $url);
