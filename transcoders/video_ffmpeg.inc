@@ -399,6 +399,16 @@ class video_ffmpeg implements transcoder_interface {
       '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile'),
     );
 
+    $form['autoconv']['advanced']['video_ffmpeg_pad_method'] = array(
+      '#type' => 'radios',
+      '#title' => t('FFMPeg Padding method'),
+      '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
+      '#options' => array(
+        0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
+        1 => t('Use -vf "pad:w:h:x:y:c" for padding'),
+      ),
+    );
+
     $form['video_ffmpeg_end'] = array(
       '#type' => 'markup',
       '#value' => '</div>',
