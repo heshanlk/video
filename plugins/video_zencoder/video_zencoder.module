@@ -6,6 +6,7 @@
  * Provides wrapper functions for the s3 amazon webservices.
  * @todo
  * - cleand up the _video_zencoder_postback_jobs() function
+ * - Add to select random thumbnails to the download image.
  */
 /*
  * Implementation of hook_cron().
