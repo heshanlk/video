@@ -507,5 +507,4 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       return $video->dimensions;
     }
   }
-
 }
