@@ -536,8 +536,12 @@ class video_ffmpeg implements transcoder_interface {
           $pad1++;
           $pad2--;
         }
-        $options[] = '-padtop ' . $pad1;
-        $options[] = '-padbottom ' . $pad2;
+        if (variable_get('video_ffmpeg_pad_method', 0)) {
+          $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':0:' . $pad1 . '"';
+        } else {
+          $options[] = '-padtop ' . $pad1;
+          $options[] = '-padbottom ' . $pad2;
+        }
       } else {
         // We are padding the left/right of the video.
         $padding = round($output_width - $end_width);
@@ -546,8 +550,12 @@ class video_ffmpeg implements transcoder_interface {
           $pad1++;
           $pad2--;
         }
-        $options[] = '-padleft ' . $pad1;
-        $options[] = '-padright ' . $pad2;
+        if (variable_get('video_ffmpeg_pad_method', 0)) {
+          $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':' . $pad1 . ':0"';
+        } else {
+          $options[] = '-padleft ' . $pad1;
+          $options[] = '-padright ' . $pad2;
+        }
       }
 
       $end_width = round($end_width) % 2 !== 0 ? round($end_width) + 1 : round($end_width);
