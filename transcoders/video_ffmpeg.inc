@@ -34,6 +34,8 @@ class video_ffmpeg implements transcoder_interface {
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
     $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19' : '';
     $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
+    $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
+    $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
   }
 
   public function run_command($options) {
@@ -134,16 +136,33 @@ class video_ffmpeg implements transcoder_interface {
       //call our transcoder
 //        $command_output = $this->convert_video($video, $converted);
       $dimensions = $this->dimensions($video);
+      if ($this->params['enable_faststart'] && in_array($this->params['videoext'], array('mov', 'mp4'))) {
+        $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
+      } else {
+        $ffmpeg_output = $converted;
+      }
       // Setup our default command to be run.
-      $command = t($this->params['command'], array(
+      $command = strtr($this->params['command'], array(
             '!videofile' => $video->filepath,
             '!audiobitrate' => $this->params['audiobitrate'],
             '!size' => $dimensions,
             '!videobitrate' => $this->params['videobitrate'],
-            '!convertfile' => $converted
+            '!convertfile' => $ffmpeg_output,
           ));
       // Process our video
-      $command_output = $this->run_command($command);
+//      $command_output = $this->run_command($command);
+      $command_output = $this->run_command($command, $verbose);
+      if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
+        // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
+        // the command to be execute so we need to fudge the command to run qt-faststart.
+        $cmd_path = $this->params['cmd_path'];
+        $this->params['cmd_path'] = $this->params['faststart_cmd'];
+        $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted, $verbose);
+        $this->params['cmd_path'] = $cmd_path;
+
+        // Delete the temporary output file.
+        file_delete($ffmpeg_output);
+      }
 
       //lets check to make sure our file exists, if not error out
       if (!file_exists($converted) || !filesize($converted)) {
@@ -352,6 +371,16 @@ class video_ffmpeg implements transcoder_interface {
       '#size' => 10,
       '#maxlength' => 10,
       '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
+    );
+    $form['autoconv']['video_ffmpeg_enable_faststart'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Process mov/mp4 videos with qt-faststart'),
+      '#default_value' => variable_get('video_ffmpeg_enable_faststart', 0),
+    );
+    $form['autoconv']['video_ffmpeg_faststart_cmd'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to qt-faststart'),
+      '#default_value' => variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart'),
     );
     $form['autoconv']['advanced'] = array(
       '#type' => 'fieldset',
