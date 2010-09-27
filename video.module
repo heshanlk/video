@@ -895,7 +895,9 @@ function video_default_widget_settings_validate($element, &$form_state) {
 
 function video_widget_settings_file_path_validate($element, &$form_state) {
   //lets prepend our video folder to the path settings.  first truncate videos/ off the end if it exists.
-  $form_state['values']['file_path'] = 'videos/' . $form_state['values']['file_path'];
+  // #848804
+  if (!module_exists('filefield_paths'))
+    $form_state['values']['file_path'] = 'videos/' . $form_state['values']['file_path'];
 }
 
 /*

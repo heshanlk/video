@@ -64,18 +64,21 @@ function _video_zencoder_postback_jobs() {
 // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
     $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video->fid;
-    $i = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
-    $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
+//    $i = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
+    $filename = $video->fid . '_' . sprintf("%04d", 4) . '.png';
     $thumbfile = $final_thumb_path . '/' . $filename;
 
     if (video_s3_get_object_info($thumbfile)) {
       $default = $final_thumb_path . '/no-thumb.png';
       file_delete($default);
-      video_s3_get_object($thumbfile, $default);
+      if (video_s3_get_object($thumbfile, $default))
+        watchdog('zencoder', t('Successfully downloaded the thumbnails file and replaced the default image.'));
+      else
+        watchdog('zencoder', t('Download thumbanils files is failed.'), array(), WATCHDOG_ERROR);
     }
 //      file_copy($default, $thumbfile, FILE_EXISTS_REPLACE);
   }
-  watchdog('zencoder', t('Updated the Zencoder Job !id to states !states.', array('!id' => $video->job->id, '!states' => $zc_output_state)));
+  watchdog('zencoder', t('Updated the Zencoder Job !id to states !states.', array('!id' => $video->jobid, '!states' => $zc_output_state)));
 }
 
 /**

@@ -1,4 +1,5 @@
 <?php
+
 // $Id$
 /**
  * @file
@@ -12,7 +13,7 @@ function video_zencoder_schema() {
   $schema['video_zencoder'] = array(
     'description' => t('Store video s3 cdn and convert with zencoder webservice'),
     'fields' => array(
-  	  'vid' => array(
+      'vid' => array(
         'description' => t('Auto Increment id'),
         'type' => 'serial',
         'unsigned' => TRUE,
@@ -52,19 +53,19 @@ function video_zencoder_schema() {
         'default' => '',
         'description' => t('The bucket the video is stored in.'),
       ),
-	  'filename' => array(
+      'filename' => array(
         'type' => 'varchar',
         'length' => '255',
         'default' => '',
         'description' => t('The filename of the video.'),
       ),
-	  'filepath' => array(
+      'filepath' => array(
         'type' => 'varchar',
         'length' => '255',
         'default' => '',
         'description' => t('The filepath of the video.'),
       ),
-	  'filemime' => array(
+      'filemime' => array(
         'type' => 'varchar',
         'length' => '255',
         'default' => '',
@@ -116,3 +117,27 @@ function video_zencoder_uninstall() {
   drupal_uninstall_schema('video_zencoder');
   // TODO : Delete our variables.
 }
+
+// ALTER TABLE `video_zencoder` ADD `dimensions` VARCHAR( 255 ) NULL AFTER `filesize` ;
+/**
+ * Update 6401
+ * Adding new dimentaion row to the table
+ * @return <type>
+ */
+function video_zencoder_update_6401() {
+  $ret = array();
+  // set settings column to accept larger values
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql('ALTER TABLE {video_zencoder} ADD dimensions VARCHAR( 255 ) NULL NULL AFTER filesize');
+      break;
+
+    case 'pgsql':
+      db_add_column($ret, 'video_zencoder', 'dimensions', 'VARCHAR', array('null' => TRUE));
+      break;
+  }
+
+  return $ret;
+}
+
