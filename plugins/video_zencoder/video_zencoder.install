@@ -1,6 +1,7 @@
 <?php
 
 // $Id$
+
 /**
  * @file
  * Provides installation functions for video_s3.module.
@@ -77,6 +78,12 @@ function video_zencoder_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
+      ),
+      'dimensions' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The dimensions of the video.'),
       ),
       'status' => array(
         'description' => t('Status of the cdn transfer'),
