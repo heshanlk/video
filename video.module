@@ -151,7 +151,7 @@ function video_theme() {
     'file' => 'video_formatter.inc',
   );
 
-  $path = drupal_get_path('module', 'video') . '/theme';
+  $path = drupal_get_path('module', 'video');
   //Lets setup our themes for our players
   $players = video_video_players();
   foreach ($players as $tpl => $value) {
