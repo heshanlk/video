@@ -198,3 +198,10 @@ function videoftp_js($type_name, $field_name, $delta) {
   print drupal_to_js(array('status' => TRUE, 'data' => $output));
   exit;
 }
+
+/**
+ * filefield source support
+ */
+function videoftp_filefield_sources_widgets() {
+  return array('videoftp_widget');
+}

@@ -137,3 +137,10 @@ function uploadfield_form_content_field_overview_submit(&$form, &$form_state) {
     }
   }
 }
+
+/**
+ * filefield source support
+ */
+function uploadfield_filefield_sources_widgets() {
+  return array('uploadfield_widget');
+}
