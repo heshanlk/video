@@ -151,13 +151,14 @@ function video_theme() {
     'file' => 'video_formatter.inc',
   );
 
-  $path = drupal_get_path('module', 'video');
+  $path = drupal_get_path('module', 'video') .'/theme';
   //Lets setup our themes for our players
   $players = video_video_players();
   foreach ($players as $tpl => $value) {
     $theme[$tpl] = array(
       'arguments' => array('video' => NULL, 'node' => NULL, 'themed_output' => NULL),
-      'file' => 'video_formatter.inc',
+      //#843368 fix
+//      'file' => 'video_formatter.inc',
       'template' => str_replace('_', '-', $tpl),
       'path' => $path,
     );
