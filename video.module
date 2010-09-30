@@ -151,7 +151,7 @@ function video_theme() {
     'file' => 'video_formatter.inc',
   );
 
-  $path = drupal_get_path('module', 'video') .'/theme';
+  $path = drupal_get_path('module', 'video') . '/theme';
   //Lets setup our themes for our players
   $players = video_video_players();
   foreach ($players as $tpl => $value) {
@@ -384,10 +384,13 @@ function video_convert_process(&$element) {
     // Our video should be in the database pending, lets see if we need to convert it now.
     // Check if we are going from unselected to selected or if this is a new video and we have checked the checkbox
     $convert_video_on_save = false;
+    $element_data_convert_on_save = '';
+    $convert_on_save = variable_get('video_convert_on_save', FALSE);
     if (isset($element['data']['convert_video_on_save']['#value']))
-      $convert_video_on_save = $element['data']['convert_video_on_save']['#value'] || $file['data']['convert_video_on_save'];
+      $element_data_convert_on_save = $element['data']['convert_video_on_save']['#value'];
+    $convert_video_on_save = $element_data_convert_on_save || $file['data']['convert_video_on_save'];
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])
-        && $convert_video_on_save) || ($convert && $convert_video_on_save)) {
+        && $convert_video_on_save) || ($convert && $convert_video_on_save) || $convert_on_save) {
       $return = $video_conversion->process($fid);
       if ($return === FALSE) {
         drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
