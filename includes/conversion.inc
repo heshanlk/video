@@ -6,14 +6,14 @@
  * Class file to handle video conversion using ffmpeg and webservices.
  *
  */
-if (!defined('VIDEO_RENDERING_PENDING'))
-  define('VIDEO_RENDERING_PENDING', 1);
-if (!defined('VIDEO_RENDERING_ACTIVE'))
-  define('VIDEO_RENDERING_ACTIVE', 5);
-if (!defined('VIDEO_RENDERING_COMPLETE'))
-  define('VIDEO_RENDERING_COMPLETE', 10);
-if (!defined('VIDEO_RENDERING_FAILED'))
-  define('VIDEO_RENDERING_FAILED', 20);
+defined('VIDEO_RENDERING_PENDING') ||
+    define('VIDEO_RENDERING_PENDING', 1);
+defined('VIDEO_RENDERING_ACTIVE') ||
+    define('VIDEO_RENDERING_ACTIVE', 5);
+defined('VIDEO_RENDERING_COMPLETE') ||
+    define('VIDEO_RENDERING_COMPLETE', 10);
+defined('VIDEO_RENDERING_FAILED') ||
+    define('VIDEO_RENDERING_FAILED', 20);
 
 class video_conversion {
 
