@@ -15,6 +15,8 @@ function theme_video_formatter_video_plain($element) {
     return '';
   // Get our field information to determine if we are checking conversion
   $field = content_fields($element['#field_name'], $element['#type_name']);
+  if (!empty($field['list_field']) && !$element['#item']['list'])
+    return '';
   // Only needs to be ran if they are converting videos
   if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
     module_load_include('inc', 'video', '/includes/conversion');
@@ -106,6 +108,11 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
  */
 
 function theme_video_formatter_video_media_js($element) {
+  //#913928
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  if (!empty($field['list_field']) && !$element['#item']['list'])
+    return '';
+
   drupal_add_js(drupal_get_path('module', 'video') . '/js/jquery.media.js');
   drupal_add_js(drupal_get_path('module', 'video') . '/js/jquery.metadata.js');
   //setup our video object
