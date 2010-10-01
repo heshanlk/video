@@ -1,17 +1,18 @@
 <?php
+
 // $Id$
 
 /**
  * @file
  * Video formatter hooks and callbacks.
  */
-
 /*
  * Default video cck formatter.  Makes sure the video being displayed exists, has been converted (if in que).
  * If not or the video is processed, then it will get the default player for the specific video type for output.
  */
 function theme_video_formatter_video_plain($element) {
-  if (empty($element['#item']['fid'])) return '';
+  if (empty($element['#item']['fid']))
+    return '';
   // Get our field information to determine if we are checking conversion
   $field = content_fields($element['#field_name'], $element['#type_name']);
   // Only needs to be ran if they are converting videos
@@ -19,10 +20,9 @@ function theme_video_formatter_video_plain($element) {
     module_load_include('inc', 'video', '/includes/conversion');
     $conversion = new video_conversion;
     $video = $conversion->load_job($element['#item']['fid']);
-    if($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
+    if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
       return theme('video_inprogress');
-    }
-    else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+    } else if ($video->video_status == VIDEO_RENDERING_FAILED) {
       return theme('video_encoding_failed');
     }
   }
@@ -32,17 +32,19 @@ function theme_video_formatter_video_plain($element) {
 /*
  * Renders the video thumbnail as a link to the node page.
  */
+
 function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
   // Inside a view $element may contain null data. In that case, just return.
-  if (empty($element['#item']['fid'])) return '';
+  if (empty($element['#item']['fid']))
+    return '';
   //setup our thumbnail object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
   $thumbnail = $video_helper->thumbnail_object($element);
   //get our themed image
   $image = theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title, '', TRUE, $imagecache);
-  $class = 'popups video video-nodelink video-'. $element['#field_name'];
-  return l($image, 'node/'. $element['#node']->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
+  $class = 'popups video video-nodelink video-' . $element['#field_name'];
+  return l($image, 'node/' . $element['#node']->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
 /*
@@ -52,6 +54,7 @@ function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
  * @todo Very unstable, need better methods of integration.  Seems hackish right now to find out what flv player is being
  * used.  We are also using jmedia for all other filetypes.
  */
+
 function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
   global $base_path;
   if (!module_exists('colorbox')) {
@@ -60,12 +63,13 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
   }
 
   // Inside a view $element may contain null data. In that case, just return.
-  if (empty($element['#item']['fid'])) return '';
+  if (empty($element['#item']['fid']))
+    return '';
 
   //load up our media plugins
-  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
-  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
-  drupal_add_js(drupal_get_path('module', 'video') .'/js/flowplayer-3.2.0.min.js');
+  drupal_add_js(drupal_get_path('module', 'video') . '/js/jquery.media.js');
+  drupal_add_js(drupal_get_path('module', 'video') . '/js/jquery.metadata.js');
+  drupal_add_js(drupal_get_path('module', 'video') . '/js/flowplayer-3.2.0.min.js');
 
   //setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
@@ -75,20 +79,20 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
   $action = swftools_get_action($video->filepath);
   $player = swftools_get_player($action);
   $path = explode("_", $player);
-  $player_url = $base_path . swftools_get_player_path() .'/'. $path[0] .'/'. variable_get($player .'_file', '');
-  if(stristr($player, 'flowplayer')) {
+  $player_url = $base_path . swftools_get_player_path() . '/' . $path[0] . '/' . variable_get($player . '_file', '');
+  if (stristr($player, 'flowplayer')) {
     $player = 'flowplayer';
   }
   //add our default settings to the Drupal.settings object
   $settings = array('video' => array(
-    'flvplayer' => $player_url,
-    'autoplay' => $video->autoplay,
-    'autobuffer' => $video->autobuffering,
-    'player' => $player,
-  ));
+      'flvplayer' => $player_url,
+      'autoplay' => $video->autoplay,
+      'autobuffer' => $video->autobuffering,
+      'player' => $player,
+      ));
   drupal_add_js($settings, 'setting');
   $image = theme('video_image', $video->thumbnail, $video->thumbnail->alt, $video->thumbnail->title, '', TRUE, $imagecache);
-  $class = 'video-box video-'. $element['#field_name'] .'{width:\''.$video->player_width.'px\', height:\''.$video->player_height.'px\', player:\''.$player.'\'}';
+  $class = 'video-box video-' . $element['#field_name'] . '{width:\'' . $video->player_width . 'px\', height:\'' . $video->player_height . 'px\', player:\'' . $player . '\'}';
   return l($image, $video->url, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
@@ -100,15 +104,16 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
  *
  * We are outputing an anchor to the videofile.  The jMedia functions will overtake this anchor and setup our object/embed tags.
  */
+
 function theme_video_formatter_video_media_js($element) {
-  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.media.js');
-  drupal_add_js(drupal_get_path('module', 'video') .'/js/jquery.metadata.js');
+  drupal_add_js(drupal_get_path('module', 'video') . '/js/jquery.media.js');
+  drupal_add_js(drupal_get_path('module', 'video') . '/js/jquery.metadata.js');
   //setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
   $video = $video_helper->video_object($element);
   //lets output the link to be overtaken by jmedia
-  $link = l($video->filename, $video->url, array('attributes' => array('class' => 'jmedia {width: '. $video->player_width .', height: '. $video->player_height .', autoplay: '. $video->autoplay .'}')));
+  $link = l($video->filename, $video->url, array('attributes' => array('class' => 'jmedia {width: ' . $video->player_width . ', height: ' . $video->player_height . ', autoplay: ' . $video->autoplay . '}')));
   return $link;
 }
 
@@ -116,46 +121,44 @@ function theme_video_formatter_video_media_js($element) {
  * Displays a "encoding in progress message"
  */
 function theme_video_inprogress() {
-  return '<div class="video-ffmpeg-helper-inprogress">'. t('This video is currently being processed. Please wait.') . '</div>';
+  return '<div class="video-ffmpeg-helper-inprogress">' . t('This video is currently being processed. Please wait.') . '</div>';
 }
 
 /**
  * Display an "encoding failed" message"
  */
 function theme_video_encoding_failed() {
-  return '<div class="video-ffmpeg-helper-encoding-failed">'. t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
+  return '<div class="video-ffmpeg-helper-encoding-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
 }
 
 function theme_video_flv($video, $node) {
   if ($video->flash_player == 'swftools') {
     $options = array(
-  	  'params' => array(
+      'params' => array(
         'width' => $video->player_width,
         'height' => $video->player_height,
-    ),
+      ),
       'othervars' => array(
-    //@todo: swftools bug, can't enable this until they fix their pathing for the images.
-    //'image' => $video->thumbnail->swfthumb,
-    ),
+        //@todo: swftools bug, can't enable this until they fix their pathing for the images.
+        'image' => $video->thumbnail->swfthumb,
+      ),
     );
     $themed_output = swf($video->url, $options);
-  }
-  elseif ($video->flash_player == 'flowplayer') {
+  } elseif ($video->flash_player == 'flowplayer') {
     $options = array(
       'clip' => array(
         'url' => urlencode($video->url),
         'autoPlay' => $video->autoplay,
         'autoBuffering' => $video->autobuffering,
-    ),
+      ),
     );
     $themed_output = theme(
-      'flowplayer',
-    $options,
-    $video->formatter,
-    array('style' => 'width:' . $video->player_width . 'px;height:' . $video->player_height . 'px;')
+            'flowplayer',
+            $options,
+            $video->formatter,
+            array('style' => 'width:' . $video->player_width . 'px;height:' . $video->player_height . 'px;')
     );
-  }
-  else {
+  } else {
     $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
   }
   return theme('video_play_flv', $video, $node, $themed_output);
@@ -173,5 +176,5 @@ function theme_video_formatter_imagecache($element) {
     $element['imagecache_preset'] = $namespace;
   }
   //return $theme_function;
-  return theme('video_formatter_'. $theme_function, $element, TRUE);
+  return theme('video_formatter_' . $theme_function, $element, TRUE);
 }
