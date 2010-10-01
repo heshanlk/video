@@ -143,11 +143,11 @@ class video_ffmpeg implements transcoder_interface {
       }
       // Setup our default command to be run.
       $command = strtr($this->params['command'], array(
-            '!videofile' => $video->filepath,
+            '!videofile' => '"' . $video->filepath . '"',
             '!audiobitrate' => $this->params['audiobitrate'],
             '!size' => $dimensions,
             '!videobitrate' => $this->params['videobitrate'],
-            '!convertfile' => $ffmpeg_output,
+            '!convertfile' => '"' . $ffmpeg_output . '"',
           ));
       // Process our video
 //      $command_output = $this->run_command($command);
