@@ -388,7 +388,9 @@ function video_convert_process(&$element) {
     $convert_on_save = variable_get('video_convert_on_save', FALSE);
     if (isset($element['data']['convert_video_on_save']['#value']))
       $element_data_convert_on_save = $element['data']['convert_video_on_save']['#value'];
-    $convert_video_on_save = $element_data_convert_on_save || $file['data']['convert_video_on_save'];
+    if(isset ($file['data']['convert_video_on_save']))
+      $file_date_convet_on_save = $file['data']['convert_video_on_save'];
+    $convert_video_on_save = $element_data_convert_on_save || $file_date_convet_on_save;
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])
         && $convert_video_on_save) || ($convert && $convert_video_on_save) || $convert_on_save) {
       $return = $video_conversion->process($fid);
