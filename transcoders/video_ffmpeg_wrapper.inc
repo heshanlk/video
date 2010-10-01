@@ -119,7 +119,7 @@ class video_ffmpeg_wrapper implements transcoder_interface {
     if (file_move($video, $original)) {
       //update our filename after the move to maintain filename uniqueness.
 //        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
-      $converted = file_create_filename(pathinfo($video->filepath, PATHINFO_FILENAME) . '.' . $this->video_converted_extension(), $converted);
+      $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . '.' . $this->video_converted_extension(), $converted);
       // Update our filepath since we moved it
       $update = drupal_write_record('files', $video, 'fid');
       //call our transcoder
@@ -507,4 +507,5 @@ class video_ffmpeg_wrapper implements transcoder_interface {
       return $video->dimensions;
     }
   }
+
 }

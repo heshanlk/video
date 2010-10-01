@@ -109,7 +109,7 @@ class video_zencoder implements transcoder_interface {
       $ssl = variable_get('amazon_s3_ssl', FALSE);
 
       $filepath = $video_s3->filepath;
-      $filename = $video_s3->filename;
+      $filename = str_replace(' ', '_', $video_s3->filename);
       module_load_include('inc', 'video_zencoder', '/includes/zencoder');
       $zc = new video_zencoder_api;
       if ($encoding_job = $zc->create($video_s3)) {
