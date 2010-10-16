@@ -92,6 +92,18 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 3,
   );
+
+  $items['admin/settings/video/filesystem'] = array(
+    'title' => 'Filesystem',
+    'description' => 'Configure your filesystem settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_filesystem_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+  );
+
   $items['admin/settings/video/cron'] = array(
     'title' => 'Cron Settings',
     'description' => 'Configure your cron settings.',
@@ -100,8 +112,10 @@ function video_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'video.admin.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' => 4,
+    'weight' => 5,
   );
+
+
   return $items;
 }
 
@@ -389,7 +403,7 @@ function video_convert_process(&$element) {
     $convert_on_save = variable_get('video_convert_on_save', FALSE);
     if (isset($element['data']['convert_video_on_save']['#value']))
       $element_data_convert_on_save = $element['data']['convert_video_on_save']['#value'];
-    if(isset ($file['data']['convert_video_on_save']))
+    if (isset($file['data']['convert_video_on_save']))
       $file_date_convet_on_save = $file['data']['convert_video_on_save'];
     $convert_video_on_save = $element_data_convert_on_save || $file_date_convet_on_save;
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])

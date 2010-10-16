@@ -30,16 +30,6 @@ function video_s3_help($path, $arg) {
 
 function video_s3_menu() {
   $items = array();
-  $items['admin/settings/video/amazon_s3'] = array(
-    'title' => 'Amazon S3',
-    'description' => 'Configure your Amazon S3 settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_s3_admin_settings'),
-    'access arguments' => array('administer site configuration'),
-    'file' => 'video_s3.admin.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
-  );
   $items['admin/settings/video/amazon_s3/bucket/%/delete'] = array(
     'title' => 'Delete Bucket',
     'page callback' => 'video_s3_bucket_delete',
@@ -151,4 +141,25 @@ function video_s3_get_object($object, $save_to = false) {
   $s3 = new video_amazon_s3;
   $s3->connect();
   return $s3->get_object($object, $save_to);
+}
+
+/*
+ * Deletes a bucket from your Amazon S3 server.
+ */
+
+function video_s3_bucket_delete($bucket) {
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  $s3->connect();
+  $buckets = $s3->s3->listBuckets();
+  if (is_array($buckets) && in_array($bucket, $buckets)) {
+    if ($s3->s3->deleteBucket($bucket)) {
+      drupal_set_message(t('Successfully deleted the bucket %bucket', array('%bucket' => $bucket)));
+    } else {
+      drupal_set_message(t('Could not delete the bucket %bucket', array('%bucket' => $bucket)), 'error');
+    }
+  } else {
+    drupal_set_message(t('The bucket %bucket does not exist for deletion.', array('%bucket' => $bucket)), 'error');
+  }
+  drupal_goto('admin/settings/video/amazon_s3');
 }

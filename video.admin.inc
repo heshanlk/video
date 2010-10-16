@@ -6,6 +6,11 @@
  * @file
  * Provides the administration settings for the Video Drupal module.
  */
+
+/**
+ * Video transcoder admin settings
+ * @return <type>
+ */
 function video_transcoder_admin_settings() {
   module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;
@@ -29,6 +34,10 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
   $transcoder->admin_settings_validate($form, $form_state);
 }
 
+/**
+ * Video general admin settings
+ * @return <type>
+ */
 function video_general_admin_settings() {
   $form = array();
   $form['video_autoplay'] = array(
@@ -64,6 +73,10 @@ function video_general_admin_settings() {
   return system_settings_form($form);
 }
 
+/**
+ * Video player admin settings
+ * @return <type>
+ */
 function video_players_admin_settings() {
   $form = array();
   $form['extensions'] = array(
@@ -99,6 +112,10 @@ function video_players_admin_settings() {
   return system_settings_form($form);
 }
 
+/**
+ * Video Metadata admin settings
+ * @return <type>
+ */
 function video_metadata_admin_settings() {
   module_load_include('inc', 'video', '/includes/metadata');
   $metadata = new video_metadata;
@@ -114,6 +131,10 @@ function video_metadata_admin_settings_validate($form, &$form_state) {
   $metadata->admin_settings_validate($form, $form_state);
 }
 
+/**
+ * Video cron admin settings
+ * @return <type>
+ */
 function video_cron_admin_settings() {
   $form = array();
   $form['video_cron'] = array(
@@ -129,4 +150,23 @@ function video_cron_admin_settings() {
     '#description' => t('How many videos do you want to process on each cron run?  Either through hook_cron or the video_scheduler.php.'),
   );
   return system_settings_form($form);
+}
+
+/**
+ * File system admin settings
+ * @return <type>
+ */
+function video_filesystem_admin_settings() {
+  module_load_include('inc', 'video', '/includes/filesystem');
+  $filesystem = new video_filesystem;
+  $form = $filesystem->admin_settings();
+  return system_settings_form($form);
+}
+
+function video_filesystem_admin_settings_validate($form, &$form_state) {
+  // add vallidations by metadata interface
+  $filesystem = $form_state['values']['vid_filesystem'];
+  module_load_include('inc', 'video', '/includes/filesystem');
+  $filesystem = new video_filesystem($filesystem);
+  $filesystem->admin_settings_validate($form, $form_state);
 }

@@ -23,6 +23,12 @@ $(document).ready(function() {
     video_hide_all__metadata_options();
   });
 
+  // change metadata options
+  video_hide_all__filesystem_options();
+  $("input[name='vid_filesystem']").change(function() {
+    video_hide_all__filesystem_options();
+  });
+
   $('.video_select').each(function() {
     var ext = $(this).attr('rel');
     $('select', this).change(function() {
@@ -97,6 +103,16 @@ function videoftp_thumbnail_change() {
 
 function video_hide_all__metadata_options() {
   $("input[name='vid_metadata']").each(function() {
+    var id = $(this).val();
+    $('#'+id).hide();
+    if ($(this).is(':checked')) {
+      $('#' + id).show();
+    }
+  });
+}
+
+function video_hide_all__filesystem_options() {
+  $("input[name='vid_filesystem']").each(function() {
     var id = $(this).val();
     $('#'+id).hide();
     if ($(this).is(':checked')) {
