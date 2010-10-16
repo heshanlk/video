@@ -16,6 +16,18 @@ class drupal extends video_filesystem {
     
   }
 
+  public function save_file($video) {
+
+  }
+
+  public function prepare_file($video) {
+
+  }
+
+  public function load_file(&$video) {
+    
+  }
+
   /**
    * Interface Implementations
    * @see sites/all/modules/video/includes/filesystem_interface#get_name()
@@ -44,17 +56,12 @@ class drupal extends video_filesystem {
     return;
   }
 
-  public function process($video) {
-    $command_output = $this->run_command($this->meta_command . ' ' . $video);
-    return $command_output;
-  }
-
   public function admin_settings() {
     $form = array();
     return $form;
   }
 
-  public function  admin_settings_validate($form, $form_state) {
+  public function admin_settings_validate($form, $form_state) {
     return;
   }
 

@@ -16,6 +16,18 @@ class video_s3 extends video_filesystem {
 
   }
 
+  public function save_file($video) {
+
+  }
+
+  public function prepare_file($video) {
+
+  }
+
+  public function load_file(&$video) {
+    video_s3_video_load(&$video);
+  }
+
   /**
    * Interface Implementations
    * @see sites/all/modules/video/includes/filesystem_interface#get_name()
@@ -43,11 +55,6 @@ class video_s3 extends video_filesystem {
 
   public function run_command($options) {
     return;
-  }
-
-  public function process($video) {
-    $command_output = $this->run_command($this->meta_command . ' ' . $video);
-    return $command_output;
   }
 
   public function admin_settings() {
@@ -97,7 +104,7 @@ class video_s3 extends video_filesystem {
     //lets show our buckets in table format with a delete link.
     //@todo add permissions
     //were enabled, that means they have successfully connected and created a bucket.
-    if (variable_get('amazon_s3_access_key', false)) {
+    if (variable_get('amazon_s3_access_key', false) && variable_get('vid_filesystem', 'drupal') == 'video_s3') {
       module_load_include('inc', 'video_s3', '/includes/amazon_s3');
       $s3 = new video_amazon_s3;
       $s3->connect();

@@ -44,9 +44,6 @@ class video_helper {
     $video->autoplay = variable_get('video_autoplay', TRUE);
     $video->autobuffering = variable_get('video_autobuffering', TRUE);
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
-
-    // TODO : add hook_video_load API to load videos
-    // lets find out if we are overriding this video with a converted one.
     // lets find out if we have transcoded this file and update our paths.
     if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion']
         && !$element['#item']['data']['bypass_autoconversion']) {
@@ -60,8 +57,14 @@ class video_helper {
 
     // Let othere module to load the video files by referance
     // Lets find out if we have pushed this file to the cdn if enabled.
-    if (!module_exists('video_zencoder'))
-      video_module_invoke('load', $video);
+    $filesystem = variable_get('vid_filesystem', 'drupal');
+    if ($filesystem != 'drupal') {
+      module_load_include('inc', 'video', '/includes/filesystem');
+      $filesystem = new video_filesystem();
+      $filesystem->load_file($video);
+    }
+
+
     // Moved to last to recheck incase we changed our extension above.
     $video->flash_player = variable_get('video_extension_' . $video->extension . '_flash_player', '');
 

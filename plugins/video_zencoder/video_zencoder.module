@@ -70,7 +70,7 @@ function _video_zencoder_postback_jobs() {
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
     $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video->fid;
 //    $i = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
-    $filename = $video->fid . '_' . sprintf("%04d", 4) . '.png';
+    $filename = $video->fid . '_' . sprintf("%04d", 1) . '.png';
     $thumbfile = $final_thumb_path . '/' . $filename;
 
     if (video_s3_get_object_info($thumbfile)) {
