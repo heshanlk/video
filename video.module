@@ -749,6 +749,7 @@ function video_video_extensions() {
 
 function video_video_players() {
   $players = array(
+    'video_play_html5' => t('HTML5 Player'),
     'video_play_divx' => t('Divx Player'),
     'video_play_quicktime' => t('Quicktime'),
     'video_play_realmedia' => t('Real Media Player'),
