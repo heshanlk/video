@@ -99,6 +99,7 @@ class video_transcoder {
   }
 
   private function _transcoders() {
+    // @TODO : think to change this to observer patteren
     $files = array();
     // Lets find our transcoder classes and build our radio options
     // We do this by scanning our transcoders folder
