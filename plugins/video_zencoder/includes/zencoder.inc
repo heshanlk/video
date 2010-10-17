@@ -60,13 +60,10 @@ class video_zencoder_api {
     // Notifications
 //    if(!empty($notify_url))
 //    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
-//    print $base_url;
-    $url = $base_url . '/postback/jobs';
-//    $url = 'http://123.231.47.131/drupal-6/postback/jobs';
+//    $url = $base_url . '/postback/jobs';
+    $url = 'http://123.231.57.158/postback/jobs';
     $notifications[] = array('format' => 'json', 'url' => $url);
-//    base_path()
-//    $notifications[] = 'http://123.231.9.136/drupal-6/postback/jobs';
-//    $base_url = $folder;
+
     //get the presets
     $presets = $file->presets;
     $public = (variable_get('amazon_s3_private', FALSE)) ? 0 : 1;
@@ -170,7 +167,7 @@ class video_zencoder_api {
 //            'test' => 1,
 //            'download_connections' => -1,
       'api_key' => $this->access_key,
-      'input' => 's3://' . $input_name . '',
+      'input' => 's3://' . $input_name,
       'outputs' => $zc_outputs,
       'output' => $zc_other
     );
@@ -180,12 +177,8 @@ class video_zencoder_api {
 //    watchdog('zencoder', json_encode($encoding_job_json));
 
     $encoding_job = new ZencoderJob(json_encode($encoding_job_json));
-    print_r($encoding_job);
-    exit;
     // Check if it worked
     if ($encoding_job->created) {
-      print_r($encoding_job);
-      exit;
 //      watchdog('zencoder', serialize($encoding_job));
       return $encoding_job;
     } else {

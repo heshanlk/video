@@ -42,7 +42,8 @@ function video_zencoder_menu() {
 function _video_zencoder_postback_jobs() {
 // get JSON post data
   $data = file_get_contents("php://input");
-//  print_r($data);
+  print_r($data);
+  exit;
   watchdog('zencoder', t('Postback received from the Zencoder Transcoding servers.'));
 // get the file object by zenocder job id
   $video = json_decode($data);

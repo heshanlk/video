@@ -128,62 +128,70 @@ class video_ffmpeg implements transcoder_interface {
     $original = $original . '/' . $video->filename;
     //lets move our video and then convert it.
     if (file_move($video, $original)) {
-      //update our filename after the move to maintain filename uniqueness.
-//        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
-      $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . '.' . $this->video_converted_extension(), $converted);
       // Update our filepath since we moved it
       $update = drupal_write_record('files', $video, 'fid');
-      //call our transcoder
+      // process presets
+      $presets = $video->presets;
+      $converted_files = array();
+      foreach ($presets as $name => $preset) {
+        //update our filename after the move to maintain filename uniqueness.
+//        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
+        $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . '.' . $preset['extension'], $converted);
+        //call our transcoder
 //        $command_output = $this->convert_video($video, $converted);
-      $dimensions = $this->dimensions($video);
-      if ($this->params['enable_faststart'] && in_array($this->params['videoext'], array('mov', 'mp4'))) {
-        $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
-      } else {
-        $ffmpeg_output = $converted;
-      }
-      // Setup our default command to be run.
-      $command = strtr($this->params['command'], array(
-            '!videofile' => '"' . $video->filepath . '"',
-            '!audiobitrate' => $this->params['audiobitrate'],
-            '!size' => $dimensions,
-            '!videobitrate' => $this->params['videobitrate'],
-            '!convertfile' => '"' . $ffmpeg_output . '"',
-          ));
-      // Process our video
+        $video->dimensions = $preset['width'] . 'x' . $preset['height'];
+        $dimensions = $this->dimensions($video);
+        if ($this->params['enable_faststart'] && in_array($preset['extension'], array('mov', 'mp4'))) {
+          $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
+        } else {
+          $ffmpeg_output = $converted;
+        }
+        // Setup our default command to be run.
+        $command = strtr($this->params['command'], array(
+              '!videofile' => '"' . $video->filepath . '"',
+              '!audiobitrate' => $preset['audio_bitrate'],
+              '!size' => $dimensions,
+              '!videobitrate' => $preset['video_bitrate'],
+              '!convertfile' => '"' . $ffmpeg_output . '"',
+            ));
+        // Process our video
 //      $command_output = $this->run_command($command);
-      $command_output = $this->run_command($command);
-      if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
-        // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
-        // the command to be execute so we need to fudge the command to run qt-faststart.
-        $cmd_path = $this->params['cmd_path'];
-        $this->params['cmd_path'] = $this->params['faststart_cmd'];
-        $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted, $verbose);
-        $this->params['cmd_path'] = $cmd_path;
+        $command_output = $this->run_command($command);
+        if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
+          // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
+          // the command to be execute so we need to fudge the command to run qt-faststart.
+          $cmd_path = $this->params['cmd_path'];
+          $this->params['cmd_path'] = $this->params['faststart_cmd'];
+          $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted, $verbose);
+          $this->params['cmd_path'] = $cmd_path;
 
-        // Delete the temporary output file.
-        file_delete($ffmpeg_output);
-      }
+          // Delete the temporary output file.
+          file_delete($ffmpeg_output);
+        }
 
-      //lets check to make sure our file exists, if not error out
-      if (!file_exists($converted) || !filesize($converted)) {
-        watchdog('video_conversion', 'Video conversion failed.  FFMPEG reported the following output: ' . $command_output, array(), WATCHDOG_ERROR);
-        $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
-        return FALSE;
+        //lets check to make sure our file exists, if not error out
+        if (!file_exists($converted) || !filesize($converted)) {
+          watchdog('video_conversion', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->filepath, '%preset' => $name), WATCHDOG_ERROR);
+          $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+          return FALSE;
+        }
+        // Setup our converted video object
+        $video_info = pathinfo($converted);
+        //update our converted video
+        $video->converted = new stdClass();
+        $video->converted->vid = $video->vid;
+        $video->converted->filename = $video_info['basename'];
+        $video->converted->filepath = $converted;
+        $video->converted->filemime = file_get_mimetype($converted);
+        $video->converted->filesize = filesize($converted);
+        $video->converted->status = VIDEO_RENDERING_COMPLETE;
+        $video->converted->preset = $name;
+        $video->converted->completed = time();
+        $converted_files[] = $video->converted;
       }
-      // Setup our converted video object
-      $video_info = pathinfo($converted);
-      //update our converted video
-      $video->converted = new stdClass();
-      $video->converted->vid = $video->vid;
-      $video->converted->filename = $video_info['basename'];
-      $video->converted->filepath = $converted;
-      $video->converted->filemime = file_get_mimetype($converted);
-      $video->converted->filesize = filesize($converted);
-      $video->converted->status = VIDEO_RENDERING_COMPLETE;
-      $video->converted->completed = time();
       // Update our video_files table with the converted video information.
-      $result = db_query("UPDATE {video_files} SET filename='%s', filepath='%s', filemime='%s', filesize=%d, status=%d, completed=%d WHERE vid=%d",
-              $video->converted->filename, $video->converted->filepath, $video->converted->filemime, $video->converted->filesize, $video->converted->status, $video->converted->completed, $video->converted->vid);
+      $result = db_query("UPDATE {video_files} SET status=%d, completed=%d, data='%s' WHERE vid=%d",
+              $video->converted->status, $video->converted->completed, serialize($converted_files), $video->converted->vid);
 
       watchdog('video_conversion', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
       return TRUE;
@@ -192,10 +200,6 @@ class video_ffmpeg implements transcoder_interface {
       $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
-  }
-
-  public function video_converted_extension() {
-    return $this->params['videoext'];
   }
 
   /**

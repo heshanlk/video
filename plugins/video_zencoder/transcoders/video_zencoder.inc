@@ -101,8 +101,6 @@ class video_zencoder implements transcoder_interface {
     if (is_object($video_s3)) {
       // This will update our current video status to active.
 //      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
-      // Get Output file info
-      $filetype = variable_get('video_zencoder_ext', 'flv');
       // bucket name
       $bucket = variable_get('amazon_s3_bucket', '');
       $ssl = variable_get('amazon_s3_ssl', FALSE);
@@ -113,23 +111,15 @@ class video_zencoder implements transcoder_interface {
       module_load_include('inc', 'video_zencoder', '/includes/zencoder');
       $zc = new video_zencoder_api;
       if ($encoding_job = $zc->create($video_s3)) {
-//        print_r($encoding_jobxx);
-//        exit;
         // Update our table.
-        $video->bucket = $bucket;
-        $video->filename = $filename . '.' . $filetype;
-        $video->filemime = file_get_mimetype($filename . '.' . $filetype);
         $video->vid = $video->vid;
-        $video->jobid = $encoding_job->id;
+
         // @TODO : add foreach for each outout and put insert save multiple files
-        $video->outputid = $encoding_job->outputs['VIDEO_' . $video->fid]->id;
-        $prefix = $ssl ? 'https://' : 'http://';
-        $video->filepath = $prefix . $video->bucket . '.s3.amazonaws.com/' . $filename . '.' . $filetype;
-//        print_r($video);
-//        exit;
+        $outputs = serialize($encoding_job->outputs);
+        $video->data = $outputs;
+        // write output values to the table
         if ($this->update($video)) {
           watchdog('zencoder', t('Successfully created trancoding job on file: !file into the bucket %bucket on Zencoder.', array('!file' => $filepath, '%bucket' => $bucket)), array(), WATCHDOG_INFO);
-//          return TRUE;
         }
       } else {
         watchdog('zencoder', 'Failed to queus our file to Zencoder.', array(), WATCHDOG_ERROR);
@@ -545,7 +535,7 @@ class video_zencoder implements transcoder_interface {
   }
 
   public function create_job($video) {
-    return db_query("INSERT INTO {video_zencoder} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
+    return db_query("INSERT INTO {video_zencoder} (fid, status) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING);
   }
 
   public function update_job($video) {
@@ -624,8 +614,8 @@ class video_zencoder implements transcoder_interface {
    */
 
   private function update($video) {
-    $result = db_query("UPDATE {video_zencoder} SET jobid = %d, outputid = %d, bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', completed=%d WHERE vid=%d",
-            $video->jobid, $video->outputid, $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, time(), $video->vid);
+    $result = db_query("UPDATE {video_zencoder} SET jobid = %d, completed=%d, data='%s' WHERE vid=%d",
+            $video->jobid, time(), $video->data, $video->vid);
     return $result;
   }
 

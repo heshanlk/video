@@ -141,10 +141,6 @@ class video_transcoder {
     return $this->transcoder->get_dimensions($video);
   }
 
-  public function video_converted_extension() {
-    return $this->transcoder->video_converted_extension();
-  }
-
   public function create_job($video) {
     return $this->transcoder->create_job($video);
   }
