@@ -83,7 +83,6 @@ class video_zencoder implements transcoder_interface {
   public function convert_video($video) {
     // get the active jobs and check for the status
     if ($video->video_status == VIDEO_RENDERING_ACTIVE) {
-
       return;
     }
     // We need to check if this file id exists in our S3 table to avoid file not found error.
@@ -94,7 +93,7 @@ class video_zencoder implements transcoder_interface {
         $video_s3 = $s3_file;
       }
     } else {
-      watchdog('zencoder', t('You must avtive the Video S3 module to work with Zencoder, file is not found in S3 tables', array()), array(), WATCHDOG_ERROR);
+      watchdog('zencoder', t('You must active the Video S3 module to work with Zencoder, file is not found in S3 tables', array()), array(), WATCHDOG_ERROR);
 //      return FALSE;
     }
 
@@ -110,6 +109,7 @@ class video_zencoder implements transcoder_interface {
 
       $filepath = $video_s3->filepath;
       $filename = str_replace(' ', '_', $video_s3->filename);
+      $video_s3->presets = $video->presets;
       module_load_include('inc', 'video_zencoder', '/includes/zencoder');
       $zc = new video_zencoder_api;
       if ($encoding_job = $zc->create($video_s3)) {

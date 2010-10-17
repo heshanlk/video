@@ -61,7 +61,11 @@ class video_transcoder {
     return $this->transcoder->generate_thumbnails($video);
   }
 
-  public function convert_video($video) {
+  public function convert_video(&$video) {
+    module_load_include('inc', 'video', '/includes/video_preset');
+    $video_preset = new video_preset();
+    $presets = $video_preset->properties();
+    $video->presets = $presets;
     $output = $this->transcoder->convert_video($video);
     // if successfully converted the video then update the status to publish
     if ($output)

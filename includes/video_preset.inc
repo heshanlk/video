@@ -9,10 +9,13 @@
 
 class video_preset {
 
-  private $preset;
+  private $presets;
 
   public function __construct($preset = null) {
-    //get our configured transcoder.
+    $this->presets = $preset;
+    if (!isset($preset))
+      $this->presets = variable_get('vid_preset', '');
+//get our configured transcoder.
 //    if (!isset($preset))
 //      $preset = variable_get('vid_preset', 'flash_hq');
 //    echo print_r($preset);
@@ -50,18 +53,19 @@ class video_preset {
       '#prefix' => '<div id="preset-checkboxes">',
       '#suffix' => '</div>',
     );
-    $form = $form + $options['admin_settings'];
+//    $form = $form + $options['admin_settings'];
     return $form;
   }
 
-  private function _preset() {
+  private function _preset($presets = null) {
+// @TDOO : Observer will match in this case
     $files = array();
-    // Lets find our transcoder classes and build our radio options
-    // We do this by scanning our transcoders folder
-    $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
+// Lets find our transcoder classes and build our radio options
+// We do this by scanning our transcoders folder
+    $form = array('radios' => array(), 'help' => array(), 'properties' => array());
     $path = drupal_get_path('module', 'video') . '/video_preset';
     $files = file_scan_directory($path, '^.*\.inc$');
-    // check inside sub modules
+// check inside sub modules
     $modules = module_list();
     foreach ($modules as $module) {
       $mobule_files = array();
@@ -77,12 +81,17 @@ class video_preset {
       $form['radios'][$focus->get_value()] = $focus->get_name();
       $form['help'][] = $focus->get_help();
 //      $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings();
+      if (is_array($presets) && !empty($presets[$focus->get_value()]))
+        $form['properties'][$focus->get_value()] = $focus->get_properties();
+//      echo $focus->get_value();
     }
     return $form;
   }
 
-  public function get_properties($video) {
-    return $this->preset->get_properties($video);
+  public function properties() {
+    $presets = $this->presets;
+    $options = $this->_preset($presets);
+    return $options['properties'];
   }
 
 }
@@ -93,5 +102,5 @@ interface video_preset_interface {
 
   public function get_help();
 
-  public function get_properties($video);
+  public function get_properties();
 }

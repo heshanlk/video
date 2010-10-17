@@ -6,7 +6,7 @@
  * Class file used to store metadata on the video.
  *
  */
-class flash_lq extends video_preset {
+class flash_lq implements video_preset_interface {
 
   protected $name = 'Flash HQ Video Low quality';
   protected $value = 'flash_lq';
@@ -58,8 +58,33 @@ class flash_lq extends video_preset {
     return $form;
   }
 
-  public function get_properties($video) {
-
+  public function get_properties() {
+    $properties = array(
+      'extension' => 'mp4',
+      'width' => '480',
+      'height' => '360',
+      'quality' => '',
+      'speed' => '',
+      'upscale' => '',
+      'stretch' => '',
+      'frame_rate' => '',
+      'max_frame_rate' => '',
+      'keyframe_interval' => '',
+      'video_bitrate' => '',
+      'bitrate_cap' => '',
+      'buffer_size' => '',
+      'h264_profile' => '',
+      'h264_level' => '',
+      'skip_video' => '',
+      'audio_codec' => '',
+      'audio_bitrate' => '',
+      'audio_channels' => '',
+      'audio_sample_rate' => '',
+      'skip_audio' => '',
+      'start_clip' => '',
+      'clip_length' => '',
+    );
+    return $properties;
   }
 
 }

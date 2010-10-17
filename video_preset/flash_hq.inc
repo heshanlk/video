@@ -6,10 +6,18 @@
  * Class file used to store metadata on the video.
  *
  */
-class flash_hq extends video_preset {
+class flash_hq implements video_preset_interface {
 
   protected $name = 'Flash HQ Video';
   protected $value = 'flash_hq';
+  protected $properties = array(
+    '!audiobitrate' => '',
+    '!size' => '',
+    '!videobitrate' => '',
+  );
+  protected $width;
+  protected $height;
+  protected $video_ext = 'flv';
 
   public function __construct() {
     
@@ -58,8 +66,33 @@ class flash_hq extends video_preset {
     return $form;
   }
 
-  public function get_properties($video) {
-
+  public function get_properties() {
+    $properties = array(
+      'extension' => 'flv',
+      'width' => '640',
+      'height' => '340',
+      'quality' => '',
+      'speed' => '',
+      'upscale' => '',
+      'stretch' => '',
+      'frame_rate' => '',
+      'max_frame_rate' => '',
+      'keyframe_interval' => '',
+      'video_bitrate' => '',
+      'bitrate_cap' => '',
+      'buffer_size' => '',
+      'h264_profile' => '',
+      'h264_level' => '',
+      'skip_video' => '',
+      'audio_codec' => '',
+      'audio_bitrate' => '',
+      'audio_channels' => '',
+      'audio_sample_rate' => '',
+      'skip_audio' => '',
+      'start_clip' => '',
+      'clip_length' => '',
+    );
+    return $properties;
   }
 
 }

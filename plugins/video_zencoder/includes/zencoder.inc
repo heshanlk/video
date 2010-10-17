@@ -39,108 +39,23 @@ class video_zencoder_api {
     //file type
     $filetype = variable_get('video_zencoder_ext', 'flv');
     // Get varialbes
-    $lable = 'VIDEO_' . $file->fid;
-//    $base_url = $folder;
-    $public = (variable_get('amazon_s3_private', FALSE)) ? 0 : 1;
-    $width = variable_get('zc_width', '');
-    $height = variable_get('zc_height', '');
-    $quality = variable_get('zc_quality', 3);
-    $speed = variable_get('zc_speed', 3);
-    $upscale = variable_get('zc_upscale', '');
-    $stretch = variable_get('zc_stretch', '');
-    $frame_rate = variable_get('zc_frame_rate', '');
-    $max_frame_rate = variable_get('zc_max_frame_rate', '');
-    $keyframe_interval = variable_get('zc_key_frame_interval', '');
-    $video_bitrate = variable_get('zc_vid_bit_rate', '');
-    $bitrate_cap = variable_get('zc_bit_rate_cap', '');
-    $buffer_size = variable_get('zc_buffer_size', '');
-    $h264_profile = variable_get('zc_h245_profile', 1);
-    $h264_level = variable_get('zc_h245_level', 0);
-    $skip_video = variable_get('zc_skip_video', '');
-    $audio_codec = variable_get('zc_audio_codec', 'aac');
-    $audio_bitrate = variable_get('zc_audio_bitrate', '');
-    $audio_channels = variable_get('zc_audio_channels', 2);
-    $audio_sample_rate = variable_get('zc_audio_sample_rate', '');
-    $skip_audio = variable_get('zc_skip_audio', '');
+    $bucket = $this->bucket;
     $thumb_no = variable_get('no_of_video_thumbs', 5);
     // TODO :
     $thumb_size = '160x120';
     $thumb_base = $baseurl;
     $thumb_prefix = $filename;
+
     $notify_url = variable_get('zc_notify_url', '');
     $notify_email = variable_get('zc_notify_email', '');
-    $start_clip = variable_get('zc_start_clip', '');
-    $clip_length = variable_get('zc_clip_length', '');
-
-    $bucket = $this->bucket;
 
     // Job details
     $input_name = $bucket . '/' . $filename;
 //    watchdog('zencoder', $input_name);
-
-    $zc_output = array();
-    if (!empty($lable))
-      $zc_output['label'] = $lable;
-    if (!empty($bucket))
-      $zc_output['url'] = 's3://' . $bucket . '/' . $filename . '.' . $filetype;
-    if (!empty($public))
-      $zc_output['public'] = $public;
-    if (!empty($width))
-      $zc_output['width'] = $width;
-    if (!empty($height))
-      $zc_output['height'] = $height;
-    if ($quality != 3)
-      $zc_output['quality'] = $quality;
-    if ($speed != 3)
-      $zc_output['speed'] = $speed;
-    if (!empty($upscale))
-      $zc_output['upscale'] = $upscale;
-    if (!empty($frame_rate))
-      $zc_output['frame_rate'] = $frame_rate;
-    if (!empty($max_frame_rate))
-      $zc_output['max_frame_rate'] = $max_frame_rate;
-    if (!empty($keyframe_interval))
-      $zc_output['keyframe_interval'] = $keyframe_interval;
-    if (!empty($video_bitrate))
-      $zc_output['video_bitrate'] = $video_bitrate;
-    if (!empty($bitrate_cap))
-      $zc_output['bitrate_cap'] = $bitrate_cap;
-    if (!empty($buffer_size))
-      $zc_output['buffer_size'] = $buffer_size;
-    if (($h264_profile != 1))
-      $zc_output['h264_profile'] = $h264_profile;
-    if (($h264_level != 0))
-      $zc_output['h264_level'] = $h264_level;
-    if (!empty($skip_video))
-      $zc_output['skip_video'] = $skip_video;
-    if (($audio_codec != 'aac'))
-      $zc_output['audio_codec'] = $audio_codec;
-    if (!empty($audio_bitrate))
-      $zc_output['audio_bitrate'] = $audio_bitrate;
-    if (($audio_channels != 2))
-      $zc_output['audio_channels'] = $audio_channels;
-    if (!empty($audio_sample_rate))
-      $zc_output['audio_sample_rate'] = $audio_sample_rate;
-    if (!empty($skip_audio))
-      $zc_output['skip_audio'] = $skip_audio;
-    if (!empty($start_clip))
-      $zc_output['start_clip'] = $start_clip;
-    if (!empty($clip_length))
-      $zc_output['clip_length'] = $clip_length;
-
     // thumbnails
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
     $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $file->fid;
-
-    $thumbnails['number'] = $thumb_no;
-    if (!empty($thumb_size))
-      $thumbnails['thumb_size'] = $thumb_size;
-    if (!empty($bucket))
-      $thumbnails['base_url'] = 's3://' . $bucket . '/' . $final_thumb_path;
-    if (!empty($file->fid))
-      $thumbnails['prefix'] = $file->fid;
-    $zc_output['thumbnails'] = $thumbnails;
 
     // Notifications
 //    if(!empty($notify_url))
@@ -151,9 +66,104 @@ class video_zencoder_api {
     $notifications[] = array('format' => 'json', 'url' => $url);
 //    base_path()
 //    $notifications[] = 'http://123.231.9.136/drupal-6/postback/jobs';
-    if (!empty($notify_email))
-      $notifications[] = $notify_email;
-    $zc_output['notifications'] = $notifications;
+//    $base_url = $folder;
+    //get the presets
+    $presets = $file->presets;
+    $public = (variable_get('amazon_s3_private', FALSE)) ? 0 : 1;
+
+    // construct the output array with the presets
+    $zc_outputs = array();
+    foreach ($presets as $name => $preset) {
+      $zc_output = array();
+      $lable = 'VIDEO_' . $name . '_' . $file->fid;
+      $width = $preset['width'];
+      $height = $preset['height'];
+      $quality = $preset['quality'];
+      $speed = $preset['speed'];
+      $upscale = $preset['upscale'];
+      $stretch = $preset['stretch'];
+      $frame_rate = $preset['frame_rate'];
+      $max_frame_rate = $preset['max_frame_rate'];
+      $keyframe_interval = $preset['keyframe_interval'];
+      $video_bitrate = $preset['video_bitrate'];
+      $bitrate_cap = $preset['bitrate_cap'];
+      $buffer_size = $preset['buffer_size'];
+      $h264_profile = $preset['h264_profile'];
+      $h264_level = $preset['h264_level'];
+      $skip_video = $preset['skip_video'];
+      $audio_codec = $preset['audio_codec'];
+      $audio_bitrate = $preset['audio_bitrate'];
+      $audio_channels = $preset['audio_channels'];
+      $audio_sample_rate = $preset['audio_sample_rate'];
+      $skip_audio = $preset['skip_audio'];
+      $start_clip = $preset['start_clip'];
+      $clip_length = $preset['clip_length'];
+
+      if (!empty($lable))
+        $zc_output['label'] = $lable;
+      if (!empty($bucket))
+        $zc_output['url'] = 's3://' . $bucket . '/' . pathinfo($filename, PATHINFO_DIRNAME) . '/converted/' . pathinfo($filename, PATHINFO_FILENAME) . '.' . $preset['extension'];
+      if (!empty($public))
+        $zc_output['public'] = $public;
+      if (!empty($width))
+        $zc_output['width'] = $width;
+      if (!empty($height))
+        $zc_output['height'] = $height;
+      if (!empty($quality))
+        $zc_output['quality'] = $quality;
+      if (!empty($speed))
+        $zc_output['speed'] = $speed;
+      if (!empty($upscale))
+        $zc_output['upscale'] = $upscale;
+      if (!empty($frame_rate))
+        $zc_output['frame_rate'] = $frame_rate;
+      if (!empty($max_frame_rate))
+        $zc_output['max_frame_rate'] = $max_frame_rate;
+      if (!empty($keyframe_interval))
+        $zc_output['keyframe_interval'] = $keyframe_interval;
+      if (!empty($video_bitrate))
+        $zc_output['video_bitrate'] = $video_bitrate;
+      if (!empty($bitrate_cap))
+        $zc_output['bitrate_cap'] = $bitrate_cap;
+      if (!empty($buffer_size))
+        $zc_output['buffer_size'] = $buffer_size;
+      if (!empty($h264_profile))
+        $zc_output['h264_profile'] = $h264_profile;
+      if (!empty($h264_level))
+        $zc_output['h264_level'] = $h264_level;
+      if (!empty($skip_video))
+        $zc_output['skip_video'] = $skip_video;
+      if (!empty($audio_codec))
+        $zc_output['audio_codec'] = $audio_codec;
+      if (!empty($audio_bitrate))
+        $zc_output['audio_bitrate'] = $audio_bitrate;
+      if (!empty($audio_channels))
+        $zc_output['audio_channels'] = $audio_channels;
+      if (!empty($audio_sample_rate))
+        $zc_output['audio_sample_rate'] = $audio_sample_rate;
+      if (!empty($skip_audio))
+        $zc_output['skip_audio'] = $skip_audio;
+      if (!empty($start_clip))
+        $zc_output['start_clip'] = $start_clip;
+      if (!empty($clip_length))
+        $zc_output['clip_length'] = $clip_length;
+
+      // thumbnails
+      $thumbnails['number'] = $thumb_no;
+      if (!empty($thumb_size))
+        $thumbnails['thumb_size'] = $thumb_size;
+      if (!empty($bucket))
+        $thumbnails['base_url'] = 's3://' . $bucket . '/' . $final_thumb_path;
+      if (!empty($file->fid))
+        $thumbnails['prefix'] = $file->fid;
+      $zc_output['thumbnails'] = $thumbnails;
+
+      //notifications
+      if (!empty($notify_email))
+        $notifications[] = $notify_email;
+      $zc_output['notifications'] = $notifications;
+      $zc_outputs[] = $zc_output;
+    }
 
 
     $encoding_job_json = array(
@@ -161,17 +171,21 @@ class video_zencoder_api {
 //            'download_connections' => -1,
       'api_key' => $this->access_key,
       'input' => 's3://' . $input_name . '',
-      'output' => $zc_output
+      'outputs' => $zc_outputs,
+      'output' => $zc_other
     );
 
-
+//    print_r(($encoding_job_json));
+//    exit;
 //    watchdog('zencoder', json_encode($encoding_job_json));
 
     $encoding_job = new ZencoderJob(json_encode($encoding_job_json));
-
+    print_r($encoding_job);
+    exit;
     // Check if it worked
     if ($encoding_job->created) {
-//      print_r($encoding_job);
+      print_r($encoding_job);
+      exit;
 //      watchdog('zencoder', serialize($encoding_job));
       return $encoding_job;
     } else {
