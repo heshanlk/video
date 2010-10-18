@@ -338,44 +338,6 @@ class video_ffmpeg implements transcoder_interface {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE
     );
-    $form['autoconv']['video_ffmpeg_ext'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Video Extension'),
-      '#size' => 10,
-      '#maxlength' => 10,
-      '#default_value' => variable_get('video_ffmpeg_ext', 'flv'),
-      '#description' => t('The video extensions without the period you want the converted file to contain.')
-    );
-    $form['autoconv']['video_ffmpeg_width'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Video Width'),
-      '#size' => 10,
-      '#maxlength' => 10,
-      '#default_value' => variable_get('video_ffmpeg_width', 640),
-    );
-    $form['autoconv']['video_ffmpeg_height'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Video height'),
-      '#size' => 10,
-      '#maxlength' => 10,
-      '#default_value' => variable_get('video_ffmpeg_height', 480),
-    );
-    $form['autoconv']['video_ffmpeg_helper_auto_cvr_video_bitrate'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Video bitrate'),
-      '#description' => t('The video bitrate in bit/s of the converted video.'),
-      '#size' => 10,
-      '#maxlength' => 10,
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', 200000),
-    );
-    $form['autoconv']['video_ffmpeg_helper_auto_cvr_audio_bitrate'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Audio bitrate'),
-      '#description' => t('The audio bitrate in bit/s of the converted video.'),
-      '#size' => 10,
-      '#maxlength' => 10,
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', 64000),
-    );
     $form['autoconv']['video_ffmpeg_enable_faststart'] = array(
       '#type' => 'checkbox',
       '#title' => t('Process mov/mp4 videos with qt-faststart'),

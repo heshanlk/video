@@ -47,25 +47,6 @@ class flash_hq implements video_preset_interface {
     return $this->value;
   }
 
-  public function admin_settings() {
-    $form = array();
-    $form['video_flvtool2_start'] = array(
-      '#type' => 'markup',
-      '#value' => '<div id="video_flvtool2">',
-    );
-    $form['video_metadata_path'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Path to FLVTool2'),
-      '#description' => t('Executable path to flvtool2.'),
-      '#default_value' => variable_get('video_metadata_path', $this->meta_command_path),
-    );
-    $form['video_flvtool2_end'] = array(
-      '#type' => 'markup',
-      '#value' => '</div>',
-    );
-    return $form;
-  }
-
   public function get_properties() {
     $properties = array(
       'extension' => 'flv',
