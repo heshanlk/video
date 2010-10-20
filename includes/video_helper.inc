@@ -50,6 +50,9 @@ class video_helper {
       module_load_include('inc', 'video', '/includes/conversion');
       $conversion = new video_conversion;
       $converted = $conversion->load_completed_job($video);
+      echo '<pre>';
+      print_r($converted);
+      exit;
       $video->filepath = $converted->filepath;
       $video->url = (!valid_url($converted->filepath)) ? file_create_url($converted->filepath) : $converted->filepath;
       $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);

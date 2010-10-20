@@ -42,9 +42,9 @@ function video_zencoder_menu() {
 function _video_zencoder_postback_jobs() {
 // get JSON post data
   $data = file_get_contents("php://input");
-  print_r($data);
-  exit;
-  watchdog('zencoder', t('Postback received from the Zencoder Transcoding servers.'));
+  watchdog('zencoder', t('Postback received from the Zencoder Transcoding servers.' . serialize($data)));
+//    print_r($data);
+//  exit;
 // get the file object by zenocder job id
   $video = json_decode($data);
 //  print_r($zc);
@@ -57,21 +57,42 @@ function _video_zencoder_postback_jobs() {
     $video->output->state = VIDEO_RENDERING_COMPLETE;
   if ($zc_output_state == 'failed' || $zc_job_state == 'failed')
     $video->output->state = VIDEO_RENDERING_FAILED;
+  if ($zc_job_state == 'processing') {
+    watchdog('zencoder', t('Job !jobid is processing.', array('!jobid' => $video->job->id)));
+    return;
+  }
 
 // update the Zencoder Job
   module_load_include('inc', 'video_zencoder', '/includes/zencoder');
   $zc = new video_zencoder_api;
 // Lets run delete.
-  if ($zc->update($video) && $video->output->state == VIDEO_RENDERING_COMPLETE) {
-    $video = $zc->load_job($video->job->id);
-    db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $video->nid);
+  $videodb = $zc->load_job($video->job->id);
+//  print_r($video);
+//  echo $nid = $videodb->nid;
+//  echo $vid = $videodb->vid;
+//  echo $fid = $videodb->fid;
+
+  if ($video->output->state == VIDEO_RENDERING_COMPLETE) {
+//    echo 'completed';
+    $nid = $videodb->nid;
+    $vid = $videodb->vid;
+    $fid = $videodb->fid;
+//    print_r($videodb);
+//    echo 'working completed';
+    if (!db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', VIDEO_RENDERING_COMPLETE, $vid))
+      watchdog('zencoder', t('Error updating zencoder status.', array()), NULL, WATCHDOG_ERROR);
+
+    if (!db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $nid))
+      watchdog('zencoder', t('Error pulishing node.', array()), NULL, WATCHDOG_ERROR);
+
+//    print_r($video);
 // update the thumbanils
 // this will update the default thumbnails, if user want to select another one then they wil need to edit the node
 // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video->fid;
+    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $fid;
 //    $i = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
-    $filename = $video->fid . '_' . sprintf("%04d", 1) . '.png';
+    $filename = $fid . '_' . sprintf("%04d", 1) . '.png';
     $thumbfile = $final_thumb_path . '/' . $filename;
 
     if (video_s3_get_object_info($thumbfile)) {
@@ -83,8 +104,15 @@ function _video_zencoder_postback_jobs() {
         watchdog('zencoder', t('Download thumbanils files is failed.'), array(), WATCHDOG_ERROR);
     }
 //      file_copy($default, $thumbfile, FILE_EXISTS_REPLACE);
+    watchdog('zencoder', t('Updated the Zencoder Job !id to states !states.', array('!id' => $video->job->id, '!states' => $zc_output_state)));
   }
-  watchdog('zencoder', t('Updated the Zencoder Job !id to states !states.', array('!id' => $video->jobid, '!states' => $zc_output_state)));
+  else if ($video->output->state == VIDEO_RENDERING_FAILED) {
+    echo 'working failed';
+    $this->change_status($vid, VIDEO_RENDERING_FAILED);
+    watchdog('zencoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
+  } else {
+    echo 'working something else';
+  }
 }
 
 /**

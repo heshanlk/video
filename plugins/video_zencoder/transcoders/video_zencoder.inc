@@ -113,13 +113,13 @@ class video_zencoder implements transcoder_interface {
       if ($encoding_job = $zc->create($video_s3)) {
         // Update our table.
         $video->vid = $video->vid;
-
-        // @TODO : add foreach for each outout and put insert save multiple files
+        //job id
+        $video->jobid = $encoding_job->id;
         $outputs = serialize($encoding_job->outputs);
         $video->data = $outputs;
         // write output values to the table
         if ($this->update($video)) {
-          watchdog('zencoder', t('Successfully created trancoding job on file: !file into the bucket %bucket on Zencoder.', array('!file' => $filepath, '%bucket' => $bucket)), array(), WATCHDOG_INFO);
+          watchdog('zencoder', t('Successfully created trancoding job on !jobid.', array('!jobid' => $video->jobid)), array(), WATCHDOG_INFO);
         }
       } else {
         watchdog('zencoder', 'Failed to queus our file to Zencoder.', array(), WATCHDOG_ERROR);

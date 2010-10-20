@@ -61,7 +61,7 @@ class video_zencoder_api {
 //    if(!empty($notify_url))
 //    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
 //    $url = $base_url . '/postback/jobs';
-    $url = 'http://123.231.57.158/postback/jobs';
+    $url = 'http://175.157.80.217/postback/jobs';
     $notifications[] = array('format' => 'json', 'url' => $url);
 
     //get the presets
@@ -168,8 +168,7 @@ class video_zencoder_api {
 //            'download_connections' => -1,
       'api_key' => $this->access_key,
       'input' => 's3://' . $input_name,
-      'outputs' => $zc_outputs,
-      'output' => $zc_other
+      'outputs' => $zc_outputs
     );
 
 //    print_r(($encoding_job_json));
@@ -195,8 +194,8 @@ class video_zencoder_api {
    */
 
   public function update($video) {
-    $result = db_query("UPDATE {video_zencoder} SET filepath='%s', status=%d, completed=%d WHERE jobid=%d AND outputid = %d",
-            $video->output->url, $video->output->state, time(), $video->job->id, $video->output->id);
+    $result = db_query("UPDATE {video_zencoder} SET status=%d, completed=%d WHERE jobid=%d",
+            $video->output->state, time(), $video->job->id);
     return $result;
   }
 
