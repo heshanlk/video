@@ -330,17 +330,11 @@ class video_zencoder implements transcoder_interface {
     $data = unserialize($video->data);
     foreach ($data as $value) {
       $video->converted[] = array(
-        'url' => $value->url,
+        'url' => (!variable_get('amazon_s3_private', FALSE)) ? $value->url : video_s3_get_authenticated_url($video->filename),
         'extension' => pathinfo($value->url, PATHINFO_EXTENSION),
         'filepath' => pathinfo($value->url, PATHINFO_FILENAME)
       );
     }
-
-    $s3 = new video_amazon_s3;
-    if (variable_get('amazon_s3_private', FALSE))
-      $video->filepath = video_s3_get_authenticated_url($video->filename);
-    else
-      $video->filepath = $video->filepath;
 
     return $video;
   }
