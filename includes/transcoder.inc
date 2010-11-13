@@ -62,7 +62,7 @@ class video_transcoder {
   }
 
   public function convert_video(&$video) {
-    module_load_include('inc', 'video', '/includes/video_preset');
+    module_load_include('inc', 'video', '/includes/preset');
     $video_preset = new video_preset();
     $presets = $video_preset->properties();
     $video->presets = $presets;
@@ -167,7 +167,7 @@ class video_transcoder {
     return $this->transcoder->load_job_queue();
   }
 
-  public function load_completed_job($video) {
+  public function load_completed_job(&$video) {
     return $this->transcoder->load_completed_job($video);
   }
 
@@ -185,7 +185,7 @@ interface transcoder_interface {
 
   public function load_job_queue();
 
-  public function load_completed_job($video);
+  public function load_completed_job(&$video);
 
   public function change_status($vid, $status);
 

@@ -35,6 +35,7 @@ class video_helper {
     $video->filepath = $element['#item']['filepath'];
     $video->url = file_create_url($element['#item']['filepath']);
     $video->extension = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
+    $video->player = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
     $video->width = trim($dimensions[0]);
     $video->height = trim($dimensions[1]);
     $video->player_width = trim($player_dimensions[0]);
@@ -49,13 +50,7 @@ class video_helper {
         && !$element['#item']['data']['bypass_autoconversion']) {
       module_load_include('inc', 'video', '/includes/conversion');
       $conversion = new video_conversion;
-      $converted = $conversion->load_completed_job($video);
-      echo '<pre>';
-      print_r($converted);
-      exit;
-      $video->filepath = $converted->filepath;
-      $video->url = (!valid_url($converted->filepath)) ? file_create_url($converted->filepath) : $converted->filepath;
-      $video->extension = pathinfo($converted->filepath, PATHINFO_EXTENSION);
+      $conversion->load_completed_job($video);
     }
 
     // Let othere module to load the video files by referance

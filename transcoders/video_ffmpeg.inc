@@ -442,7 +442,7 @@ class video_ffmpeg implements transcoder_interface {
    * @param <type> $video
    * @return <type>
    */
-  public function load_completed_job($video) {
+  public function load_completed_job(&$video) {
     $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
     return db_fetch_object($result);
   }

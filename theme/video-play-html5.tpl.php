@@ -14,7 +14,8 @@
 
 <video width="<?= $video->player_width; ?>" height="<?= $video->player_height; ?>" controls>
   <!-- MP4 must be first for iPad! -->
-  <source src="<?= $video->url; ?>" type="video/mp4" /><!-- WebKit video    -->
-  <source src="<?= $video->url; ?>" type="video/ogg" /><!-- Firefox / Opera -->
+  <?php foreach ($video->files as $filetype => $values) : ?>
+    <source src="<?php echo $values['url']; ?>" type="<?php echo file_get_mimetype($values['filepath']) ?>" /><!-- WebKit video    -->
+   <?php endforeach; ?>
   <!-- fallback to Flash: -->
 </video>

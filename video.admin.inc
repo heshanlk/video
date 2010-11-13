@@ -39,7 +39,7 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
  * @return <type>
  */
 function video_preset_admin_settings() {
-  module_load_include('inc', 'video', '/includes/video_preset');
+  module_load_include('inc', 'video', '/includes/preset');
   $preset = new video_preset();
   $form = $preset->admin_settings();
   return system_settings_form($form);

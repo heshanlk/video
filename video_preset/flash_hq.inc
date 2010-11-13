@@ -10,11 +10,6 @@ class flash_hq implements video_preset_interface {
 
   protected $name = 'Flash HQ Video';
   protected $value = 'flash_hq';
-  protected $properties = array(
-    '!audiobitrate' => '',
-    '!size' => '',
-    '!videobitrate' => '',
-  );
   protected $width;
   protected $height;
   protected $video_ext = 'flv';

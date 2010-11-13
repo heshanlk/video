@@ -749,6 +749,7 @@ function video_video_extensions() {
     'mpeg' => 'video_play_windowsmedia',
     'ogg' => 'video_play_theora',
     'ogv' => 'video_play_theora',
+    'html5' => 'video_play_html5',
   );
   return $extensions;
 }
@@ -799,7 +800,7 @@ function video_get_player($element) {
   $video = $video_helper->video_object($element);
   // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
-  $theme_function = variable_get('video_extension_' . $video->extension, $defaults[$video->extension]);
+  $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
   // Lets do some special handling for our flv files to accomdate multiple players.
   if ($theme_function == 'video_play_flv') {
     return theme('video_flv', $video, $node);
