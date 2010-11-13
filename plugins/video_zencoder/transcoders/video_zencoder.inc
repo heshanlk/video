@@ -117,14 +117,14 @@ class video_zencoder implements transcoder_interface {
         $video->jobid = $encoding_job->id;
         $outputs = new stdClass();
 //        print_r($encoding_job->outputs);
-        foreach($encoding_job->outputs as $output){
+        foreach ($encoding_job->outputs as $output) {
           $outputs->{$output->id}->id = $output->id;
           $outputs->{$output->id}->label = $output->label;
           $outputs->{$output->id}->url = $output->url;
           $outputs->{$output->id}->state = $output->state;
           $outputs->{$output->id}->error_message = $output->error_message;
           $outputs->{$output->id}->error_link = $output->error_link;
-        } 
+        }
         $video->data = serialize($outputs);
         // write output values to the table
         if ($this->update($video)) {
@@ -328,22 +328,14 @@ class video_zencoder implements transcoder_interface {
     module_load_include('inc', 'video_s3', '/includes/amazon_s3');
     $video = db_fetch_object(db_query('SELECT * FROM {video_zencoder} WHERE fid = %d', $video->fid));
     $data = unserialize($video->data);
-    echo '<pre>';
-    print_r($data);
-    foreach ($data as $data_values) {
-      foreach((array)$data_values as $item){
-        print_r($item);
-        echo 'oki';
-        echo '<br/>';
-      }
+    foreach ($data as $value) {
       $video->converted[] = array(
-        'url' => $item['url'],
-        'extension' => pathinfo($item->url, PATHINFO_EXTENSION),
-        'filepath' => pathinfo($item->url, PATHINFO_FILENAME)
+        'url' => $value->url,
+        'extension' => pathinfo($value->url, PATHINFO_EXTENSION),
+        'filepath' => pathinfo($value->url, PATHINFO_FILENAME)
       );
     }
 
-    exit;
     $s3 = new video_amazon_s3;
     if (variable_get('amazon_s3_private', FALSE))
       $video->filepath = video_s3_get_authenticated_url($video->filename);
