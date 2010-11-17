@@ -61,7 +61,7 @@ class video_zencoder_api {
 //    if(!empty($notify_url))
 //    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
     $url = $base_url . '/postback/jobs';
-//    $url = 'http://123.231.60.233/postback/jobs';
+//    $url = 'http://175.157.80.94/postback/jobs';
     $notifications[] = array('format' => 'json', 'url' => $url);
 
     //get the presets

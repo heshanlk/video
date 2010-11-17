@@ -100,7 +100,7 @@ class video_zencoder implements transcoder_interface {
     // If we have a video lets go ahead and send it.
     if (is_object($video_s3)) {
       // This will update our current video status to active.
-//      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
       // bucket name
       $bucket = variable_get('amazon_s3_bucket', '');
       $ssl = variable_get('amazon_s3_ssl', FALSE);

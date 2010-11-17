@@ -12,7 +12,7 @@
  */
 ?>
 
-<video width="<?= $video->player_width; ?>" height="<?= $video->player_height; ?>" controls>
+<video width="<?= $video->player_width; ?>" height="<?= $video->player_height; ?>" controls poster="<?php print $video->thumbnail->url; ?>">
   <!-- MP4 must be first for iPad! -->
   <?php foreach ($video->files as $filetype => $values) : ?>
     <source src="<?php echo $values['url']; ?>" type="<?php echo file_get_mimetype($values['filepath']) ?>" /><!-- WebKit video    -->
