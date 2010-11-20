@@ -152,13 +152,22 @@ function theme_video_flv($video, $node) {
     );
     $themed_output = swf($video->url, $options);
   } elseif ($video->flash_player == 'flowplayer') {
-    $options = array(
-      'clip' => array(
-        'url' => urlencode($video->url),
-        'autoPlay' => $video->autoplay,
-        'autoBuffering' => $video->autobuffering,
-      ),
-    );
+    // kjh: use a playlist to display the thumbnail if not auto playing
+    if (!$video->autoplay && $video->thumbnail->url) {
+      $options = array(
+        'playlist' => array($video->thumbnail->url,
+          array('url' => urlencode($video->url),
+            'autoPlay' => $video->autoplay,
+            'autoBuffering' => $video->autobuffering,
+          ),),);
+    } else {
+      $options = array(
+        'clip' => array('url' => urlencode($video->url),
+          'autoPlay' => $video->autoplay,
+          'autoBuffering' => $video->autobuffering,
+        ),);
+    }
+
     $themed_output = theme(
             'flowplayer',
             $options,
