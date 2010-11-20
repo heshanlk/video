@@ -118,7 +118,7 @@ function video_update_6406() {
  */
 function video_update_6407() {
   $ret = array();
-  // drop un wanted fields in video zencoder
+  // drop un wanted fields in video files
   db_drop_field($ret, 'video_files', 'filesize');
   db_drop_field($ret, 'video_files', 'dimensions');
   db_drop_field($ret, 'video_files', 'filename');
