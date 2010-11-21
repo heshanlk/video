@@ -67,6 +67,9 @@ class html5_mp4 implements video_preset_interface {
       'skip_audio' => '',
       'start_clip' => '',
       'clip_length' => '',
+      'command' => array(
+        'HandBrakeCLI --preset "iPhone & iPod Touch" --vb !videobitrate --width !width --two-pass --turbo --optimize --input !videofile --output !convertfile'
+      )
     );
     return $properties;
   }

@@ -11,7 +11,7 @@
 class video_ffmpeg implements transcoder_interface {
 
   // Naming for our radio options.  Makes it easy to extend our transcoders.
-  private $name = 'FFmpeg';
+  private $name = 'Locally Installed Transcoders (FFMPEG/Handbreke/Mcoder)';
   private $value = 'video_ffmpeg';
   protected $params = array();
   protected $audio_bitrate = 64;
@@ -39,7 +39,8 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function run_command($options) {
-    $command = $this->nice . ' ' . $this->params['cmd_path'] . ' ' . $options . '  2>&1';
+//    $command = $this->nice . ' ' . $this->params['cmd_path'] . ' ' . $options . '  2>&1';
+    $command = $options . '  2>&1';
     watchdog('video_ffmpeg', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
     ob_start();
     passthru($command, $command_return);
@@ -147,10 +148,11 @@ class video_ffmpeg implements transcoder_interface {
           $ffmpeg_output = $converted;
         }
         // Setup our default command to be run.
-        $command = strtr($this->params['command'], array(
+        $command = strtr($preset['command'], array(
               '!videofile' => '"' . $video->filepath . '"',
               '!audiobitrate' => $preset['audio_bitrate'],
-              '!size' => $dimensions,
+              '!width' => $preset['width'],
+              '!height' => $preset['height'],
               '!videobitrate' => $preset['video_bitrate'],
               '!convertfile' => '"' . $ffmpeg_output . '"',
             ));

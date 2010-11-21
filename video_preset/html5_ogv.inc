@@ -67,6 +67,9 @@ class html5_ogv implements video_preset_interface {
       'skip_audio' => '',
       'start_clip' => '',
       'clip_length' => '',
+      'command' => array(
+        'ffmpeg2theora --videobitrate !videobitrate --max_size !widthx!height --output !convertfile !videofile'
+      )
     );
     return $properties;
   }
