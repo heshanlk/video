@@ -3,14 +3,14 @@
 /*
  * @file
  * Theme file to handle divx output.
- * 
+ *
  * Variables passed.
  * $video is the video object.
  * $node is the node object.
  *
  * http://labs.divx.com/Webplayer
  * http://labs.divx.com/WebPlayerCodeGenerator
- * 
+ *
  */
 ?>
 
