@@ -11,7 +11,7 @@
  */
 ?> 
 <applet=code="com.fluendo.player.Cortado.class" archive="<?php print $video->theora_player; ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">
-  <param name="url" value="<?php print $video->url; ?>" />
+  <param name="url" value="<?php print $video->files->{$video->player}->url; ?>" />
   <param name="local" value="false" />
   <param name="mode" value="zero" />
   <param name="keepaspect" value="true" />

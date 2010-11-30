@@ -95,7 +95,7 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
   drupal_add_js($settings, 'setting');
   $image = theme('video_image', $video->thumbnail, $video->thumbnail->alt, $video->thumbnail->title, '', TRUE, $imagecache);
   $class = 'video-box video-' . $element['#field_name'] . '{width:\'' . $video->player_width . 'px\', height:\'' . $video->player_height . 'px\', player:\'' . $player . '\'}';
-  return l($image, $video->url, array('attributes' => array('class' => $class), 'html' => TRUE));
+  return l($image, $video->files->{$video->player}->url, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
 /*
@@ -120,7 +120,7 @@ function theme_video_formatter_video_media_js($element) {
   $video_helper = new video_helper;
   $video = $video_helper->video_object($element);
   //lets output the link to be overtaken by jmedia
-  $link = l($video->filename, $video->url, array('attributes' => array('class' => 'jmedia {width: ' . $video->player_width . ', height: ' . $video->player_height . ', autoplay: ' . $video->autoplay . '}')));
+  $link = l($video->filename, $video->files->{$video->player}->url, array('attributes' => array('class' => 'jmedia {width: ' . $video->player_width . ', height: ' . $video->player_height . ', autoplay: ' . $video->autoplay . '}')));
   return $link;
 }
 
@@ -150,19 +150,19 @@ function theme_video_flv($video, $node) {
         'image' => $video->thumbnail->swfthumb,
       ),
     );
-    $themed_output = swf($video->url, $options);
+    $themed_output = swf($video->files->{$video->player}->url, $options);
   } elseif ($video->flash_player == 'flowplayer') {
     // kjh: use a playlist to display the thumbnail if not auto playing
     if (!$video->autoplay && $video->thumbnail->url) {
       $options = array(
         'playlist' => array($video->thumbnail->url,
-          array('url' => urlencode($video->url),
+          array('url' => urlencode($video->files->{$video->player}->url),
             'autoPlay' => $video->autoplay,
             'autoBuffering' => $video->autobuffering,
           ),),);
     } else {
       $options = array(
-        'clip' => array('url' => urlencode($video->url),
+        'clip' => array('url' => urlencode($video->files->{$video->player}->url),
           'autoPlay' => $video->autoplay,
           'autoBuffering' => $video->autobuffering,
         ),);

@@ -32,9 +32,11 @@ class video_helper {
     $video = new stdClass();
     $video->fid = $element['#item']['fid'];
     $video->original = $element['#item'];
-    $video->filepath = $element['#item']['filepath'];
-    $video->url = file_create_url($element['#item']['filepath']);
-    $video->extension = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
+    $extension = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
+    $video->files->{$extension}->filename = pathinfo($element['#item']['filepath'], PATHINFO_FILENAME) . '.' . $extension;
+    $video->files->{$extension}->filepath = $element['#item']['filepath'];
+    $video->files->{$extension}->url = file_create_url($element['#item']['filepath']);
+    $video->files->{$extension}->extension = $extension;
     $video->player = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
     $video->width = trim($dimensions[0]);
     $video->height = trim($dimensions[1]);
@@ -48,14 +50,18 @@ class video_helper {
     // lets find out if we have transcoded this file and update our paths.
     if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion']
         && !$element['#item']['data']['bypass_autoconversion']) {
+      // discard all existing file data
+      $video->files = new stdClass();
       module_load_include('inc', 'video', '/includes/conversion');
       $conversion = new video_conversion;
       $conversion->load_completed_job($video);
     }
-
+//    echo '<pre>';
+//    print_r($video);
+//    die();
     // Let othere module to load the video files by referance
     // Lets find out if we have pushed this file to the cdn if enabled.
-    // @TODO : add correct filesystem loadet to this
+    // @TODO : add correct filesystem load to this
     $filesystem = variable_get('vid_filesystem', 'drupal');
     if ($filesystem != 'drupal' && !module_exists('video_zencoder')) {
       module_load_include('inc', 'video', '/includes/filesystem');
@@ -65,7 +71,7 @@ class video_helper {
 
 
     // Moved to last to recheck incase we changed our extension above.
-    $video->flash_player = variable_get('video_extension_' . $video->extension . '_flash_player', '');
+    $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');
 
     // Return our object
     return $video;

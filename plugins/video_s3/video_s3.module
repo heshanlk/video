@@ -114,9 +114,9 @@ function video_s3_video_load(&$video) {
     $video->filepath = $amazon->filepath;
 //    $video->url = $amazon->filepath;
     if (variable_get('amazon_s3_private', FALSE))
-      $video->url = video_s3_get_authenticated_url($amazon->filename);
+      $video->files->{$video->player}->url = video_s3_get_authenticated_url($amazon->filename);
     else
-      $video->url = $amazon->filepath;
+      $video->files->{$video->player}->url = $amazon->filepath;
 
     $video->extension = pathinfo($amazon->filepath, PATHINFO_EXTENSION);
   }

@@ -433,12 +433,10 @@ class video_ffmpeg implements transcoder_interface {
     $data = unserialize($video_row->data);
     foreach ($data as $value) {
       $extension = pathinfo($value->url, PATHINFO_EXTENSION);
-      $video->files[$extension] = array(
-        'url' => file_create_url($value->url),
-        'extension' => $extension,
-        'filename' => pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension,
-        'filepath' => $value->url
-      );
+      $video->files->{$extension}->filename = pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension;
+      $video->files->{$extension}->filepath = $value->url;
+      $video->files->{$extension}->url = file_create_url($value->url);
+      $video->files->{$extension}->extension = $extension;
       $video->player = strtolower($extension);
     }
     return $video;
