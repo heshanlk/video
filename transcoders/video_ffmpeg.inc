@@ -350,24 +350,8 @@ class video_ffmpeg implements transcoder_interface {
       '#title' => t('Path to qt-faststart'),
       '#default_value' => variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart'),
     );
-    $form['autoconv']['advanced'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Advanced Settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE
-    );
-    $form['autoconv']['advanced']['video_ffmpeg_helper_auto_cvr_options'] = array(
-      '#type' => 'textarea',
-      '#title' => t('Video converter options'),
-      '#description' => t('Provide the ffmpeg options to configure the video conversion.  Available argument values are: ') . '<ul>' .
-      '<li>' . t('!videofile (the video file to convert)') .
-      '<li>' . t('!convertfile (a newly created file to store the converted file)') .
-      '<li>' . t('!size (video resolution of the converted file)') .
-      '</ul>' . t('For further informations refer to the !ffmpegdoc', array('!ffmpegdoc' => l(t('Official FFMpeg documentation.'), 'http://ffmpeg.mplayerhq.hu/ffmpeg-doc.html', array('fragment' => TRUE)))),
-      '#default_value' => variable_get('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile'),
-    );
 
-    $form['autoconv']['advanced']['video_ffmpeg_pad_method'] = array(
+    $form['autoconv']['video_ffmpeg_pad_method'] = array(
       '#type' => 'radios',
       '#title' => t('FFMPeg Padding method'),
       '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
@@ -446,7 +430,18 @@ class video_ffmpeg implements transcoder_interface {
    */
   public function load_completed_job(&$video) {
     $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
-    return db_fetch_object($result);
+    $data = unserialize($video_row->data);
+    foreach ($data as $value) {
+      $extension = pathinfo($value->url, PATHINFO_EXTENSION);
+      $video->files[$extension] = array(
+        'url' => file_create_url($value->url),
+        'extension' => $extension,
+        'filename' => pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension,
+        'filepath' => $value->url
+      );
+      $video->player = strtolower($extension);
+    }
+    return $video;
   }
 
   /**

@@ -326,17 +326,17 @@ class video_zencoder implements transcoder_interface {
    */
   public function load_completed_job(&$video) {
     module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-    $video_row = db_fetch_object(db_query('SELECT * FROM {video_zencoder} WHERE fid = %d', $video->fid));
+    $video_row = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE fid = %d', $video->fid));
     $data = unserialize($video_row->data);
     foreach ($data as $value) {
       $extension = pathinfo($value->url, PATHINFO_EXTENSION);
       $video->files[$extension] = array(
         'url' => (!variable_get('amazon_s3_private', FALSE)) ? $value->url : video_s3_get_authenticated_url($video->filename),
         'extension' => $extension,
-        'filepath' => pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension
+        'filename' => pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension,
+        'filepath' => $value->url
       );
-      // enable HTML5 video player
-      $video->player = 'html5';
+      $video->player = strtolower($extension);
     }
     return $video;
   }

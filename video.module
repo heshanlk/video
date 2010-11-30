@@ -464,8 +464,7 @@ function video_web_extensions($ext) {
     'swf', // swf player
     'dir', 'dcr', // dcr player
     'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
-    'ogg',
-    'ogv', // ogg/ogv theora
+    'ogg', 'ogv', 'webm' // ogg/ogv theora
   );
   if (count(array_diff($extensions, $web_extensions))) {
     return FALSE;
@@ -749,7 +748,7 @@ function video_video_extensions() {
     'mpeg' => 'video_play_windowsmedia',
     'ogg' => 'video_play_theora',
     'ogv' => 'video_play_theora',
-    'html5' => 'video_play_html5',
+    'webm' => 'video_play_theora'
   );
   return $extensions;
 }

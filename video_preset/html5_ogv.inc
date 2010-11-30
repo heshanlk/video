@@ -28,7 +28,7 @@ class html5_ogv implements video_preset_interface {
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function get_help() {
-    return t('<b>HTML5 Theora Video</b><br> Dimention : 640*340<br>Video Codec : AAC<br> Audio Codec : MP3', array());
+    return t('<b>HTML5 Theora Video</b>', array());
   }
 
   /**
