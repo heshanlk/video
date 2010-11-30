@@ -287,7 +287,7 @@ class video_zencoder implements transcoder_interface {
   }
 
   public function create_job($video) {
-    return db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
+    return db_query("INSERT INTO {video_zencoder} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
   }
 
   public function update_job($video) {
