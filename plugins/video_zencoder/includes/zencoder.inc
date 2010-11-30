@@ -22,7 +22,7 @@ class video_zencoder_api {
   private $bucket;
 
   public function __construct() {
-    $this->access_key = variable_get('zencoder_api_key', '');
+    $this->access_key = variable_get('video_zencoder_api_key', '');
     $this->limit = variable_get('amazon_s3_limit', 5);
     $this->bucket = variable_get('amazon_s3_bucket', '');
   }
@@ -33,12 +33,12 @@ class video_zencoder_api {
   public function create($file) {
     global $base_url;
     // API Key
-    $api_key = variable_get('zencoder_api_key', '');
+    $api_key = variable_get('video_zencoder_api_key', '');
     // File details
     $filename = $file->filename;
     // Get varialbes
     $bucket = $this->bucket;
-    $thumb_no = variable_get('no_of_video_thumbs', 5);
+    $thumb_no = variable_get('video_thumbs', 5);
 
     $thumb_size = variable_get('video_thumbs_size', '160x120');
     $thumb_base = $baseurl;
@@ -226,7 +226,7 @@ class video_zencoder_api {
 
     if ($request->successful) {
       $results = $request->results;
-      variable_set('zencoder_api_key', $results['api_key']);
+      variable_set('video_zencoder_api_key', $results['api_key']);
       $message = drupal_mail('video_zencoder', 'video_zencoder', $user->email, language_default(), $results);
       if (!$message['result']) {
         drupal_set_message(t('Unable to send e-mail!. Your Zencoder Details are as below.<br/> <b>API Key</b> : !api_key<br/> <b>Password</b> : !password<br/>', array('!api_key' => $results['api_key'], '!password' => $results['password'])), 'status');
@@ -236,7 +236,7 @@ class video_zencoder_api {
       }
 //      return $request->results;
       return true;
-//      variable_set('zencoder_api_key', '');
+//      variable_set('video_zencoder_api_key', '');
     } else {
       $errors = '';
       foreach ($request->errors as $error) {

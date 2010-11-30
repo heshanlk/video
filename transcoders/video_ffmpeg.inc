@@ -68,7 +68,7 @@ class video_ffmpeg implements transcoder_interface {
     }
 
     // Total thumbs to generate
-    $total_thumbs = variable_get('no_of_video_thumbs', 5);
+    $total_thumbs = variable_get('video_thumbs', 5);
     $videofile = escapeshellarg($video['filepath']);
     //get the playtime from the current transcoder
     $duration = $this->get_playtime($video['filepath']);
@@ -295,11 +295,11 @@ class video_ffmpeg implements transcoder_interface {
       '#description' => t('Absolute path to ffmpeg.'),
       '#default_value' => variable_get('video_transcoder_path', '/usr/bin/ffmpeg'),
     );
-    $form['no_of_video_thumbs'] = array(
+    $form['video_thumbs'] = array(
       '#type' => 'textfield',
       '#title' => t('Number of thumbnails'),
       '#description' => t('Number of thumbnails to display from video.'),
-      '#default_value' => variable_get('no_of_video_thumbs', 5),
+      '#default_value' => variable_get('video_thumbs', 5),
     );
     $form['video_ffmpeg_nice_enable'] = array(
       '#type' => 'checkbox',

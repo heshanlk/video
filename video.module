@@ -311,7 +311,7 @@ function video_thumb_process(&$element) {
       module_load_include('inc', 'video', '/includes/transcoder');
       $transcoder = new video_transcoder;
       if ($thumbs = $transcoder->generate_thumbnails($file)) {
-        $rnd_img = rand(0, variable_get('no_of_video_thumbs', 5) - 1);
+        $rnd_img = rand(0, variable_get('video_thumbs', 5) - 1);
         $default_thumb = $thumbs[$rnd_img]->filepath;
 
         if (is_array($thumbs)) {

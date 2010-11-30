@@ -90,7 +90,15 @@ function video_install() {
  */
 function video_uninstall() {
   drupal_uninstall_schema('video');
-  //@todo Need to drop all variables used in this module here.
+// Delete all variables which begin with the namespaced "video_*".
+  $video_vars = array();
+  $query = "SELECT name FROM {variable} WHERE name LIKE '%video_%'";
+  $video_vars = db_query($query);
+  while ($result = db_fetch_array($video_vars)) {
+    if (strpos($result['name'], 'video') === 0) {
+      variable_del($result['name']);
+    }
+  }
 }
 
 /**
@@ -113,7 +121,7 @@ function video_update_6405() {
  */
 function video_update_6406() {
   drupal_set_message('The system has reset your thumbnail and ffmpeg command settings to their original state.  If you made adjustments to these commands, you will have to reset them up.');
-  //lets reset our ffmpeg system command variables.
+//lets reset our ffmpeg system command variables.
   variable_set('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
   variable_set('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile');
   return array();
@@ -124,7 +132,7 @@ function video_update_6406() {
  */
 function video_update_6407() {
   $ret = array();
-  // drop un wanted fields in video files
+// drop un wanted fields in video files
   db_drop_field($ret, 'video_files', 'filesize');
   db_drop_field($ret, 'video_files', 'dimensions');
   db_drop_field($ret, 'video_files', 'filename');
