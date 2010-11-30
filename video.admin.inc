@@ -151,7 +151,7 @@ function video_cron_admin_settings() {
   $form['video_cron'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use Drupals built in cron.'),
-    '#default_value' => variable_get('video_cron', FALSE),
+    '#default_value' => variable_get('video_cron', TRUE),
     '#description' => t('If you would like to use Drupals built in cron hook, check this box.  Please be warned that transcoding videos is very resource intensive.  If you use poor mans cron, I highly discourage this option.  I also suggest you setup your cron to call this function through CLI instead of WGET.'),
   );
   $form['video_ffmpeg_instances'] = array(

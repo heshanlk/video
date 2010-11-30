@@ -259,7 +259,7 @@ function video_field_formatter_info() {
  */
 
 function video_cron() {
-  if (variable_get('video_cron', FALSE)) {
+  if (variable_get('video_cron', TRUE)) {
     module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
     $video_conversion->run_queue();

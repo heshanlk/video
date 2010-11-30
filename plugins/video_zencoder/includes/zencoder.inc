@@ -44,7 +44,7 @@ class video_zencoder_api {
     $thumb_base = $baseurl;
     $thumb_prefix = $filename;
     // dimentions
-    $dimentions = explode('x', $video->dimentions);
+    $dimentions = explode('x', $file->dimentions);
 
     $notify_url = variable_get('zc_notify_url', '');
     $notify_email = variable_get('zc_notify_email', '');
@@ -61,7 +61,7 @@ class video_zencoder_api {
 //    if(!empty($notify_url))
 //    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
     $url = $base_url . '/postback/jobs';
-//    $url = 'http://175.157.80.94/postback/jobs';
+//    $url = 'http://123.231.41.190/postback/jobs';
     $notifications[] = array('format' => 'json', 'url' => $url);
 
     //get the presets
