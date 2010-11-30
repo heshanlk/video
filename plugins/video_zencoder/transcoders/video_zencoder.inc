@@ -106,6 +106,7 @@ class video_zencoder implements transcoder_interface {
       $ssl = variable_get('amazon_s3_ssl', FALSE);
 
       $filepath = $video_s3->filepath;
+      $video_s3->dimensions = $video->dimensions;
       $filename = str_replace(' ', '_', $video_s3->filename);
       $video_s3->presets = $video->presets;
       module_load_include('inc', 'video_zencoder', '/includes/zencoder');
@@ -216,8 +217,21 @@ class video_zencoder implements transcoder_interface {
         '#type' => 'textfield',
         '#title' => t('Zencoder API Key'),
         '#default_value' => variable_get('zencoder_api_key', ''),
-        '#size' => 50,
         '#description' => t('Zencoder API Key.')
+      );
+      $form['zencoder_info']['no_of_video_thumbs'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Number of thumbnails'),
+        '#description' => t('Number of thumbnails to display from video.'),
+        '#default_value' => variable_get('no_of_video_thumbs', 5),
+        '#size' =>5
+      );
+      $form['zencoder_info']['video_thumbs_size'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Dimention of thumbnails'),
+        '#description' => t('Size of thumbnails to extract from video.'),
+        '#default_value' => variable_get('video_thumbs_size', '160x120'),
+        '#size' =>10
       );
     }
     $form['video_zencoder_end'] = array(
@@ -273,7 +287,7 @@ class video_zencoder implements transcoder_interface {
   }
 
   public function create_job($video) {
-    return db_query("INSERT INTO {video_zencoder} (fid, status) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING);
+    return db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
   }
 
   public function update_job($video) {
@@ -298,7 +312,7 @@ class video_zencoder implements transcoder_interface {
 
   public function load_job($fid) {
     $job = null;
-    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
+    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
     $job = db_fetch_object($result);
     if (!empty($job))
       return $job;
@@ -310,7 +324,7 @@ class video_zencoder implements transcoder_interface {
     // load jobs with status as pending and active both
     $total_videos = variable_get('video_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
+    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
             VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
 
     while ($row = db_fetch_object($result)) {

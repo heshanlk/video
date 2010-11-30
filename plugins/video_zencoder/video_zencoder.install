@@ -48,6 +48,12 @@ function video_zencoder_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'dimensions' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The dimensions of the video.'),
+      ),
       'completed' => array(
         'description' => t('Time of successful completion to amazon.'),
         'type' => 'int',

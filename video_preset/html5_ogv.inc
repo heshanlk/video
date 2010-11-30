@@ -42,8 +42,6 @@ class html5_ogv implements video_preset_interface {
   public function get_properties() {
     $properties = array(
       'extension' => 'ogv',
-      'width' => '640',
-      'height' => '340',
       'quality' => '',
       'speed' => '',
       'upscale' => '',

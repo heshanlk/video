@@ -42,8 +42,6 @@ class html5_webm implements video_preset_interface {
   public function get_properties() {
     $properties = array(
       'extension' => 'webm',
-      'width' => '640',
-      'height' => '340',
       'quality' => '',
       'speed' => '',
       'upscale' => '',

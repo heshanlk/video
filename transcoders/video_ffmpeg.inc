@@ -140,8 +140,8 @@ class video_ffmpeg implements transcoder_interface {
         $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . '.' . $preset['extension'], $converted);
         //call our transcoder
 //        $command_output = $this->convert_video($video, $converted);
-        $video->dimensions = $preset['width'] . 'x' . $preset['height'];
         $dimensions = $this->dimensions($video);
+        $dimention = explode('x', $dimensions);
         if ($this->params['enable_faststart'] && in_array($preset['extension'], array('mov', 'mp4'))) {
           $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
         } else {
@@ -151,8 +151,8 @@ class video_ffmpeg implements transcoder_interface {
         $command = strtr($preset['command'], array(
               '!videofile' => '"' . $video->filepath . '"',
               '!audiobitrate' => $preset['audio_bitrate'],
-              '!width' => $preset['width'],
-              '!height' => $preset['height'],
+              '!width' => $dimention[0],
+              '!height' => $dimention[1],
               '!videobitrate' => $preset['video_bitrate'],
               '!convertfile' => '"' . $ffmpeg_output . '"',
             ));
@@ -377,7 +377,7 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function create_job($video) {
-    return db_query("INSERT INTO {video_files} (fid, status) VALUES (%d, %d)", $video['fid'], VIDEO_RENDERING_PENDING);
+    return db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
   }
 
   public function update_job($video) {
@@ -403,7 +403,7 @@ class video_ffmpeg implements transcoder_interface {
 
   public function load_job($fid) {
     $job = null;
-    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
+    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
     $job = db_fetch_object($result);
     if (!empty($job))
       return $job;
@@ -414,7 +414,7 @@ class video_ffmpeg implements transcoder_interface {
   public function load_job_queue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
+    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
             VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
 
     while ($row = db_fetch_object($result)) {

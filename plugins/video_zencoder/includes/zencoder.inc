@@ -36,15 +36,15 @@ class video_zencoder_api {
     $api_key = variable_get('zencoder_api_key', '');
     // File details
     $filename = $file->filename;
-    //file type
-    $filetype = variable_get('video_zencoder_ext', 'flv');
     // Get varialbes
     $bucket = $this->bucket;
     $thumb_no = variable_get('no_of_video_thumbs', 5);
-    // TODO :
-    $thumb_size = '160x120';
+
+    $thumb_size = variable_get('video_thumbs_size', '160x120');
     $thumb_base = $baseurl;
     $thumb_prefix = $filename;
+    // dimentions
+    $dimentions = explode('x', $video->dimentions);
 
     $notify_url = variable_get('zc_notify_url', '');
     $notify_email = variable_get('zc_notify_email', '');
@@ -73,8 +73,8 @@ class video_zencoder_api {
     foreach ($presets as $name => $preset) {
       $zc_output = array();
       $lable = 'VIDEO_' . $name . '_' . $file->fid;
-      $width = $preset['width'];
-      $height = $preset['height'];
+      $width = $dimentions[0];
+      $height = $dimentions[1];
       $quality = $preset['quality'];
       $speed = $preset['speed'];
       $upscale = $preset['upscale'];

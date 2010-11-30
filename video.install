@@ -44,6 +44,12 @@ function video_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'dimensions' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The dimensions of the video.'),
+      ),
       'started' => array(
         'description' => t('Started transcodings'),
         'type' => 'int',
