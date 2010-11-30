@@ -240,6 +240,11 @@ class video_zencoder_api {
     } else {
       $errors = '';
       foreach ($request->errors as $error) {
+        if($error == 'Email has already been taken'){
+          drupal_set_message(t('Your account already exists on Zencoder. So !login to here and enter API key below', array('!login' => l(t('login'), 'https://app.zencoder.com/session/new'))));
+          variable_set('video_zencoder_api_key', 'Please enter your API Key');
+          return TRUE;
+        }
         $errors .= $error;
       }
       return $errors;

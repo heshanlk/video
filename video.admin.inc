@@ -54,7 +54,7 @@ function video_general_admin_settings() {
   $form['video_autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Automatically start video on page load'),
-    '#default_value' => variable_get('video_autoplay', TRUE),
+    '#default_value' => variable_get('video_autoplay', FALSE),
     '#description' => t('Start the video when the page and video loads')
   );
   $form['video_autobuffering'] = array(

@@ -216,22 +216,22 @@ class video_zencoder implements transcoder_interface {
       $form['zencoder_info']['video_zencoder_api_key'] = array(
         '#type' => 'textfield',
         '#title' => t('Zencoder API Key'),
-        '#default_value' => variable_get('video_zencoder_api_key', ''),
-        '#description' => t('Zencoder API Key.')
+        '#default_value' => variable_get('video_zencoder_api_key', null),
+        '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add new account.')
       );
       $form['zencoder_info']['video_thumbs'] = array(
         '#type' => 'textfield',
         '#title' => t('Number of thumbnails'),
         '#description' => t('Number of thumbnails to display from video.'),
         '#default_value' => variable_get('video_thumbs', 5),
-        '#size' =>5
+        '#size' => 5
       );
       $form['zencoder_info']['video_thumbs_size'] = array(
         '#type' => 'textfield',
         '#title' => t('Dimention of thumbnails'),
         '#description' => t('Size of thumbnails to extract from video.'),
         '#default_value' => variable_get('video_thumbs_size', '160x120'),
-        '#size' =>10
+        '#size' => 10
       );
     }
     $form['video_zencoder_end'] = array(
@@ -246,7 +246,7 @@ class video_zencoder implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
    */
   public function admin_settings_validate($form, &$form_state) {
-    $zencoder_api = variable_get('video_zencoder_api_key', null);
+    $zencoder_api = isset($form_state['values']['video_zencoder_api_key']) ? $form_state['values']['video_zencoder_api_key'] : NULL;
     if (isset($zencoder_api) && !empty($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder')
       return;
 
