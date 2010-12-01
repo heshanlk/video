@@ -165,10 +165,6 @@ class video_ffmpeg implements transcoder_interface {
 //          die();
           // Process our video
 //      $command_output = $this->run_command($command);
-          echo $command . "\n";
-          echo "\n";
-          echo "\n";
-          echo "\n";
           $command_output = $this->run_command($command);
         }
 
