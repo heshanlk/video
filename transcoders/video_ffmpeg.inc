@@ -81,7 +81,7 @@ class video_ffmpeg implements transcoder_interface {
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {
         //setup the command to be passed to the transcoder.
-        $options = t($this->params['thumb_command'], array('!videofile' => $videofile, '!seek' => $seek, '!thumbfile' => $thumbfile));
+        $options = $this->params['cmd_path'] . ' ' . t($this->params['thumb_command'], array('!videofile' => $videofile, '!seek' => $seek, '!thumbfile' => $thumbfile));
         // Generate the thumbnail from the video.
         $command_output = $this->run_command($options);
         if (!file_exists($thumbfile)) {
@@ -109,13 +109,15 @@ class video_ffmpeg implements transcoder_interface {
 
   public function convert_video($video) {
     // This will update our current video status to active.
-    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+//    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     // Get the converted file object
     //we are going to move our video to an "original" folder
     //we are going to transcode the video to the "converted" folder
-    $pathinfo = pathinfo($video->filepath);
-    $original = $pathinfo['dirname'] . '/original';
-    $converted = $pathinfo['dirname'] . '/converted';
+//    $pathinfo = pathinfo($video->filepath);
+    // @TODO This about getting the correct path from the filefield if they active it
+    $files = file_create_path();
+    $original = $files . '/videos/original';
+    $converted = $files . '/videos/converted';
 
     if (!field_file_check_directory($original, FILE_CREATE_DIRECTORY)) {
       watchdog('video_transcoder', 'Video conversion failed.  Could not create the directory: ' . $orginal, array(), WATCHDOG_ERROR);
@@ -135,6 +137,8 @@ class video_ffmpeg implements transcoder_interface {
       $presets = $video->presets;
       $converted_files = array();
       foreach ($presets as $name => $preset) {
+        // reset converted file path
+        $converted = $files . '/videos/converted';
         //update our filename after the move to maintain filename uniqueness.
 //        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
         $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . '.' . $preset['extension'], $converted);
@@ -148,17 +152,26 @@ class video_ffmpeg implements transcoder_interface {
           $ffmpeg_output = $converted;
         }
         // Setup our default command to be run.
-        $command = strtr($preset['command'], array(
-              '!videofile' => '"' . $video->filepath . '"',
-              '!audiobitrate' => $preset['audio_bitrate'],
-              '!width' => $dimention[0],
-              '!height' => $dimention[1],
-              '!videobitrate' => $preset['video_bitrate'],
-              '!convertfile' => '"' . $ffmpeg_output . '"',
-            ));
-        // Process our video
+        foreach ($preset['command'] as $command) {
+          $command = strtr($command, array(
+                '!videofile' => '"' . $video->filepath . '"',
+                '!audiobitrate' => $preset['audio_bitrate'],
+                '!width' => $dimention[0],
+                '!height' => $dimention[1],
+                '!videobitrate' => $preset['video_bitrate'],
+                '!convertfile' => '"' . $ffmpeg_output . '"',
+              ));
+//          print_r($preset['command']);
+//          die();
+          // Process our video
 //      $command_output = $this->run_command($command);
-        $command_output = $this->run_command($command);
+          echo $command . "\n";
+          echo "\n";
+          echo "\n";
+          echo "\n";
+          $command_output = $this->run_command($command);
+        }
+
         if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
           // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
           // the command to be execute so we need to fudge the command to run qt-faststart.
@@ -214,7 +227,7 @@ class video_ffmpeg implements transcoder_interface {
 
     $file = escapeshellarg($video);
     // Execute the command
-    $options = ' -i ' . $file;
+    $options = $this->params['cmd_path'] . ' -i ' . $file;
     $command_output = $this->run_command($options);
     return $command_output;
   }
@@ -429,13 +442,13 @@ class video_ffmpeg implements transcoder_interface {
    * @return <type>
    */
   public function load_completed_job(&$video) {
-    $result = db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid);
-    $data = unserialize($video_row->data);
+    $result = db_fetch_object(db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid));
+    $data = unserialize($result->data);
     foreach ($data as $value) {
-      $extension = pathinfo($value->url, PATHINFO_EXTENSION);
-      $video->files->{$extension}->filename = pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension;
-      $video->files->{$extension}->filepath = $value->url;
-      $video->files->{$extension}->url = file_create_url($value->url);
+      $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
+      $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) . '.' . $extension;
+      $video->files->{$extension}->filepath = $value->filepath;
+      $video->files->{$extension}->url = file_create_url($value->filepath);
       $video->files->{$extension}->extension = $extension;
       $video->player = strtolower($extension);
     }
