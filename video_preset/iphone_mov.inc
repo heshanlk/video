@@ -6,10 +6,10 @@
  * Class file used to store metadata on the video.
  *
  */
-class html5_ogv implements video_preset_interface {
+class iphone_mov implements video_preset_interface {
 
-  protected $name = 'HTML5 Theora';
-  protected $value = 'html5_ogv';
+  protected $name = 'iPhone MOV';
+  protected $value = 'iphone_mov';
 
   public function __construct() {
 
@@ -28,7 +28,7 @@ class html5_ogv implements video_preset_interface {
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function get_help() {
-//    return t('<b>HTML5 Theora Video</b>', array());
+//    return t('<b>HTML5 WebM Video</b>', array());
   }
 
   /**
@@ -41,7 +41,7 @@ class html5_ogv implements video_preset_interface {
 
   public function get_properties() {
     $properties = array(
-      'extension' => 'ogv',
+      'extension' => 'mov',
       'quality' => '',
       'speed' => '',
       'upscale' => '',
@@ -66,8 +66,7 @@ class html5_ogv implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        'ffmpeg2theora --videobitrate !videobitrate --max_size !widthx!height --output !convertfile !videofile'
-      )
+        'ffmpeg -i !videofile -f mp4 -vcodec mpeg4 -maxrate 1000k -b 700k -qmin 3 -qmax 5 -bufsize 4096 -g 300 -acodec aac -ab 192 -s 320x240 -aspect 4:3 !convertfile')
     );
     return $properties;
   }

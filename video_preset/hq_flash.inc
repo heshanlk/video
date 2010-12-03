@@ -6,10 +6,10 @@
  * Class file used to store metadata on the video.
  *
  */
-class html5_ogv implements video_preset_interface {
+class hq_flash implements video_preset_interface {
 
-  protected $name = 'HTML5 Theora';
-  protected $value = 'html5_ogv';
+  protected $name = 'Flash';
+  protected $value = 'hq_flash';
 
   public function __construct() {
 
@@ -28,7 +28,7 @@ class html5_ogv implements video_preset_interface {
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function get_help() {
-//    return t('<b>HTML5 Theora Video</b>', array());
+//    return t('<b>High Video</b>', array());
   }
 
   /**
@@ -41,7 +41,7 @@ class html5_ogv implements video_preset_interface {
 
   public function get_properties() {
     $properties = array(
-      'extension' => 'ogv',
+      'extension' => 'flv',
       'quality' => '',
       'speed' => '',
       'upscale' => '',
@@ -66,7 +66,7 @@ class html5_ogv implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        'ffmpeg2theora --videobitrate !videobitrate --max_size !widthx!height --output !convertfile !videofile'
+        'ffmpeg -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile'
       )
     );
     return $properties;
