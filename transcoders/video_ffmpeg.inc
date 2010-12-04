@@ -154,6 +154,7 @@ class video_ffmpeg implements transcoder_interface {
         // Setup our default command to be run.
         foreach ($preset['command'] as $command) {
           $command = strtr($command, array(
+                '!cmd_path' => $this->params['cmd_path'],
                 '!videofile' => '"' . $video->filepath . '"',
                 '!audiobitrate' => $preset['audio_bitrate'],
                 '!width' => $dimention[0],
