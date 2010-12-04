@@ -305,7 +305,7 @@ class video_zencoder implements transcoder_interface {
     if (!$this->load_job($video->fid))
       return;
     //lets get all our videos and unlink them
-    $sql = db_query("SELECT filepath FROM {video_zencoder} WHERE fid=%d", $video->fid);
+    $sql = db_query("SELECT vid FROM {video_zencoder} WHERE fid=%d", $video->fid);
     //we loop here as future development will include multiple video types (HTML 5)
     while ($row = db_fetch_object($sql)) {
       // @TODO : cancel the job to transcode
