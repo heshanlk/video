@@ -8,7 +8,7 @@
  */
 class html5_ogv implements video_preset_interface {
 
-  protected $name = 'HTML5 Theora';
+  protected $name = 'HTML5 Theora(ogv) (ffmpeg2theora)';
   protected $value = 'html5_ogv';
 
   public function __construct() {

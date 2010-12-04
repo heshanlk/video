@@ -66,7 +66,9 @@ class html5_mp4 implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        'HandBrakeCLI --preset "iPhone & iPod Touch" --vb !videobitrate --width !width --two-pass --turbo --optimize --input !videofile --output !convertfile'
+//        'HandBrakeCLI --preset "iPhone & iPod Touch" --vb !videobitrate --width !width --two-pass --turbo --optimize --input !videofile --output !convertfile'
+        '!cmd_path -i !videofile -an -pass 1 -vcodec libx264 -vpre slow_firstpass -b 500k -threads 0 !convertfile',
+        '!cmd_path -i !videofile -acodec libfaac -ab 128k -pass 2 -vcodec libx264 -vpre slow -b 500k -threads 0 !convertfile'
       )
     );
     return $properties;

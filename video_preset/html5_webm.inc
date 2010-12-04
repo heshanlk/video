@@ -66,8 +66,8 @@ class html5_webm implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        'ffmpeg -pass 1 -passlogfile !videofile -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -an -f webm -y NUL',
-        'ffmpeg -pass 2 -passlogfile !videofile -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -acodec libvorbis -ac 2 -y !convertfile'
+        '!cmd_path -pass 1 -passlogfile !videofile -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -an -f webm -y NUL',
+        '!cmd_path -pass 2 -passlogfile !videofile -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -acodec libvorbis -ac 2 -y !convertfile'
       )
     );
     return $properties;

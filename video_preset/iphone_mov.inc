@@ -66,7 +66,7 @@ class iphone_mov implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        'ffmpeg -i !videofile -f mp4 -vcodec mpeg4 -maxrate 1000k -b 700k -qmin 3 -qmax 5 -bufsize 4096 -g 300 -acodec aac -ab 192 -s 320x240 -aspect 4:3 !convertfile')
+        '!cmd_path -i !videofile -f mp4 -vcodec mpeg4 -maxrate 1000k -b 700k -qmin 3 -qmax 5 -bufsize 4096 -g 300 -acodec aac -ab 192 -s 320x240 -aspect 4:3 !convertfile')
     );
     return $properties;
   }

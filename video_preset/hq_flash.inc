@@ -66,7 +66,7 @@ class hq_flash implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        'ffmpeg -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile'
+        '!cmd_path -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile'
       )
     );
     return $properties;
