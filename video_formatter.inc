@@ -173,7 +173,7 @@ function theme_video_flv($video, $node) {
             $options,
             $video->formatter,
             // adding 24px to height #973636
-            array('style' => 'width:' . $video->player_width . 'px;height:' . $video->player_height + 24 . 'px;')
+            array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')
     );
   } else {
     $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
