@@ -1,9 +1,12 @@
 ;$Id$
 
 name = Video
-description = Allows Creation of CCK Video Fields.
-package = "Video"
-dependencies[] = content
-dependencies[] = filefield
-core = 6.x
-version = 6.x-4.x-dev
+description = Implementation of a video field
+package = Video
+core = 7.x
+files[] = video.module
+files[] = video.admin.inc
+files[] = video.drush.inc
+files[] = video.theme.inc
+files[] = video_formatter.inc
+files[] = video_schedular.inc

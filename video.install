@@ -6,7 +6,7 @@
  * Provides installation functions for video.module.
  *
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
- *                              <heshanmw at gmail dot com>
+ * 
  * @todo
  */
 
@@ -15,7 +15,7 @@
  */
 function video_schema() {
   $schema['video_files'] = array(
-    'description' => t('Store video transcoding queue'),
+    'description' => 'Store video transcoding queue',
     'fields' => array(
       'vid' => array(
         'description' => t('Video id'),
@@ -24,21 +24,21 @@ function video_schema() {
         'not null' => TRUE,
       ),
       'fid' => array(
-        'description' => t('Original file id'),
+        'description' => 'Original file id',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
       'nid' => array(
-        'description' => t('Node id'),
+        'description' => 'Node id',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
       'status' => array(
-        'description' => t('Status of the transcoding'),
+        'description' => 'Status of the transcoding',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -48,7 +48,7 @@ function video_schema() {
         'type' => 'varchar',
         'length' => '255',
         'default' => '',
-        'description' => t('The dimensions of the video.'),
+        'description' => 'The dimensions of the video.',
       ),
       'started' => array(
         'description' => t('Started transcodings'),
@@ -57,7 +57,7 @@ function video_schema() {
         'default' => 0,
       ),
       'completed' => array(
-        'description' => t('Transcoding completed'),
+        'description' => 'Transcoding completed',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
@@ -78,18 +78,19 @@ function video_schema() {
   return $schema;
 }
 
+
 /**
  * Implementation of hook_install().
  */
 function video_install() {
-  drupal_install_schema('video');
+//  drupal_install_schema('video');
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function video_uninstall() {
-  drupal_uninstall_schema('video');
+//  drupal_uninstall_schema('video');
 // Delete all variables which begin with the namespaced "video_*".
   $video_vars = array();
   $query = "SELECT name FROM {variable} WHERE name LIKE '%video_%'";
@@ -102,41 +103,18 @@ function video_uninstall() {
 }
 
 /**
- * Update 6405
- * dropping video_rendering table and creating video_files
- * @return <type>
+ * Implements hook_requirements() to check the PHP GD Library.
+ *
+ * @param $phase
+ * @TODO : add requirment when this need FFMPEG, thing on install profiles
  */
-function video_update_6405() {
-  $ret = array();
-  $ret[] = update_sql("DROP TABLE IF EXISTS {video_rendering}");
-  $ret[] = update_sql("DROP TABLE IF EXISTS {video_files}");
-  $table = video_schema();
-  db_create_table($ret, 'video_files', $table['video_files']);
-  return $ret;
-}
+function video_requirements($phase) {
+  $requirements = array();
 
-/**
- * Update 6406
- * @return <type>
- */
-function video_update_6406() {
-  drupal_set_message('The system has reset your thumbnail and ffmpeg command settings to their original state.  If you made adjustments to these commands, you will have to reset them up.');
-//lets reset our ffmpeg system command variables.
-  variable_set('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
-  variable_set('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile');
-  return array();
-}
-
-/**
- * Update 6407
- */
-function video_update_6407() {
-  $ret = array();
-// drop un wanted fields in video files
-  db_drop_field($ret, 'video_files', 'filesize');
-  db_drop_field($ret, 'video_files', 'filename');
-  db_drop_field($ret, 'video_files', 'filepath');
-  db_drop_field($ret, 'video_files', 'filemime');
-  db_add_column($ret, 'video_files', 'data', 'longtext', array('null' => TRUE));
-  return $ret;
+  if ($phase == 'runtime') {
+    $requirements['video']['value'] = t('1.0');
+    $requirements['video']['severity'] = REQUIREMENT_OK;
+    $requirements['video']['title'] = t('GD library rotate and desaturate effects');
+  }
+  return $requirements;
 }
