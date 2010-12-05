@@ -815,7 +815,7 @@ function video_default_widget_settings($widget) {
     '#type' => 'fieldset',
     '#title' => t('Video Advanced Settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
     '#weight' => 10
   );
   $form['plugins']['default_dimensions'] = array(
@@ -845,7 +845,7 @@ function video_default_widget_settings($widget) {
     '#title' => t('Video Thumbnail Settings'),
     '#element_validate' => array('video_default_widget_settings_validate'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
     '#weight' => 11
   );
 
