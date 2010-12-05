@@ -1,0 +1,25 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function videoftp_install() {
+  drupal_load('module', 'content');
+  content_notify('install', 'videoftp');
+}
+
+function videoftp_uninstall() {
+  drupal_load('module', 'content');
+  content_notify('uninstall', 'videoftp');
+}
+
+function videoftp_enable() {
+  drupal_load('module', 'content');
+  content_notify('enable', 'videoftp');
+}
+
+function videoftp_disable() {
+  drupal_load('module', 'content');
+  content_notify('disable', 'videoftp');
+}

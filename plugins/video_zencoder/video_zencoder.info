@@ -1,0 +1,9 @@
+;$Id$
+
+name = Zencoder API on Video
+description = Zencoder is a webservice to transcode videos.
+package = "Video"
+dependencies[] = video
+dependencies[] = video_s3
+core = 6.x
+version = 6.x-4.x-dev

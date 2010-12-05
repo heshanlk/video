@@ -1,0 +1,107 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Provides installation functions for video_s3.module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function video_s3_schema() {
+  $schema['video_s3'] = array(
+    'description' => t('Store video s3 cdn'),
+    'fields' => array(
+  	  'vid' => array(
+        'description' => t('Auto Increment id'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => t('Original file id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'nid' => array(
+        'description' => t('Node id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'bucket' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The bucket the video is stored in.'),
+      ),
+	  'filename' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filename of the video.'),
+      ),
+	  'filepath' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filepath of the video.'),
+      ),
+	  'filemime' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filemime of the video.'),
+      ),
+      'filesize' => array(
+        'description' => t('Filesize of the video.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => t('Status of the cdn transfer'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => t('Time of successful completion to amazon.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'status' => array('status'),
+      'file' => array('fid'),
+    ),
+    'primary key' => array('vid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function video_s3_install() {
+  drupal_install_schema('video_s3');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function video_s3_uninstall() {
+  drupal_uninstall_schema('video_s3');
+  // Delete our variables.
+  variable_del('amazon_s3');
+  variable_del('amazon_s3_ssl');
+  variable_del('amazon_s3_access_key');
+  variable_del('amazon_s3_secret_access_key');
+  variable_del('amazon_s3_bucket');
+}

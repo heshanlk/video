@@ -1,0 +1,9 @@
+; $Id$
+name = Video FTP
+description = Allows you to attach videos uploaded through FTP to nodes.
+core = 6.x
+version = 6.x-4.x-dev
+dependencies[] = content
+dependencies[] = filefield
+dependencies[] = video
+package = "Video"
