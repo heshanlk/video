@@ -441,6 +441,8 @@ class video_ffmpeg implements transcoder_interface {
   public function load_completed_job(&$video) {
     $result = db_fetch_object(db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid));
     $data = unserialize($result->data);
+    if (empty($data))
+      return $video;
     foreach ($data as $value) {
       $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
       $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) . '.' . $extension;

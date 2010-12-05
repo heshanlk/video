@@ -346,6 +346,8 @@ class video_zencoder implements transcoder_interface {
     module_load_include('inc', 'video_s3', '/includes/amazon_s3');
     $video_row = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE fid = %d', $video->fid));
     $data = unserialize($video_row->data);
+    if(empty($data))
+      return $video;
     foreach ($data as $value) {
       $extension = pathinfo($value->url, PATHINFO_EXTENSION);
       $video->files->{$extension}->filename = pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension;
