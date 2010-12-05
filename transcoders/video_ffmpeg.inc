@@ -401,11 +401,16 @@ class video_ffmpeg implements transcoder_interface {
     if (!$this->load_job($video->fid))
       return;
     //lets get all our videos and unlink them
-    $sql = db_query("SELECT filepath FROM {video_files} WHERE fid=%d", $video->fid);
+    $sql = db_query("SELECT data FROM {video_files} WHERE fid=%d", $video->fid);
     //we loop here as future development will include multiple video types (HTML 5)
     while ($row = db_fetch_object($sql)) {
-      if (file_exists($row->filepath))
-        unlink($row->filepath);
+      $data = unserialize($row->data);
+      if (empty($data))
+        continue;
+      foreach ($data as $file) {
+        if (file_exists($file->filepath))
+          unlink($file->filepath);
+      }
     }
     //now delete our rows.
     db_query('DELETE FROM {video_files} WHERE fid = %d', $video->fid);
