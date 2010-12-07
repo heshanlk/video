@@ -201,7 +201,7 @@ class ZencoderCURL {
 
     // Set transfer options
     curl_setopt_array($ch, $this->options);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
     // Execute session and store returned results
     $this->results = curl_exec($ch);
