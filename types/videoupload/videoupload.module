@@ -6,8 +6,6 @@
  * uploadfield core hooks and menu callbacks.
  */
 
-module_load_include('inc', 'videoupload', 'videoupload.field');
-
 /**
  * Implementation of hook_perm().
  */

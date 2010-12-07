@@ -6,6 +6,9 @@
  * @file video.module
  *
  */
+// include the field element
+module_load_include('inc', 'video', 'video.field');
+
 /*
  * Implementation of hook_init().
  */

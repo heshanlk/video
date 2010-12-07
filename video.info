@@ -11,3 +11,4 @@ files[] = video.drush.inc
 files[] = video.theme.inc
 files[] = video_formatter.inc
 files[] = video_schedular.inc
+files[] = video.field.inc

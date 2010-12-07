@@ -10,7 +10,7 @@
 /**
  * Implements hook_field_info().
  */
-function videoupload_field_info() {
+function video_field_info() {
   return array(
     'video' => array(
       'label' => t('Video'),
@@ -26,7 +26,7 @@ function videoupload_field_info() {
         'max_resolution' => '',
         'min_resolution' => '',
       ),
-      'default_widget' => 'video_video',
+      'default_widget' => 'video_upload',
       'default_formatter' => 'video',
     ),
   );
@@ -35,7 +35,7 @@ function videoupload_field_info() {
 /**
  * Implements hook_field_settings_form().
  */
-function videoupload_field_settings_form($field, $instance) {
+function video_field_settings_form($field, $instance) {
   $defaults = field_info_field_settings($field['type']);
   $settings = array_merge($defaults, $field['settings']);
 
@@ -65,7 +65,7 @@ function videoupload_field_settings_form($field, $instance) {
 /**
  * Implements hook_field_instance_settings_form().
  */
-function videoupload_field_instance_settings_form($field, $instance) {
+function video_field_instance_settings_form($field, $instance) {
   $settings = $instance['settings'];
 
   // Use the file field instance settings form as a basis.
@@ -102,14 +102,14 @@ function _video_field_resolution_validate($element, &$form_state) {
 /**
  * Implements hook_field_load().
  */
-function videoupload_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
+function video_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
   file_field_load($entity_type, $entities, $field, $instances, $langcode, $items, $age);
 }
 
 /**
  * Implements hook_field_prepare_view().
  */
-function videoupload_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
+function video_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
   // If there are no files specified at all, use the default.
   foreach ($entities as $id => $entity) {
     if (empty($items[$id]) && $field['settings']['default_image']) {
@@ -127,52 +127,64 @@ function videoupload_field_prepare_view($entity_type, $entities, $field, $instan
 /**
  * Implements hook_field_presave().
  */
-function videoupload_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+function video_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_presave($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
  * Implements hook_field_insert().
  */
-function videoupload_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
+function video_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_insert($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
  * Implements hook_field_update().
  */
-function videoupload_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
+function video_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_update($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
  * Implements hook_field_delete().
  */
-function videoupload_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
+function video_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_delete($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
  * Implements hook_field_delete_revision().
  */
-function videoupload_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, &$items) {
+function video_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
  * Implements hook_field_is_empty().
  */
-function videoupload_field_is_empty($item, $field) {
+function video_field_is_empty($item, $field) {
   return file_field_is_empty($item, $field);
 }
 
 /**
  * Implements hook_field_widget_info().
  */
-function videoupload_field_widget_info() {
+function video_field_widget_info() {
   return array(
-    'video_video' => array(
-      'label' => t('Video'),
+    'video_upload' => array(
+      'label' => t('Video Upload'),
+      'field types' => array('video'),
+      'settings' => array(
+        'progress_indicator' => 'throbber',
+        'preview_image_style' => 'thumbnail',
+      ),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+        'default value' => FIELD_BEHAVIOR_NONE,
+      ),
+    ),
+    'video_ftp' => array(
+      'label' => t('Video FTP'),
       'field types' => array('video'),
       'settings' => array(
         'progress_indicator' => 'throbber',
@@ -189,7 +201,7 @@ function videoupload_field_widget_info() {
 /**
  * Implements hook_field_widget_settings_form().
  */
-function videoupload_field_widget_settings_form($field, $instance) {
+function video_field_widget_settings_form($field, $instance) {
   $widget = $instance['widget'];
   $settings = $widget['settings'];
 
@@ -212,7 +224,7 @@ function videoupload_field_widget_settings_form($field, $instance) {
 /**
  * Implements hook_field_widget_form().
  */
-function videoupload_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+function video_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
 
   // Add display_field setting to field because file_field_widget_form() assumes it is set.
   $field['settings']['display_field'] = 0;
@@ -252,7 +264,7 @@ function videoupload_field_widget_form(&$form, &$form_state, $field, $instance, 
  *
  * Expands the image_image type to include the alt and title fields.
  */
-function videoupload_field_widget_process($element, &$form_state, $form) {
+function video_field_widget_process($element, &$form_state, $form) {
   $item = $element['#value'];
   $item['fid'] = $element['fid']['#value'];
 
@@ -304,7 +316,7 @@ function videoupload_field_widget_process($element, &$form_state, $form) {
  *
  * @ingroup themeable
  */
-function theme_videoupload_widget($variables) {
+function theme_video_widget($variables) {
   $element = $variables['element'];
   $output = '';
   $output .= '<div class="image-widget form-managed-file clearfix">';
@@ -327,24 +339,9 @@ function theme_videoupload_widget($variables) {
 }
 
 /**
- * Implements hook_field_formatter_info().
- */
-function videoupload_field_formatter_info() {
-  $formatters = array(
-    'video' => array(
-      'label' => t('Video'),
-      'field types' => array('video'),
-      'settings' => array('image_style' => '', 'image_link' => ''),
-    ),
-  );
-
-  return $formatters;
-}
-
-/**
  * Implements hook_field_formatter_settings_form().
  */
-function videoupload_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+function video_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
 
@@ -375,7 +372,7 @@ function videoupload_field_formatter_settings_form($field, $instance, $view_mode
 /**
  * Implements hook_field_formatter_settings_summary().
  */
-function videoupload_field_formatter_settings_summary($field, $instance, $view_mode) {
+function video_field_formatter_settings_summary($field, $instance, $view_mode) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
 
@@ -407,7 +404,7 @@ function videoupload_field_formatter_settings_summary($field, $instance, $view_m
 /**
  * Implements hook_field_formatter_view().
  */
-function videoupload_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+function video_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
 
   // Check if the formatter involves a link.
@@ -446,7 +443,7 @@ function videoupload_field_formatter_view($entity_type, $entity, $field, $instan
  *
  * @ingroup themeable
  */
-function theme_videoupload_formatter($variables) {
+function theme_video_formatter($variables) {
   $item = $variables['item'];
   $image = array(
     'path' => $item['uri'],
