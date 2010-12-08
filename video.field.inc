@@ -17,7 +17,7 @@ function video_field_info() {
       'description' => t('This field stores the ID of an video file as an integer value.'),
       'settings' => array(
         'uri_scheme' => variable_get('file_default_scheme', 'public'),
-        'default_image' => 0,
+        'default_video_thumbnail' => 0,
       ),
       'instance_settings' => array(
         'file_extensions' => 'avi wmv flv',
@@ -51,12 +51,12 @@ function video_field_settings_form($field, $instance) {
     '#description' => t('Select where the final files should be stored. Private file storage has significantly more overhead than public files, but allows restricted access to files within this field.'),
   );
 
-  $form['default_image'] = array(
-    '#title' => t('Default image'),
+  $form['default_video_thumbnail'] = array(
+    '#title' => t('Default video thumbnail'),
     '#type' => 'managed_file',
-    '#description' => t('If no image is uploaded, this image will be shown on display.'),
-    '#default_value' => $field['settings']['default_image'],
-    '#upload_location' => 'public://default_images/',
+    '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
+    '#default_value' => $field['settings']['default_video_thumbnail'],
+    '#upload_location' => 'public://default_video_thumbnail/',
   );
 
   return $form;
@@ -70,10 +70,8 @@ function video_field_instance_settings_form($field, $instance) {
 
   // Use the file field instance settings form as a basis.
   $form = file_field_instance_settings_form($field, $instance);
-
-  //default settings
-  $default = video_default_widget_settings($widget);
-  $form = $form + $default;
+  // Remove the description option.
+  unset($form['description_field']);
   return $form;
 }
 
@@ -112,8 +110,8 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
 function video_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
   // If there are no files specified at all, use the default.
   foreach ($entities as $id => $entity) {
-    if (empty($items[$id]) && $field['settings']['default_image']) {
-      if ($file = file_load($field['settings']['default_image'])) {
+    if (empty($items[$id]) && $field['settings']['default_video_thumbnail']) {
+      if ($file = file_load($field['settings']['default_video_thumbnail'])) {
         $items[$id][0] = (array) $file + array(
           'is_default' => TRUE,
           'alt' => '',
@@ -204,20 +202,12 @@ function video_field_widget_info() {
 function video_field_widget_settings_form($field, $instance) {
   $widget = $instance['widget'];
   $settings = $widget['settings'];
-
   // Use the file widget settings form.
   $form = file_field_widget_settings_form($field, $instance);
 
-  $form['preview_image_style'] = array(
-    '#title' => t('Preview image style'),
-    '#type' => 'select',
-    '#options' => image_style_options(FALSE),
-    '#empty_option' => '<' . t('no preview') . '>',
-    '#default_value' => $settings['preview_image_style'],
-    '#description' => t('The preview image will be shown while editing the content.'),
-    '#weight' => 15,
-  );
-
+  //default settings
+  $default = video_default_widget_settings($settings);
+  $form =  $default + $form;
   return $form;
 }
 
@@ -470,4 +460,46 @@ function theme_video_formatter($variables) {
   }
 
   return $output;
+}
+
+/**
+ * Implementation of CCK's hook_field_formatter_info().
+ */
+function video_field_formatter_info() {
+  $formatters = array(
+    'video_plain' => array(
+      'label' => t('Video'),
+      'field types' => array('video'),
+      'description' => t('Displays video files with player embedded.'),
+    ),
+    'video_nodelink' => array(
+      'label' => t('Video Thumbnail linked to node'),
+      'field types' => array('video'),
+      'description' => t('Displays the video thumbnail and links to the node.'),
+    ),
+    //'video_colorbox' => array(
+    //  'label' => t('Video Thumbnail to Colorbox'),
+    //  'field types' => array('filefield'),
+    //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
+    //),
+    'video_media_js' => array(
+      'label' => t('Video inject with jMedia'),
+      'field types' => array('video'),
+      'description' => t('Displays the video by using jmedia javascript.'),
+    ),
+  );
+  //setup our imagecache presets
+  if (module_exists('imagecache')) {
+    //we need formatters for each of our thumbnails.
+    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
+    foreach ($thumb_types as $types) {
+      foreach (imagecache_presets () as $preset) {
+        $formatters[$preset['presetname'] . '__' . $types] = array(
+          'label' => t('@preset @label', array('@preset' => $preset['presetname'], '@label' => $formatters[$types]['label'])),
+          'field types' => array('video'),
+        );
+      }
+    }
+  }
+  return $formatters;
 }

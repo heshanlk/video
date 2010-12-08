@@ -215,47 +215,6 @@ function video_theme() {
   return $theme;
 }
 
-/**
- * Implementation of CCK's hook_field_formatter_info().
- */
-function video_field_formatter_info() {
-  $formatters = array(
-    'video_plain' => array(
-      'label' => t('Video'),
-      'field types' => array('filefield'),
-      'description' => t('Displays video files with player embedded.'),
-    ),
-    'video_nodelink' => array(
-      'label' => t('Video Thumbnail linked to node'),
-      'field types' => array('filefield'),
-      'description' => t('Displays the video thumbnail and links to the node.'),
-    ),
-    //'video_colorbox' => array(
-    //  'label' => t('Video Thumbnail to Colorbox'),
-    //  'field types' => array('filefield'),
-    //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
-    //),
-    'video_media_js' => array(
-      'label' => t('Video inject with jMedia'),
-      'field types' => array('filefield'),
-      'description' => t('Displays the video by using jmedia javascript.'),
-    ),
-  );
-  //setup our imagecache presets
-  if (module_exists('imagecache')) {
-    //we need formatters for each of our thumbnails.
-    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
-    foreach ($thumb_types as $types) {
-      foreach (imagecache_presets () as $preset) {
-        $formatters[$preset['presetname'] . '__' . $types] = array(
-          'label' => t('@preset @label', array('@preset' => $preset['presetname'], '@label' => $formatters[$types]['label'])),
-          'field types' => array('filefield'),
-        );
-      }
-    }
-  }
-  return $formatters;
-}
 
 /*
  * Implmentation of hook_cron().
@@ -814,42 +773,28 @@ function video_get_player($element) {
 function video_default_widget_settings($widget) {
   $form = array();
   // Default video settings.
-  $form['plugins'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Video Advanced Settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#weight' => 10
-  );
-  $form['plugins']['default_dimensions'] = array(
+  $form['default_dimensions'] = array(
     '#type' => 'select',
     '#title' => t('Default Video Resolution Dimensions'),
     '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-    '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that FFMPEG will use to transcode your video files.')
+    '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that FFMPEG will use to transcode your video files.'),
+    '#weight' => 15,
   );
-  $form['plugins']['default_player_dimensions'] = array(
+  $form['default_player_dimensions'] = array(
     '#type' => 'select',
     '#title' => t('Default Video Player Dimensions'),
     '#default_value' => !empty($widget['default_player_dimensions']) ? $widget['default_player_dimensions'] : '',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-    '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.')
+    '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.'),
+    '#weight' => 16,
   );
-  $form['plugins']['autoconversion'] = array(
+  $form['autoconversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable video conversion.'),
     '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
     '#default_value' => $widget['autoconversion'],
-  );
-
-  // Default thumbnail settings.
-  $form['default'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Video Thumbnail Settings'),
-    '#element_validate' => array('video_default_widget_settings_validate'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#weight' => 11
+    '#weight' => 17,
   );
 
   $thumb_options = array(
@@ -859,30 +804,26 @@ function video_default_widget_settings($widget) {
     'no' => 'Don\'t create thumbnail',
   );
 
-  $form['default']['autothumbnail'] = array(
+  $form['autothumbnail'] = array(
     '#type' => 'radios',
     '#title' => t('Thumbnail Generation'),
     '#options' => $thumb_options,
     '#description' => t('To use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings before using ffmpeg to create thumbnails.'),
     '#default_value' => isset($widget['autothumbnail']) ? $widget['autothumbnail'] : 'no',
+    '#weight' => 18,
   );
 
 
   // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
   // Present a video image of the current default image.
   if (!empty($widget['default_video_thumb'])) {
-    $form['default']['default_video_thumbnail'] = array(
+    $form['default_video_thumbnail'] = array(
       '#type' => 'markup',
       '#value' => theme('video_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
       '#prefix' => '<div class="video_thumbnail">',
       '#suffix' => '</div>'
     );
   }
-  $form['default']['default_video_thumb_upload'] = array(
-    '#type' => 'file',
-    '#title' => empty($widget['default_video_thumb']) ? t('Upload default video thumbnail') : t('Replace default video thumbnail with'),
-    '#description' => t('Choose a image that will be used as video thumbnail when you don\'t have video thumbnails for videos.'),
-  );
   // We set this value on 'validate' so we can get CCK to add it
   // as a standard field setting.
   $form['default_video_thumb'] = array(
@@ -897,6 +838,7 @@ function video_default_widget_settings($widget) {
  *
  */
 function video_default_widget_settings_validate($element, &$form_state) {
+  return;
   // Verify the destination exists
   $destination = file_directory_path() . '/video_thumbs';
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
