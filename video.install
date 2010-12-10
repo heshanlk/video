@@ -137,6 +137,14 @@ function video_update_6407() {
   db_drop_field($ret, 'video_files', 'filename');
   db_drop_field($ret, 'video_files', 'filepath');
   db_drop_field($ret, 'video_files', 'filemime');
-  db_add_column($ret, 'video_files', 'data', 'longtext', array('null' => TRUE));
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_add_column($ret, 'video_files', 'data', 'longtext', array('null' => TRUE));
+      break;
+    case 'pgsql':
+      db_add_column($ret, 'video_files', 'data', 'text', array('null' => TRUE));
+      break;
+  }
   return $ret;
 }

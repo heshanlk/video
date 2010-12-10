@@ -130,6 +130,13 @@ function video_zencoder_update_6402() {
   db_drop_field($ret, 'video_zencoder', 'filename');
   db_drop_field($ret, 'video_zencoder', 'filepath');
   db_drop_field($ret, 'video_zencoder', 'filemime');
-  db_add_column($ret, 'video_zencoder', 'data', 'longtext', array('null' => TRUE));
-  return $ret;
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_add_column($ret, 'video_zencoder', 'data', 'longtext', array('null' => TRUE));
+      break;
+    case 'pgsql':
+      db_add_column($ret, 'video_zencoder', 'data', 'text', array('null' => TRUE));
+      break;
+  }  return $ret;
 }
