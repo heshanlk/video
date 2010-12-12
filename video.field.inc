@@ -191,14 +191,6 @@ function video_field_widget_settings_form($field, $instance) {
   //default settings
   $default = video_default_widget_settings($settings);
   $form = $default + $form;
-  $form['default_video_thumbnail'] = array(
-    '#title' => t('Default video thumbnail'),
-    '#type' => 'managed_file',
-    '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
-    '#default_value' => $widget['settings']['default_video_thumbnail'],
-    '#upload_location' => 'public://default_video_thumbnail/',
-    '#weight' => 19,
-  );
   return $form;
 }
 
