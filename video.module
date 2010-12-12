@@ -12,6 +12,7 @@ module_load_include('inc', 'video', 'video.field');
 /*
  * Implementation of hook_init().
  */
+
 function video_init() {
   drupal_add_css(drupal_get_path('module', 'video') . '/css/video.css');
   drupal_add_js(drupal_get_path('module', 'video') . '/js/video.js');
@@ -214,7 +215,6 @@ function video_theme() {
   }
   return $theme;
 }
-
 
 /*
  * Implmentation of hook_cron().
@@ -830,6 +830,15 @@ function video_default_widget_settings($widget) {
     '#type' => 'value',
     '#value' => $widget['default_video_thumb'],
   );
+
+//  $form['default_video_thumbnail'] = array(
+//    '#title' => t('Default video thumbnail'),
+//    '#type' => 'managed_file',
+//    '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
+//    '#default_value' => !empty($widget['default_video_thumbnail']) ? $widget['default_video_thumbnail'] : '',
+//    '#upload_location' => 'public://default_video_thumbnail/',
+//    '#weight' => 19,
+//  );
   return $form;
 }
 

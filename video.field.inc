@@ -20,7 +20,7 @@ function video_field_info() {
         'default_video_thumbnail' => 0,
       ),
       'instance_settings' => array(
-        'file_extensions' => 'avi wmv flv',
+        'file_extensions' => 'mp4 ogg avi mov wmv flv',
         'file_directory' => '',
         'max_filesize' => '',
         'max_resolution' => '',
@@ -51,14 +51,6 @@ function video_field_settings_form($field, $instance) {
     '#description' => t('Select where the final files should be stored. Private file storage has significantly more overhead than public files, but allows restricted access to files within this field.'),
   );
 
-  $form['default_video_thumbnail'] = array(
-    '#title' => t('Default video thumbnail'),
-    '#type' => 'managed_file',
-    '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
-    '#default_value' => $field['settings']['default_video_thumbnail'],
-    '#upload_location' => 'public://default_video_thumbnail/',
-  );
-
   return $form;
 }
 
@@ -73,28 +65,6 @@ function video_field_instance_settings_form($field, $instance) {
   // Remove the description option.
   unset($form['description_field']);
   return $form;
-}
-
-/**
- * Element validate function for resolution fields.
- */
-function _video_field_resolution_validate($element, &$form_state) {
-  if (!empty($element['x']['#value']) || !empty($element['y']['#value'])) {
-    foreach (array('x', 'y') as $dimension) {
-      $value = $element[$dimension]['#value'];
-      if (!is_numeric($value)) {
-        form_error($element[$dimension], t('Height and width values must be numeric.'));
-        return;
-      }
-      if (intval($value) == 0) {
-        form_error($element[$dimension], t('Both a height and width value must be specified in the !name field.', array('!name' => $element['#title'])));
-        return;
-      }
-    }
-    form_set_value($element, intval($element['x']['#value']) . 'x' . intval($element['y']['#value']), $form_state);
-  } else {
-    form_set_value($element, '', $form_state);
-  }
 }
 
 /**
@@ -204,10 +174,31 @@ function video_field_widget_settings_form($field, $instance) {
   $settings = $widget['settings'];
   // Use the file widget settings form.
   $form = file_field_widget_settings_form($field, $instance);
-
+  switch ($instance['widget']['type']) {
+    case 'video_upload':
+      break;
+    case 'video_ftp':
+      $form['ftp_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('FTP Filepath'),
+        '#default_value' => !empty($widget['ftp_path']) ? $widget['ftp_path'] : 'ftpvideos',
+        '#description' => t('The subdirectory within the "<em>files/</em>" directory where you have upload the videos for attachment.  Once the video is attached it will be moved from this directory to the main files directory.'),
+        '#required' => TRUE,
+        '#weight' => 3,
+      );
+      break;
+  }
   //default settings
   $default = video_default_widget_settings($settings);
-  $form =  $default + $form;
+  $form = $default + $form;
+  $form['default_video_thumbnail'] = array(
+    '#title' => t('Default video thumbnail'),
+    '#type' => 'managed_file',
+    '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
+    '#default_value' => $widget['settings']['default_video_thumbnail'],
+    '#upload_location' => 'public://default_video_thumbnail/',
+    '#weight' => 19,
+  );
   return $form;
 }
 
