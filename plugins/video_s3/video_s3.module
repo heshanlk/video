@@ -46,7 +46,7 @@ function video_s3_menu() {
  */
 
 function video_s3_cron() {
-  $filesystem = variable_get('vid_filesystem', 'drupal');
+  $filesystem = variable_get('video_filesystem', 'drupal');
   if ($filesystem == 'video_s3') {
     module_load_include('inc', 'video_s3', '/includes/amazon_s3');
     $s3 = new video_amazon_s3;

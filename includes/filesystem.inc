@@ -14,7 +14,7 @@ class video_filesystem {
   public function __construct($filesystem = null) {
     //get our configured transcoder.
     if (!isset($filesystem))
-      $filesystem = variable_get('vid_filesystem', 'drupal');
+      $filesystem = variable_get('video_filesystem', 'drupal');
     if (!module_load_include('inc', 'video', '/filesystem/' . $filesystem)) {
       $modules = module_list();
       foreach ($modules as $module) {
@@ -51,10 +51,10 @@ class video_filesystem {
   public function admin_settings() {
     $form = array();
     $options = $this->_filesystem();
-    $form['vid_filesystem'] = array(
+    $form['video_filesystem'] = array(
       '#type' => 'radios',
       '#title' => t('Video Filesystem'),
-      '#default_value' => variable_get('vid_filesystem', 'drupal'),
+      '#default_value' => variable_get('video_filesystem', 'drupal'),
       '#options' => $options['radios'],
       '#description' => t('!list', array('!list' => theme('item_list', $options['help']))),
       '#prefix' => '<div id="filesystem-radios">',

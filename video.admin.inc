@@ -23,12 +23,12 @@ function video_transcoder_admin_settings() {
  */
 function video_transcoder_admin_settings_validate($form, &$form_state) {
   // check ffmpeg_wrapper module installed or not
-  if ($form_state['values']['vid_convertor'] == 'video_ffmpeg_wrapper' && !module_exists('ffmpeg_wrapper')) {
-    form_set_error('vid_convertor', t('You need to download and install the !ffmpeg_wrapper module to enable this option.', array('!ffmpeg_wrapper' => l(t('FFMPEG Wrapper'), 'http://drupal.org/project/ffmpeg_wrapper'))));
+  if ($form_state['values']['video_convertor'] == 'video_ffmpeg_wrapper' && !module_exists('ffmpeg_wrapper')) {
+    form_set_error('video_convertor', t('You need to download and install the !ffmpeg_wrapper module to enable this option.', array('!ffmpeg_wrapper' => l(t('FFMPEG Wrapper'), 'http://drupal.org/project/ffmpeg_wrapper'))));
   }
 
   // add vallidations by trnacoder interface
-  $transcoder = $form_state['values']['vid_convertor'];
+  $transcoder = $form_state['values']['video_convertor'];
   module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder($transcoder);
   $transcoder->admin_settings_validate($form, $form_state);
@@ -136,7 +136,7 @@ function video_metadata_admin_settings() {
 
 function video_metadata_admin_settings_validate($form, &$form_state) {
   // add vallidations by metadata interface
-  $metadata = $form_state['values']['vid_metadata'];
+  $metadata = $form_state['values']['video_metadata'];
   module_load_include('inc', 'video', '/includes/metadata');
   $metadata = new video_metadata($metadata);
   $metadata->admin_settings_validate($form, $form_state);
@@ -176,7 +176,7 @@ function video_filesystem_admin_settings() {
 
 function video_filesystem_admin_settings_validate($form, &$form_state) {
   // add vallidations by metadata interface
-  $filesystem = $form_state['values']['vid_filesystem'];
+  $filesystem = $form_state['values']['video_filesystem'];
   module_load_include('inc', 'video', '/includes/filesystem');
   $filesystem = new video_filesystem($filesystem);
   $filesystem->admin_settings_validate($form, $form_state);

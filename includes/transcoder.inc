@@ -28,7 +28,7 @@ class video_transcoder {
   private function get_instance($transcoder = null) {
     //get our configured transcoder.
     if (!isset($transcoder))
-      $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
+      $transcoder = variable_get('video_convertor', 'video_ffmpeg');
 //    module_load_include('inc', 'video', '/transcoders/' . $transcoder);
     if (!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
       $modules = module_list();
@@ -85,10 +85,10 @@ class video_transcoder {
   public function admin_settings() {
     $form = array();
     $options = $this->_transcoders();
-    $form['vid_convertor'] = array(
+    $form['video_convertor'] = array(
       '#type' => 'radios',
       '#title' => t('Video transcoder'),
-      '#default_value' => variable_get('vid_convertor', 'video_ffmpeg'),
+      '#default_value' => variable_get('video_convertor', 'video_ffmpeg'),
       '#options' => $options['radios'],
       '#description' => t('Selecting a video transcoder will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', $options['help']))),
       '#prefix' => '<div id="transcoder-radios">',
