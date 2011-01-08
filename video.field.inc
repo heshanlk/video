@@ -23,8 +23,8 @@ function video_field_info() {
         'file_extensions' => 'mp4 ogg avi mov wmv flv',
         'file_directory' => '',
         'max_filesize' => '',
-        'max_resolution' => '',
-        'min_resolution' => '',
+        'default_dimensions' => '',
+        'default_player_dimensions' => '',
       ),
       'default_widget' => 'video_upload',
       'default_formatter' => 'video',
@@ -83,8 +83,6 @@ function video_field_prepare_view($entity_type, $entities, $field, $instances, $
       if ($file = file_load($field['settings']['default_video_thumbnail'])) {
         $items[$id][0] = (array) $file + array(
           'is_default' => TRUE,
-          'alt' => '',
-          'title' => '',
         );
       }
     }
@@ -240,14 +238,8 @@ function video_field_widget_process($element, &$form_state, $form) {
   $item = $element['#value'];
   $item['fid'] = $element['fid']['#value'];
 
-  $instance = field_widget_instance($element, $form_state);
+  $field = field_widget_field($element, $form_state);
 
-  $settings = $instance['settings'];
-
-  $widget_settings = $instance['widget']['settings'];
-//  echo '<pre>';
-//  print_r($instance);
-//  die();
   $element['#theme'] = 'theme_video_widget';
   $element['#attached']['css'][] = drupal_get_path('module', 'image') . '/video.css';
 
@@ -260,18 +252,17 @@ function video_field_widget_process($element, &$form_state, $form) {
   }
 
   // Title is not necessary for each individual field.
-  if ($settings['multiple'] > 0) {
+  if ($field['cardinality'] < 0) {
     unset($element['#title']);
   }
 
   // Create our thumbnails
-  if ($settings['widget']['autothumbnail']) {
-    video_thumb_process($element);
-  }
+  video_thumb_process($element, $form_state);
+
 
   // Add our extra fields if in preview mode
   if (!empty($item['fid'])) {
-    video_widget_element_settings($element);
+    video_widget_element_settings($element, $form_state);
   }
 
   // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...

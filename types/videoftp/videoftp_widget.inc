@@ -1,4 +1,5 @@
 <?php
+
 // $Id:
 
 /**
@@ -21,7 +22,7 @@ function videoftp_widget_settings_form($widget) {
   );
   $form['path_settings'] = array(
     '#type' => 'fieldset',
-   	'#title' => t('Path settings'),
+    '#title' => t('Path settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#weight' => 2,
@@ -33,7 +34,7 @@ function videoftp_widget_settings_form($widget) {
     '#default_value' => ltrim(ltrim($widget['file_path'], "videos"), "/"),
     '#description' => t('Optional subdirectory within the "<em>files/videos/</em>" directory where files will be moved and stored. Do not include preceding or trailing slashes.'),
     '#element_validate' => array('video_widget_settings_file_path_validate', '_filefield_widget_settings_file_path_validate'),
-  );  
+  );
   $form['path_settings']['ftp_path'] = array(
     '#type' => 'textfield',
     '#title' => t('FTP Filepath'),
@@ -55,11 +56,11 @@ function videoftp_widget_settings_form($widget) {
  */
 function videoftp_widget_settings_validate($widget) {
   // Check that only web images are specified in the callback.
-  if(!video_web_extensions($widget['file_extensions'])) {
+  if (!video_web_extensions($widget['file_extensions'])) {
     form_set_error('file_extensions', t('Only web-standard videos are supported through the videoftp widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
   }
   // Check for our ftp filepath and try to create it, if not it will throw an error.
-  $ftp_path = file_directory_path().'/'.$widget['ftp_path'];
+  $ftp_path = file_default_scheme() . ':/' . $widget['ftp_path'];
   file_check_directory($ftp_path, true, 'ftp_path');
 }
 
@@ -67,7 +68,7 @@ function videoftp_widget_settings_validate($widget) {
  * Implementation of CCK's hook_widget_settings($op = 'save').
  */
 function videoftp_widget_settings_save($widget) {
-  return array('file_extensions', 'file_path', 'ftp_path', 'autothumbnail','autoconversion', 'default_dimensions', 'default_player_dimensions', 'default_video_thumb');
+  return array('file_extensions', 'file_path', 'ftp_path', 'autothumbnail', 'autoconversion', 'default_dimensions', 'default_player_dimensions', 'default_video_thumb');
 }
 
 /**
@@ -78,8 +79,7 @@ function videoftp_widget_value($element, $edit = FALSE) {
     // Creating so we load up our empty values.
     $file = field_file_load($element['#default_value']['fid']);
     $item = $element['#default_value'];
-  }
-  else {
+  } else {
     // Reset our item array for our data.
     $item = array_merge($element['#default_value'], $edit);
     $field = content_fields($element['#field_name'], $element['#type_name']);
@@ -127,7 +127,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $element['#theme'] = 'videoftp_widget_item';
-  
+
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
     $element['preview']['#value'] = theme('videoftp_widget_preview', $element['#value']);
   }
@@ -142,11 +142,11 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
     '#type' => 'submit',
     '#value' => t('Attach'),
     '#submit' => array('node_form_submit_build_node'),
-    '#ahah' => array( // with JavaScript
-       'path' => 'videoftp/ahah/'.   $element['#type_name'] .'/'. $element['#field_name'] .'/'. $element['#delta'],
-       'wrapper' => $element['#id'] .'-ahah-wrapper',
-       'method' => 'replace',
-       'effect' => 'fade',
+    '#ahah' => array(// with JavaScript
+      'path' => 'videoftp/ahah/' . $element['#type_name'] . '/' . $element['#field_name'] . '/' . $element['#delta'],
+      'wrapper' => $element['#id'] . '-ahah-wrapper',
+      'method' => 'replace',
+      'effect' => 'fade',
     ),
     '#field_name' => $element['#field_name'],
     '#delta' => $element['#delta'],
@@ -156,16 +156,16 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
     '#post' => $element['#post'],
   );
   $element['videoftp_remove'] = array(
-  // With default CCK edit forms, $element['#parents'] is array($element['#field_name'], $element['#delta']).
-  // However, if some module (for example, flexifield) places our widget deeper in the tree, we want to
-  // use that information in constructing the button name.
-    '#name' => implode('_', $element['#parents']) .'_videoftp_remove',
+    // With default CCK edit forms, $element['#parents'] is array($element['#field_name'], $element['#delta']).
+    // However, if some module (for example, flexifield) places our widget deeper in the tree, we want to
+    // use that information in constructing the button name.
+    '#name' => implode('_', $element['#parents']) . '_videoftp_remove',
     '#type' => 'submit',
     '#value' => t('Remove'),
     '#submit' => array('node_form_submit_build_node'),
-    '#ahah' => array( // with JavaScript
-      'path' => 'videoftp/ahah/'.   $element['#type_name'] .'/'. $element['#field_name'] .'/'. $element['#delta'],
-      'wrapper' => $element['#id'] .'-ahah-wrapper',
+    '#ahah' => array(// with JavaScript
+      'path' => 'videoftp/ahah/' . $element['#type_name'] . '/' . $element['#field_name'] . '/' . $element['#delta'],
+      'wrapper' => $element['#id'] . '-ahah-wrapper',
       'method' => 'replace',
       'effect' => 'fade',
     ),
@@ -195,7 +195,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   // Set access on the buttons and select.
   $element['videoftp_attach']['#access'] = empty($item['fid']);
   $element['videoftp_remove']['#access'] = !empty($item['fid']);
-  
+
   $options = videoftp_options($field);
   $element['ftpselect'] = array(
     '#type' => 'select',
@@ -225,12 +225,12 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   );
 
   // Create our thumbnails
-  if($field['widget']['autothumbnail']) {
+  if ($field['widget']['autothumbnail']) {
     video_thumb_process($element);
   }
-  
+
   // Add our extra fields if in preview mode
-  if(!empty($item['fid'])) {
+  if (!empty($item['fid'])) {
     video_widget_element_settings($element);
   }
 
@@ -245,12 +245,12 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   // does not get the values in $form.
   $form_state['#field_info'][$field['field_name']] = $field;
 
-  $element['#attributes']['id'] = $element['#id'] .'-ahah-wrapper';
-  $element['#prefix'] = '<div '. drupal_attributes($element['#attributes']) .'>';
+  $element['#attributes']['id'] = $element['#id'] . '-ahah-wrapper';
+  $element['#prefix'] = '<div ' . drupal_attributes($element['#attributes']) . '>';
   $element['#suffix'] = '</div>';
 
   // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
-  if($form_state['submitted'] == 1) {
+  if ($form_state['submitted'] == 1) {
     video_widget_process($element, $form_state);
   }
   return $element;
@@ -258,16 +258,16 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
 
 function videoftp_save_upload($element) {
   global $user;
-  $upload_name = $element['#field_name'] .'_'. $element['#delta'];
+  $upload_name = $element['#field_name'] . '_' . $element['#delta'];
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $video = $element['#post'][$field['field_name']][$delta]['ftpselect'];
-  $ftp_path = file_directory_path().'/'.$field['widget']['ftp_path'];
+  $ftp_path = file_default_scheme() . ':/' . $field['widget']['ftp_path'];
 
-  if (empty($video) || !file_exists($ftp_path.'/'.$video)) {
+  if (empty($video) || !file_exists($ftp_path . '/' . $video)) {
     return 0;
   }
-  
+
   $dest = filefield_widget_file_path($field);
   if (!field_file_check_directory($dest, FILE_CREATE_DIRECTORY)) {
     watchdog('filefield', 'The upload directory %directory for the file field %field (content type %type) could not be created or is not accessible. A newly uploaded file could not be saved in this directory as a consequence, and the upload was canceled.', array('%directory' => $dest, '%field' => $element['#field_name'], '%type' => $element['#type_name']));
@@ -279,14 +279,14 @@ function videoftp_save_upload($element) {
   $file = new stdClass();
   $file->uid = $user->uid;
   $file->filename = file_munge_filename(trim(basename($video), '.'), $field['widget']['file_extensions']);
-  $file->filepath = $ftp_path.'/'.$video;
+  $file->filepath = $ftp_path . '/' . $video;
   $file->filemime = file_get_mimetype($file->filename);
   $file->filesize = filesize($file->filepath);
   $file->status = FILE_STATUS_TEMPORARY;
   $file->timestamp = time();
 
   //lets move our file from the ftp folder to the files directory
-  if(file_move($file, $dest)) {
+  if (file_move($file, $dest)) {
     // Insert new record to the database.
     drupal_write_record('files', $file);
   }
@@ -298,9 +298,9 @@ function videoftp_options($field) {
   $options = array();
   $options[] = t('Select Video');
   // Lets setup our ftp_path.
-  $ftp_path = file_directory_path().'/'.$field['widget']['ftp_path'];
+  $ftp_path = file_default_scheme() . ':/' . $field['widget']['ftp_path'];
   // We are going to scan the directory and pull out the available video types by extension.
-  $extensions = explode(" ",$field['widget']['file_extensions']);
+  $extensions = explode(" ", $field['widget']['file_extensions']);
   $video_files = scandir($ftp_path);
   foreach ($video_files as $file) {
     $ext = pathinfo($file);

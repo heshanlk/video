@@ -55,7 +55,7 @@ class video_zencoder_api {
     // thumbnails
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $file->fid;
+    $final_thumb_path = file_default_scheme() . ':/' . $video_thumb_path . '/' . $file->fid;
 
     // Notifications
 //    if(!empty($notify_url))
@@ -240,7 +240,7 @@ class video_zencoder_api {
     } else {
       $errors = '';
       foreach ($request->errors as $error) {
-        if($error == 'Email has already been taken'){
+        if ($error == 'Email has already been taken') {
           drupal_set_message(t('Your account already exists on Zencoder. So !login to here and enter API key below', array('!login' => l(t('login'), 'https://app.zencoder.com/session/new'))));
           variable_set('video_zencoder_api_key', 'Please enter your API Key');
           return TRUE;

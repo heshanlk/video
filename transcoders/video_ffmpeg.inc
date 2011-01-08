@@ -53,12 +53,12 @@ class video_ffmpeg implements transcoder_interface {
     global $user;
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video['fid'];
+    $final_thumb_path = file_default_scheme() . ':/' . $video_thumb_path . '/' . $video['fid'];
 
     // Ensure the destination directory exists and is writable.
     $directories = explode('/', $final_thumb_path);
     // Get the file system directory.
-    $file_system = file_directory_path();
+    $file_system = file_default_scheme() . ':/';
     foreach ($directories as $directory) {
       $full_path = isset($full_path) ? $full_path . '/' . $directory : $directory;
       // Don't check directories outside the file system path.

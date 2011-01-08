@@ -259,16 +259,18 @@ function video_node_update_submit($form, &$form_state) {
  * Utility function that will add a preview of thumbnails for you to select when uploading videos.
  */
 
-function video_thumb_process(&$element) {
+function video_thumb_process(&$element, &$form_state) {
   // Developed for ffmpeg support
   $file = $element['#value'];
   $delta = $file['fid'];
-  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $field = field_widget_field($element, $form_state);
+  $instance = field_widget_instance($element, $form_state);
+  $settings = $instance['widget']['settings'];
   $gen_fail = FALSE;
 
   if (isset($element['preview']) && $file['fid'] != 0) {
     $default_thumb = '';
-    if (in_array($field['widget']['autothumbnail'], array('auto', 'auto_fallback'))) {
+    if (in_array($field['settings']['autothumbnail'], array('auto', 'auto_fallback'))) {
 
       module_load_include('inc', 'video', '/includes/transcoder');
       $transcoder = new video_transcoder;
@@ -299,8 +301,8 @@ function video_thumb_process(&$element) {
       }
     }
 
-    if ((!empty($gen_fail) && $field['widget']['autothumbnail'] == 'auto_fallback') ||
-        $field['widget']['autothumbnail'] == 'manual_upload') {
+    if ((!empty($gen_fail) && $field['settings']['autothumbnail'] == 'auto_fallback') ||
+        $field['settings']['autothumbnail'] == 'manual_upload') {
 
       $element['data']['video_thumb_file'] = array(
         '#name' => 'files[' . $element['#field_name'] . '_' . $element['#delta'] . '_thumbs]',
@@ -320,8 +322,8 @@ function video_thumb_process(&$element) {
     // @todo Add smaller video preview instead of thumbnail?
     if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
       $large_thumb = array('filepath' => $file['data']['video_thumb']);
-    } elseif (!empty($field['widget']['default_video_thumb'])) {
-      $large_thumb = $field['widget']['default_video_thumb'];
+    } elseif (!empty($field['settings']['default_video_thumb'])) {
+      $large_thumb = $field['settings']['default_video_thumb'];
     } else {
       $large_thumb = array('filepath' => $default_thumb);
     }
@@ -406,7 +408,7 @@ function video_file_delete($file) {
 
   //now lets delete our video thumbnails and folder.
   $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-  $thumb_folder = file_directory_path() . '/' . $video_thumb_path . '/' . $file->fid;
+  $thumb_folder = file_default_scheme() . ':/' . $video_thumb_path . '/' . $file->fid;
   // Recursively delete our folder and files
   rmdirr($thumb_folder);
   // Let other modules to know about the file delete
@@ -448,21 +450,31 @@ function video_views_api() {
  * Process elements loads on settings
  * @param <type> $element
  */
-function video_widget_element_settings(&$element) {
+function video_widget_element_settings(&$element, &$form_state) {
   $file = $element['#value'];
   $delta = $element['#delta'];
-  $field = content_fields($element['#field_name'], $element['#type_name']);
+
+  $field = field_widget_field($element, $form_state);
+  $instance = field_widget_instance($element, $form_state);
+  $settings = $instance['widget']['settings'];
   // Check if using the default width and replace tokens.
   $default_dimensions = user_access('override player dimensions');
   $description = t('Set your video dimensions.  This will create your player with these dimensions.');
   //setup our default dimensions.
-  $dimensions = $field['widget']['default_dimensions'];
-  $player_dimensions = $field['widget']['default_player_dimensions'];
+  $dimensions = $settings['default_dimensions'];
+  $player_dimensions = $settings['default_player_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
-  if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
+  if ($field['settings']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
     $video_info = _video_dimensions_options($options, $file['filepath']);
-    $description = t('Set your video dimensions.  This will create your player and transcode your video with these dimensions.  Your video size is !size, if you choose a higher resolution, this could cause video distortion.  You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] . 'x' . $video_info['height']));
+    $description = t('Set your video dimensions.  This will create your player
+      and transcode your video with these dimensions.  Your video size is !size,
+      if you choose a higher resolution, this could cause video distortion.
+      You are shown dimensions that match your aspect ratio,
+      if you choose dimensions that do not match your ratio, we will pad your
+      video by adding black bars on either the top or bottom while maintaining
+      your videos original aspect ratio.',
+            array('!size' => $video_info['width'] . 'x' . $video_info['height']));
     //setup our default display of dimensions.
     //lets go through our options looking for a matching resolution
     foreach ($options as $key => $value) {
@@ -505,7 +517,7 @@ function video_widget_element_settings(&$element) {
   }
 
   // only in preview mode and then create thumbnails
-  if ($field['widget']['autoconversion']) {
+  if ($field['settings']['autoconversion']) {
     if (user_access('bypass conversion video')) {
       $element['data']['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
@@ -564,11 +576,11 @@ function video_widget_element_settings(&$element) {
  */
 function video_widget_process(&$element, &$form_state) {
   $item = $element['#value'];
-  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $field = field_widget_field($element, $form_state);
   switch ($form_state['clicked_button']['#submit'][0]) {
     case 'node_form_submit':
       // Auto convert our video file
-      if ($field['widget']['autoconversion']) {
+      if ($field['settings']['autoconversion']) {
         video_convert_process($element);
         //lets set our node status to unpublished if our video is not converted.
         if (isset($element['#unpublish']) && $element['#unpublish']) {
@@ -604,7 +616,7 @@ function video_widget_process(&$element, &$form_state) {
  */
 function video_upload_manual_thumb(&$element) {
 
-  $destination = file_directory_path() . '/video_thumbs/' . $element['#value']['fid'];
+  $destination = file_default_scheme() . ':/' . 'video_thumbs/' . $element['#value']['fid'];
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('video_thumb_upload', t('The thumbnail image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
@@ -837,7 +849,7 @@ function video_default_field_settings($settings) {
 function video_default_widget_settings_validate($element, &$form_state) {
   return;
   // Verify the destination exists
-  $destination = file_directory_path() . '/video_thumbs';
+  $destination = file_default_scheme() . ':/' . 'video_thumbs';
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
