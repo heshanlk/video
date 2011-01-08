@@ -789,11 +789,17 @@ function video_default_widget_settings($widget) {
     '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.'),
     '#weight' => 16,
   );
+  return $form;
+}
+
+function video_default_field_settings($settings) {
+  $form = array();
+  // Default video field settings.
   $form['autoconversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable video conversion.'),
-    '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
-    '#default_value' => $widget['autoconversion'],
+    '#description' => t('Use ffmpeg(Default) or Zencoder to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
+    '#default_value' => isset($settings['autoconversion']) ? $settings['autoconversion'] : '',
     '#weight' => 17,
   );
 
@@ -809,33 +815,15 @@ function video_default_widget_settings($widget) {
     '#title' => t('Thumbnail Generation'),
     '#options' => $thumb_options,
     '#description' => t('To use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings before using ffmpeg to create thumbnails.'),
-    '#default_value' => isset($widget['autothumbnail']) ? $widget['autothumbnail'] : 'no',
+    '#default_value' => isset($settings['autothumbnail']) ? $settings['autothumbnail'] : 'no',
     '#weight' => 18,
-  );
-
-
-  // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
-  // Present a video image of the current default image.
-  if (!empty($widget['default_video_thumb'])) {
-    $form['default_video_thumbnail'] = array(
-      '#type' => 'markup',
-      '#value' => theme('video_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
-      '#prefix' => '<div class="video_thumbnail">',
-      '#suffix' => '</div>'
-    );
-  }
-  // We set this value on 'validate' so we can get CCK to add it
-  // as a standard field setting.
-  $form['default_video_thumb'] = array(
-    '#type' => 'value',
-    '#value' => $widget['default_video_thumb'],
   );
 
   $form['default_video_thumbnail'] = array(
     '#title' => t('Default video thumbnail'),
     '#type' => 'managed_file',
     '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
-    '#default_value' => !empty($widget['default_video_thumbnail']) ? $widget['default_video_thumbnail'] : '',
+    '#default_value' => !empty($settings['default_video_thumbnail']) ? $settings['default_video_thumbnail'] : '',
     '#upload_location' => 'public://default_video_thumbnail/',
     '#weight' => 19,
   );

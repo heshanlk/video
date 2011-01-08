@@ -417,6 +417,7 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function load_job($fid) {
+    return;
     $job = null;
     $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
     $job = db_fetch_object($result);

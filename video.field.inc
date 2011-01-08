@@ -4,7 +4,7 @@
 
 /**
  * @file
- * Implement an image field, based on the file module's file field.
+ * Implement an video field, based on the file module's file field.
  */
 
 /**
@@ -38,7 +38,6 @@ function video_field_info() {
 function video_field_settings_form($field, $instance) {
   $defaults = field_info_field_settings($field['type']);
   $settings = array_merge($defaults, $field['settings']);
-
   $scheme_options = array();
   foreach (file_get_stream_wrappers(STREAM_WRAPPERS_WRITE_VISIBLE) as $scheme => $stream_wrapper) {
     $scheme_options[$scheme] = $stream_wrapper['name'];
@@ -50,7 +49,7 @@ function video_field_settings_form($field, $instance) {
     '#default_value' => $settings['uri_scheme'],
     '#description' => t('Select where the final files should be stored. Private file storage has significantly more overhead than public files, but allows restricted access to files within this field.'),
   );
-
+  $form = $form + video_default_field_settings($settings);
   return $form;
 }
 
@@ -198,27 +197,27 @@ function video_field_widget_settings_form($field, $instance) {
  * Implements hook_field_widget_form().
  */
 function video_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-
+//  return;
   // Add display_field setting to field because file_field_widget_form() assumes it is set.
   $field['settings']['display_field'] = 0;
 
   $elements = file_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
   $settings = $instance['settings'];
-
   foreach (element_children($elements) as $delta) {
+
     // Add upload resolution validation.
     if ($settings['max_resolution'] || $settings['min_resolution']) {
       $elements[$delta]['#upload_validators']['file_validate_image_resolution'] = array($settings['max_resolution'], $settings['min_resolution']);
     }
 
     // If not using custom extension validation, ensure this is an image.
-    $supported_extensions = array('png', 'gif', 'jpg', 'jpeg');
+    $supported_extensions = array('mp4', 'ogg', 'avi', 'mov', 'wmv', 'flv');
     $extensions = isset($elements[$delta]['#upload_validators']['file_validate_extensions'][0]) ? $elements[$delta]['#upload_validators']['file_validate_extensions'][0] : implode(' ', $supported_extensions);
     $extensions = array_intersect(explode(' ', $extensions), $supported_extensions);
     $elements[$delta]['#upload_validators']['file_validate_extensions'][0] = implode(' ', $extensions);
 
     // Add all extra functionality provided by the image widget.
-    $elements[$delta]['#process'][] = 'image_field_widget_process';
+    $elements[$delta]['#process'][] = 'video_field_widget_process';
   }
 
   if ($field['cardinality'] == 1) {
@@ -244,71 +243,42 @@ function video_field_widget_process($element, &$form_state, $form) {
   $instance = field_widget_instance($element, $form_state);
 
   $settings = $instance['settings'];
+
   $widget_settings = $instance['widget']['settings'];
+//  echo '<pre>';
+//  print_r($instance);
+//  die();
+  $element['#theme'] = 'theme_video_widget';
+  $element['#attached']['css'][] = drupal_get_path('module', 'image') . '/video.css';
 
-  $element['#theme'] = 'image_widget';
-  $element['#attached']['css'][] = drupal_get_path('module', 'image') . '/image.css';
+  $field_name = $element['#field_name'];
+  $delta = $element['#delta'];
+//  $field = content_fields($element['#field_name'], $element['#type_name']);
 
-  // Add the image preview.
-  if ($element['#file'] && $widget_settings['preview_image_style']) {
-    $element['preview'] = array(
-      '#type' => 'markup',
-      '#markup' => theme('image_style', array('style_name' => $widget_settings['preview_image_style'], 'path' => $element['#file']->uri)),
-    );
+  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
+    $element['preview']['#value'] = theme('video_widget_preview', $element['#value']);
   }
 
-  // Add the additional alt and title fields.
-  $element['alt'] = array(
-    '#title' => t('Alternate text'),
-    '#type' => 'textfield',
-    '#default_value' => isset($item['alt']) ? $item['alt'] : '',
-    '#description' => t('This text will be used by screen readers, search engines, or when the image cannot be loaded.'),
-    '#maxlength' => variable_get('image_alt_length', 80), // See http://www.gawds.org/show.php?contentid=28.
-    '#weight' => -2,
-    '#access' => (bool) $item['fid'] && $settings['alt_field'],
-  );
-  $element['title'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Title'),
-    '#default_value' => isset($item['title']) ? $item['title'] : '',
-    '#description' => t('The title is used as a tool tip when the user hovers the mouse over the image.'),
-    '#maxlength' => variable_get('image_title_length', 500),
-    '#weight' => -1,
-    '#access' => (bool) $item['fid'] && $settings['title_field'],
-  );
+  // Title is not necessary for each individual field.
+  if ($settings['multiple'] > 0) {
+    unset($element['#title']);
+  }
 
+  // Create our thumbnails
+  if ($settings['widget']['autothumbnail']) {
+    video_thumb_process($element);
+  }
+
+  // Add our extra fields if in preview mode
+  if (!empty($item['fid'])) {
+    video_widget_element_settings($element);
+  }
+
+  // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
+  if ($form_state['submitted'] == 1) {
+    video_widget_process($element, $form_state);
+  }
   return $element;
-}
-
-/**
- * Returns HTML for an image field widget.
- *
- * @param $variables
- *   An associative array containing:
- *   - element: A render element representing the image field widget.
- *
- * @ingroup themeable
- */
-function theme_video_widget($variables) {
-  $element = $variables['element'];
-  $output = '';
-  $output .= '<div class="image-widget form-managed-file clearfix">';
-
-  if (isset($element['preview'])) {
-    $output .= '<div class="image-preview">';
-    $output .= drupal_render($element['preview']);
-    $output .= '</div>';
-  }
-
-  $output .= '<div class="image-widget-data">';
-  if ($element['fid']['#value'] != 0) {
-    $element['filename']['#markup'] .= ' <span class="file-size">(' . format_size($element['#file']->filesize) . ')</span> ';
-  }
-  $output .= drupal_render_children($element);
-  $output .= '</div>';
-  $output .= '</div>';
-
-  return $output;
 }
 
 /**
@@ -460,16 +430,16 @@ function video_field_formatter_info() {
       'field types' => array('video'),
       'description' => t('Displays the video thumbnail and links to the node.'),
     ),
-    //'video_colorbox' => array(
-    //  'label' => t('Video Thumbnail to Colorbox'),
-    //  'field types' => array('filefield'),
-    //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
-    //),
-    'video_media_js' => array(
-      'label' => t('Video inject with jMedia'),
-      'field types' => array('video'),
-      'description' => t('Displays the video by using jmedia javascript.'),
-    ),
+      //'video_colorbox' => array(
+      //  'label' => t('Video Thumbnail to Colorbox'),
+      //  'field types' => array('filefield'),
+      //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
+      //),
+//    'video_media_js' => array(
+//      'label' => t('Video inject with jMedia'),
+//      'field types' => array('video'),
+//      'description' => t('Displays the video by using jmedia javascript.'),
+//    ),
   );
   //setup our imagecache presets
   if (module_exists('imagecache')) {
@@ -478,7 +448,7 @@ function video_field_formatter_info() {
     foreach ($thumb_types as $types) {
       foreach (imagecache_presets () as $preset) {
         $formatters[$preset['presetname'] . '__' . $types] = array(
-          'label' => t('@preset @label', array('@preset' => $preset['presetname'], '@label' => $formatters[$types]['label'])),
+          'label' => t('[Video] @preset @label', array('@preset' => $preset['presetname'], '@label' => $formatters[$types]['label'])),
           'field types' => array('video'),
         );
       }
