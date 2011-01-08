@@ -20,7 +20,7 @@ class video_metadata {
       foreach ($modules as $module) {
         $mobule_files = array();
         $module_path = drupal_get_path('module', $module) . '/metadata';
-        $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
+        $mobule_files = file_scan_directory($module_path, '/.*\.inc/');
         if (is_array($mobule_files)) {
           foreach ($mobule_files as $file) {
             if ($file->name == $metadata)
@@ -77,13 +77,13 @@ class video_metadata {
     // We do this by scanning our transcoders folder
     $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
     $path = drupal_get_path('module', 'video') . '/metadata';
-    $files = file_scan_directory($path, '^.*\.inc$');
+    $files = file_scan_directory($path, '/.*\.inc/');
     // check inside sub modules
     $modules = module_list();
     foreach ($modules as $module) {
       $mobule_files = array();
       $module_path = drupal_get_path('module', $module) . '/metadata';
-      $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
+      $mobule_files = file_scan_directory($module_path, '/.*\.inc/');
       $files = array_merge($files, $mobule_files);
     }
 

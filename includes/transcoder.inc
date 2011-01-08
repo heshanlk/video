@@ -35,7 +35,7 @@ class video_transcoder {
       $files = array();
       foreach ($modules as $module) {
         $module_path = drupal_get_path('module', $module) . '/transcoders';
-        $inc_files = file_scan_directory($module_path, '^.*\.inc$');
+        $inc_files = file_scan_directory($module_path, '/.*\.inc/');
         if (!empty($inc_files))
           $files[$module] = $inc_files;
       }
@@ -109,13 +109,13 @@ class video_transcoder {
     // We do this by scanning our transcoders folder
     $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
     $path = drupal_get_path('module', 'video') . '/transcoders';
-    $files = file_scan_directory($path, '^.*\.inc$');
+    $files = file_scan_directory($path, '/.*\.inc/');
     // check inside sub modules
     $modules = module_list();
     foreach ($modules as $module) {
       $mobule_files = array();
       $module_path = drupal_get_path('module', $module) . '/transcoders';
-      $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
+      $mobule_files = file_scan_directory($module_path, '/.*\.inc/');
       $files = array_merge($files, $mobule_files);
     }
 

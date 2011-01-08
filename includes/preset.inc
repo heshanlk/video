@@ -64,13 +64,13 @@ class video_preset {
 // We do this by scanning our transcoders folder
     $form = array('radios' => array(), 'help' => array(), 'properties' => array());
     $path = drupal_get_path('module', 'video') . '/video_preset';
-    $files = file_scan_directory($path, '^.*\.inc$');
+    $files = file_scan_directory($path, '/.*\.inc/');
 // check inside sub modules
     $modules = module_list();
     foreach ($modules as $module) {
       $mobule_files = array();
       $module_path = drupal_get_path('module', $module) . '/video_preset';
-      $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
+      $mobule_files = file_scan_directory($module_path, '/.*\.inc/');
       $files = array_merge($files, $mobule_files);
     }
 
