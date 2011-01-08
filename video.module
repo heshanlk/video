@@ -52,7 +52,7 @@ function video_perm() {
  */
 function video_menu() {
   $items = array();
-  $items['admin/settings/video'] = array(
+  $items['admin/config/media/video'] = array(
     'title' => 'Video',
     'description' => 'Configure different aspects of the video module and its plugins',
     'page callback' => 'drupal_get_form',
@@ -61,12 +61,12 @@ function video_menu() {
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['admin/settings/video/general'] = array(
+  $items['admin/config/media/video/general'] = array(
     'title' => 'General',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 0,
   );
-  $items['admin/settings/video/players'] = array(
+  $items['admin/config/media/video/players'] = array(
     'title' => 'Players',
     'description' => 'Configure your player settings for each video extension.',
     'page callback' => 'drupal_get_form',
@@ -76,7 +76,7 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 1,
   );
-  $items['admin/settings/video/transcoders'] = array(
+  $items['admin/config/media/video/transcoders'] = array(
     'title' => 'Transcoders',
     'description' => 'Configure your transcoder to convert your videos or extra thumbnails.',
     'page callback' => 'drupal_get_form',
@@ -86,7 +86,7 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 2,
   );
-  $items['admin/settings/video/presets'] = array(
+  $items['admin/config/media/video/presets'] = array(
     'title' => 'Presets',
     'description' => 'Configure your transcoder presets to convert your videos.',
     'page callback' => 'drupal_get_form',
@@ -96,7 +96,7 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 3,
   );
-  $items['admin/settings/video/metadata'] = array(
+  $items['admin/config/media/video/metadata'] = array(
     'title' => 'Metadata',
     'description' => 'Configure your metadata settings.',
     'page callback' => 'drupal_get_form',
@@ -107,7 +107,7 @@ function video_menu() {
     'weight' => 4,
   );
 
-  $items['admin/settings/video/filesystem'] = array(
+  $items['admin/config/media/video/filesystem'] = array(
     'title' => 'Filesystem',
     'description' => 'Configure your filesystem settings.',
     'page callback' => 'drupal_get_form',
@@ -118,7 +118,7 @@ function video_menu() {
     'weight' => 5,
   );
 
-  $items['admin/settings/video/cron'] = array(
+  $items['admin/config/media/video/cron'] = array(
     'title' => 'Cron Settings',
     'description' => 'Configure your cron settings.',
     'page callback' => 'drupal_get_form',
