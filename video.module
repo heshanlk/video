@@ -280,13 +280,13 @@ function video_thumb_process(&$element, &$form_state) {
       $transcoder = new video_transcoder;
       if ($thumbs = $transcoder->generate_thumbnails($file)) {
         $rnd_img = rand(0, variable_get('video_thumbs', 5) - 1);
-        $default_thumb = $thumbs[$rnd_img]->filepath;
+        $default_thumb = $thumbs[$rnd_img]->uri;
 
         if (is_array($thumbs)) {
           foreach ($thumbs as $fid => $img) {
             // if file object contain url then use file name to identify object
-            $key = $img->filepath;
-            $thumbss[$key] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
+            $key = $img->uri;
+            $thumbss[$key] = theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $img->uri));
           }
         }
       }
@@ -298,7 +298,7 @@ function video_thumb_process(&$element, &$form_state) {
           '#options' => $thumbss,
           '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
           '#weight' => 10,
-          '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
+          '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
         );
       } else {
         $gen_fail = TRUE;
@@ -324,15 +324,16 @@ function video_thumb_process(&$element, &$form_state) {
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
-      $large_thumb = array('filepath' => $file['data']['video_thumb']);
-    } elseif (!empty($field['settings']['default_video_thumb'])) {
-      $large_thumb = $field['settings']['default_video_thumb'];
-    } else {
-      $large_thumb = array('filepath' => $default_thumb);
-    }
-    // @todo Integrate the thumbnails with imagecache.
-    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) . '</div>';
+//    if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
+//      $large_thumb = array('filepath' => $file['data']['video_thumb']);
+//    } elseif (!empty($field['settings']['default_video_thumb'])) {
+//      $large_thumb = $field['settings']['default_video_thumb'];
+//    } else {
+//      $large_thumb = array('filepath' => $default_thumb);
+//    }
+//    $default_thumbnail = file_load($settings['default_video_thumbnail']);
+//    // @todo Integrate the thumbnails with imagecache.
+//    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $settings['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)) . '</div>';
   }
 }
 
@@ -470,7 +471,8 @@ function video_widget_element_settings(&$element, &$form_state) {
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
   if ($field['settings']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
-    $video_info = _video_dimensions_options($options, $file['filepath']);
+    $file_object = file_load($file['fid']);
+    $video_info = _video_dimensions_options($options, drupal_realpath($file_object->uri));
     $description = t('Set your video dimensions.  This will create your player
       and transcode your video with these dimensions.  Your video size is !size,
       if you choose a higher resolution, this could cause video distortion.

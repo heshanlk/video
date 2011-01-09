@@ -20,11 +20,11 @@ function video_field_info() {
         'autoconversion' => 0,
         'autothumbnail' => 'no',
         'default_video_thumbnail' => 0,
-        'preview_video_thumb_style' => 'medium',
+        'preview_video_thumb_style' => 'thumbnail',
       ),
       'instance_settings' => array(
         'file_extensions' => 'mp4 ogg avi mov wmv flv',
-        'file_directory' => '',
+        'file_directory' => 'video',
         'max_filesize' => '',
         'default_dimensions' => '640x350',
         'default_player_dimensions' => '640x350'
@@ -245,11 +245,12 @@ function video_field_widget_process($element, &$form_state, $form) {
 //  }
   // Add the image preview.
   if ($settings['default_video_thumbnail'] && $element['#value']['fid'] != 0) {
+    $element['preview'] = array();
     $default_thumbnail = file_load($settings['default_video_thumbnail']);
-    $element['preview'] = array(
-      '#type' => 'markup',
-      '#markup' => theme('image_style', array('style_name' => $settings['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)),
-    );
+//    $element['preview'] = array(
+//      '#type' => 'markup',
+//      '#markup' => theme('image_style', array('style_name' => $settings['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)),
+//    );
   }
   // Title is not necessary for each individual field.
   if ($field['cardinality'] != 1) {

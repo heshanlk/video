@@ -53,28 +53,29 @@ class video_ffmpeg implements transcoder_interface {
     global $user;
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
     // Get the file system directory.
-    file_prepare_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
+    $schema_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
+    file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
     // Total thumbs to generate
     $total_thumbs = variable_get('video_thumbs', 5);
     $videofile = file_load($video['fid']);
-    $videopath = escapeshellarg($videofile->uri);
+    //get the actual video file path from the stream wrappers
+    $videopath = (drupal_realpath($videofile->uri));
     //get the playtime from the current transcoder
-    $duration = $this->get_playtime($videofile->uri);
+    $duration = $this->get_playtime($videopath);
 
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
       $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
-      $filename = "/video-thumb-for-" . $video['fid'] . "-$i.jpg";
-      $thumbfile = $final_thumb_path . $filename;
+      $filename = file_munge_filename("/video-thumb-for-" . $video['fid'] . "-$i.jpg", '', TRUE);
+      $thumbfile = $schema_thumb_path . $filename;
       //skip files already exists, this will save ffmpeg traffic
-      if (!is_file($thumbfile)) {
+      if (!is_file(drupal_realpath($thumbfile))) {
         //setup the command to be passed to the transcoder.
-        $options = $this->params['cmd_path'] . ' ' . t($this->params['thumb_command'], array('!videofile' => $videopath, '!seek' => $seek, '!thumbfile' => $thumbfile));
+        $options = $this->params['cmd_path'] . ' ' . t($this->params['thumb_command'], array('!videofile' => $videopath, '!seek' => $seek, '!thumbfile' => drupal_realpath($thumbfile)));
         // Generate the thumbnail from the video.
         $command_output = $this->run_command($options);
-        if (!file_exists($thumbfile)) {
+        if (!file_exists(drupal_realpath($thumbfile))) {
           $error_param = array('%file' => $thumbfile, '%cmd' => $options, '%out' => $command_output);
           $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
           // Log the error message.
@@ -86,11 +87,11 @@ class video_ffmpeg implements transcoder_interface {
       // @TODO : use file_munge_filename()
       $file = new stdClass();
       $file->uid = $user->uid;
-      $file->status = FILE_STATUS_TEMPORARY;
+      $file->status = 0;
       $file->filename = trim($filename);
-      $file->filepath = $thumbfile;
+      $file->uri = $thumbfile;
       $file->filemime = file_get_mimetype($filename);
-      $file->filesize = filesize($thumbfile);
+      $file->filesize = filesize(drupal_realpath($thumbfile));
       $file->timestamp = time();
       $files[] = $file;
     }
