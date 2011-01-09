@@ -440,16 +440,14 @@ function video_field_formatter_info() {
 //    ),
   );
   //setup our imagecache presets
-  if (module_exists('imagecache')) {
-    //we need formatters for each of our thumbnails.
-    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
-    foreach ($thumb_types as $types) {
-      foreach (imagecache_presets () as $preset) {
-        $formatters[$preset['presetname'] . '__' . $types] = array(
-          'label' => t('[Video] @preset @label', array('@preset' => $preset['presetname'], '@label' => $formatters[$types]['label'])),
-          'field types' => array('video'),
-        );
-      }
+  //we need formatters for each of our thumbnails.
+  $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
+  foreach ($thumb_types as $types) {
+    foreach (image_styles () as $preset) {
+      $formatters[$preset['name'] . '__' . $types] = array(
+        'label' => t('[Video] @preset @label', array('@preset' => $preset['name'], '@label' => $formatters[$types]['label'])),
+        'field types' => array('video'),
+      );
     }
   }
   return $formatters;
