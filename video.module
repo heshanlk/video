@@ -142,6 +142,10 @@ function video_theme() {
     'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
     'file' => 'video.theme.inc',
   );
+  $theme['video_widget'] = array(
+    'render element' => 'element',
+    'file' => 'video.theme.inc',
+  );
   $theme['video_widget_preview'] = array(
     'arguments' => array('item' => TRUE),
     'file' => 'video.theme.inc',
@@ -456,7 +460,7 @@ function video_widget_element_settings(&$element, &$form_state) {
 
   $field = field_widget_field($element, $form_state);
   $instance = field_widget_instance($element, $form_state);
-  $settings = $instance['widget']['settings'];
+  $settings = $instance['settings'];
   // Check if using the default width and replace tokens.
   $default_dimensions = user_access('override player dimensions');
   $description = t('Set your video dimensions.  This will create your player with these dimensions.');
@@ -782,7 +786,7 @@ function video_get_player($element) {
   }
 }
 
-function video_default_widget_settings($widget) {
+function video_default_instance_settings($widget) {
   $form = array();
   // Default video settings.
   $form['default_dimensions'] = array(
@@ -838,6 +842,15 @@ function video_default_field_settings($settings) {
     '#default_value' => !empty($settings['default_video_thumbnail']) ? $settings['default_video_thumbnail'] : '',
     '#upload_location' => 'public://default_video_thumbnail/',
     '#weight' => 19,
+  );
+  $form['preview_video_thumb_style'] = array(
+    '#title' => t('Preview thumbnail style'),
+    '#type' => 'select',
+    '#options' => image_style_options(FALSE),
+    '#empty_option' => '<' . t('no preview') . '>',
+    '#default_value' => !empty($settings['preview_video_thumb_style']) ? $settings['preview_video_thumb_style'] : '',
+    '#description' => t('The preview image will be shown while editing the content.'),
+    '#weight' => 20,
   );
   return $form;
 }

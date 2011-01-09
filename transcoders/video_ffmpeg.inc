@@ -53,25 +53,15 @@ class video_ffmpeg implements transcoder_interface {
     global $user;
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_default_scheme() . ':/' . $video_thumb_path . '/' . $video['fid'];
-
-    // Ensure the destination directory exists and is writable.
-    $directories = explode('/', $final_thumb_path);
+    $final_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
     // Get the file system directory.
-    $file_system = file_default_scheme() . ':/';
-    foreach ($directories as $directory) {
-      $full_path = isset($full_path) ? $full_path . '/' . $directory : $directory;
-      // Don't check directories outside the file system path.
-      if (strpos($full_path, $file_system) === 0) {
-        field_file_check_directory($full_path, FILE_CREATE_DIRECTORY);
-      }
-    }
-
+    file_prepare_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
     // Total thumbs to generate
     $total_thumbs = variable_get('video_thumbs', 5);
-    $videofile = escapeshellarg($video['filepath']);
+    $videofile = file_load($video['fid']);
+    $videopath = escapeshellarg($videofile->uri);
     //get the playtime from the current transcoder
-    $duration = $this->get_playtime($video['filepath']);
+    $duration = $this->get_playtime($videofile->uri);
 
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
@@ -81,7 +71,7 @@ class video_ffmpeg implements transcoder_interface {
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {
         //setup the command to be passed to the transcoder.
-        $options = $this->params['cmd_path'] . ' ' . t($this->params['thumb_command'], array('!videofile' => $videofile, '!seek' => $seek, '!thumbfile' => $thumbfile));
+        $options = $this->params['cmd_path'] . ' ' . t($this->params['thumb_command'], array('!videofile' => $videopath, '!seek' => $seek, '!thumbfile' => $thumbfile));
         // Generate the thumbnail from the video.
         $command_output = $this->run_command($options);
         if (!file_exists($thumbfile)) {
@@ -428,10 +418,13 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function load_job_queue() {
+    return;
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
-            VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
+    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status 
+      FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid
+      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp',
+            array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT), 0, $total_videos, array());
 
     while ($row = db_fetch_object($result)) {
       $videos[] = $row;

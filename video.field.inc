@@ -17,14 +17,17 @@ function video_field_info() {
       'description' => t('This field stores the ID of an video file as an integer value.'),
       'settings' => array(
         'uri_scheme' => variable_get('file_default_scheme', 'public'),
+        'autoconversion' => 0,
+        'autothumbnail' => 'no',
         'default_video_thumbnail' => 0,
+        'preview_video_thumb_style' => 'medium',
       ),
       'instance_settings' => array(
         'file_extensions' => 'mp4 ogg avi mov wmv flv',
         'file_directory' => '',
         'max_filesize' => '',
-        'default_dimensions' => '',
-        'default_player_dimensions' => '',
+        'default_dimensions' => '640x350',
+        'default_player_dimensions' => '640x350'
       ),
       'default_widget' => 'video_upload',
       'default_formatter' => 'video',
@@ -57,12 +60,31 @@ function video_field_settings_form($field, $instance) {
  * Implements hook_field_instance_settings_form().
  */
 function video_field_instance_settings_form($field, $instance) {
+  $widget = $instance['widget'];
+  $instance_settings = $instance['settings'];
   $settings = $instance['settings'];
-
   // Use the file field instance settings form as a basis.
   $form = file_field_instance_settings_form($field, $instance);
   // Remove the description option.
   unset($form['description_field']);
+  // add settings by widget type
+  switch ($instance['widget']['type']) {
+    case 'video_upload':
+      break;
+    case 'video_ftp':
+      $form['ftp_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('FTP Filepath'),
+        '#default_value' => !empty($widget['ftp_path']) ? $widget['ftp_path'] : 'ftpvideos',
+        '#description' => t('The subdirectory within the "<em>files/</em>" directory where you have upload the videos for attachment.  Once the video is attached it will be moved from this directory to the main files directory.'),
+        '#required' => TRUE,
+        '#weight' => 3,
+      );
+      break;
+  }
+  //default settings
+  $default = video_default_instance_settings($settings);
+  $form = $default + $form;
   return $form;
 }
 
@@ -141,7 +163,6 @@ function video_field_widget_info() {
       'field types' => array('video'),
       'settings' => array(
         'progress_indicator' => 'throbber',
-        'preview_image_style' => 'thumbnail',
       ),
       'behaviors' => array(
         'multiple values' => FIELD_BEHAVIOR_CUSTOM,
@@ -153,7 +174,6 @@ function video_field_widget_info() {
       'field types' => array('video'),
       'settings' => array(
         'progress_indicator' => 'throbber',
-        'preview_image_style' => 'thumbnail',
       ),
       'behaviors' => array(
         'multiple values' => FIELD_BEHAVIOR_CUSTOM,
@@ -167,27 +187,9 @@ function video_field_widget_info() {
  * Implements hook_field_widget_settings_form().
  */
 function video_field_widget_settings_form($field, $instance) {
-  $widget = $instance['widget'];
-  $settings = $widget['settings'];
   // Use the file widget settings form.
   $form = file_field_widget_settings_form($field, $instance);
-  switch ($instance['widget']['type']) {
-    case 'video_upload':
-      break;
-    case 'video_ftp':
-      $form['ftp_path'] = array(
-        '#type' => 'textfield',
-        '#title' => t('FTP Filepath'),
-        '#default_value' => !empty($widget['ftp_path']) ? $widget['ftp_path'] : 'ftpvideos',
-        '#description' => t('The subdirectory within the "<em>files/</em>" directory where you have upload the videos for attachment.  Once the video is attached it will be moved from this directory to the main files directory.'),
-        '#required' => TRUE,
-        '#weight' => 3,
-      );
-      break;
-  }
-  //default settings
-  $default = video_default_widget_settings($settings);
-  $form = $default + $form;
+
   return $form;
 }
 
@@ -202,11 +204,6 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
   $elements = file_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
   $settings = $instance['settings'];
   foreach (element_children($elements) as $delta) {
-
-    // Add upload resolution validation.
-    if ($settings['max_resolution'] || $settings['min_resolution']) {
-      $elements[$delta]['#upload_validators']['file_validate_image_resolution'] = array($settings['max_resolution'], $settings['min_resolution']);
-    }
 
     // If not using custom extension validation, ensure this is an image.
     $supported_extensions = array('mp4', 'ogg', 'avi', 'mov', 'wmv', 'flv');
@@ -237,25 +234,34 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
 function video_field_widget_process($element, &$form_state, $form) {
   $item = $element['#value'];
   $item['fid'] = $element['fid']['#value'];
-
   $field = field_widget_field($element, $form_state);
-
-  $element['#theme'] = 'theme_video_widget';
+  $instance = field_widget_instance($element, $form_state);
+  $settings = $field['settings'];
+  $element['#theme'] = 'video_widget';
   $element['#attached']['css'][] = drupal_get_path('module', 'image') . '/video.css';
-
-  $field_name = $element['#field_name'];
-  $delta = $element['#delta'];
-//  $field = content_fields($element['#field_name'], $element['#type_name']);
-
-  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
-    $element['preview']['#value'] = theme('video_widget_preview', $element['#value']);
+  // preview the video thumbnail
+//  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
+//    $element['preview']['#value'] = theme('video_widget_preview', $element['#value']);
+//  }
+  // Add the image preview.
+  if ($settings['default_video_thumbnail'] && $element['#value']['fid'] != 0) {
+    $default_thumbnail = file_load($settings['default_video_thumbnail']);
+    $element['preview'] = array(
+      '#type' => 'markup',
+      '#markup' => theme('image_style', array('style_name' => $settings['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)),
+    );
   }
-
   // Title is not necessary for each individual field.
-  if ($field['cardinality'] < 0) {
+  if ($field['cardinality'] != 1) {
     unset($element['#title']);
   }
-
+  // add file elements by widget type
+  switch ($instance['widget']['type']) {
+    case 'video_upload':
+      break;
+    case 'video_ftp':
+      break;
+  }
   // Create our thumbnails
   video_thumb_process($element, $form_state);
 
