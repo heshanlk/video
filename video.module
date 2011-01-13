@@ -530,7 +530,7 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#title' => t('Bypass auto conversion'),
         '#default_value' => isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
         '#description' => t('This will bypass your auto conversion of videos.'),
-        '#attributes' => array('class' => 'video-bypass-auto-conversion'),
+        '#attributes' => array('class' => array('video-bypass-auto-conversion')),
       );
     }
 
@@ -541,7 +541,7 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#title' => t('Convert video on save'),
         '#default_value' => $convert,
         '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
-        '#attributes' => array('class' => 'video-convert-video-on-save'),
+        '#attributes' => array('class' => array('video-convert-video-on-save')),
       );
 
       if ($convert) {
@@ -561,7 +561,7 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#title' => t('Use the default thumbnail for this video?'),
         '#default_value' => $default_thumb,
         '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
-        '#attributes' => array('class' => 'video-use-default-video-thumb'),
+        '#attributes' => array('class' => array('video-use-default-video-thumb')),
       );
       if ($default_thumb) {
         $element['data']['use_default_video_thumb']['#attributes']['checked'] = 'checked';

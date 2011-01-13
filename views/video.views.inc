@@ -31,7 +31,7 @@ function video_views_data() {
   $data = array();
   $data['video']['table']['group'] = t('Video');
   $widgets = array('videoftp_widget', 'uploadfield_widget');
-  foreach (content_fields () as $field) {
+  foreach (field_info_fields () as $field) {
     if ($field['module'] == 'filefield' && isset($field['widget']['type']) && in_array($field['widget']['type'], $widgets)) {
       $views_data = content_views_field_views_data($field);
       $table_alias = content_views_tablename($field);
