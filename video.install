@@ -82,14 +82,15 @@ function video_schema() {
  * Implementation of hook_install().
  */
 function video_install() {
-  drupal_install_schema('video');
+  // Create the videos directory and ensure it's writable.
+  $directory = file_default_scheme() . '://videos';
+  file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function video_uninstall() {
-  return;
   drupal_uninstall_schema('video');
 // Delete all variables which begin with the namespaced "video_*".
 //  $video_vars = array();
@@ -100,13 +101,15 @@ function video_uninstall() {
 //      variable_del($result['name']);
 //    }
 //  }
+//
+  // Remove the video directory and generated images.
+  file_unmanaged_delete_recursive(file_default_scheme() . '://videos');
 }
 
 /**
  * Implements hook_field_schema().
  */
 function video_field_schema($field) {
-  return;
   return array(
     'columns' => array(
       'fid' => array(
@@ -115,8 +118,8 @@ function video_field_schema($field) {
         'not null' => FALSE,
         'unsigned' => TRUE,
       ),
-      'fid' => array(
-        'description' => 'The {file_managed}.fid being referenced in this field.',
+      'thumbanail' => array(
+        'description' => 'The {file_managed}.fid for the video thumbanil.',
         'type' => 'int',
         'not null' => FALSE,
         'unsigned' => TRUE,
@@ -126,13 +129,7 @@ function video_field_schema($field) {
         'type' => 'varchar',
         'length' => 32,
         'not null' => FALSE,
-      ),
-      'title' => array(
-        'description' => "Image title text, for the image's 'title' attribute.",
-        'type' => 'varchar',
-        'length' => 128,
-        'not null' => FALSE,
-      ),
+      )
     ),
     'indexes' => array(
       'fid' => array('fid'),
