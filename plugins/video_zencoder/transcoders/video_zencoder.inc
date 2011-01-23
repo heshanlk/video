@@ -233,6 +233,14 @@ class video_zencoder implements transcoder_interface {
         '#default_value' => variable_get('video_thumbs_size', '160x120'),
         '#size' => 10
       );
+      global $base_url;
+      $form['zencoder_info']['video_zencoder_postback'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Postback URL for Zencoder'),
+        '#description' => t('Important : Do not change this if you do not know
+          what your doing.<br/> This postback URL will receive video data when they are completed.'),
+        '#default_value' => variable_get('video_zencoder_postback', $base_url . '/postback/jobs'),
+      );
     }
     $form['video_zencoder_end'] = array(
       '#type' => 'markup',

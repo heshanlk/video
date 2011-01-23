@@ -60,8 +60,8 @@ class video_zencoder_api {
     // Notifications
 //    if(!empty($notify_url))
 //    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
-    $url = $base_url . '/postback/jobs';
-//    $url = 'http://123.231.41.190/postback/jobs';
+    $url = variable_get('video_zencoder_postback', $base_url . '/postback/jobs');
+//    $url = 'http://123.231.63.138/postback/jobs';
     $notifications[] = array('format' => 'json', 'url' => $url);
 
     //get the presets
@@ -240,7 +240,7 @@ class video_zencoder_api {
     } else {
       $errors = '';
       foreach ($request->errors as $error) {
-        if($error == 'Email has already been taken'){
+        if ($error == 'Email has already been taken') {
           drupal_set_message(t('Your account already exists on Zencoder. So !login to here and enter API key below', array('!login' => l(t('login'), 'https://app.zencoder.com/session/new'))));
           variable_set('video_zencoder_api_key', 'Please enter your API Key');
           return TRUE;
