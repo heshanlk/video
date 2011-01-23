@@ -109,7 +109,7 @@ class video_ffmpeg implements transcoder_interface {
 
   public function convert_video($video) {
     // This will update our current video status to active.
-//    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     // Get the converted file object
     //we are going to move our video to an "original" folder
     //we are going to transcode the video to the "converted" folder
