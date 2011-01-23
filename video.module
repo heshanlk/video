@@ -470,7 +470,8 @@ function video_widget_element_settings(&$element, &$form_state) {
   $player_dimensions = $settings['default_player_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
-  if ($field['settings']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
+  if ($field['settings']['autoconversion'] && isset($element['preview']) &&
+      $file['fid'] != 0 && $default_dimensions) {
     $file_object = file_load($file['fid']);
     $video_info = _video_dimensions_options($options, drupal_realpath($file_object->uri));
     $description = t('Set your video dimensions.  This will create your player
@@ -500,13 +501,17 @@ function video_widget_element_settings(&$element, &$form_state) {
     $player_dimensions = $file['data']['player_dimensions'];
   }
 
-  $element['data']['dimensions'] = array(
-    '#type' => 'select',
-    '#title' => t('Dimensions for Video Transcoding'),
-    '#default_value' => $dimensions,
-    '#description' => $description,
-    '#options' => $options,
-  );
+  // show only enabled the autoconversion
+  if ($field['settings']['autoconversion']) {
+    $element['data']['dimensions'] = array(
+      '#type' => 'select',
+      '#title' => t('Dimensions for Video Transcoding'),
+      '#default_value' => $dimensions,
+      '#description' => $description,
+      '#options' => $options,
+    );
+  }
+  // get the player dimentions
   $element['data']['player_dimensions'] = array(
     '#type' => 'select',
     '#title' => t('Dimensions for Video Player'),
@@ -533,7 +538,7 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#attributes' => array('class' => array('video-bypass-auto-conversion')),
       );
     }
-
+// check this to convert the video on save
     $convert = isset($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE);
     if (user_access('convert on submission')) {
       $element['data']['convert_video_on_save'] = array(
@@ -553,25 +558,26 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#value' => $convert,
       );
     }
+  }
 
-    $default_thumb = isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE);
-    if (user_access('use default thumb')) {
-      $element['data']['use_default_video_thumb'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Use the default thumbnail for this video?'),
-        '#default_value' => $default_thumb,
-        '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
-        '#attributes' => array('class' => array('video-use-default-video-thumb')),
-      );
-      if ($default_thumb) {
-        $element['data']['use_default_video_thumb']['#attributes']['checked'] = 'checked';
-      }
-    } else {
-      $element['data']['use_default_video_thumb'] = array(
-        '#type' => 'value',
-        '#value' => $default_thumb,
-      );
+  // use of default thumbnail
+  $default_thumb = isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE);
+  if (user_access('use default thumb')) {
+    $element['data']['use_default_video_thumb'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use the default thumbnail for this video?'),
+      '#default_value' => $default_thumb,
+      '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
+      '#attributes' => array('class' => array('video-use-default-video-thumb')),
+    );
+    if ($default_thumb) {
+      $element['data']['use_default_video_thumb']['#attributes']['checked'] = 'checked';
     }
+  } else {
+    $element['data']['use_default_video_thumb'] = array(
+      '#type' => 'value',
+      '#value' => $default_thumb,
+    );
   }
 }
 

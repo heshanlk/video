@@ -89,22 +89,24 @@ function video_install() {
  * Implementation of hook_uninstall().
  */
 function video_uninstall() {
-//  drupal_uninstall_schema('video');
+  return;
+  drupal_uninstall_schema('video');
 // Delete all variables which begin with the namespaced "video_*".
-  $video_vars = array();
-  $query = "SELECT name FROM {variable} WHERE name LIKE '%video_%'";
-  $video_vars = db_query($query);
-  while ($result = db_fetch_array($video_vars)) {
-    if (strpos($result['name'], 'video') === 0) {
-      variable_del($result['name']);
-    }
-  }
+//  $video_vars = array();
+//  $query = "SELECT name FROM {variable} WHERE name LIKE '%video_%'";
+//  $video_vars = db_query($query);
+//  while ($result = db_fetch_array($video_vars)) {
+//    if (strpos($result['name'], 'video') === 0) {
+//      variable_del($result['name']);
+//    }
+//  }
 }
 
 /**
  * Implements hook_field_schema().
  */
 function video_field_schema($field) {
+  return;
   return array(
     'columns' => array(
       'fid' => array(
