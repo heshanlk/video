@@ -847,9 +847,10 @@ function video_default_field_settings($settings) {
   $form['default_video_thumbnail'] = array(
     '#title' => t('Default video thumbnail'),
     '#type' => 'managed_file',
+//    '#element_validate' => array('video_field_default_thumbnail_validate'),
     '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
     '#default_value' => !empty($settings['default_video_thumbnail']) ? $settings['default_video_thumbnail'] : '',
-    '#upload_location' => 'public://videos/thumbnails/default/' . $settings['default_video_thumbnail'],
+    '#upload_location' => 'public://videos/thumbnails/default',
     '#weight' => 19,
   );
   $form['preview_video_thumb_style'] = array(
