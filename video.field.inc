@@ -36,52 +36,6 @@ function video_field_info() {
 }
 
 /**
- * Element specific validation for video default value.
- *
- */
-function video_field_settings_validate($element, &$form_state) {
-//  echo '<pre>';
-//  print_r($form_state);
-//  die();
-  // Verify the destination exists
-  $destination = file_default_scheme() . ':/' . 'videos/thumbnails/default';
-  if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
-    form_set_error('default_video_thumbnail', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
-    return;
-  }
-
-  $validators = array(
-    'file_validate_is_image' => array(),
-  );
-
-  // We save the upload here because we can't know the correct path until the file is saved.
-  if (!$file = file_save_upload('default_video_thumbnail', $validators, $destination)) {
-    // No upload to save we hope... or file_save_upload() reported an error on its own.
-    return;
-  }
-
-  // Remove old image (if any) & clean up database.
-  $old_default = $form_state['values']['default_video_thumbnail'];
-  if (!empty($old_default['fid'])) {
-    if (file_delete(file_create_path($old_default['filepath']))) {
-      db_query('DELETE FROM {files} WHERE fid=%d', $old_default['fid']);
-    }
-  }
-
-  // Make the file permanent and store it in the form.
-  file_set_status($file, FILE_STATUS_PERMANENT);
-  $file->timestamp = time();
-  $form_state['values']['default_video_thumbnail'] = (array) $file;
-}
-
-function video_widget_settings_file_path_validate($element, &$form_state) {
-  //lets prepend our video folder to the path settings.  first truncate videos/ off the end if it exists.
-  // #848804
-  if (!module_exists('filefield_paths'))
-    $form_state['values']['file_path'] = 'videos/' . $form_state['values']['file_path'];
-}
-
-/**
  * Implements hook_field_settings_form().
  */
 function video_field_settings_form($field, $instance) {
@@ -100,6 +54,21 @@ function video_field_settings_form($field, $instance) {
   );
   $form = $form + video_default_field_settings($settings);
   return $form;
+}
+
+/**
+ * Element specific validation for video default value.
+ *
+ */
+function video_field_default_thumbnail_validate($element, &$form_state) {
+  $settings = $form_state['values']['field']['settings'];
+  // Make the file permanent and store it in the form.
+  if (!empty($settings['default_video_thumbnail']['fid'])) {
+    $file = file_load($settings['default_video_thumbnail']['fid']);
+    $file->status |= FILE_STATUS_PERMANENT;
+    $file = file_save($file);
+    $form_state['values']['field']['settings']['default_video_thumbnail'] = (array) $file;
+  }
 }
 
 /**
