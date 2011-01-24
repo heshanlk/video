@@ -616,10 +616,13 @@ function video_widget_process(&$element, &$form_state) {
       }
 
       // Save manually uploaded thumbs (if they exist) and add them to element
-      if (isset($_FILES['files']) && is_array($_FILES['files']['name']))
-        if (array_key_exists($field['field_name'] . '_' . $element['#delta'] . '_thumbs', $_FILES['files']['name'])) {
-          video_upload_manual_thumb($element);
-        }
+      $filename = $field['field_name'] . '_' . $element['#delta'] . '_thumbs';
+      if (isset($_FILES['files']) && is_array($_FILES['files']['name']) && !empty($_FILES['files']['name'][$filename])) {
+        video_upload_manual_thumb($element);
+      }
+      else {
+        $element['data']['video_thumb']['#value'] = $element['#default_value']['data']['video_thumb'];
+      }
 
       // Call hook_video_submit API
       video_module_invoke('insert', $element, $form_state);
