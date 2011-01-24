@@ -129,6 +129,12 @@ function video_field_schema($field) {
         'type' => 'varchar',
         'length' => 32,
         'not null' => FALSE,
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => 'A serialized array of file related data. Use of this field is discouraged and it will likely disappear in a future version of Drupal.',
       )
     ),
     'indexes' => array(
