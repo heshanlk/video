@@ -324,16 +324,17 @@ function video_thumb_process(&$element, &$form_state) {
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-//    if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
-//      $large_thumb = array('filepath' => $file['data']['video_thumb']);
-//    } elseif (!empty($field['settings']['default_video_thumb'])) {
-//      $large_thumb = $field['settings']['default_video_thumb'];
-//    } else {
-//      $large_thumb = array('filepath' => $default_thumb);
-//    }
-//    $default_thumbnail = file_load($settings['default_video_thumbnail']);
-//    // @todo Integrate the thumbnails with imagecache.
-//    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $settings['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)) . '</div>';
+    if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
+      $large_thumb = array('filepath' => $file['data']['video_thumb']);
+    } elseif (!empty($field['settings']['default_video_thumb'])) {
+      $large_thumb = $field['settings']['default_video_thumb'];
+    } else {
+      $large_thumb = array('filepath' => $default_thumb);
+    }
+//    print_r($field['settings']['default_video_thumbnail']);
+    $default_thumbnail = file_load($field['settings']['default_video_thumbnail']);
+    // @todo Integrate the thumbnails with imagecache.
+    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)) . '</div>';
   }
 }
 
@@ -848,7 +849,7 @@ function video_default_field_settings($settings) {
     '#type' => 'managed_file',
     '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
     '#default_value' => !empty($settings['default_video_thumbnail']) ? $settings['default_video_thumbnail'] : '',
-    '#upload_location' => 'public://default_video_thumbnail/',
+    '#upload_location' => 'public://videos/thumbnails/default/' . $settings['default_video_thumbnail'],
     '#weight' => 19,
   );
   $form['preview_video_thumb_style'] = array(
@@ -861,50 +862,6 @@ function video_default_field_settings($settings) {
     '#weight' => 20,
   );
   return $form;
-}
-
-/**
- * Element specific validation for video default value.
- *
- */
-function video_default_widget_settings_validate($element, &$form_state) {
-  return;
-  // Verify the destination exists
-  $destination = file_default_scheme() . ':/' . 'video_thumbs';
-  if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
-    form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
-    return;
-  }
-
-  $validators = array(
-    'file_validate_is_image' => array(),
-  );
-
-  // We save the upload here because we can't know the correct path until the file is saved.
-  if (!$file = file_save_upload('default_video_thumb_upload', $validators, $destination)) {
-    // No upload to save we hope... or file_save_upload() reported an error on its own.
-    return;
-  }
-
-  // Remove old image (if any) & clean up database.
-  $old_default = $form_state['values']['default_video_thumb'];
-  if (!empty($old_default['fid'])) {
-    if (file_delete(file_create_path($old_default['filepath']))) {
-      db_query('DELETE FROM {files} WHERE fid=%d', $old_default['fid']);
-    }
-  }
-
-  // Make the file permanent and store it in the form.
-  file_set_status($file, FILE_STATUS_PERMANENT);
-  $file->timestamp = time();
-  $form_state['values']['default_video_thumb'] = (array) $file;
-}
-
-function video_widget_settings_file_path_validate($element, &$form_state) {
-  //lets prepend our video folder to the path settings.  first truncate videos/ off the end if it exists.
-  // #848804
-  if (!module_exists('filefield_paths'))
-    $form_state['values']['file_path'] = 'videos/' . $form_state['values']['file_path'];
 }
 
 /*
