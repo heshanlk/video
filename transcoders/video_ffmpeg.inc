@@ -40,7 +40,7 @@ class video_ffmpeg implements transcoder_interface {
 
   public function run_command($options) {
 //    $command = $this->nice . ' ' . $this->params['cmd_path'] . ' ' . $options . '  2>&1';
-    $command = $options . '  2>&1';
+    $command = $this->nice . ' ' . $options . '  2>&1';
     watchdog('video_ffmpeg', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
     ob_start();
     passthru($command, $command_return);
