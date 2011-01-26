@@ -141,6 +141,9 @@ class video_amazon_s3 {
           $prefix = $this->ssl ? 'https://' : 'http://';
           $video->filepath = $prefix . $video->bucket . '.s3.amazonaws.com/' . $filename;
           if ($this->update($video)) {
+            // remove local file
+            if (variable_get('amazon_s3_delete_local', FALSE))
+              unlink($filename);
             watchdog('amazon_s3', t('Successfully uploaded our file: !file into the bucket %bucket on the Amazon S3 server.', array('!file' => $filepath, '%bucket' => $this->bucket)), array(), WATCHDOG_INFO);
           }
         } else {

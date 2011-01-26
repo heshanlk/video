@@ -127,6 +127,12 @@ class video_s3 extends video_filesystem {
         '#type' => 'markup',
         '#value' => theme('table', $header, $rows),
       );
+      $form['amazon_s3_delete_local'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Delete Local file?'),
+        '#default_value' => variable_get('amazon_s3_delete_local', FALSE),
+        '#description' => t('Delete the local file from server on successful submit to the S3 server.'),
+      );
     }
     return $form;
   }
