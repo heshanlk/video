@@ -619,8 +619,7 @@ function video_widget_process(&$element, &$form_state) {
       $filename = $field['field_name'] . '_' . $element['#delta'] . '_thumbs';
       if (isset($_FILES['files']) && is_array($_FILES['files']['name']) && !empty($_FILES['files']['name'][$filename])) {
         video_upload_manual_thumb($element);
-      }
-      else {
+      } else {
         $element['data']['video_thumb']['#value'] = $element['#default_value']['data']['video_thumb'];
       }
 
@@ -663,7 +662,7 @@ function video_upload_manual_thumb(&$element) {
   $old_thumb = $element['data']['video_thumb']['#value'];
   if (!empty($old_thumb)) {
     if (file_delete($old_thumb)) {
-      db_query('DELETE FROM {files} WHERE filepath=%d', $old_thumb);
+      db_query('DELETE FROM {files} WHERE filepath=\'%s\'', $old_thumb);
     }
   }
   // Make the file permanent and store it in the form.
