@@ -50,11 +50,32 @@ function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
 }
 
 /*
+ * Renders the video thumbnail with no inbuilt node link.
+ */
+
+function theme_video_formatter_video_nonodelink($element, $imagecache = FALSE) {
+  // Inside a view $element may contain null data. In that case, just return.
+  if (empty($element['#item']['fid']))
+    return '';
+  //setup our thumbnail object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  $thumbnail = $video_helper->thumbnail_object($element);
+  // return the themed image
+  $output = '<div class="popups video video-nonodelink video-' . $element['#field_name'] . '">';
+  $output .= theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title, null, TRUE, $imagecache);
+  $output .= '</div>';
+  return $output;
+}
+
+/*
  * Renders the video thumbnail.
  */
+
 function theme_video_formatter_video_thumbnail($element, $imagecache = FALSE) {
   // Inside a view $element may contain null data. In that case, just return.
-  if (empty($element['#item']['fid'])) return '';
+  if (empty($element['#item']['fid']))
+    return '';
   //setup our thumbnail object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
