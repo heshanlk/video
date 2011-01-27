@@ -11,6 +11,7 @@
  * - Add a metadata extractor class to extract width and height
  *
  */
+module_load_include('inc', 'video_s3', '/includes/amazon_s3');
 
 class video_zencoder implements transcoder_interface {
 
