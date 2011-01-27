@@ -27,10 +27,8 @@
   <?php $videojs_sources .= "<source src=\"$filepath\" type='$mimetype; codecs=\"" . $codecs[$mimetype] . "\"' />"; ?>
   <?php endif; ?>
   <?php endforeach; ?>
-<?php print $videojs_sources; ?>
+  <?php print $videojs_sources; ?>
       <!-- Flash Fallback. Use any flash video player here. Make sure to keep the vjs-flash-fallback class. -->
-  <?php
-      // override the video player to fix the mp4 issue.
-      $video->player = 'flv'; ?>
-<?php echo theme('video_flv', $video, $node); ?>
+  <?php $video->player = 'flv'; ?>
+  <?php echo theme('video_flv', $video, $node); ?>
 </video>
