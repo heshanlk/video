@@ -50,6 +50,20 @@ function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
 }
 
 /*
+ * Renders the video thumbnail.
+ */
+function theme_video_formatter_video_thumbnail($element, $imagecache = FALSE) {
+  // Inside a view $element may contain null data. In that case, just return.
+  if (empty($element['#item']['fid'])) return '';
+  //setup our thumbnail object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  $thumbnail = $video_helper->thumbnail_object($element);
+  //get our themed image
+  return theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title, '', TRUE, $imagecache);
+}
+
+/*
  * Renders the video thumbnail linked to the absolute filepath of the video.  Colorbox is introduced to handle
  * the video in an overlay.
  *

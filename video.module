@@ -158,6 +158,10 @@ function video_theme() {
     'arguments' => array('element' => NULL, 'imagecache' => NULL),
     'file' => 'video_formatter.inc',
   );
+  $theme['video_formatter_video_thumbnail'] = array(
+    'arguments' => array('element' => NULL, 'imagecache' => NULL),
+    'file' => 'video_formatter.inc',
+  );
   //$theme['video_formatter_video_colorbox'] = array(
   //  'arguments' => array('element' => NULL, 'imagecache' => NULL),
   //  'file' => 'video_formatter.inc',
@@ -198,7 +202,7 @@ function video_theme() {
   if (module_exists('imagecache')) {
     //we need formatters for each of our thumbnails.
     //@todo create a function to check for our colorbox module and only add theme elements that could be used.
-    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
+    $thumb_types = array('video_nodelink', 'video_thumbnail'); //array('video_colorbox', 'video_nodelink');
     foreach ($thumb_types as $types) {
       foreach (imagecache_presets () as $preset) {
         $theme['video_formatter_' . $preset['presetname'] . '__' . $types] = array(
@@ -227,6 +231,11 @@ function video_field_formatter_info() {
       'field types' => array('filefield'),
       'description' => t('Displays the video thumbnail and links to the node.'),
     ),
+    'video_thumbnail' => array(
+      'label' => t('Video Thumbnail'),
+      'field types' => array('filefield'),
+      'description' => t('Displays the video thumbnail.'),
+    ),
     //'video_colorbox' => array(
     //  'label' => t('Video Thumbnail to Colorbox'),
     //  'field types' => array('filefield'),
@@ -241,7 +250,7 @@ function video_field_formatter_info() {
   //setup our imagecache presets
   if (module_exists('imagecache')) {
     //we need formatters for each of our thumbnails.
-    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
+    $thumb_types = array('video_nodelink', 'video_thumbnail'); //array('video_colorbox', 'video_nodelink');
     foreach ($thumb_types as $types) {
       foreach (imagecache_presets () as $preset) {
         $formatters[$preset['presetname'] . '__' . $types] = array(
@@ -886,7 +895,7 @@ function video_default_widget_settings($widget) {
   // as a standard field setting.
   $form['default_video_thumb'] = array(
     '#type' => 'value',
-    '#value' => $widget['default_video_thumb'],
+    '#value' => isset($widget['default_video_thumb']) ? $widget['default_video_thumb'] : NULL,
   );
   return $form;
 }
