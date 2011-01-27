@@ -19,7 +19,7 @@ function video_s3_perm() {
 function video_s3_help($path, $arg) {
   switch ($path) {
     case 'admin/settings/video/amazon_s3':
-      $output = t('Use Amazon Simple Storage Service (Amazon S3) to store your video files.  This free\'s up bandwidth from your site, providing a faster experience for your users.  Simply enable this module and enter your authentication details and your done!');
+      $output = t('Use Amazon Simple Storage Service (Amazon S3) to store your video files.  This frees up bandwidth from your site, providing a faster experience for your users.  Simply enable this module and enter your authentication details and you\'re done!');
       return $output;
   }
 }
@@ -120,6 +120,10 @@ function video_s3_video_load(&$video) {
       $video->files->{$video->player}->url = video_s3_get_authenticated_url($amazon->filename);
     else
       $video->files->{$video->player}->url = $amazon->filepath;
+    // Are we using CloudFront?
+    if ($cf_subdomain = variable_get('amazon_s3_cf_domain', FALSE)) {
+      $video->files->{$video->player}->url = preg_replace('/[^\/]+\.s3\.amazonaws\.com/', $cf_subdomain, $video->files->{$video->player}->url);
+    }
 
     $video->extension = pathinfo($amazon->filepath, PATHINFO_EXTENSION);
   }

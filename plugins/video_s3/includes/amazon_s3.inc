@@ -133,8 +133,18 @@ class video_amazon_s3 {
         // use the file object as file name
         $video->filename = $filename;
         $perm = (variable_get('amazon_s3_private', FALSE) == FALSE) ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE;
+        $expires_interval = variable_get('amazon_s3_expires_offset', 604800);
+        if ($expires_interval === 'none') {
+          $headers = array();
+        } else {
+          $headers = array('Expires' => gmdate('r', $expires_interval == 0 ? 0 : (time() + $expires_interval)));
+        }
+        $cc = variable_get('amazon_s3_cache_control_max_age', 'none');
+        if ($cc !== 'none') {
+          $headers['Cache-Control'] = 'max-age=' . $cc;
+        }
 
-        if ($this->s3->putObjectFile($filepath, $this->bucket, $filename, $perm)) {
+        if ($this->s3->putObject($this->s3->inputFile($filepath), $this->bucket, $filename, $perm, array(), $headers)) {
           // Update our table.
           $video->bucket = $this->bucket;
           $video->vid = $row->vid;
@@ -154,6 +164,31 @@ class video_amazon_s3 {
         watchdog('amazon_s3', 'We did not find the file id: ' . $row->fid . ' or it is still queued for ffmpeg processing.', array(), WATCHDOG_DEBUG);
       }
     }
+    // Update Expires headers on currently-uploaded files.
+    // First, make sure this is a good time to do this. It doesn't make much
+    // sense to do this more often than the Expires offset.
+    $expires_offset = variable_get('amazon_s3_expires_offset', 604800);
+    if ($expires_offset !== 'none' && $expires_offset != 0 && variable_get('amazon_s3_expires_last_cron', 0) + $expires_offset < time()) {
+      $active = db_query('SELECT bucket, filename FROM {video_s3} WHERE status = %d', VIDEO_S3_COMPLETE);
+      $headers = array('Expires' => gmdate('r', time() + $expires_offset));
+      // Note that Cache-Control headers are always relative values (X seconds
+      // in the future from the point they are sent), so we don't need to update
+      // them regularly like we do with Expires headers. However, if we don't
+      // send one, the one that is set (if any) will be deleted. (Also, if the
+      // human has changed this setting on the administration page, we want to
+      // update video info accordingly.)
+      // @todo: Logic problems: This only updates when expires headers update…
+      // Might want to find a way so that these update immediately when the
+      // admin settings form is submitted.
+      $cc = variable_get('amazon_s3_cache_control_max_age', 'none');
+      if ($cc !== 'none') {
+        $headers['Cache-Control'] = 'max-age=' . $cc;
+      }
+      while ($file = db_fetch_object($active)) {
+        $this->update_headers($file->bucket, $file->filename, $headers);
+      }
+    }
+    variable_set('amazon_s3_expires_last_cron', time());
   }
 
   public function get_object_info($object) {
@@ -167,6 +202,15 @@ class video_amazon_s3 {
 
   public function get_object($object, $saveTo = false) {
     return $this->s3->getObject($this->bucket, $object, $saveTo);
+  }
+
+  public function update_headers($bucket, $object, $headers) {
+    // Reset the Content-Type header usually sent when the S3 library puts a
+    // file - we'll lose it otherwise.
+    if (!isset($headers['Content-Type'])) {
+      $headers['Content-Type'] = $this->s3->__getMimeType($object);
+    }
+    return $this->s3->copyObject($bucket, $object, $bucket, $object, variable_get('amazon_s3_private', FALSE) == FALSE ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE, array(), $headers);
   }
 
 }

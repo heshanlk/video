@@ -101,6 +101,67 @@ class video_s3 extends video_filesystem {
       '#size' => 50,
     );
 
+    // cloud front
+    $form['amazon_s3_cf_domain'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CloudFront domain name'),
+      '#description' => t('If you are using Amazon CloudFront with this bucket, enter the CloudFront domain name. This will probably be something like <em>X.cloudfront.net</em> where <em>X</em> is a series of random-looking numbers and letters. Do not include <em>http://</em> at the beginning.'),
+      '#default_value' => variable_get('amazon_s3_cf_domain', ''),
+      '#size' => 50,
+    );
+    $form['headers_fset'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Headers'),
+    );
+    $form['headers_fset']['amazon_s3_expires_offset'] = array(
+      '#type' => 'select',
+      '#title' => t('Expires header'),
+      '#options' => array(
+        'none' => t('(none)'),
+        '0' => t('File is always expired (Unix epoch, 1 Jan 1970, 00:00:00 UTC)'),
+      ),
+      '#default_value' => variable_get('amazon_s3_expires_offset', 604800),
+      '#description' => t('Amazon S3 can be told to send an Expires header (<a href="http://developer.yahoo.com/performance/rules.html#expires">learn more</a>) with served files. This will induce most browsers to cache the file longer, reducing the frequency that it is re-downloaded from the server. This can save on bandwidth charges and provide a faster experience for visitors. However, files which will be frequently updated with the same filename should use a low Expires offset, or else visitors won\'t see &quot;fresh&quot; data. Also, Expires headers will be updated for currently-uploaded files on cron runs, so the interval set here should be greater than or equal to your server\'s cron run interval for best results.'),
+    );
+    $form['headers_fset']['amazon_s3_cache_control_max_age'] = array(
+      '#type' => 'select',
+      '#title' => t('max-age parameter of Cache-Control header'),
+      '#options' => array(
+        'none' => t('(none)'),
+      ),
+      '#default_value' => variable_get('amazon_s3_cache_control_max_age', 'none'),
+      '#description' => t('When using Amazon CloudFront, the max-age parameter of the Cache-Control header (<a href="http://condor.depaul.edu/~dmumaugh/readings/handouts/SE435/HTTP/node24.html">learn more</a>) tells CloudFront\'s edge servers how frequently they should check the Amazon S3 bucket to see if the files they have cached have been changed or deleted. If you need to ensure that files on edge servers are updated quickly after a video is changed or deleted, set this to a low value; if videos are rarely changed or deleted, or visitors seeing stale data is not a problem, set this to a high value for speed and/or to save on the cost of transferring files from your S3 server to the edge servers. If no value is selected, Amazon\'s default of one day will be used.'),
+    );
+    foreach (array(
+              300, // 5 min
+              600, // 10 min
+              1800, // 30 min
+              3600, // 1 hr
+              14400, // 4 hr
+              28800, // 8 hr
+              43200, // 12 hr
+              86400, // 1 day
+              172800, // 2 day
+              604800, // 1 wk
+              1209600, // 2 wk
+              2419200, // 4 wk
+              4838400, // 8 wk
+              14515200, // 24 wk
+              31536000, // 1 yr (365 day)
+              63072000, // 2 yr
+              157680000, // 5 yr
+              315360000, // 10 yr
+    ) as $time) {
+      $interval = format_interval($time, 1);
+      $form['headers_fset']['amazon_s3_expires_offset']['#options'][$time] = $interval;
+      if ($time >= 3600) {
+        // The minimum Cache-Control; max-age value Amazon will accept is one hour.
+        $form['headers_fset']['amazon_s3_cache_control_max_age']['#options'][$time] = $interval;
+      }
+    }
+
+
+
     //lets show our buckets in table format with a delete link.
     //@todo add permissions
     //were enabled, that means they have successfully connected and created a bucket.
