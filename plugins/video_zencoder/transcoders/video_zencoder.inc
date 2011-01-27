@@ -11,7 +11,6 @@
  * - Add a metadata extractor class to extract width and height
  *
  */
-module_load_include('inc', 'video_s3', '/includes/amazon_s3');
 
 class video_zencoder implements transcoder_interface {
 
@@ -82,6 +81,8 @@ class video_zencoder implements transcoder_interface {
   }
 
   public function convert_video($video) {
+    // load the S3 lib
+    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
     // get the active jobs and check for the status
     if ($video->video_status == VIDEO_RENDERING_ACTIVE) {
       return;
@@ -355,7 +356,7 @@ class video_zencoder implements transcoder_interface {
     module_load_include('inc', 'video_s3', '/includes/amazon_s3');
     $video_row = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE fid = %d', $video->fid));
     $data = unserialize($video_row->data);
-    if(empty($data))
+    if (empty($data))
       return $video;
     foreach ($data as $value) {
       $extension = pathinfo($value->url, PATHINFO_EXTENSION);
