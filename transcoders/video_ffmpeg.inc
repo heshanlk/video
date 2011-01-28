@@ -172,10 +172,7 @@ class video_ffmpeg implements transcoder_interface {
         if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
           // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
           // the command to be execute so we need to fudge the command to run qt-faststart.
-          $cmd_path = $this->params['cmd_path'];
-          $this->params['cmd_path'] = $this->params['faststart_cmd'];
-          $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted, $verbose);
-          $this->params['cmd_path'] = $cmd_path;
+          $command_output .= $this->run_command($this->params['faststart_cmd'] . ' ' . $ffmpeg_output . ' ' . $converted);
 
           // Delete the temporary output file.
           file_delete($ffmpeg_output);
