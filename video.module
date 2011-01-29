@@ -292,11 +292,11 @@ function video_thumb_process(&$element, &$form_state) {
       }
 
       if (!empty($thumbss)) {
-        $element['data']['video_thumb'] = array(
+        $element['video_thumb'] = array(
           '#type' => 'radios',
           '#title' => t('Video Thumbnails'),
           '#options' => $thumbss,
-          '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
+          '#default_value' => !empty($file['video_thumb']) ? $file['video_thumb'] : $default_thumb,
           '#weight' => 10,
           '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
         );
@@ -308,24 +308,24 @@ function video_thumb_process(&$element, &$form_state) {
     if ((!empty($gen_fail) && $field['settings']['autothumbnail'] == 'auto_fallback') ||
         $field['settings']['autothumbnail'] == 'manual_upload') {
 
-      $element['data']['video_thumb_file'] = array(
+      $element['video_thumb_file'] = array(
         '#name' => 'files[' . $element['#field_name'] . '_' . $element['#delta'] . '_thumbs]',
         '#type' => 'file',
         '#size' => '40',
-        '#title' => !empty($file['data']['video_thumb']) ? t('Replace the video thumbnail') : t('Upload a video thumbnail'),
+        '#title' => !empty($file['video_thumb']) ? t('Replace the video thumbnail') : t('Upload a video thumbnail'),
         '#description' => t('This thumbnail will be uploaded when the node is saved.'),
       );
 
-      $element['data']['video_thumb'] = array(
+      $element['video_thumb'] = array(
         '#type' => 'value',
-        '#value' => isset($file['data']['video_thumb']) ? $file['data']['video_thumb'] : false,
+        '#value' => isset($file['video_thumb']) ? $file['video_thumb'] : false,
       );
     }
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
-      $large_thumb = array('filepath' => $file['data']['video_thumb']);
+    if (isset($file['video_thumb']) && !empty($file['video_thumb'])) {
+      $large_thumb = array('filepath' => $file['video_thumb']);
     } elseif (!empty($field['settings']['default_video_thumb'])) {
       $large_thumb = $field['settings']['default_video_thumb'];
     } else {
@@ -493,18 +493,18 @@ function video_widget_element_settings(&$element, &$form_state) {
     }
   }
   // Override our dimensions to the user selected.
-  if (isset($file['data']['dimensions']) && !empty($file['data']['dimensions'])) {
+  if (isset($file['dimensions']) && !empty($file['dimensions'])) {
     $dimensions = $file['data']['dimensions'];
   }
 
   // Override our player dimensions to the user selected.
-  if (isset($file['data']['player_dimensions']) && !empty($file['data']['player_dimensions'])) {
-    $player_dimensions = $file['data']['player_dimensions'];
+  if (isset($file['player_dimensions']) && !empty($file['player_dimensions'])) {
+    $player_dimensions = $file['player_dimensions'];
   }
 
   // show only enabled the autoconversion
   if ($field['settings']['autoconversion']) {
-    $element['data']['dimensions'] = array(
+    $element['dimensions'] = array(
       '#type' => 'select',
       '#title' => t('Dimensions for Video Transcoding'),
       '#default_value' => $dimensions,
@@ -513,7 +513,7 @@ function video_widget_element_settings(&$element, &$form_state) {
     );
   }
   // get the player dimentions
-  $element['data']['player_dimensions'] = array(
+  $element['player_dimensions'] = array(
     '#type' => 'select',
     '#title' => t('Dimensions for Video Player'),
     '#default_value' => $player_dimensions,
@@ -522,27 +522,27 @@ function video_widget_element_settings(&$element, &$form_state) {
   );
   // If users cannot change the default dimensions, lets change this to a value.
   if (!$default_dimensions) {
-    $element['data']['dimensions']['#type'] = 'value';
-    $element['data']['dimensions']['#value'] = $dimensions;
-    $element['data']['player_dimensions']['#type'] = 'value';
-    $element['data']['player_dimensions']['#value'] = $player_dimensions;
+    $element['dimensions']['#type'] = 'value';
+    $element['dimensions']['#value'] = $dimensions;
+    $element['player_dimensions']['#type'] = 'value';
+    $element['player_dimensions']['#value'] = $player_dimensions;
   }
 
   // only in preview mode and then create thumbnails
   if ($field['settings']['autoconversion']) {
     if (user_access('bypass conversion video')) {
-      $element['data']['bypass_autoconversion'] = array(
+      $element['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
-        '#default_value' => isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
+        '#default_value' => isset($file['bypass_autoconversion']) ? $file['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
         '#description' => t('This will bypass your auto conversion of videos.'),
         '#attributes' => array('class' => array('video-bypass-auto-conversion')),
       );
     }
 // check this to convert the video on save
-    $convert = isset($file['data']['convert_video_on_save']) ? $file['data']['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE);
+    $convert = isset($file['convert_video_on_save']) ? $file['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE);
     if (user_access('convert on submission')) {
-      $element['data']['convert_video_on_save'] = array(
+      $element['convert_video_on_save'] = array(
         '#type' => 'checkbox',
         '#title' => t('Convert video on save'),
         '#default_value' => $convert,
@@ -551,10 +551,10 @@ function video_widget_element_settings(&$element, &$form_state) {
       );
 
       if ($convert) {
-        $element['data']['convert_video_on_save']['#attributes']['checked'] = 'checked';
+        $element['convert_video_on_save']['#attributes']['checked'] = 'checked';
       }
     } else {
-      $element['data']['convert_video_on_save'] = array(
+      $element['convert_video_on_save'] = array(
         '#type' => 'value',
         '#value' => $convert,
       );
@@ -562,9 +562,9 @@ function video_widget_element_settings(&$element, &$form_state) {
   }
 
   // use of default thumbnail
-  $default_thumb = isset($file['data']['use_default_video_thumb']) ? $file['data']['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE);
+  $default_thumb = isset($file['use_default_video_thumb']) ? $file['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE);
   if (user_access('use default thumb')) {
-    $element['data']['use_default_video_thumb'] = array(
+    $element['use_default_video_thumb'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use the default thumbnail for this video?'),
       '#default_value' => $default_thumb,
@@ -572,10 +572,10 @@ function video_widget_element_settings(&$element, &$form_state) {
       '#attributes' => array('class' => array('video-use-default-video-thumb')),
     );
     if ($default_thumb) {
-      $element['data']['use_default_video_thumb']['#attributes']['checked'] = 'checked';
+      $element['use_default_video_thumb']['#attributes']['checked'] = 'checked';
     }
   } else {
-    $element['data']['use_default_video_thumb'] = array(
+    $element['use_default_video_thumb'] = array(
       '#type' => 'value',
       '#value' => $default_thumb,
     );
