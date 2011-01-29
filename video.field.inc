@@ -295,6 +295,51 @@ function video_field_widget_process($element, &$form_state, $form) {
 }
 
 /**
+ * Formatters
+ */
+
+/**
+ * Implementation of CCK's hook_field_formatter_info().
+ */
+function video_field_formatter_info() {
+  $formatters = array(
+    'video_plain' => array(
+      'label' => t('Video'),
+      'field types' => array('video'),
+      'settings' => array('image_style' => '', 'image_link' => ''),
+    ),
+    'video_nodelink' => array(
+      'label' => t('Video Thumbnail linked to node'),
+      'field types' => array('video'),
+      'settings' => array('image_style' => '', 'image_link' => ''),
+    ),
+      //'video_colorbox' => array(
+      //  'label' => t('Video Thumbnail to Colorbox'),
+      //  'field types' => array('filefield'),
+      //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
+      //),
+//    'video_media_js' => array(
+//      'label' => t('Video inject with jMedia'),
+//      'field types' => array('video'),
+//      'description' => t('Displays the video by using jmedia javascript.'),
+//    ),
+  );
+  //setup our imagecache presets
+  //we need formatters for each of our thumbnails.
+  $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
+  foreach ($thumb_types as $types) {
+    foreach (image_styles () as $preset) {
+      $formatters[$preset['name'] . '__' . $types] = array(
+        'label' => t('[Video] @preset @label', array('@preset' => $preset['name'], '@label' => $formatters[$types]['label'])),
+        'field types' => array('video'),
+        'settings' => array('image_style' => '', 'image_link' => ''),
+      );
+    }
+  }
+  return $formatters;
+}
+
+/**
  * Implements hook_field_formatter_settings_form().
  */
 function video_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
@@ -426,44 +471,4 @@ function theme_video_formatter($variables) {
   }
 
   return $output;
-}
-
-/**
- * Implementation of CCK's hook_field_formatter_info().
- */
-function video_field_formatter_info() {
-  $formatters = array(
-    'video_plain' => array(
-      'label' => t('Video'),
-      'field types' => array('video'),
-      'description' => t('Displays video files with player embedded.'),
-    ),
-    'video_nodelink' => array(
-      'label' => t('Video Thumbnail linked to node'),
-      'field types' => array('video'),
-      'description' => t('Displays the video thumbnail and links to the node.'),
-    ),
-      //'video_colorbox' => array(
-      //  'label' => t('Video Thumbnail to Colorbox'),
-      //  'field types' => array('filefield'),
-      //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
-      //),
-//    'video_media_js' => array(
-//      'label' => t('Video inject with jMedia'),
-//      'field types' => array('video'),
-//      'description' => t('Displays the video by using jmedia javascript.'),
-//    ),
-  );
-  //setup our imagecache presets
-  //we need formatters for each of our thumbnails.
-  $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
-  foreach ($thumb_types as $types) {
-    foreach (image_styles () as $preset) {
-      $formatters[$preset['name'] . '__' . $types] = array(
-        'label' => t('[Video] @preset @label', array('@preset' => $preset['name'], '@label' => $formatters[$types]['label'])),
-        'field types' => array('video'),
-      );
-    }
-  }
-  return $formatters;
 }
