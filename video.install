@@ -119,22 +119,22 @@ function video_field_schema($field) {
         'unsigned' => TRUE,
       ),
       'thumbanail' => array(
-        'description' => 'The {file_managed}.fid for the video thumbanil.',
+        'description' => 'The {file_managed}.fid being referenced for video thumbanil.',
         'type' => 'int',
         'not null' => FALSE,
         'unsigned' => TRUE,
       ),
-      'dimensions' => array(
+      'use_default_video_thumb' => array(
+        'description' => 'Use video thumbanil.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+      ),
+      'player_dimensions' => array(
         'description' => "Video dimention for the video player.",
         'type' => 'varchar',
         'length' => 32,
         'not null' => FALSE,
-      ),
-      'data' => array(
-        'type' => 'text',
-        'not null' => FALSE,
-        'size' => 'big',
-        'description' => 'A serialized array of file related data. Use of this field is discouraged and it will likely disappear in a future version of Drupal.',
       )
     ),
     'indexes' => array(
