@@ -195,3 +195,20 @@ function theme_video_formatter_imagecache($element) {
   //return $theme_function;
   return theme('video_formatter_' . $theme_function, $element, TRUE);
 }
+
+/**
+ * Returns HTML for an image field formatter.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - item: An array of image data.
+ *   - video_style: An optional vieo thumb style.
+ *   - path: An array containing the link 'path' and link 'options'.
+ *   - field : field settings
+ *   - instance : field instance settings
+ *
+ * @ingroup themeable
+ */
+function theme_video_formatter($variables) {
+  return video_get_player($variables);
+}
