@@ -306,12 +306,12 @@ function video_field_formatter_info() {
     'video_plain' => array(
       'label' => t('Video'),
       'field types' => array('video'),
-      'settings' => array('image_style' => '', 'image_link' => ''),
+      'settings' => array('video_style' => '', 'video_link' => ''),
     ),
     'video_nodelink' => array(
       'label' => t('Video Thumbnail linked to node'),
       'field types' => array('video'),
-      'settings' => array('image_style' => '', 'image_link' => ''),
+      'settings' => array('video_style' => '', 'video_link' => ''),
     ),
       //'video_colorbox' => array(
       //  'label' => t('Video Thumbnail to Colorbox'),
@@ -330,9 +330,9 @@ function video_field_formatter_info() {
   foreach ($thumb_types as $types) {
     foreach (image_styles () as $preset) {
       $formatters[$preset['name'] . '__' . $types] = array(
-        'label' => t('[Video] @preset @label', array('@preset' => $preset['name'], '@label' => $formatters[$types]['label'])),
+        'label' => t('[Video] @preset of @label', array('@preset' => $preset['name'], '@label' => $formatters[$types]['label'])),
         'field types' => array('video'),
-        'settings' => array('image_style' => '', 'image_link' => ''),
+        'settings' => array('video_style' => '', 'video_link' => ''),
       );
     }
   }
@@ -347,11 +347,11 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
   $settings = $display['settings'];
 
   $image_styles = image_style_options(FALSE);
-  $element['image_style'] = array(
+  $element['video_style'] = array(
     '#title' => t('Image style'),
     '#type' => 'select',
-    '#default_value' => $settings['image_style'],
-    '#empty_option' => t('None (original image)'),
+    '#default_value' => $settings['video_style'],
+    '#empty_option' => t('None (original video/video thumbnail)'),
     '#options' => $image_styles,
   );
 
@@ -359,10 +359,10 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
     'content' => t('Content'),
     'file' => t('File'),
   );
-  $element['image_link'] = array(
-    '#title' => t('Link image to'),
+  $element['video_link'] = array(
+    '#title' => t('Link video or vide thumbanil to'),
     '#type' => 'select',
-    '#default_value' => $settings['image_link'],
+    '#default_value' => $settings['video_link'],
     '#empty_option' => t('Nothing'),
     '#options' => $link_types,
   );
@@ -384,10 +384,10 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
   unset($image_styles['']);
   // Styles could be lost because of enabled/disabled modules that defines
   // their styles in code.
-  if (isset($image_styles[$settings['image_style']])) {
-    $summary[] = t('Image style: @style', array('@style' => $image_styles[$settings['image_style']]));
+  if (isset($image_styles[$settings['video_style']])) {
+    $summary[] = t('Video thumbnail style: @style', array('@style' => $image_styles[$settings['video_style']]));
   } else {
-    $summary[] = t('Original image');
+    $summary[] = t('Original video/video thumbnail');
   }
 
   $link_types = array(
@@ -395,8 +395,8 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
     'file' => t('Linked to file'),
   );
   // Display this setting only if image is linked.
-  if (isset($link_types[$settings['image_link']])) {
-    $summary[] = $link_types[$settings['image_link']];
+  if (isset($link_types[$settings['video_link']])) {
+    $summary[] = $link_types[$settings['video_link']];
   }
 
   return implode('<br />', $summary);
@@ -409,9 +409,9 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
   $element = array();
 
   // Check if the formatter involves a link.
-  if ($display['settings']['image_link'] == 'content') {
+  if ($display['settings']['video_link'] == 'content') {
     $uri = entity_uri($entity_type, $entity);
-  } elseif ($display['settings']['image_link'] == 'file') {
+  } elseif ($display['settings']['video_link'] == 'file') {
     $link_file = TRUE;
   }
 
@@ -423,52 +423,14 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
       );
     }
     $element[$delta] = array(
-      '#theme' => 'image_formatter',
+      '#theme' => 'video_formatter',
       '#item' => $item,
-      '#image_style' => $display['settings']['image_style'],
+      '#video_style' => $display['settings']['video_style'],
       '#path' => isset($uri) ? $uri : '',
+      '#entity' => $entity,
+      '#field' => $field,
+      '#instance' => $instance
     );
   }
-
   return $element;
-}
-
-/**
- * Returns HTML for an image field formatter.
- *
- * @param $variables
- *   An associative array containing:
- *   - item: An array of image data.
- *   - image_style: An optional image style.
- *   - path: An array containing the link 'path' and link 'options'.
- *
- * @ingroup themeable
- */
-function theme_video_formatter($variables) {
-  $item = $variables['item'];
-  $image = array(
-    'path' => $item['uri'],
-    'alt' => $item['alt'],
-  );
-  // Do not output an empty 'title' attribute.
-  if (drupal_strlen($item['title']) > 0) {
-    $image['title'] = $item['title'];
-  }
-
-  if ($variables['image_style']) {
-    $image['style_name'] = $variables['image_style'];
-    $output = theme('image_style', $image);
-  } else {
-    $output = theme('image', $image);
-  }
-
-  if ($variables['path']) {
-    $path = $variables['path']['path'];
-    $options = $variables['path']['options'];
-    // When displaying an image inside a link, the html option must be TRUE.
-    $options['html'] = TRUE;
-    $output = l($output, $path, $options);
-  }
-
-  return $output;
 }

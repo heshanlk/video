@@ -1,4 +1,4 @@
-<?php 
+<?php
 //$Id$
 /*
  * @file
@@ -22,11 +22,11 @@
   <param name="autoplay" value="<?php print $video->autoplay ? 'true' : 'false'; ?>" />
   <param name="pluginurl" value="http://www.apple.com/quicktime/download/" />
   <embed src="<?php print $video->files->{$video->player}->url; ?>"
-  	type="video/quicktime"
-    pluginspage="http://www.apple.com/quicktime/download/" 
-    width="<?php print $video->player_width; ?>" 
-    height="<?php print $video->player_height; ?>" 
-    autostart="<?php print $video->autoplay ? 'true' : 'false'; ?>" 
-    controller="true" >
+         type="video/quicktime"
+         pluginspage="http://www.apple.com/quicktime/download/"
+         width="<?php print $video->player_width; ?>"
+         height="<?php print $video->player_height; ?>"
+         autostart="<?php print $video->autoplay ? 'true' : 'false'; ?>"
+         controller="true" >
   </embed>
 </object>

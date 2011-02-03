@@ -139,7 +139,7 @@ function video_menu() {
 function video_theme() {
   $theme = array();
   $theme['video_thumbnails'] = array(
-    'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
+    'variables' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
     'file' => 'video.theme.inc',
   );
   $theme['video_widget'] = array(
@@ -147,23 +147,23 @@ function video_theme() {
     'file' => 'video.theme.inc',
   );
   $theme['video_widget_preview'] = array(
-    'arguments' => array('item' => TRUE),
+    'variables' => array('item' => TRUE),
     'file' => 'video.theme.inc',
   );
   $theme['video_image'] = array(
-    'arguments' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE, 'imagecache' => NULL),
+    'variables' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE, 'imagecache' => NULL),
     'file' => 'video.theme.inc',
   );
   $theme['video_widget_video_thumb'] = array(
-    'arguments' => array('item' => TRUE),
+    'variables' => array('item' => TRUE),
     'file' => 'video.theme.inc',
   );
   $theme['video_formatter_video_plain'] = array(
-    'arguments' => array('element' => NULL),
+    'variables' => array('element' => NULL),
     'file' => 'video_formatter.inc',
   );
   $theme['video_formatter_video_nodelink'] = array(
-    'arguments' => array('element' => NULL, 'imagecache' => NULL),
+    'variables' => array('element' => NULL, 'imagecache' => NULL),
     'file' => 'video_formatter.inc',
   );
   //$theme['video_formatter_video_colorbox'] = array(
@@ -171,15 +171,15 @@ function video_theme() {
   //  'file' => 'video_formatter.inc',
   //);
   $theme['video_formatter_video_media_js'] = array(
-    'arguments' => array('element' => NULL),
+    'variables' => array('element' => NULL),
     'file' => 'video_formatter.inc',
   );
   $theme['video_encoding_failed'] = array(
-    'arguments' => array(),
+    'variables' => array(),
     'file' => 'video_formatter.inc',
   );
   $theme['video_inprogress'] = array(
-    'arguments' => array(),
+    'variables' => array(),
     'file' => 'video_formatter.inc',
   );
 
@@ -188,9 +188,7 @@ function video_theme() {
   $players = video_video_players();
   foreach ($players as $tpl => $value) {
     $theme[$tpl] = array(
-      'arguments' => array('video' => NULL, 'node' => NULL, 'themed_output' => NULL),
-      //#843368 fix
-//      'file' => 'video_formatter.inc',
+      'variables' => array('video' => NULL, 'themed_output' => NULL),
       'template' => str_replace('_', '-', $tpl),
       'path' => $path,
     );
@@ -198,7 +196,7 @@ function video_theme() {
   //We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
   //calling our flv template file.
   $theme['video_flv'] = array(
-    'arguments' => array('video' => NULL, 'node' => NULL),
+    'variables' => array('video' => NULL, 'node' => NULL),
     'file' => 'video_formatter.inc'
   );
 
@@ -210,13 +208,18 @@ function video_theme() {
     foreach ($thumb_types as $types) {
       foreach (imagecache_presets () as $preset) {
         $theme['video_formatter_' . $preset['presetname'] . '__' . $types] = array(
-          'arguments' => array('element' => NULL),
+          'variables' => array('element' => NULL),
           'function' => 'theme_video_formatter_imagecache',
           'file' => 'video_formatter.inc'
         );
       }
     }
   }
+  // @TODO : check is there any other optimal way to do this?
+  $theme['video_formatter'] = array(
+    'variables' => array('item' => NULL, 'path' => NULL, 'video_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL),
+    'file' => 'video_formatter.inc'
+  );
   return $theme;
 }
 
@@ -334,7 +337,8 @@ function video_thumb_process(&$element, &$form_state) {
 //    print_r($field['settings']['default_video_thumbnail']);
     $default_thumbnail = file_load($field['settings']['default_video_thumbnail']);
     // @todo Integrate the thumbnails with imagecache.
-    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)) . '</div>';
+    if (!empty($default_thumbnail))
+      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)) . '</div>';
   }
 }
 
@@ -779,7 +783,7 @@ function video_video_flv_players() {
  */
 function video_get_player($element) {
   // Setup our node object to be passed along with the player.
-  $node = $element['#node'];
+//  $node = $element['entity'];
   // Setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
@@ -787,11 +791,12 @@ function video_get_player($element) {
   // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
   $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
+
   // Lets do some special handling for our flv files to accomdate multiple players.
   if ($theme_function == 'video_play_flv') {
-    return theme('video_flv', $video, $node);
+    return theme('video_flv', (array) $video);
   } else {
-    return theme($theme_function, $video, $node);
+    return theme($theme_function, (array) $video);
   }
 }
 

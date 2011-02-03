@@ -212,3 +212,112 @@ function theme_video_formatter_imagecache($element) {
 function theme_video_formatter($variables) {
   return video_get_player($variables);
 }
+
+/**
+ * Process variables for video-play-quicktime.tpl.php.
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-quicktime.tpl.php
+ */
+function template_preprocess_video_play_quicktime(&$variables) {
+  $variables['video'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-dcr.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-dcr.tpl.php
+ */
+function template_preprocess_video_play_dcr(&$variables) {
+  $variables['video'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-divx.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-divx.tpl.php
+ */
+function template_preprocess_video_play_divx(&$variables) {
+  $variables['video'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-flash.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-flash.tpl.php
+ */
+function template_preprocess_video_play_flash(&$variables) {
+  $variables['video'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-flv.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-flv.tpl.php
+ */
+function template_preprocess_video_play_flv(&$variables) {
+  $variables['video'] = (object) $variables;
+  $variables['themed_output'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-html5.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-html5.tpl.php
+ */
+function template_preprocess_video_play_html5(&$variables) {
+  $variables['video'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-realmedia.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-realmedia.tpl.php
+ */
+function template_preprocess_video_play_realmedia(&$variables) {
+  $variables['video'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-theora.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-theora.tpl.php
+ */
+function template_preprocess_video_play_theora(&$variables) {
+  $variables['video'] = (object) $variables;
+}
+
+/**
+ * Process variables for video-play-windowsmedia.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $video
+ *
+ * @see video-play-windowsmedia.tpl.php
+ */
+function template_preprocess_video_play_windowsmedia(&$variables) {
+  $variables['video'] = (object) $variables;
+}
