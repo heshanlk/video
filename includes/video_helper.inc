@@ -51,7 +51,7 @@ class video_helper {
     // load thumbnail object
     $video->thumbnail = $this->thumbnail_object($variables);
 //    $video->formatter = $variables['#formatter'];
-    $video->autoplay = variable_get('video_autoplay', TRUE);
+    $video->autoplay = variable_get('video_autoplay', FALSE);
     $video->autobuffering = variable_get('video_autobuffering', TRUE);
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
     // lets find out if we have transcoded this file and update our paths.
@@ -103,7 +103,8 @@ class video_helper {
       $thumbnail->filepath = $thumbnail_load->uri;
     } else {
       //need some type of default if nothing is present
-      //drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
+      drupal_set_message(t('No thumbnail has been configured for the video !title.', array('!title' => $variables['entity']->title)), 'error');
+      return;
     }
 
     $thumbnail->url = file_create_url($thumbnail->filepath);

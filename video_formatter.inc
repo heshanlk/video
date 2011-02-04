@@ -42,6 +42,11 @@ function theme_video_thumbnail($variables) {
   $video_helper = new video_helper;
   // @TODO : change the object to an array
   $thumbnail = (array) $video_helper->thumbnail_object($variables);
+  // return if no file path found for the video thumbnails and add log message
+  if (empty($thumbnail['filepath'])) {
+    watchdog('video', 'Unable to find the video thumbnail for the %node.', array('%node' => $variables['entity']->title), WATCHDOG_ERROR);
+    return '';
+  }
   $image = array(
     'path' => $thumbnail['filepath'],
     'alt' => $thumbnail['alt'],
@@ -199,38 +204,6 @@ function theme_video_flv($video, $node) {
     $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
   }
   return theme('video_play_flv', $video, $node, $themed_output);
-}
-
-function theme_video_formatter_imagecache($variables) {
-  // Inside a view $variables may contain NULL data. In that case, just return.
-  if (empty($variables['#item']['fid'])) {
-    return '';
-  }
-
-  // Extract the preset name from the formatter name.
-  list($namespace, $theme_function) = explode('__', $variables['#formatter'], 2);
-  if ($preset = imagecache_preset_by_name($namespace)) {
-    $variables['imagecache_preset'] = $namespace;
-  }
-  //return $theme_function;
-  return theme('video_formatter_' . $theme_function, $variables, TRUE);
-}
-
-/**
- * Returns HTML for an image field formatter.
- *
- * @param $variables
- *   An associative array containing:
- *   - item: An array of image data.
- *   - video_style: An optional vieo thumb style.
- *   - path: An array containing the link 'path' and link 'options'.
- *   - field : field settings
- *   - instance : field instance settings
- *
- * @ingroup themeable
- */
-function theme_video_formatter($variables) {
-  return video_get_player($variables);
 }
 
 /**
