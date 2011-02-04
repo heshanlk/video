@@ -10,21 +10,21 @@
 
 class video_helper {
 
-  public function video_object($element) {
-    $field_settings = $element['field']['settings'];
-    $instance_settings = $element['instance']['settings'];
+  public function video_object($variables) {
+    $field_settings = $variables['field']['settings'];
+    $instance_settings = $variables['instance']['settings'];
     //setup our width x height
 
-    $player_dimensions = explode("x", $element['item']['player_dimensions']);
+    $player_dimensions = explode("x", $variables['item']['player_dimensions']);
     // set the video dimentions
-    if (!isset($element['item']['dimensions'])) {
+    if (!isset($variables['item']['dimensions'])) {
       $dimensions = explode("x", $instance_settings['default_dimensions']);
       if (!isset($dimensions[0]) || !isset($dimensions[1])) {
         drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions in the form of WxH.'), 'error');
       }
     }
     else
-      $dimensions = explode("x", $element['item']['dimensions']);
+      $dimensions = explode("x", $variables['item']['dimensions']);
 
     if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
       $player_dimensions = explode("x", $instance_settings['default_player_dimensions']);
@@ -35,12 +35,12 @@ class video_helper {
 
     // Build our video object for all types.
     $video = new stdClass();
-    $video->fid = $element['item']['fid'];
-    $video->original = $element['item'];
-    $extension = strtolower(pathinfo($element['item']['filename'], PATHINFO_EXTENSION));
-    $video->files->{$extension}->filename = pathinfo($element['item']['filename'], PATHINFO_FILENAME) . '.' . $extension;
-    $video->files->{$extension}->filepath = $element['item']['uri'];
-    $video->files->{$extension}->url = file_create_url($element['item']['uri']);
+    $video->fid = $variables['item']['fid'];
+    $video->original = $variables['item'];
+    $extension = strtolower(pathinfo($variables['item']['filename'], PATHINFO_EXTENSION));
+    $video->files->{$extension}->filename = pathinfo($variables['item']['filename'], PATHINFO_FILENAME) . '.' . $extension;
+    $video->files->{$extension}->filepath = $variables['item']['uri'];
+    $video->files->{$extension}->url = file_create_url($variables['item']['uri']);
     $video->files->{$extension}->extension = $extension;
     // set the player to play
     $video->player = $extension;
@@ -49,14 +49,14 @@ class video_helper {
     $video->player_width = trim($player_dimensions[0]);
     $video->player_height = trim($player_dimensions[1]);
     // load thumbnail object
-    $video->thumbnail = $this->thumbnail_object($element);
-//    $video->formatter = $element['#formatter'];
+    $video->thumbnail = $this->thumbnail_object($variables);
+//    $video->formatter = $variables['#formatter'];
     $video->autoplay = variable_get('video_autoplay', TRUE);
     $video->autobuffering = variable_get('video_autobuffering', TRUE);
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
     // lets find out if we have transcoded this file and update our paths.
     if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']
-        && !$element['item']['bypass_autoconversion']) {
+        && !$variables['item']['bypass_autoconversion']) {
       // discard all existing file data
       $video->files = new stdClass();
       module_load_include('inc', 'video', '/includes/conversion');
@@ -81,9 +81,9 @@ class video_helper {
     return $video;
   }
 
-  public function thumbnail_object($element) {
-    $field_settings = $element['field']['settings'];
-    $instance_settings = $element['instance']['settings'];
+  public function thumbnail_object($variables) {
+    $field_settings = $variables['field']['settings'];
+    $instance_settings = $variables['instance']['settings'];
     // Build our thumbnail object
     $thumbnail = new stdClass();
     $thumbnail->filepath = '';
@@ -95,24 +95,18 @@ class video_helper {
 
     // Setup our thumbnail path.
     $default_thumbnail = file_load($field_settings['default_video_thumbnail']);
-    $use_default_img = isset($element['item']['use_default_video_thumb']) ? $element['item']['use_default_video_thumb'] : false;
+    $use_default_img = isset($variables['item']['use_default_video_thumb']) ? $variables['item']['use_default_video_thumb'] : false;
     if ($use_default_img && !empty($field_settings['default_video_thumbnail'])) {
       $thumbnail->filepath = $default_thumbnail->uri;
-    } elseif (isset($element['item']['video_thumb']) ? $element['item']['video_thumb'] : false) {
-      $thumbnail_load = file_load($element['item']['video_thumb']);
+    } elseif (isset($variables['item']['video_thumb']) ? $variables['item']['video_thumb'] : false) {
+      $thumbnail_load = file_load($variables['item']['video_thumb']);
       $thumbnail->filepath = $thumbnail_load->uri;
     } else {
       //need some type of default if nothing is present
       //drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
     }
-    //lets check for an imagecache preset
-    $style_name = $field_settings['preview_video_thumb_style'];
-    $style_path = image_style_path($style_name, $thumbnail->filepath);
-    if (!file_exists($style_path)) {
-      $style_path = image_style_url($style_name, $thumbnail->filepath);
-    } else {
-      $thumbnail->url = file_create_url($thumbnail->filepath);
-    }
+
+    $thumbnail->url = file_create_url($thumbnail->filepath);
 
     //swftools appends sites/default/files to the front of our path...
     //@todo Is this a setting?  Need to figure this out.

@@ -303,13 +303,13 @@ function video_field_widget_process($element, &$form_state, $form) {
  */
 function video_field_formatter_info() {
   $formatters = array(
-    'video_plain' => array(
+    'video' => array(
       'label' => t('Video'),
       'field types' => array('video'),
-      'settings' => array('video_style' => '', 'video_link' => ''),
+//      'settings' => array('video_style' => '', 'video_link' => ''),
     ),
-    'video_nodelink' => array(
-      'label' => t('Video Thumbnail linked to node'),
+    'video_thumbnail' => array(
+      'label' => t('Video thumbnail'),
       'field types' => array('video'),
       'settings' => array('video_style' => '', 'video_link' => ''),
     ),
@@ -324,18 +324,6 @@ function video_field_formatter_info() {
 //      'description' => t('Displays the video by using jmedia javascript.'),
 //    ),
   );
-  //setup our imagecache presets
-  //we need formatters for each of our thumbnails.
-  $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
-  foreach ($thumb_types as $types) {
-    foreach (image_styles () as $preset) {
-      $formatters[$preset['name'] . '__' . $types] = array(
-        'label' => t('[Video] @preset of @label', array('@preset' => $preset['name'], '@label' => $formatters[$types]['label'])),
-        'field types' => array('video'),
-        'settings' => array('video_style' => '', 'video_link' => ''),
-      );
-    }
-  }
   return $formatters;
 }
 
@@ -348,10 +336,10 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
 
   $image_styles = image_style_options(FALSE);
   $element['video_style'] = array(
-    '#title' => t('Image style'),
+    '#title' => t('Video thumbnail style'),
     '#type' => 'select',
     '#default_value' => $settings['video_style'],
-    '#empty_option' => t('None (original video/video thumbnail)'),
+    '#empty_option' => t('None (original video thumbnail)'),
     '#options' => $image_styles,
   );
 
@@ -360,7 +348,7 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
     'file' => t('File'),
   );
   $element['video_link'] = array(
-    '#title' => t('Link video or vide thumbanil to'),
+    '#title' => t('Link video or video thumbanil to'),
     '#type' => 'select',
     '#default_value' => $settings['video_link'],
     '#empty_option' => t('Nothing'),
@@ -387,12 +375,12 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
   if (isset($image_styles[$settings['video_style']])) {
     $summary[] = t('Video thumbnail style: @style', array('@style' => $image_styles[$settings['video_style']]));
   } else {
-    $summary[] = t('Original video/video thumbnail');
+    $summary[] = t('Original video thumbnail');
   }
 
   $link_types = array(
     'content' => t('Linked to content'),
-    'file' => t('Linked to file'),
+    'file' => t('Linked to video file'),
   );
   // Display this setting only if image is linked.
   if (isset($link_types[$settings['video_link']])) {
@@ -415,6 +403,8 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
     $link_file = TRUE;
   }
 
+  // set the display
+  $theme = $display['type'];
   foreach ($items as $delta => $item) {
     if (isset($link_file)) {
       $uri = array(
@@ -423,7 +413,7 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
       );
     }
     $element[$delta] = array(
-      '#theme' => 'video_formatter',
+      '#theme' => $theme,
       '#item' => $item,
       '#video_style' => $display['settings']['video_style'],
       '#path' => isset($uri) ? $uri : '',

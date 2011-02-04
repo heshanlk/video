@@ -10,43 +10,63 @@
  * Default video cck formatter.  Makes sure the video being displayed exists, has been converted (if in que).
  * If not or the video is processed, then it will get the default player for the specific video type for output.
  */
-function theme_video_formatter_video_plain($element) {
-  if (empty($element['#item']['fid']))
+function theme_video($variables) {
+  if (empty($variables['item']['fid']))
     return '';
-  // Get our field information to determine if we are checking conversion
-  $field = content_fields($element['#field_name'], $element['#type_name']);
-  if (!empty($field['list_field']) && !$element['#item']['list'])
-    return '';
+  $field_settings = $variables['field']['settings'];
+  $instance_settings = $variables['instance']['settings'];
   // Only needs to be ran if they are converting videos
-  if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
+  if (isset($field_settings['autoconversion']) && $field_settings['autoconversion'] && !$variables['item']['bypass_autoconversion']) {
     module_load_include('inc', 'video', '/includes/conversion');
     $conversion = new video_conversion;
-    $video = $conversion->load_job($element['#item']['fid']);
+    $video = $conversion->load_job($variables['item']['fid']);
     if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
       return theme('video_inprogress');
     } else if ($video->video_status == VIDEO_RENDERING_FAILED) {
       return theme('video_encoding_failed');
     }
   }
-  return video_get_player($element);
+  return video_get_player($variables);
 }
 
 /*
  * Renders the video thumbnail as a link to the node page.
  */
 
-function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
-  // Inside a view $element may contain null data. In that case, just return.
-  if (empty($element['#item']['fid']))
+function theme_video_thumbnail($variables) {
+  // Inside a view $variables may contain null data. In that case, just return.
+  if (empty($variables['item']['fid']))
     return '';
   //setup our thumbnail object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
-  $thumbnail = $video_helper->thumbnail_object($element);
-  //get our themed image
-  $image = theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title, '', TRUE, $imagecache);
-  $class = 'popups video video-nodelink video-' . $element['#field_name'];
-  return l($image, 'node/' . $element['#node']->nid, array('attributes' => array('class' => $class), 'html' => TRUE));
+  // @TODO : change the object to an array
+  $thumbnail = (array) $video_helper->thumbnail_object($variables);
+  $image = array(
+    'path' => $thumbnail['filepath'],
+    'alt' => $thumbnail['alt'],
+  );
+  // Do not output an empty 'title' attribute.
+  if (drupal_strlen($thumbnail['title']) > 0) {
+    $image['title'] = $thumbnail['title'];
+  }
+
+  if ($variables['video_style']) {
+    $image['style_name'] = $variables['video_style'];
+    $output = theme('image_style', $image);
+  } else {
+    $output = theme('image', $image);
+  }
+
+  if ($variables['path']) {
+    $path = $variables['path']['path'];
+    $options = $variables['path']['options'];
+    // When displaying an image inside a link, the html option must be TRUE.
+    $options['html'] = TRUE;
+    $output = l($output, $path, $options);
+  }
+
+  return $output;
 }
 
 /*
@@ -57,15 +77,15 @@ function theme_video_formatter_video_nodelink($element, $imagecache = FALSE) {
  * used.  We are also using jmedia for all other filetypes.
  */
 
-function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
+function theme_video_colorbox($variables, $imagecache = FALSE) {
   global $base_path;
   if (!module_exists('colorbox')) {
     drupal_set_message(t('You must download and enable !colorbox for this formatter.', array('!colorbox' => l(t('Colorbox'), 'http://www.drupal.org/project/colorbox'))), 'error');
-    return theme('video_formatter_video_nodelink', $element);
+    return theme('video_formatter_video_nodelink', $variables);
   }
 
-  // Inside a view $element may contain null data. In that case, just return.
-  if (empty($element['#item']['fid']))
+  // Inside a view $variables may contain null data. In that case, just return.
+  if (empty($variables['#item']['fid']))
     return '';
 
   //load up our media plugins
@@ -76,7 +96,7 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
   //setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
-  $video = $video_helper->video_object($element);
+  $video = $video_helper->video_object($variables);
 
   $action = swftools_get_action($video->filepath);
   $player = swftools_get_player($action);
@@ -94,7 +114,7 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
       ));
   drupal_add_js($settings, 'setting');
   $image = theme('video_image', $video->thumbnail, $video->thumbnail->alt, $video->thumbnail->title, '', TRUE, $imagecache);
-  $class = 'video-box video-' . $element['#field_name'] . '{width:\'' . $video->player_width . 'px\', height:\'' . $video->player_height . 'px\', player:\'' . $player . '\'}';
+  $class = 'video-box video-' . $variables['#field_name'] . '{width:\'' . $video->player_width . 'px\', height:\'' . $video->player_height . 'px\', player:\'' . $player . '\'}';
   return l($image, $video->files->{$video->player}->url, array('attributes' => array('class' => $class), 'html' => TRUE));
 }
 
@@ -107,10 +127,10 @@ function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
  * We are outputing an anchor to the videofile.  The jMedia functions will overtake this anchor and setup our object/embed tags.
  */
 
-function theme_video_formatter_video_media_js($element) {
+function theme_video_media_js($variables) {
   //#913928
-  $field = content_fields($element['#field_name'], $element['#type_name']);
-  if (!empty($field['list_field']) && !$element['#item']['list'])
+  $field = content_fields($variables['#field_name'], $variables['#type_name']);
+  if (!empty($field['list_field']) && !$variables['#item']['list'])
     return '';
 
   drupal_add_js(drupal_get_path('module', 'video') . '/js/jquery.media.js');
@@ -118,7 +138,7 @@ function theme_video_formatter_video_media_js($element) {
   //setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
-  $video = $video_helper->video_object($element);
+  $video = $video_helper->video_object($variables);
   //lets output the link to be overtaken by jmedia
   $link = l($video->filename, $video->files->{$video->player}->url, array('attributes' => array('class' => 'jmedia {width: ' . $video->player_width . ', height: ' . $video->player_height . ', autoplay: ' . $video->autoplay . '}')));
   return $link;
@@ -181,19 +201,19 @@ function theme_video_flv($video, $node) {
   return theme('video_play_flv', $video, $node, $themed_output);
 }
 
-function theme_video_formatter_imagecache($element) {
-  // Inside a view $element may contain NULL data. In that case, just return.
-  if (empty($element['#item']['fid'])) {
+function theme_video_formatter_imagecache($variables) {
+  // Inside a view $variables may contain NULL data. In that case, just return.
+  if (empty($variables['#item']['fid'])) {
     return '';
   }
 
   // Extract the preset name from the formatter name.
-  list($namespace, $theme_function) = explode('__', $element['#formatter'], 2);
+  list($namespace, $theme_function) = explode('__', $variables['#formatter'], 2);
   if ($preset = imagecache_preset_by_name($namespace)) {
-    $element['imagecache_preset'] = $namespace;
+    $variables['imagecache_preset'] = $namespace;
   }
   //return $theme_function;
-  return theme('video_formatter_' . $theme_function, $element, TRUE);
+  return theme('video_formatter_' . $theme_function, $variables, TRUE);
 }
 
 /**

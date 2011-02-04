@@ -138,6 +138,15 @@ function video_menu() {
  */
 function video_theme() {
   $theme = array();
+  $theme['video'] = array(
+    'variables' => array('item' => NULL, 'path' => NULL, 'video_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL),
+    'file' => 'video_formatter.inc',
+  );
+  $theme['video_thumbnail'] = array(
+    'variables' => array('item' => NULL, 'path' => NULL, 'video_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL),
+    'file' => 'video_formatter.inc',
+  );
+
   $theme['video_thumbnails'] = array(
     'variables' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
     'file' => 'video.theme.inc',
@@ -158,14 +167,7 @@ function video_theme() {
     'variables' => array('item' => TRUE),
     'file' => 'video.theme.inc',
   );
-  $theme['video_formatter_video_plain'] = array(
-    'variables' => array('element' => NULL),
-    'file' => 'video_formatter.inc',
-  );
-  $theme['video_formatter_video_nodelink'] = array(
-    'variables' => array('element' => NULL, 'imagecache' => NULL),
-    'file' => 'video_formatter.inc',
-  );
+
   //$theme['video_formatter_video_colorbox'] = array(
   //  'arguments' => array('element' => NULL, 'imagecache' => NULL),
   //  'file' => 'video_formatter.inc',
@@ -781,13 +783,13 @@ function video_video_flv_players() {
 /**
  * Get the object for the suitable player for the parameter resource
  */
-function video_get_player($element) {
+function video_get_player($variables) {
   // Setup our node object to be passed along with the player.
-//  $node = $element['entity'];
+//  $node = $variables['entity'];
   // Setup our video object
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
-  $video = $video_helper->video_object($element);
+  $video = $video_helper->video_object($variables);
   // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
   $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
