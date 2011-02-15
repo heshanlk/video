@@ -1,4 +1,5 @@
 <?php
+
 // $Id$
 
 /**
@@ -31,7 +32,7 @@ function uploadfield_widget_settings_form($widget) {
  */
 function uploadfield_widget_settings_validate($widget) {
   // Check that only web images are specified in the callback.
-  if(!video_web_extensions($widget['file_extensions'])) {
+  if (!video_web_extensions($widget['file_extensions'])) {
     form_set_error('file_extensions', t('Only web-standard videos are supported through the videoftp widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
   }
 }
@@ -52,9 +53,11 @@ function uploadfield_widget_value($element, $edit = FALSE) {
   if (!$edit) {
     $file = field_file_load($element['#default_value']['fid']);
     $item = $element['#default_value'];
-  }
-  else {
+  } else {
     $item = array_merge($element['#default_value'], $edit);
+    if (isset($element['#default_value']['data']) && isset($edit['data'])) {
+      $item['data'] = array_merge($element['#default_value']['data'], $edit['data']);
+    }
     $field = content_fields($element['#field_name'], $element['#type_name']);
 
     // Uploads take priority over value of fid text field.
@@ -87,6 +90,9 @@ function uploadfield_widget_value($element, $edit = FALSE) {
     }
   }
   // Merge file and item data so it is available to all widgets.
+  if (isset($item['data']) && isset($file['data'])) {
+    $file['data'] = array_merge($item['data'], $file['data']);
+  }
   $item = array_merge($item, $file);
 
   return $item;
@@ -112,17 +118,17 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
   }
 
   // Create our thumbnails
-  if($field['widget']['autothumbnail']) {
+  if ($field['widget']['autothumbnail']) {
     video_thumb_process($element);
   }
 
   // Add our extra fields if in preview mode
-  if(!empty($item['fid'])) {
+  if (!empty($item['fid'])) {
     video_widget_element_settings($element);
   }
 
   // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
-  if($form_state['submitted'] == 1) {
+  if ($form_state['submitted'] == 1) {
     video_widget_process($element, $form_state);
   }
   return $element;

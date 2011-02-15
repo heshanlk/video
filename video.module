@@ -638,8 +638,6 @@ function video_widget_process(&$element, &$form_state) {
       $filename = $field['field_name'] . '_' . $element['#delta'] . '_thumbs';
       if (isset($_FILES['files']) && is_array($_FILES['files']['name']) && !empty($_FILES['files']['name'][$filename])) {
         video_upload_manual_thumb($element);
-      } else {
-        $element['data']['video_thumb']['#value'] = $element['#default_value']['data']['video_thumb'];
       }
 
       // Call hook_video_submit API
@@ -916,7 +914,7 @@ function video_default_widget_settings($widget) {
  */
 function video_default_widget_settings_validate($element, &$form_state) {
   // Verify the destination exists
-  $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs'); 
+  $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
   $destination = file_directory_path() . '/' . $video_thumb_path;
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
