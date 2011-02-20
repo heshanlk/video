@@ -306,7 +306,7 @@ function video_field_formatter_info() {
     'video' => array(
       'label' => t('Video'),
       'field types' => array('video'),
-//      'settings' => array('video_style' => '', 'video_link' => ''),
+      'settings' => array('video_style' => '', 'video_link' => ''),
     ),
     'video_thumbnail' => array(
       'label' => t('Video thumbnail'),
