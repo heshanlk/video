@@ -285,19 +285,19 @@ function video_thumb_process(&$element, &$form_state) {
       $transcoder = new video_transcoder;
       if ($thumbs = $transcoder->generate_thumbnails($file)) {
         $rnd_img = rand(0, variable_get('video_thumbs', 5) - 1);
-        $default_thumb = $thumbs[$rnd_img]->uri;
+        $default_thumb = $thumbs[$rnd_img]->fid;
 
         if (is_array($thumbs)) {
           foreach ($thumbs as $fid => $img) {
             // if file object contain url then use file name to identify object
-            $key = $img->uri;
+            $key = $img->fid;
             $thumbss[$key] = theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $img->uri));
           }
         }
       }
 
       if (!empty($thumbss)) {
-        $element['video_thumb'] = array(
+        $element['video_thumbnail'] = array(
           '#type' => 'radios',
           '#title' => t('Video Thumbnails'),
           '#options' => $thumbss,
