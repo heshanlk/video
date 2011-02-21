@@ -917,3 +917,44 @@ function rmdirr($dir) {
   }
   @rmdir($dir);
 }
+
+/**
+ * The hook that tells the preset module that your module should be added to the Preset Management.
+ *
+ * @return <array>
+ *   title - The title that you would like to show in the preset manager.
+ *
+ *   description - The description of your preset when it is shown in the preset manager.
+ *
+ *   permissions - The permission that you would like to add for the management of your preset.
+ *
+ *   default_settings - The default settings for your preset.  This can also be passed in as a string,
+ *      which is then interpreted as a function callback that has the following signature...
+ *
+ *      function mymodule_default_settings( $preset ) {
+ *        return array(
+ *          'param1' => 1,
+ *          'param2' => 2
+ *        );
+ *      }
+ *
+ *   file - The external file that will hold the form hooks (seen below) for your preset.
+ */
+function video_preset_info() {
+  return array(
+    'title' => t('Video Preset'),
+    'description' => t('Video module transcoding presets.'),
+    'permissions' => array(
+      'name' => 'administer video preset',
+      'title' => t('Administer Video Preset'),
+      'description' => t('Administer video preset settings for the video conversions.')
+    ),
+    'default_settings' => array(
+      'param1' => 0,
+      'param2' => 1,
+      'param3' => 3,
+      'param4' => 4
+    ),
+    'file' => drupal_get_path('module', 'video') . '/includes/video.preset.inc'
+  );
+}

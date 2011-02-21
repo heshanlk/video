@@ -5,6 +5,7 @@ description = Implementation of a video field
 package = Video
 core = 7.x
 dependencies[] = file
+dependencies[] = preset
 files[] = video.module
 files[] = video.admin.inc
 files[] = video.drush.inc
