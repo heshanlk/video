@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  * Provides installation functions for video_s3.module.

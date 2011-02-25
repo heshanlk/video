@@ -1,6 +1,5 @@
 <?php
 
-// $Id$
 /**
  * This is used to set some required settings while the preset is being created.
  *

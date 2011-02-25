@@ -1,6 +1,5 @@
 <?php
 
-//$Id$
 /*
  * @file
  * Class file to handle video conversion using ffmpeg and webservices.

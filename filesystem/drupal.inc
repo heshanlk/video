@@ -1,6 +1,5 @@
 <?php
 
-//$Id$
 /*
  * @file
  * Class file used to store filesystem on the video.

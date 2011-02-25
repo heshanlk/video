@@ -1,6 +1,5 @@
 <?php
 
-//$Id$
 /*
  * @file
  * Class file used to create our video and thumbnail objects.

@@ -1,6 +1,5 @@
 <?php
 
-//$Id$
 /*
  * @file
  * Transcoder class file to handle ffmpeg_wrapper settings and conversions.

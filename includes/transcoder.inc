@@ -1,6 +1,5 @@
 <?php
 
-//$Id$
 /*
  * @file
  * Class file used to wrap the transcoder functions.

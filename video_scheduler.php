@@ -1,6 +1,5 @@
 #!/usr/bin/env php
 <?php
-//$Id$
 /**
  * @file
  * Implement video rendering scheduling.

@@ -1,6 +1,5 @@
 <?php
 /**
-* $Id$
 *
 * Copyright (c) 2008, Donovan Schönknecht.  All rights reserved.
 *

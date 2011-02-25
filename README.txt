@@ -1,4 +1,3 @@
-// $Id$
 ------------
 
  To embed videos into drupal pages, using CCK and filefield support.
