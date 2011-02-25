@@ -1,5 +1,4 @@
 <?php
-//$Id$
 /**
  * @file
  * Enable addition of optional metadata on video nodes created by video module.

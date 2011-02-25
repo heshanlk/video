@@ -1,4 +1,3 @@
-;$Id$
 name = Google Video
 description = Enable Google video support for Video module.
 dependencies[] = video

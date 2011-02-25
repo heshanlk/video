@@ -1,4 +1,3 @@
-// $Id$
 
 REQUIREMENTS
 ------------------------------------
@@ -114,7 +113,6 @@ VIDEO UPDATE.PHP VERSION 3
 VIDEO UPDATE.PHP VERSION 4
 --------------------------
 
-  -- $Id$
   CREATE TABLE video (
     nid int(10) unsigned NOT NULL default '0',
     vidfile text NOT NULL default '',
@@ -144,7 +142,6 @@ VIDEO UPDATE.PHP VERSION 4
 VIDEO UPDATE.PHP VERSION 5
 --------------------------
 
-  -- $Id$
   CREATE TABLE video (
     vid int(10) unsigned NOT NULL default '0',
     nid int(10) unsigned NOT NULL default '0',
@@ -175,7 +172,6 @@ VIDEO UPDATE.PHP VERSION 5
 VIDEO UPDATE.PHP VERSION 6
 --------------------------
 
-  -- $Id$
   CREATE TABLE video (
     vid int(10) unsigned NOT NULL default '0',
     nid int(10) unsigned NOT NULL default '0',

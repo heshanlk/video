@@ -1,5 +1,4 @@
 <?php
-//$Id$
 /**
  * @file
  * Add some common functions for the various video types supported

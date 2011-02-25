@@ -1,4 +1,3 @@
-; $Id$
 name = Upload Video
 description = Enable Uploaded video support for Video module.
 dependencies[] = video

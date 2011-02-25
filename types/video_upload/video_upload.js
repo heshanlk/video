@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file
  * Javascript functions for busy status on video uploads

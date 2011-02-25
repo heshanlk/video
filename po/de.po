@@ -1,5 +1,4 @@
 # Translation of video-module.pot to German.
-# $Id$
 # Uwe Hermann <uwe@hermann-uwe.de>, 2005.
 msgid ""
 ""

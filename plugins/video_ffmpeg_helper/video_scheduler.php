@@ -1,5 +1,4 @@
 <?php
-//$Id$
 /**
  * @file
  * Implement video rendering scheduling.

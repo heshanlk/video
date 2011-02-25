@@ -1,5 +1,4 @@
 <?php
-//$Id$
 /**
  * @file
  * Renders a video. This script is called concurrently by video_scheduler.php

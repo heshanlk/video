@@ -1,4 +1,3 @@
-;$Id$
 name = Video
 description = Allows video nodes.
 package = "Video"

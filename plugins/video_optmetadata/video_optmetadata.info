@@ -1,4 +1,3 @@
-;$Id$
 name = Video Opt Metadata
 description = Enable addition of optional metadata on video nodes created by video module. Optional metadata are Video Bitrate, Audio Bitrate, Audio Sampling Rate and Audio Channels.
 dependencies[] = video

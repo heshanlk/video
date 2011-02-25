@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file
  * This file contains some useful functions which fixes different

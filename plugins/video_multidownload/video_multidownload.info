@@ -1,4 +1,3 @@
-;$Id$
 name = Video Multidownload
 description = Enable multiple file download in video module.
 dependencies[] = video
