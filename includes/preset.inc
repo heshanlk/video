@@ -1,6 +1,5 @@
 <?php
 
-//$Id$
 /*
  * @file
  * Class file used to store video presets on the video.

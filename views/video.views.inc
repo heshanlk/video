@@ -1,6 +1,5 @@
 <?php
 
-// $Id$
 /**
  * @file
  * Provide views data for video.module.

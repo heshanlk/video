@@ -1,4 +1,3 @@
-; $Id$
 name = Video Upload
 description = Handle video upload for video module using filefield and CCK.
 core = 6.x

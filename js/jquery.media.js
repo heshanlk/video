@@ -10,7 +10,6 @@
  * @author: M. Alsup
  * @version: 0.92 (24-SEP-2009)
  * @requires jQuery v1.1.2 or later
- * $Id$
  *
  * Supported Media Players:
  *	- Flash

@@ -1,5 +1,4 @@
 <?php 
-//$Id$
 /*
  * @file
  * Theme file to handle director output.

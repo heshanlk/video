@@ -1,6 +1,5 @@
 <?php
 
-// $Id$
 /**
  * @file
  * Provides wrapper functions for the s3 amazon webservices.
