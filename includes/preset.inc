@@ -21,19 +21,27 @@ class video_preset {
    * @return array $form
    */
   public function admin_settings() {
-    $presets = preset_get_presets('video');
+    $form = array();
+    $presets = video_preset_get_presets();
+    if (count($presets) == 0) {
+      return $form['video_preset'] = array(
+    '#markup' => t('No Features were found. Please use the !create_link link to create
+      a new Feature module, or upload an existing Feature to your modules directory.',
+        array('!create_link' => l(t('Create Feature'), 'admin/structure/features/create'))),
+      );
+    }
     $preset = array();
     foreach ($presets as $id => $value) {
       $preset[$id] = $value['name'];
-      $help[] = $value['name'] . ' - ' . $value['description'] . ' ' . l(t('edit'), preset_get_preset_path('video', $value['name']));
+//      $help[] = $value['name'] . ' - ' . $value['description'] . ' ' . l(t('edit'), preset_get_preset_path('video', $value['name']));
     }
-    $form = array();
+
     $form['video_preset'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
       '#options' => $preset,
       '#default_value' => variable_get('video_preset', array()),
-      '#description' => t('!list', array('!list' => theme('item_list', array('items' => $help)))),
+//      '#description' => t('!list', array('!list' => theme('item_list', array('items' => $help)))),
       '#prefix' => '<div id="preset-checkboxes">',
       '#suffix' => '</div>',
     );

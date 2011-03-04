@@ -7,6 +7,7 @@
  */
 // include the field element
 module_load_include('inc', 'video', 'video.field');
+module_load_include('inc', 'video', 'includes/video.features');
 
 /*
  * Implementation of hook_init().
@@ -18,32 +19,31 @@ function video_init() {
 }
 
 /**
- * Invokes hook_video_*action*() in every module.
- * Eg :
- * hook_video_submit()
- * hook_video_insert()
- * hook_video_preview()
- * hook_video_delete()
- * hook_video_load()
- * hook_video_form() - to show values once upload is completed eg. Resolution, and Convert on Save etc
- *
- * We cannot use module_invoke() for this, because the arguments need to
- * be passed by reference.
+ * Implementation of hook_permission().
  */
-function video_module_invoke($action, &$array, &$video = NULL, $other = NULL) {
-  foreach (module_list () as $module) {
-    $function = $module . '_video_' . $action;
-    if (function_exists($function)) {
-      $function($array, $video, $other);
-    }
-  }
-}
-
-/**
- * Implementation of hook_perm().
- */
-function video_perm() {
-  return array('bypass conversion video', 'convert on submission', 'override player dimensions', 'use default thumb');
+function video_permission() {
+  $perms = array(
+    'bypass conversion video' => array(
+      'title' => t('Bypass video conversion'),
+      'description' => t('Warning: Give to trusted roles only; this permission has security implications.'),
+    ),
+    'convert on submission' => array(
+      'title' => t('Convert video on submit'),
+      'description' => t('Warning: Give to trusted roles only; this permission has security implications.'),
+    ),
+    'override player dimensions' => array(
+      'title' => t('Change default player dimentions'),
+      'description' => t('Warning: Give to trusted roles only; this permission has usability implications.'),
+    ),
+    'use default thumb' => array(
+      'title' => t('Use default thumbnail'),
+    ),
+    'administer video presets' => array(
+      'title' => t('Administer video presets'),
+      'description' => t('Perform administration tasks for the video presets.'),
+    ),
+  );
+  return $perms;
 }
 
 /**
@@ -51,6 +51,7 @@ function video_perm() {
  */
 function video_menu() {
   $items = array();
+  // General settings
   $items['admin/config/media/video'] = array(
     'title' => 'Video',
     'description' => 'Configure different aspects of the video module and its plugins',
@@ -65,6 +66,7 @@ function video_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 0,
   );
+  // Player settings
   $items['admin/config/media/video/players'] = array(
     'title' => 'Players',
     'description' => 'Configure your player settings for each video extension.',
@@ -75,6 +77,7 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 1,
   );
+  // Transcoder settings
   $items['admin/config/media/video/transcoders'] = array(
     'title' => 'Transcoders',
     'description' => 'Configure your transcoder to convert your videos or extra thumbnails.',
@@ -85,6 +88,7 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 2,
   );
+  // Preset settings
   $items['admin/config/media/video/presets'] = array(
     'title' => 'Presets',
     'description' => 'Configure your transcoder presets to convert your videos.',
@@ -95,6 +99,72 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 3,
   );
+
+  $items['admin/structure/video'] = array(
+    'title' => 'Video Presets',
+    'file' => 'includes/video.preset.inc',
+    'description' => 'Manage and configure the presets for Video.',
+    'page callback' => 'video_presets_overview',
+    'access arguments' => array('administer video presets')
+  );
+  $items['admin/structure/video/list'] = array(
+    'title' => 'List',
+    'file' => 'includes/video.preset.inc',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/structure/video/add'] = array(
+    'title' => 'Add preset',
+    'file' => 'includes/video.preset.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_form'),
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_LOCAL_TASK
+  );
+  $items['admin/structure/video/import'] = array(
+    'title' => t('Import preset'),
+    'file' => 'includes/video.preset.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_import_form'),
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_LOCAL_TASK
+  );
+
+  $items['admin/structure/video/preset/%video_preset'] = array(
+    'title' => 'Edit video preset',
+    'title callback' => 'video_preset_page_title',
+    'title arguments' => array(4),
+    'file' => 'includes/video.preset.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_form', 4),
+    'access arguments' => array('administer video presets')
+  );
+  $items['admin/structure/video/preset/%video_preset/edit'] = array(
+    'title' => 'Edit',
+    'file' => 'includes/video.preset.inc',
+    'page arguments' => array(4),
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/structure/video/preset/%video_preset/delete'] = array(
+    'title' => 'Delete',
+    'file' => 'includes/video.preset.inc',
+    'page arguments' => array('video_preset_delete_confirm', 4),
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_CALLBACK
+  );
+  $items['admin/structure/video/preset/%video_preset/export'] = array(
+    'title' => t('Export'),
+    'file' => 'includes/video.preset.inc',
+    'title callback' => 'video_preset_page_title',
+    'title arguments' => array(4),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_export_form', 4),
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_CALLBACK
+  );
+  // Metadata settings
   $items['admin/config/media/video/metadata'] = array(
     'title' => 'Metadata',
     'description' => 'Configure your metadata settings.',
@@ -105,7 +175,7 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
   );
-
+  // Filesystem settings
   $items['admin/config/media/video/filesystem'] = array(
     'title' => 'Filesystem',
     'description' => 'Configure your filesystem settings.',
@@ -116,7 +186,7 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 5,
   );
-
+  // Cron settings
   $items['admin/config/media/video/cron'] = array(
     'title' => 'Cron Settings',
     'description' => 'Configure your cron settings.',
@@ -130,6 +200,16 @@ function video_menu() {
 
 
   return $items;
+}
+
+/**
+ * Used for the menu item to load a preset.
+ *
+ * @param <type> $preset_name
+ */
+function video_preset_load($preset_name) {
+  module_load_include('inc', 'video', 'includes/video.preset');
+  return video_get_preset($preset_name);
 }
 
 /**
@@ -257,8 +337,6 @@ function video_node_update_submit($form, &$form_state) {
       $transcoder = new video_transcoder;
       $video = array('nid' => $form_state['nid'], 'fid' => $fid);
       $transcoder->update_job($video);
-      // Lets other module to know to update
-      video_module_invoke('update', $form, $form_state);
     }
   }
 }
@@ -422,8 +500,6 @@ function video_file_delete($file) {
   $thumb_folder = file_default_scheme() . ':/' . $video_thumb_path . '/' . $file->fid;
   // Recursively delete our folder and files
   rmdirr($thumb_folder);
-  // Let other modules to know about the file delete
-  video_module_invoke('delete', $file);
 }
 
 /**
@@ -613,15 +689,12 @@ function video_widget_process(&$element, &$form_state) {
           video_upload_manual_thumb($element);
         }
 
-      // Call hook_video_submit API
-      video_module_invoke('insert', $element, $form_state);
       //
       //queue up the file id to update the node id in the video rendering / cdn tables.
       $form_state['values']['video_id'][] = $item['fid'];
       break;
     case 'node_form_build_preview':
-      // Call hook_video_preview API
-      video_module_invoke('preview', $element, $form_state);
+      // preview
       break;
     case 'node_form_delete_submit':
       //moved to hook_file_delete in video module.

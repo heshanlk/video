@@ -1,11 +1,6 @@
 
 REQUIREMENTS
-------------------------------------
-Required :
-  CCK Module.
-  Filefield Module.
-
-
+------------
 
 INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 -------------------------------------
@@ -36,8 +31,8 @@ writable by the webserver or the user executling the cron job)
   
   The crontab should look something like this:
 
-  # m     h       dom     mon     dow     user            command
-  */20     *       *       *       *       www-data        cd /absolute/path/to/drupal/ ; php video_scheduler.php http://www.example.com/path_to_drupal
+  # m     h       dom     mon     dow     command
+  */20    *        *       *       *      cd /absolute/path/to/drupal/ ; php video_scheduler.php http://www.example.com/path_to_drupal
 
   This will execute the video_scheduler every 20 minutes.
 
@@ -58,7 +53,3 @@ The ffmpeg puts in the drupal logs the commands it was trying to execute. You
 might try to rerun them on a command shell in order understand what went wrong.
 
 Or contact a Drupal developer
-
-
-
-

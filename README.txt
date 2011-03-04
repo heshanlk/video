@@ -1,4 +1,5 @@
-------------
+README
+------
 
  To embed videos into drupal pages, using CCK and filefield support.
 This module add the possibility to create video nodes which are containers
