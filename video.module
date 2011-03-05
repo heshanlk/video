@@ -454,6 +454,13 @@ function video_convert_process(&$element) {
  * Implementation of hook_file_delete().
  */
 function video_file_delete($file) {
+  if (empty($file->fid)) {
+    $dump_file = 'video-debug-' . time() . '.log';
+    watchdog('video', 'hook_file_delete called with empty $file object (stack dumped to ' . $dump_file . ')', array(), WATCHDOG_ERROR);
+    file_put_contents($dump_file, serialize(debug_backtrace()));
+    return;
+  }
+
   // @TODO : check for enable trancoder
   // delete the transcoder job
   module_load_include('inc', 'video', '/includes/transcoder');
