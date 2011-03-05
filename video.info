@@ -12,3 +12,10 @@ files[] = video_formatter.inc
 files[] = video_schedular.inc
 files[] = video.field.inc
 files[] = includes/video.preset.inc
+# Including class files to lazyload
+files[] = includes/conversion.inc
+files[] = includes/filesystem.inc
+files[] = includes/metadata.inc
+files[] = includes/preset.inc
+files[] = includes/transcoder.inc
+files[] = includes/video_helper.inc

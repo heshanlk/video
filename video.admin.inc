@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @file
  * Provides the administration settings for the Video Drupal module.
@@ -11,7 +10,6 @@
  * @return <type>
  */
 function video_transcoder_admin_settings() {
-  module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;
   $form = $transcoder->admin_settings();
   return system_settings_form($form);
@@ -28,17 +26,15 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
 
   // add vallidations by trnacoder interface
   $transcoder = $form_state['values']['video_convertor'];
-  module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder($transcoder);
   $transcoder->admin_settings_validate($form, $form_state);
 }
 
 /**
- * Video transcoder admin settings
+ * Video preset admin settings
  * @return <type>
  */
 function video_preset_admin_settings() {
-  module_load_include('inc', 'video', '/includes/preset');
   $preset = new video_preset();
   $form = $preset->admin_settings();
   return system_settings_form($form);
@@ -127,7 +123,6 @@ function video_players_admin_settings() {
  * @return <type>
  */
 function video_metadata_admin_settings() {
-  module_load_include('inc', 'video', '/includes/metadata');
   $metadata = new video_metadata;
   $form = $metadata->admin_settings();
   return system_settings_form($form);
@@ -136,7 +131,6 @@ function video_metadata_admin_settings() {
 function video_metadata_admin_settings_validate($form, &$form_state) {
   // add vallidations by metadata interface
   $metadata = $form_state['values']['video_metadata'];
-  module_load_include('inc', 'video', '/includes/metadata');
   $metadata = new video_metadata($metadata);
   $metadata->admin_settings_validate($form, $form_state);
 }
@@ -167,7 +161,6 @@ function video_cron_admin_settings() {
  * @return <type>
  */
 function video_filesystem_admin_settings() {
-  module_load_include('inc', 'video', '/includes/filesystem');
   $filesystem = new video_filesystem;
   $form = $filesystem->admin_settings();
   return system_settings_form($form);
@@ -176,7 +169,6 @@ function video_filesystem_admin_settings() {
 function video_filesystem_admin_settings_validate($form, &$form_state) {
   // add vallidations by metadata interface
   $filesystem = $form_state['values']['video_filesystem'];
-  module_load_include('inc', 'video', '/includes/filesystem');
   $filesystem = new video_filesystem($filesystem);
   $filesystem->admin_settings_validate($form, $form_state);
 }
