@@ -88,7 +88,7 @@ function _video_zencoder_postback_jobs() {
 // update the thumbanils
 // this will update the default thumbnails, if user want to select another one then they wil need to edit the node
 // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
     $final_thumb_path = file_default_scheme() . ':/' . $video_thumb_path . '/' . $fid;
 //    $i = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
     $filename = $fid . '_' . sprintf("%04d", 1) . '.png';

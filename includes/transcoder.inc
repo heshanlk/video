@@ -6,9 +6,6 @@
  *
  * @todo need more commenting
  * - Add Metadata support
- * Add autoloading
- * # http://stackoverflow.com/questions/3343208/php-class-lazy-loading
- * # http://php.net/manual/en/language.oop5.autoload.php
  * 
  */
 
@@ -57,11 +54,41 @@ class video_transcoder {
   }
 
   public function generate_thumbnails($video) {
-    return $this->transcoder->generate_thumbnails($video);
+    // Save thiumnails to the vide_thumbnails table
+    $thumbnails = array();
+    $vid = $video['fid'];
+    $thumbs = $this->transcoder->generate_thumbnails($video);
+    foreach ($thumbs as $file) {
+      $existing_file = file_load_multiple(array(), array('uri' => $file->uri));
+      if ($existing_file) // check thumbnail file exists
+        $file = (array) $existing_file;
+      else { // create new file entries for thumbnails
+        drupal_write_record('file_managed', $file);
+        $file = file_load_multiple(array(), array('uri' => $file->uri));
+      }
+      if (!empty($file))
+        $thumbnails = array_merge($file, $thumbnails);
+    }
+    $exists = db_query('SELECT 1 FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField();
+    if ($exists == FALSE) { // returns TRUE is there is a record.
+      $insertquery = db_insert('video_thumbnails') // Table name no longer needs {}
+              ->fields(array(
+                'vid' => $vid,
+                'thumbnails' => serialize($thumbnails),
+              ))
+              ->execute();
+    } else {
+      $updatequery = db_update('video_thumbnails')
+              ->fields(array(
+                'thumbnails' => serialize($thumbnails),
+              ))
+              ->condition('vid', $vid)
+              ->execute();
+    }
+    return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
   }
 
   public function convert_video(&$video) {
-    module_load_include('inc', 'video', '/includes/preset');
     $video_preset = new video_preset();
     $presets = $video_preset->properties();
     $video->presets = $presets;

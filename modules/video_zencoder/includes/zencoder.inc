@@ -53,7 +53,7 @@ class video_zencoder_api {
 //    watchdog('zencoder', $input_name);
     // thumbnails
     // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
     $final_thumb_path = file_default_scheme() . ':/' . $video_thumb_path . '/' . $file->fid;
 
     // Notifications

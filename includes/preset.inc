@@ -27,7 +27,7 @@ class video_preset {
       $form['video_preset'] = array(
         '#markup' => t('No Preset were found. Please use the !create_link link to create
       a new Video Preset, or upload an existing Feature to your modules directory.',
-            array('!create_link' => l(t('Create Video Preset'), 'admin/structure/video/add'))),
+            array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
         '#prefix' => '<div id="preset-checkboxes">',
         '#suffix' => '</div>',
       );
@@ -35,7 +35,7 @@ class video_preset {
     }
     $preset = array();
     foreach ($presets as $id => $value) {
-      $preset[$id] = $value['name'] . ' ' . l(t('edit'), ('admin/structure/video/preset/' . $value['name']));
+      $preset[$id] = $value['name'] . ' ' . l(t('edit'), ('admin/config/media/video/presets/preset/' . $value['name']));
 //      $help[] = $value['name'] . ' - ' . $value['description'] . ' ' . l(t('edit'), preset_get_preset_path('video', $value['name']));
     }
 
@@ -47,8 +47,8 @@ class video_preset {
       '#description' => t('Please use the !manage_link link to manage
        Video Presets. Use the !create_link link to create
       a new Video Preset, or upload an existing Feature to your modules directory.',
-          array('!manage_link' => l(t('Manage Video Preset'), 'admin/structure/video'),
-            '!create_link' => l(t('Create Video Preset'), 'admin/structure/video/add'))),
+          array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),
+            '!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
       '#prefix' => '<div id="preset-checkboxes">',
       '#suffix' => '</div>',
     );

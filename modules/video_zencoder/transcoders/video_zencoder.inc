@@ -19,7 +19,7 @@ class video_zencoder implements transcoder_interface {
   public function generate_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
     $final_thumb_path = file_default_scheme() . ':/' . $video_thumb_path . '/' . $video['fid'];
 
     // Ensure the destination directory exists and is writable.

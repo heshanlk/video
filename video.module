@@ -6,7 +6,7 @@
  *
  */
 // include the field element
-module_load_include('inc', 'video', 'video.field');
+module_load_include('inc', 'video', 'includes/video.field');
 module_load_include('inc', 'video', 'includes/video.features');
 
 /*
@@ -90,7 +90,7 @@ function video_menu() {
   );
   // Preset settings
   $items['admin/config/media/video/presets'] = array(
-    'title' => 'Presets',
+    'title' => 'Manage Preset',
     'description' => 'Configure your transcoder presets to convert your videos.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_preset_admin_settings'),
@@ -100,21 +100,33 @@ function video_menu() {
     'weight' => 3,
   );
 
-  $items['admin/structure/video'] = array(
-    'title' => 'Video Presets',
-    'file' => 'includes/video.preset.inc',
-    'description' => 'Manage and configure the presets for Video.',
-    'page callback' => 'video_presets_overview',
-    'access arguments' => array('administer video presets')
-  );
-  $items['admin/structure/video/list'] = array(
-    'title' => 'List',
-    'file' => 'includes/video.preset.inc',
-    'access arguments' => array('administer video presets'),
+//  $items['admin/structure/video'] = array(
+//    'title' => 'Video Presets',
+//    'file' => 'includes/video.preset.inc',
+//    'description' => 'Manage and configure the presets for Video.',
+//    'page callback' => 'video_presets_overview',
+//    'access arguments' => array('administer video presets')
+//  );
+  $items['admin/config/media/video/presets/all'] = array(
+    'title' => 'Presets',
+    'description' => 'Configure your transcoder presets to convert your videos.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_preset_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   );
-  $items['admin/structure/video/add'] = array(
+  $items['admin/config/media/video/presets/list'] = array(
+    'title' => 'List',
+    'file' => 'includes/video.preset.inc',
+    'description' => 'Manage and configure the presets for Video.',
+    'page callback' => 'video_presets_overview',
+    'access arguments' => array('administer video presets'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -9,
+  );
+  $items['admin/config/media/video/presets/add'] = array(
     'title' => 'Add preset',
     'file' => 'includes/video.preset.inc',
     'page callback' => 'drupal_get_form',
@@ -122,7 +134,7 @@ function video_menu() {
     'access arguments' => array('administer video presets'),
     'type' => MENU_LOCAL_TASK
   );
-  $items['admin/structure/video/import'] = array(
+  $items['admin/config/media/video/presets/import'] = array(
     'title' => t('Import preset'),
     'file' => 'includes/video.preset.inc',
     'page callback' => 'drupal_get_form',
@@ -131,36 +143,36 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK
   );
 
-  $items['admin/structure/video/preset/%video_preset'] = array(
+  $items['admin/config/media/video/presets/preset/%video_preset'] = array(
     'title' => 'Edit video preset',
     'title callback' => 'video_preset_page_title',
-    'title arguments' => array(4),
+    'title arguments' => array(6),
     'file' => 'includes/video.preset.inc',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_preset_form', 4),
+    'page arguments' => array('video_preset_form', 6),
     'access arguments' => array('administer video presets')
   );
-  $items['admin/structure/video/preset/%video_preset/edit'] = array(
+  $items['admin/config/media/video/presets/preset/%video_preset/edit'] = array(
     'title' => 'Edit',
     'file' => 'includes/video.preset.inc',
-    'page arguments' => array(4),
+    'page arguments' => array(6),
     'access arguments' => array('administer video presets'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
-  $items['admin/structure/video/preset/%video_preset/delete'] = array(
+  $items['admin/config/media/video/presets/preset/%video_preset/delete'] = array(
     'title' => 'Delete',
     'file' => 'includes/video.preset.inc',
-    'page arguments' => array('video_preset_delete_confirm', 4),
+    'page arguments' => array('video_preset_delete_confirm', 6),
     'access arguments' => array('administer video presets'),
     'type' => MENU_CALLBACK
   );
-  $items['admin/structure/video/preset/%video_preset/export'] = array(
+  $items['admin/config/media/video/presets/preset/%video_preset/export'] = array(
     'title' => t('Export'),
     'file' => 'includes/video.preset.inc',
     'title callback' => 'video_preset_page_title',
-    'title arguments' => array(4),
+    'title arguments' => array(6),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_preset_export_form', 4),
+    'page arguments' => array('video_preset_export_form', 6),
     'access arguments' => array('administer video presets'),
     'type' => MENU_CALLBACK
   );
@@ -310,7 +322,6 @@ function video_theme() {
 
 function video_cron() {
   if (variable_get('video_cron', TRUE)) {
-    module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
     $video_conversion->run_queue();
   }
@@ -333,7 +344,6 @@ function video_node_update_submit($form, &$form_state) {
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
     foreach ($form_state['values']['video_id'] as $fid) {
       // @TODO : check for enable trancoder
-      module_load_include('inc', 'video', '/includes/transcoder');
       $transcoder = new video_transcoder;
       $video = array('nid' => $form_state['nid'], 'fid' => $fid);
       $transcoder->update_job($video);
@@ -355,30 +365,25 @@ function video_thumb_process(&$element, &$form_state) {
   $gen_fail = FALSE;
 
   if (isset($element['preview']) && $file['fid'] != 0) {
-    $default_thumb = '';
+    $default_thumb = array();
     if (in_array($field['settings']['autothumbnail'], array('auto', 'auto_fallback'))) {
-
-      module_load_include('inc', 'video', '/includes/transcoder');
       $transcoder = new video_transcoder;
       if ($thumbs = $transcoder->generate_thumbnails($file)) {
-        $rnd_img = rand(0, variable_get('video_thumbs', 5) - 1);
-        $default_thumb = $thumbs[$rnd_img]->fid;
-
-        if (is_array($thumbs)) {
+        $default_thumb = array_rand($thumbs);
+        if (!empty($thumbs)) {
           foreach ($thumbs as $fid => $img) {
             // if file object contain url then use file name to identify object
-            $key = $img->fid;
-            $thumbss[$key] = theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $img->uri));
+            $thumbss[$img->fid] = theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $img->uri));
           }
         }
       }
 
       if (!empty($thumbss)) {
-        $element['video_thumbnail'] = array(
+        $element['thumbanail'] = array(
           '#type' => 'radios',
           '#title' => t('Video Thumbnails'),
           '#options' => $thumbss,
-          '#default_value' => !empty($file['video_thumb']) ? $file['video_thumb'] : $default_thumb,
+          '#default_value' => !empty($file['thumbanail']) ? $file['thumbanail'] : $thumbs[$default_thumb]->fid,
           '#weight' => 10,
           '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
         );
@@ -398,26 +403,26 @@ function video_thumb_process(&$element, &$form_state) {
         '#description' => t('This thumbnail will be uploaded when the node is saved.'),
       );
 
-      $element['video_thumb'] = array(
+      $element['thumbanail'] = array(
         '#type' => 'value',
-        '#value' => isset($file['video_thumb']) ? $file['video_thumb'] : false,
+        '#value' => isset($file['thumbanail']) ? $file['thumbanail'] : false,
       );
     }
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (isset($file['video_thumb']) && !empty($file['video_thumb'])) {
-      $large_thumb = array('filepath' => $file['video_thumb']);
+    if (isset($file['thumbanail']) && !empty($file['thumbanail'])) {
+      $large_thumb = file_load($file['thumbanail']);
     } elseif (!empty($field['settings']['default_video_thumb'])) {
-      $large_thumb = $field['settings']['default_video_thumb'];
+      $large_thumb = file_load($field['settings']['default_video_thumbnail']);
     } else {
-      $large_thumb = array('filepath' => $default_thumb);
+      $large_thumb = file_load($default_thumb);
     }
 //    print_r($field['settings']['default_video_thumbnail']);
-    $default_thumbnail = file_load($field['settings']['default_video_thumbnail']);
+//    $default_thumbnail = file_load($field['settings']['default_video_thumbnail']);
     // @todo Integrate the thumbnails with imagecache.
-    if (!empty($default_thumbnail))
-      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)) . '</div>';
+    if (!empty($large_thumb))
+      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
   }
 }
 
@@ -496,7 +501,7 @@ function video_file_delete($file) {
   $transcoder->delete_job($file);
 
   //now lets delete our video thumbnails and folder.
-  $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+  $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
   $thumb_folder = file_default_scheme() . ':/' . $video_thumb_path . '/' . $file->fid;
   // Recursively delete our folder and files
   rmdirr($thumb_folder);

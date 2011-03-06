@@ -40,7 +40,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#type' => 'fieldset',
     '#title' => t('Video settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => FALSE
   );
   $form['settings']['video']['video_codec'] = array(
     '#type' => 'select',
@@ -324,7 +324,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#type' => 'fieldset',
     '#title' => t('Command line options'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => FALSE
   );
   $tokes = array(
     '!cmd_path - Path to transcoder',
@@ -355,20 +355,20 @@ function video_presets_overview() {
       $row = array();
       $row[] = check_plain($preset['name']);
       $row[] = array('data' => filter_xss_admin($preset['description']), 'class' => 'description');
-      $row[] = array('data' => l(t('edit'), 'admin/structure/video/preset/' . $preset['name']));
+      $row[] = array('data' => l(t('edit'), 'admin/config/media/video/presets/preset/' . $preset['name']));
 
       if (!isset($preset['default'])) {
-        $row[] = array('data' => l(t('delete'), 'admin/structure/video/preset/' . $preset['name'] . '/delete'));
+        $row[] = array('data' => l(t('delete'), 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete'));
       }
 
-      $row[] = array('data' => l(t('export'), 'admin/structure/video/preset/' . $preset['name'] . '/export'));
+      $row[] = array('data' => l(t('export'), 'admin/config/media/video/presets/preset/' . $preset['name'] . '/export'));
       $rows[] = $row;
     }
     return theme('table', array('header' => $header, 'rows' => $rows));
   } else {
     return t('No Preset were found. Please use the !create_link link to create
       a new video preset, or upload an existing Feature to your modules directory.',
-        array('!create_link' => l(t('Create Video Preset'), 'admin/structure/video/add')));
+        array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add')));
   }
 }
 
@@ -486,7 +486,7 @@ function video_preset_submit($form, &$form_state) {
   // Save this preset.
   video_preset_save($preset);
   drupal_set_message(t('Preset !preset successfully saved.', array('!preset' => $preset['name'])));
-  $form_state['redirect'] = 'admin/structure/video';
+  $form_state['redirect'] = 'admin/config/media/video/presets';
 }
 
 /**
@@ -494,7 +494,7 @@ function video_preset_submit($form, &$form_state) {
  */
 function video_preset_delete_submit($form, &$form_state) {
   $preset['name'] = $form_state['values']['name'];
-  $form_state['redirect'] = 'admin/structure/video/preset/' . $preset['name'] . '/delete';
+  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete';
 }
 
 /**
@@ -504,7 +504,7 @@ function video_preset_delete_confirm($form, &$form_state, $preset) {
   $form['name'] = array('#type' => 'value', '#value' => $preset['name']);
   $message = t('Are you sure you want to delete the preset %name?', array('%name' => $preset['name']));
   $caption = '<p>' . t('This action cannot be undone.') . '</p>';
-  return confirm_form($form, $message, 'admin/structure/video', $caption, t('Delete'));
+  return confirm_form($form, $message, 'admin/config/media/video/presets', $caption, t('Delete'));
 }
 
 /**
@@ -515,7 +515,7 @@ function video_preset_delete_confirm_submit($form, &$form_state) {
     video_preset_delete($form_state['values']['name']);
   }
 
-  $form_state['redirect'] = 'admin/structure/video';
+  $form_state['redirect'] = 'admin/config/media/video/presets';
 }
 
 /**
@@ -580,7 +580,7 @@ function video_preset_import_validate($form, &$form_state) {
 function video_preset_import_submit($form, &$form_state) {
   $preset = $form_state['preset'];
   video_preset_save($preset);
-  $form_state['redirect'] = 'admin/structure/video/preset/' . $preset['name'];
+  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . $preset['name'];
 }
 
 /**

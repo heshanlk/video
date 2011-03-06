@@ -4,6 +4,7 @@ package = Video
 core = 7.x
 configure = admin/config/media/video
 dependencies[] = file
+dependencies[] = image
 files[] = video.module
 files[] = video.admin.inc
 files[] = video.drush.inc

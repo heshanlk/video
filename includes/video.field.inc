@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @file
  * Implement an video field, based on the file module's file field.
@@ -252,14 +251,14 @@ function video_field_widget_process($element, &$form_state, $form) {
   $instance = field_widget_instance($element, $form_state);
   $settings = $field['settings'];
   $element['#theme'] = 'video_widget';
-  $element['#attached']['css'][] = drupal_get_path('module', 'image') . '/video.css';
+  $element['#attached']['css'][] = drupal_get_path('module', 'video') . '/css/video.css';
+  $element['preview'] = array();
   // preview the video thumbnail
 //  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
 //    $element['preview']['#value'] = theme('video_widget_preview', $element['#value']);
 //  }
   // Add the image preview.
   if ($settings['default_video_thumbnail'] && $element['#value']['fid'] != 0) {
-    $element['preview'] = array();
     $default_thumbnail = file_load($settings['default_video_thumbnail']);
 //    $element['preview'] = array(
 //      '#type' => 'markup',

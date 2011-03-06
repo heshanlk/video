@@ -6,7 +6,6 @@
  *
  */
 
-
 class video_ffmpeg implements transcoder_interface {
 
   // Naming for our radio options.  Makes it easy to extend our transcoders.
@@ -40,7 +39,7 @@ class video_ffmpeg implements transcoder_interface {
   public function run_command($options) {
 //    $command = $this->nice . ' ' . $this->params['cmd_path'] . ' ' . $options . '  2>&1';
     $command = $options . '  2>&1';
-    watchdog('video_ffmpeg', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
+    watchdog('transcoder', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
     ob_start();
     passthru($command, $command_return);
     $output = ob_get_contents();
@@ -51,7 +50,7 @@ class video_ffmpeg implements transcoder_interface {
   public function generate_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
     // Get the file system directory.
     $schema_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
@@ -66,8 +65,8 @@ class video_ffmpeg implements transcoder_interface {
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
       $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
-      $filename = file_munge_filename("/video-thumb-for-" . $video['fid'] . "-$i.jpg", '', TRUE);
-      $thumbfile = $schema_thumb_path . $filename;
+      $filename = file_munge_filename("video-thumb-for-" . $video['fid'] . "-$i.jpg", '', TRUE);
+      $thumbfile = $schema_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file(drupal_realpath($thumbfile))) {
         //setup the command to be passed to the transcoder.
@@ -78,7 +77,7 @@ class video_ffmpeg implements transcoder_interface {
           $error_param = array('%file' => $thumbfile, '%cmd' => $options, '%out' => $command_output);
           $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
           // Log the error message.
-          watchdog('video_transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
           continue;
         }
       }
@@ -110,11 +109,11 @@ class video_ffmpeg implements transcoder_interface {
     $converted = $files . '/videos/converted';
 
     if (!field_file_check_directory($original, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_transcoder', 'Video conversion failed.  Could not create the directory: ' . $orginal, array(), WATCHDOG_ERROR);
+      watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $orginal, array(), WATCHDOG_ERROR);
       return false;
     }
     if (!field_file_check_directory($converted, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted, array(), WATCHDOG_ERROR);
+      watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted, array(), WATCHDOG_ERROR);
       return false;
     }
 
@@ -318,7 +317,7 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),
       '#description' => t('Path to save video thumbnails extracted from the videos.'),
-      '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
+      '#default_value' => variable_get('video_thumb_path', 'videos/thumbnails'),
     );
     $form['autothumb']['advanced'] = array(
       '#type' => 'fieldset',
