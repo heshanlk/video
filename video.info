@@ -1,18 +1,10 @@
 name = Video
-description = Implementation of a video field
+description = Upload and manage video content with Drupal
 package = Video
 core = 7.x
-configure = admin/config/media/video
 dependencies[] = file
 dependencies[] = image
 files[] = video.module
-files[] = video.admin.inc
-files[] = video.drush.inc
-files[] = video.theme.inc
-files[] = video_formatter.inc
-files[] = video_schedular.inc
-files[] = video.field.inc
-files[] = includes/video.preset.inc
 # Including class files to lazyload
 files[] = includes/conversion.inc
 files[] = includes/filesystem.inc

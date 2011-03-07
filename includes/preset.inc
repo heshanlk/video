@@ -22,6 +22,7 @@ class video_preset {
    */
   public function admin_settings() {
     $form = array();
+    module_load_include('inc', 'video_ui', 'video.preset');
     $presets = video_preset_get_presets();
     if (count($presets) == 0) {
       $form['video_preset'] = array(
