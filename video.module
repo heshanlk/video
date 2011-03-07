@@ -46,7 +46,6 @@ function video_permission() {
   return $perms;
 }
 
-
 /**
  * Implementation of hook_theme().
  */
@@ -115,22 +114,6 @@ function video_theme() {
     'variables' => array('video' => NULL, 'node' => NULL),
     'file' => 'video_formatter.inc'
   );
-
-  //setup our imagecache presets
-  if (module_exists('imagecache')) {
-    //we need formatters for each of our thumbnails.
-    //@todo create a function to check for our colorbox module and only add theme elements that could be used.
-    $thumb_types = array('video_nodelink'); //array('video_colorbox', 'video_nodelink');
-    foreach ($thumb_types as $types) {
-      foreach (imagecache_presets () as $preset) {
-        $theme['video_formatter_' . $preset['presetname'] . '__' . $types] = array(
-          'variables' => array('element' => NULL),
-          'function' => 'theme_video_formatter_imagecache',
-          'file' => 'video_formatter.inc'
-        );
-      }
-    }
-  }
   // @TODO : check is there any other optimal way to do this?
   $theme['video_formatter'] = array(
     'variables' => array('item' => NULL, 'path' => NULL, 'video_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL),
@@ -144,6 +127,7 @@ function video_theme() {
  */
 
 function video_cron() {
+  module_load_include('inc', 'video', 'includes/conversion');
   if (variable_get('video_cron', TRUE)) {
     $video_conversion = new video_conversion;
     $video_conversion->run_queue();
@@ -188,8 +172,8 @@ function video_thumb_process(&$element, &$form_state) {
   $gen_fail = FALSE;
 
   if (isset($element['preview']) && $file['fid'] != 0) {
-    $default_thumb = array();
     if (in_array($field['settings']['autothumbnail'], array('auto', 'auto_fallback'))) {
+      $default_thumb = array();
       $transcoder = new video_transcoder;
       if ($thumbs = $transcoder->generate_thumbnails($file)) {
         $default_thumb = array_rand($thumbs);
@@ -214,36 +198,36 @@ function video_thumb_process(&$element, &$form_state) {
         $gen_fail = TRUE;
       }
     }
-
+    // if fail creating thumbnails fall back to manual or manual upload
     if ((!empty($gen_fail) && $field['settings']['autothumbnail'] == 'auto_fallback') ||
         $field['settings']['autothumbnail'] == 'manual_upload') {
-
-      $element['video_thumb_file'] = array(
-        '#name' => 'files[' . $element['#field_name'] . '_' . $element['#delta'] . '_thumbs]',
-        '#type' => 'file',
-        '#size' => '40',
-        '#title' => !empty($file['video_thumb']) ? t('Replace the video thumbnail') : t('Upload a video thumbnail'),
-        '#description' => t('This thumbnail will be uploaded when the node is saved.'),
-      );
-
       $element['thumbanail'] = array(
-        '#type' => 'value',
-        '#value' => isset($file['thumbanail']) ? $file['thumbanail'] : false,
+        '#title' => t('Video thumbnail'),
+        '#type' => 'managed_file',
+        '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
+        '#default_value' => !empty($file['thumbanail']) ? $file['thumbanail'] : FALSE,
+        '#upload_location' => file_default_scheme() . '://' . variable_get('video_thumb_path', 'videos/thumbnails') . '/' . $file['fid'],
       );
     }
-
+    // if no thumbnail creation
+    if ($field['settings']['autothumbnail'] == 'no') {
+      $element['thumbanail'] = array(
+        '#type' => 'value',
+        '#value' => NULL,
+      );
+    }
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
     if (isset($file['thumbanail']) && !empty($file['thumbanail'])) {
       $large_thumb = file_load($file['thumbanail']);
-    } elseif (!empty($field['settings']['default_video_thumb'])) {
+    } elseif (!empty($field['settings']['default_video_thumbnail'])) {
       $large_thumb = file_load($field['settings']['default_video_thumbnail']);
     } else {
-      $large_thumb = file_load($default_thumb);
+//      $large_thumb = file_load($default_thumb);
     }
-//    print_r($field['settings']['default_video_thumbnail']);
+//    print_r($field['settings']);
 //    $default_thumbnail = file_load($field['settings']['default_video_thumbnail']);
-    // @todo Integrate the thumbnails with imagecache.
+    // @todo Add video player
     if (!empty($large_thumb))
       $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
   }
@@ -737,7 +721,7 @@ function video_default_field_settings($settings) {
 
   $thumb_options = array(
     'auto' => 'Automatically generate thumbnails',
-    'auto_fallback' => 'Automatically generate thumbnails, with fallback to manual upload',
+    'auto_fallback' => 'Automatically generate thumbnails, with fallback to manual upload if fail',
     'manual_upload' => 'Manually upload a thumbnail',
     'no' => 'Don\'t create thumbnail',
   );
