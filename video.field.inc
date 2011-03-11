@@ -21,7 +21,7 @@ function video_field_info() {
         'preview_video_thumb_style' => 'thumbnail',
       ),
       'instance_settings' => array(
-        'file_extensions' => 'mp4 ogg avi mov wmv flv',
+        'file_extensions' => 'mp4 ogg avi mov wmv flv ogv webm',
         'file_directory' => 'videos/original',
         'max_filesize' => '',
         'default_dimensions' => '640x350',
@@ -136,6 +136,12 @@ function video_field_presave($entity_type, $entity, $field, $instance, $langcode
  */
 function video_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_insert($entity_type, $entity, $field, $instance, $langcode, $items);
+  // Create entry for video conversion if auto converison is enabled
+//  if ($field['settings']['autoconversion'] == 1) {
+//    foreach ($items as $delta => $item) {
+//      video_convert_process($item);
+//    }
+//  }
 }
 
 /**
@@ -143,6 +149,33 @@ function video_field_insert($entity_type, $entity, $field, $instance, $langcode,
  */
 function video_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_update($entity_type, $entity, $field, $instance, $langcode, $items);
+  // Create entry for video conversion if auto converison is enabled
+  if ($field['settings']['autoconversion'] == 1) {
+    $nid = $entity->vid;
+    module_load_include('inc', 'video', '/includes/conversion');
+    $video_conversion = new video_conversion;
+    foreach ($items as $delta => $item) {
+      // skip adding entry if bypass conversion is checked
+      if ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE)) {
+        // delete the conversion job if any
+        $video_conversion->delete_job($item);
+        return;
+      }
+      // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
+      if (!$video = $video_conversion->load_job($item['fid'])) {
+        if (!($video_conversion->create_job($item, $nid)))
+          drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
+      }
+      // if convert on save is checked
+      if ($item['convert_video_on_save'] == 1 || variable_get('video_convert_on_save', FALSE)) {
+        if (!$video_conversion->process($item['fid'])) {
+          drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
+        } else {
+          drupal_set_message(t('Successfully converted your video.'));
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -182,17 +215,17 @@ function video_field_widget_info() {
         'default value' => FIELD_BEHAVIOR_NONE,
       ),
     ),
-    'video_ftp' => array(
-      'label' => t('Video FTP'),
-      'field types' => array('video'),
-      'settings' => array(
-        'progress_indicator' => 'throbber',
-      ),
-      'behaviors' => array(
-        'multiple values' => FIELD_BEHAVIOR_CUSTOM,
-        'default value' => FIELD_BEHAVIOR_NONE,
-      ),
-    ),
+//    'video_ftp' => array(
+//      'label' => t('Video FTP'),
+//      'field types' => array('video'),
+//      'settings' => array(
+//        'progress_indicator' => 'throbber',
+//      ),
+//      'behaviors' => array(
+//        'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+//        'default value' => FIELD_BEHAVIOR_NONE,
+//      ),
+//    ),
   );
 }
 
@@ -210,7 +243,6 @@ function video_field_widget_settings_form($field, $instance) {
  * Implements hook_field_widget_form().
  */
 function video_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-//  return;
   // Add display_field setting to field because file_field_widget_form() assumes it is set.
   $field['settings']['display_field'] = 0;
 
@@ -218,13 +250,13 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
   $settings = $instance['settings'];
   foreach (element_children($elements) as $delta) {
 
-    // If not using custom extension validation, ensure this is an image.
-    $supported_extensions = array('mp4', 'ogg', 'avi', 'mov', 'wmv', 'flv');
+    // If not using custom extension validation, ensure this is an video.
+    $supported_extensions = array_keys(video_video_extensions());
     $extensions = isset($elements[$delta]['#upload_validators']['file_validate_extensions'][0]) ? $elements[$delta]['#upload_validators']['file_validate_extensions'][0] : implode(' ', $supported_extensions);
     $extensions = array_intersect(explode(' ', $extensions), $supported_extensions);
     $elements[$delta]['#upload_validators']['file_validate_extensions'][0] = implode(' ', $extensions);
 
-    // Add all extra functionality provided by the image widget.
+    // Add all extra functionality provided by the video widget.
     $elements[$delta]['#process'][] = 'video_field_widget_process';
   }
 
@@ -251,20 +283,7 @@ function video_field_widget_process($element, &$form_state, $form) {
   $instance = field_widget_instance($element, $form_state);
   $settings = $field['settings'];
   $element['#theme'] = 'video_widget';
-//  $element['#attached']['css'][] = drupal_get_path('module', 'video') . '/css/video.css';
   $element['preview'] = array();
-  // preview the video thumbnail
-//  if (isset($element['preview']) && $element['#value']['fid'] != 0) {
-//    $element['preview']['#value'] = theme('video_widget_preview', $element['#value']);
-//  }
-  // Add the image preview.
-  if ($settings['default_video_thumbnail'] && $element['#value']['fid'] != 0) {
-    $default_thumbnail = file_load($settings['default_video_thumbnail']);
-//    $element['preview'] = array(
-//      '#type' => 'markup',
-//      '#markup' => theme('image_style', array('style_name' => $settings['preview_video_thumb_style'], 'path' => $default_thumbnail->uri)),
-//    );
-  }
   // Title is not necessary for each individual field.
   if ($field['cardinality'] != 1) {
     unset($element['#title']);
@@ -276,18 +295,11 @@ function video_field_widget_process($element, &$form_state, $form) {
     case 'video_ftp':
       break;
   }
-  // Create our thumbnails
-  video_thumb_process($element, $form_state);
-
-
   // Add our extra fields if in preview mode
   if (!empty($item['fid'])) {
     video_widget_element_settings($element, $form_state);
-  }
-
-  // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
-  if ($form_state['submitted'] == 1) {
-    video_widget_process($element, $form_state);
+    // Create our thumbnails
+    video_thumb_process($element, $form_state);
   }
   return $element;
 }
@@ -311,16 +323,6 @@ function video_field_formatter_info() {
       'field types' => array('video'),
       'settings' => array('video_style' => '', 'video_link' => ''),
     ),
-      //'video_colorbox' => array(
-      //  'label' => t('Video Thumbnail to Colorbox'),
-      //  'field types' => array('filefield'),
-      //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
-      //),
-//    'video_media_js' => array(
-//      'label' => t('Video inject with jMedia'),
-//      'field types' => array('video'),
-//      'description' => t('Displays the video by using jmedia javascript.'),
-//    ),
   );
   return $formatters;
 }

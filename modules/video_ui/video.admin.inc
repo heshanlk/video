@@ -76,6 +76,13 @@ function video_general_admin_settings() {
     '#default_value' => variable_get('video_use_default_thumb', FALSE),
     '#description' => t('Override auto thumbnails with default thumbnail.')
   );
+  $form['video_publish_on_complete'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Publish when conversion complete'),
+    '#default_value' => variable_get('video_publish_on_complete', TRUE),
+    '#description' => t('Initially un-publish till conversion complete and then
+      publish the node only when conversion complete and successful.')
+  );
   return system_settings_form($form);
 }
 

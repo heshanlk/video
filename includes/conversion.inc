@@ -89,8 +89,8 @@ class video_conversion {
     return $this->transcoder->load_completed_job($video);
   }
 
-  public function create_job($video) {
-    return $this->transcoder->create_job($video);
+  public function create_job($video, $nid) {
+    return $this->transcoder->create_job($video, $nid);
   }
 
   public function update_job($video) {

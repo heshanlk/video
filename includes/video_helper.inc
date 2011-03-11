@@ -54,13 +54,15 @@ class video_helper {
     $video->autobuffering = variable_get('video_autobuffering', TRUE);
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
     // lets find out if we have transcoded this file and update our paths.
-    if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']
-        && !$variables['item']['bypass_autoconversion']) {
+    if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
       // discard all existing file data
-      $video->files = new stdClass();
       module_load_include('inc', 'video', '/includes/conversion');
       $conversion = new video_conversion;
-      $conversion->load_completed_job($video);
+      if ($conversion->load_job($variables['item']['fid'])) {
+        // reset the video files object and add converted videos in to it
+        $video->files = new stdClass();
+        $conversion->load_completed_job($video);
+      }
     }
     // Let othere module to load the video files by referance
     // Lets find out if we have pushed this file to the cdn if enabled.

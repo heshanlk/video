@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @file
  * Video formatter hooks and callbacks.
@@ -15,14 +14,15 @@ function theme_video($variables) {
   $field_settings = $variables['field']['settings'];
   $instance_settings = $variables['instance']['settings'];
   // Only needs to be ran if they are converting videos
-  if (isset($field_settings['autoconversion']) && $field_settings['autoconversion'] && !$variables['item']['bypass_autoconversion']) {
+  if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
     module_load_include('inc', 'video', '/includes/conversion');
     $conversion = new video_conversion;
-    $video = $conversion->load_job($variables['item']['fid']);
-    if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
-      return theme('video_inprogress');
-    } else if ($video->video_status == VIDEO_RENDERING_FAILED) {
-      return theme('video_encoding_failed');
+    if ($video = $conversion->load_job($variables['item']['fid'])) {
+      if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
+        return theme('video_inprogress');
+      } else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+        return theme('video_encoding_failed');
+      }
     }
   }
   return video_get_player($variables);

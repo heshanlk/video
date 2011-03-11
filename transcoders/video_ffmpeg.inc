@@ -30,7 +30,7 @@ class video_ffmpeg implements transcoder_interface {
     $this->params['command'] = variable_get('video_ffmpeg_helper_auto_cvr_options', $this->command);
     $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
-    $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19' : '';
+    $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19 ' : '';
     $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
     $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
     $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
@@ -38,7 +38,7 @@ class video_ffmpeg implements transcoder_interface {
 
   public function run_command($options) {
 //    $command = $this->nice . ' ' . $this->params['cmd_path'] . ' ' . $options . '  2>&1';
-    $command = $options . '  2>&1';
+    $command = $this->nice . $options . '  2>&1';
     watchdog('transcoder', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
     ob_start();
     passthru($command, $command_return);
@@ -375,10 +375,25 @@ class video_ffmpeg implements transcoder_interface {
     return;
   }
 
-  public function create_job($video) {
-    return db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#create_job()
+   */
+  public function create_job($video, $nid) {
+    return db_insert('video_files')
+        ->fields(array(
+          'fid' => $video['fid'],
+          'nid' => $nid,
+          'status' => VIDEO_RENDERING_PENDING,
+          'dimensions' => $video['dimensions'],
+        ))
+        ->execute();
   }
 
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#update_job()
+   */
   public function update_job($video) {
     if (!$this->load_job($video['fid']))
       return;
@@ -386,36 +401,47 @@ class video_ffmpeg implements transcoder_interface {
     db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $video['nid'], $video['fid']);
   }
 
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#delete_job()
+   */
   public function delete_job($video) {
-    if (!$this->load_job($video->fid))
+    if (!$video = $this->load_job($video['fid']))
       return;
-    //lets get all our videos and unlink them
-    $sql = db_query("SELECT data FROM {video_files} WHERE fid=%d", $video->fid);
-    //we loop here as future development will include multiple video types (HTML 5)
-    while ($row = db_fetch_object($sql)) {
-      $data = unserialize($row->data);
-      if (empty($data))
-        continue;
-      foreach ($data as $file) {
+    // converted output values
+    $converted = unserialize($video->data);
+    if (!empty($converted)) {
+      foreach ($converted as $file) {
         if (file_exists($file->filepath))
-          unlink($file->filepath);
+          @unlink($file->filepath);
       }
     }
     //now delete our rows.
-    db_query('DELETE FROM {video_files} WHERE fid = %d', $video->fid);
+    db_delete('video_files')
+        ->condition('fid', $video->fid)
+        ->execute();
   }
 
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#load_job()
+   */
   public function load_job($fid) {
-    return;
     $job = null;
-    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
-    $job = db_fetch_object($result);
+    $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
+      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid",
+                array(':fid' => $fid))
+            ->fetch();
     if (!empty($job))
       return $job;
     else
       return FALSE;
   }
 
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#load_job_queue()
+   */
   public function load_job_queue() {
     return;
     $total_videos = variable_get('video_ffmpeg_instances', 5);
@@ -424,32 +450,41 @@ class video_ffmpeg implements transcoder_interface {
       FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid
       WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp',
             array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT), 0, $total_videos, array());
+    $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
+      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid",
+                array(':fid' => $fid))
+            ->fetch();
 
-    while ($row = db_fetch_object($result)) {
+    $query = db_select('file_managed', 'f');
+    $query->join('video_files', 'vf');
+    $query->condition('f.status', FILE_STATUS_PERMANENT, '=')
+        ->condition('vf.status', VIDEO_RENDERING_PENDING, '=')
+        ->fields('f', array('fid', 'uid', 'filename', 'uri', 'status', 'filemime', 'filesize'))
+        ->fields('vf', array('vif', 'fid', 'nid', 'dimension', 'status', 'data'))
+        ->range(0, variable_get('video_ffmpeg_instances', 5));
+    $result = $query->execute();
+    foreach ($result as $row) {
       $videos[] = $row;
     }
     return $videos;
   }
 
   /**
-   * @todo : replace with the load job method
-   * @param <type> $video
-   * @return <type>
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#load_completed_job()
    */
   public function load_completed_job(&$video) {
-    $result = db_fetch_object(db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid));
-    $data = unserialize($result->data);
-    if (empty($data))
-      return $video;
-    foreach ($data as $value) {
-      $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
-      $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) . '.' . $extension;
-      $video->files->{$extension}->filepath = $value->filepath;
-      $video->files->{$extension}->url = file_create_url($value->filepath);
-      $video->files->{$extension}->extension = $extension;
-      $video->player = strtolower($extension);
-    }
-    return $video;
+    $file = $this->load_job($video->fid);
+    $data = unserialize($file->data);
+    if (!empty($data))
+      foreach ($data as $value) {
+        $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
+        $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) . '.' . $extension;
+        $video->files->{$extension}->filepath = $value->filepath;
+        $video->files->{$extension}->url = file_create_url($value->filepath);
+        $video->files->{$extension}->extension = $extension;
+        $video->player = strtolower($extension);
+      }
   }
 
   /**
@@ -459,7 +494,10 @@ class video_ffmpeg implements transcoder_interface {
    * @param (int) $status
    */
   public function change_status($vid, $status) {
-    $result = db_query('UPDATE {video_files} SET status = %d WHERE vid = %d ', $status, $vid);
+    db_update('video_files')->fields(array(
+          'status' => $status,))
+        ->condition('vid', $vid, '=')
+        ->execute();
   }
 
   /*

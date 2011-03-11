@@ -167,8 +167,8 @@ class video_transcoder {
     return $this->transcoder->get_dimensions($video);
   }
 
-  public function create_job($video) {
-    return $this->transcoder->create_job($video);
+  public function create_job($video, $nid) {
+    return $this->transcoder->create_job($video, $nid);
   }
 
   public function update_job($video) {
@@ -201,7 +201,7 @@ class video_transcoder {
 
 interface transcoder_interface {
 
-  public function create_job($video);
+  public function create_job($video, $nid);
 
   public function update_job($video);
 

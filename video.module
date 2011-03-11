@@ -205,7 +205,7 @@ function video_thumb_process(&$element, &$form_state) {
         '#title' => t('Video thumbnail'),
         '#type' => 'managed_file',
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
-        '#default_value' => !empty($file['thumbanail']) ? $file['thumbanail'] : FALSE,
+        '#default_value' => !empty($file['thumbanail']) ? $file['thumbanail'] : NULL,
         '#upload_location' => file_default_scheme() . '://' . variable_get('video_thumb_path', 'videos/thumbnails') . '/' . $file['fid'],
       );
     }
@@ -230,70 +230,6 @@ function video_thumb_process(&$element, &$form_state) {
     // @todo Add video player
     if (!empty($large_thumb))
       $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
-  }
-}
-
-/**
- * Adds a video to the video rendering table.
- *
- * If auto converting, it will convert your video to flv right now.  We are passing the element by reference
- * just in case we ever want to add more to the element during this process.
- *
- * @param $element
- *   Form element to get the video file from.
- */
-function video_convert_process(&$element) {
-  $file = $element['#value'];
-  // Add default dimensions from our default_value if needed
-  if (!isset($file['data']['dimensions'])) {
-    $file['data']['dimensions'] = $element['data']['dimensions']['#value'];
-  }
-  $convert = false;
-  //we need to check if this fid has already been added to the database AND that there is in fact a fid
-  if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !isset($file['data']['bypass_autoconversion'])) {
-    $fid = $file['fid'];
-    //setup our conversion class and check for the fid existence.
-    module_load_include('inc', 'video', '/includes/conversion');
-    $video_conversion = new video_conversion;
-
-    // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-    if (!$video = $video_conversion->load_job($fid)) {
-      // Video has not been added to the queue yet so lets add it.
-      $video = array('fid' => $fid, 'dimensions' => $file['data']['dimensions']);
-      if (!($video_conversion->create_job($video)))
-        drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
-      $convert = true;
-      //lets queue our node status to unpublished.
-      $element['#unpublish'] = true;
-    } elseif ($video->video_status != VIDEO_RENDERING_COMPLETE) {
-      //lets queue our node status to unpublished.
-      $element['#unpublish'] = true;
-    }
-
-    // Our video should be in the database pending, lets see if we need to convert it now.
-    // Check if we are going from unselected to selected or if this is a new video and we have checked the checkbox
-    $convert_video_on_save = false;
-    $element_data_convert_on_save = '';
-    $file_date_convet_on_save = '';
-    $convert_on_save = variable_get('video_convert_on_save', FALSE);
-    if (isset($element['data']['convert_video_on_save']['#value']))
-      $element_data_convert_on_save = $element['data']['convert_video_on_save']['#value'];
-    if (isset($file['data']['convert_video_on_save']))
-      $file_date_convet_on_save = $file['data']['convert_video_on_save'];
-    $convert_video_on_save = $element_data_convert_on_save || $file_date_convet_on_save;
-    if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])
-        && $convert_video_on_save) || ($convert && $convert_video_on_save) || $convert_on_save) {
-      $return = $video_conversion->process($fid);
-      if ($return === FALSE) {
-        drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
-      } elseif ($return === TRUE) {
-        //we are always unpublished until we are converted.
-        unset($element['#unpublish']);
-        drupal_set_message(t('Successfully converted your video.'));
-      }
-    } elseif ($convert) {
-      drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for display.'));
-    }
   }
 }
 
@@ -387,7 +323,7 @@ function video_widget_element_settings(&$element, &$form_state) {
   }
   // Override our dimensions to the user selected.
   if (isset($file['dimensions']) && !empty($file['dimensions'])) {
-    $dimensions = $file['data']['dimensions'];
+    $dimensions = $file['dimensions'];
   }
 
   // Override our player dimensions to the user selected.
@@ -473,76 +409,6 @@ function video_widget_element_settings(&$element, &$form_state) {
       '#value' => $default_thumb,
     );
   }
-}
-
-/**
- * Video_widget_process for API handlers for any video types.
- * @param <type> $element
- * @param <type> $form_state
- */
-function video_widget_process(&$element, &$form_state) {
-  $item = $element['#value'];
-  $field = field_widget_field($element, $form_state);
-  switch ($form_state['clicked_button']['#submit'][0]) {
-    case 'node_form_submit':
-      // Auto convert our video file
-      if ($field['settings']['autoconversion']) {
-        video_convert_process($element);
-        //lets set our node status to unpublished if our video is not converted.
-        if (isset($element['#unpublish']) && $element['#unpublish']) {
-          //unpublish the node
-          $form_state['values']['status'] = 0;
-        }
-      }
-
-      // Save manually uploaded thumbs (if they exist) and add them to element
-      if (isset($_FILES['files']) && is_array($_FILES['files']['name']))
-        if (array_key_exists($field['field_name'] . '_' . $element['#delta'] . '_thumbs', $_FILES['files']['name'])) {
-          video_upload_manual_thumb($element);
-        }
-
-      //
-      //queue up the file id to update the node id in the video rendering / cdn tables.
-      $form_state['values']['video_id'][] = $item['fid'];
-      break;
-    case 'node_form_build_preview':
-      // preview
-      break;
-    case 'node_form_delete_submit':
-      //moved to hook_file_delete in video module.
-      break;
-  }
-}
-
-/**
- * Handle saving of manual thumbs
- */
-function video_upload_manual_thumb(&$element) {
-
-  $destination = file_default_scheme() . ':/' . 'video_thumbs/' . $element['#value']['fid'];
-  if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
-    form_set_error('video_thumb_upload', t('The thumbnail image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
-    return;
-  }
-  $validators = array(
-    'file_validate_is_image' => array(),
-  );
-
-  if (!$file = file_save_upload($element['#field_name'] . '_' . $element['#delta'] . '_thumbs', $validators, $destination)) {
-    // No upload to save we hope... or file_save_upload() reported an error on its own.
-    return;
-  }
-
-  // Remove old image (if any) & clean up database.
-  $old_thumb = $element['data']['video_thumb']['#value'];
-  if (!empty($old_thumb)) {
-    if (file_delete($old_thumb)) {
-      db_query('DELETE FROM {files} WHERE filepath=%d', $old_thumb);
-    }
-  }
-  // Make the file permanent and store it in the form.
-  file_set_status($file, FILE_STATUS_PERMANENT);
-  $element['data']['video_thumb']['#value'] = $file->filepath;
 }
 
 /*
