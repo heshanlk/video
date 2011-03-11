@@ -39,7 +39,7 @@ function video_module_invoke($action, &$array, &$video = NULL, $other = NULL) {
  * Implementation of hook_perm().
  */
 function video_perm() {
-  return array('bypass conversion video', 'convert on submission', 'override player dimensions', 'use default thumb');
+  return array('bypass conversion video', 'convert on submission', 'override player dimensions', 'use default thumb', 'zencoder postback');
 }
 
 /**

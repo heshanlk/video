@@ -28,7 +28,7 @@ function video_zencoder_menu() {
 //    'title' => 'Video',
 //    'description' => 'Configure different aspects of the video module and its plugins',
     'page callback' => '_video_zencoder_postback_jobs',
-    'access arguments' => array('access content'),
+    'access arguments' => array('zencoder postback'),
     'type' => MENU_CALLBACK,
   );
   return $items;
