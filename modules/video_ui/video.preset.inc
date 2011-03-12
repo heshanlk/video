@@ -42,6 +42,16 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE
   );
+  $video_extension = array();
+  foreach (video_video_extensions () as $extension => $theme) {
+    $video_extension[$extension] = $extension;
+  }
+  $form['settings']['video']['video_extension'] = array(
+    '#type' => 'select',
+    '#title' => t('Video output extension'),
+    '#description' => t('Extension of the output video.'),
+    '#options' => $video_extension
+  );
   $form['settings']['video']['video_codec'] = array(
     '#type' => 'select',
     '#title' => t('Video codec'),
@@ -523,7 +533,7 @@ function video_preset_delete_confirm_submit($form, &$form_state) {
  */
 function _video_preset_name_validate($element, &$form_state) {
   $error = video_validate_preset_name($form_state['values']['name']);
-  if ($error && !isset($form_state['values']['pid']) && !isset ($form_state['values']['default'])) {
+  if ($error && !isset($form_state['values']['pid']) && !isset($form_state['values']['default'])) {
     form_set_error('name', $error);
   }
 }

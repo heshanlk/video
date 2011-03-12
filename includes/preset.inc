@@ -36,7 +36,7 @@ class video_preset {
     }
     $preset = array();
     foreach ($presets as $id => $value) {
-      $preset[$id] = $value['name'] . ' ' . l(t('edit'), ('admin/config/media/video/presets/preset/' . $value['name']));
+      $preset[$value['name']] = $value['name'] . ' ' . l(t('edit'), ('admin/config/media/video/presets/preset/' . $value['name']));
 //      $help[] = $value['name'] . ' - ' . $value['description'] . ' ' . l(t('edit'), preset_get_preset_path('video', $value['name']));
     }
 
@@ -62,10 +62,13 @@ class video_preset {
    * @return array $properties
    */
   public function properties() {
+    module_load_include('inc', 'video_ui', 'video.preset');
+    $presets = array();
     $preset = $this->preset;
-    return $options['properties'];
-    if (preset_exists('video', $preset))
-      preset_get_settings($preset);
+    foreach ($preset as $preset_name) {
+      $presets[$preset_name] = video_get_preset($preset_name);
+    }
+    return $presets;
   }
 
 }

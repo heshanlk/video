@@ -58,7 +58,7 @@ class video_ffmpeg implements transcoder_interface {
     $total_thumbs = variable_get('video_thumbs', 5);
     $videofile = file_load($video['fid']);
     //get the actual video file path from the stream wrappers
-    $videopath = (drupal_realpath($videofile->uri));
+    $videopath = drupal_realpath($videofile->uri);
     //get the playtime from the current transcoder
     $duration = $this->get_playtime($videopath);
 
@@ -99,108 +99,84 @@ class video_ffmpeg implements transcoder_interface {
   public function convert_video($video) {
     // This will update our current video status to active.
 //    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
-    // Get the converted file object
-    //we are going to move our video to an "original" folder
-    //we are going to transcode the video to the "converted" folder
-//    $pathinfo = pathinfo($video->filepath);
-    // @TODO This about getting the correct path from the filefield if they active it
-    $files = file_create_path();
-    $original = $files . '/videos/original';
-    $converted = $files . '/videos/converted';
-
-    if (!field_file_check_directory($original, FILE_CREATE_DIRECTORY)) {
-      watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $orginal, array(), WATCHDOG_ERROR);
-      return false;
-    }
-    if (!field_file_check_directory($converted, FILE_CREATE_DIRECTORY)) {
+    // get the paths so tokens will compatible with this
+    $target = str_replace('original', '', drupal_dirname($video->uri));
+    $converted = $target . '/converted/' . $video->fid;
+    if (!file_prepare_directory($converted, FILE_CREATE_DIRECTORY)) {
       watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted, array(), WATCHDOG_ERROR);
       return false;
     }
-
-    $original = $original . '/' . $video->filename;
-    //lets move our video and then convert it.
-    if (file_move($video, $original)) {
-      // Update our filepath since we moved it
-      $update = drupal_write_record('files', $video, 'fid');
-      // process presets
-      $presets = $video->presets;
-      $converted_files = array();
-      foreach ($presets as $name => $preset) {
-        // reset converted file path
-        $converted = $files . '/videos/converted';
-        //update our filename after the move to maintain filename uniqueness.
-//        $converted = $converted .'/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.'. $this->video_extension();
-        $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . '.' . $preset['extension'], $converted);
-        //call our transcoder
-//        $command_output = $this->convert_video($video, $converted);
-        $dimensions = $this->dimensions($video);
-        $dimention = explode('x', $dimensions);
-        if ($this->params['enable_faststart'] && in_array($preset['extension'], array('mov', 'mp4'))) {
-          $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
-        } else {
-          $ffmpeg_output = $converted;
-        }
-        // Setup our default command to be run.
-        foreach ($preset['command'] as $command) {
-          $command = strtr($command, array(
-                '!cmd_path' => $this->params['cmd_path'],
-                '!videofile' => '"' . $video->filepath . '"',
-                '!audiobitrate' => $preset['audio_bitrate'],
-                '!width' => $dimention[0],
-                '!height' => $dimention[1],
-                '!videobitrate' => $preset['video_bitrate'],
-                '!convertfile' => '"' . $ffmpeg_output . '"',
-              ));
-//          print_r($preset['command']);
-//          die();
-          // Process our video
-//      $command_output = $this->run_command($command);
-          $command_output = $this->run_command($command);
-        }
-
-        if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
-          // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
-          // the command to be execute so we need to fudge the command to run qt-faststart.
-          $cmd_path = $this->params['cmd_path'];
-          $this->params['cmd_path'] = $this->params['faststart_cmd'];
-          $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted, $verbose);
-          $this->params['cmd_path'] = $cmd_path;
-
-          // Delete the temporary output file.
-          file_delete($ffmpeg_output);
-        }
-
-        //lets check to make sure our file exists, if not error out
-        if (!file_exists($converted) || !filesize($converted)) {
-          watchdog('video_conversion', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->filepath, '%preset' => $name), WATCHDOG_ERROR);
-          $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
-          return FALSE;
-        }
-        // Setup our converted video object
-        $video_info = pathinfo($converted);
-        //update our converted video
-        $video->converted = new stdClass();
-        $video->converted->vid = $video->vid;
-        $video->converted->filename = $video_info['basename'];
-        $video->converted->filepath = $converted;
-        $video->converted->filemime = file_get_mimetype($converted);
-        $video->converted->filesize = filesize($converted);
-        $video->converted->status = VIDEO_RENDERING_COMPLETE;
-        $video->converted->preset = $name;
-        $video->converted->completed = time();
-        $converted_files[] = $video->converted;
+    //get the actual video file path from the stream wrappers
+    $original_video_path = drupal_realpath($video->uri);
+    // process presets
+    $presets = $video->presets;
+    $converted_files = array();
+    foreach ($presets as $name => $preset) {
+      $settings = $preset['settings'];
+      $converted .= '/' . file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '.' . $settings['video_extension'], $settings['video_extension']);
+      $dimensions = $this->dimensions($video);
+      $dimention = explode('x', $dimensions);
+      if ($this->params['enable_faststart'] && in_array($settings['video_extension'], array('mov', 'mp4'))) {
+        $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
+      } else {
+        $ffmpeg_output = $converted;
       }
-      // Update our video_files table with the converted video information.
-      $result = db_query("UPDATE {video_files} SET status=%d, completed=%d, data='%s' WHERE vid=%d",
-              $video->converted->status, $video->converted->completed, serialize($converted_files), $video->converted->vid);
+      // Setup our default command to be run.
+      $command = strtr($settings['command'], array(
+            '!cmd_path' => $this->params['cmd_path'],
+            '!videofile' => '"' . $original_video_path . '"',
+            '!audiobitrate' => $settings['audio_bitrate'],
+            '!width' => $dimention[0],
+            '!height' => $dimention[1],
+            '!videobitrate' => $settings['video_bitrate'],
+            '!convertfile' => '"' . $ffmpeg_output . '"',
+          ));
+      // process our video
+      $command_output = $this->run_command($command);
 
-      watchdog('video_conversion', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
-      return TRUE;
-    } else {
-      watchdog('video_conversion', 'Cound not move the video to the original folder.', array(), WATCHDOG_ERROR);
-      $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
-      return FALSE;
+
+      if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
+        // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
+        // the command to be execute so we need to fudge the command to run qt-faststart.
+        $cmd_path = $this->params['cmd_path'];
+        $this->params['cmd_path'] = $this->params['faststart_cmd'];
+        $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted, $verbose);
+        $this->params['cmd_path'] = $cmd_path;
+
+        // Delete the temporary output file.
+        drupal_unlink($ffmpeg_output);
+      }
+
+      //lets check to make sure our file exists, if not error out
+      if (!file_exists($converted) || !filesize($converted)) {
+        watchdog('video_conversion', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->filepath, '%preset' => $name), WATCHDOG_ERROR);
+        $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+        return FALSE;
+      }
+      // Setup our converted video object
+      $video_info = pathinfo($converted);
+      //update our converted video
+      $video->converted = new stdClass();
+      $video->converted->vid = $video->vid;
+      $video->converted->filename = $video_info['basename'];
+      $video->converted->filepath = $converted;
+      $video->converted->filemime = file_get_mimetype($converted);
+      $video->converted->filesize = filesize($converted);
+      $video->converted->status = VIDEO_RENDERING_COMPLETE;
+      $video->converted->preset = $name;
+      $video->converted->completed = time();
+      $converted_files[] = $video->converted;
     }
+    // Update our video_files table with the converted video information.
+    db_update('video_files')
+        ->fields(array(
+          'status' => VIDEO_RENDERING_COMPLETE,
+          'completed' => time(),
+          'data' => serialize($converted_files)))
+        ->condition('vid', $video->converted->vid, '=')
+        ->execute();
+    watchdog('video_conversion', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
+    return TRUE;
   }
 
   /**
@@ -392,21 +368,11 @@ class video_ffmpeg implements transcoder_interface {
 
   /**
    * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#update_job()
-   */
-  public function update_job($video) {
-    if (!$this->load_job($video['fid']))
-      return;
-    //lets update our table to include the nid
-    db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $video['nid'], $video['fid']);
-  }
-
-  /**
-   * Interface Implementations
    * @see sites/all/modules/video/includes/transcoder_interface#delete_job()
    */
   public function delete_job($video) {
-    if (!$video = $this->load_job($video['fid']))
+    $video = (object) $video;
+    if (!$video = $this->load_job($video->fid))
       return;
     // converted output values
     $converted = unserialize($video->data);
@@ -443,26 +409,13 @@ class video_ffmpeg implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#load_job_queue()
    */
   public function load_job_queue() {
-    return;
+//    return;
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status 
-      FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid
+    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
+      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
       WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp',
-            array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT), 0, $total_videos, array());
-    $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
-      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid",
-                array(':fid' => $fid))
-            ->fetch();
-
-    $query = db_select('file_managed', 'f');
-    $query->join('video_files', 'vf');
-    $query->condition('f.status', FILE_STATUS_PERMANENT, '=')
-        ->condition('vf.status', VIDEO_RENDERING_PENDING, '=')
-        ->fields('f', array('fid', 'uid', 'filename', 'uri', 'status', 'filemime', 'filesize'))
-        ->fields('vf', array('vif', 'fid', 'nid', 'dimension', 'status', 'data'))
-        ->range(0, variable_get('video_ffmpeg_instances', 5));
-    $result = $query->execute();
+            0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
       $videos[] = $row;
     }

@@ -93,10 +93,6 @@ class video_conversion {
     return $this->transcoder->create_job($video, $nid);
   }
 
-  public function update_job($video) {
-    return $this->transcoder->update_job($video);
-  }
-
   public function delete_job($video) {
     return $this->transcoder->delete_job($video);
   }

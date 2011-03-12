@@ -89,22 +89,19 @@ class video_transcoder {
   }
 
   public function convert_video(&$video) {
+    // load the presets
     $video_preset = new video_preset();
     $presets = $video_preset->properties();
     $video->presets = $presets;
     $output = $this->transcoder->convert_video($video);
     // if successfully converted the video then update the status to publish
-    if ($output)
+    if ($output && variable_get('video_publish_on_complete', TRUE))
     // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
-      db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $video->nid);
-
-    // If they are using metadata.
-    // @TODO : add meta data support
-//    if (variable_get('video_metadata', FALSE)) {
-//      module_load_include('inc', 'video', '/includes/metadata');
-//      $metadata = new video_metadata;
-//      $metadata->process($converted);
-//    }
+      db_update('node')
+          ->fields(array(
+            'status' => NODE_PUBLISHED))
+          ->condition('nid', $video->nid, '=')
+          ->execute();
     return $output;
   }
 
@@ -171,10 +168,6 @@ class video_transcoder {
     return $this->transcoder->create_job($video, $nid);
   }
 
-  public function update_job($video) {
-    return $this->transcoder->update_job($video);
-  }
-
   public function delete_job($video) {
     return $this->transcoder->delete_job($video);
   }
@@ -202,8 +195,6 @@ class video_transcoder {
 interface transcoder_interface {
 
   public function create_job($video, $nid);
-
-  public function update_job($video);
 
   public function delete_job($video);
 
