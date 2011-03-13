@@ -1,7 +1,0 @@
-
-name = Zencoder API on Video
-description = Zencoder is a webservice to transcode videos.
-package = Video
-core = 7.x
-dependencies[] = video
-dependencies[] = video_s3

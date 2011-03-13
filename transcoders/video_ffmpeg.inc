@@ -100,6 +100,7 @@ class video_ffmpeg implements transcoder_interface {
     // This will update our current video status to active.
 //    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     // get the paths so tokens will compatible with this
+    // @todo : add best method to get existing file path and add converted there
     $target = str_replace('original', '', drupal_dirname($video->uri));
     $converted = $target . '/converted/' . $video->fid;
     if (!file_prepare_directory($converted, FILE_CREATE_DIRECTORY)) {

@@ -1,6 +1,0 @@
-
-name = Amazon S3 on Video
-description = Leverages the Video module and Amazon Simple Storage Service (Amazon S3) to serve and store your video's saving bandwidth.
-package = Video
-core = 7.x
-dependencies[] = video
