@@ -102,7 +102,7 @@ class video_ffmpeg implements transcoder_interface {
     // get the paths so tokens will compatible with this
     // @todo : add best method to get existing file path and add converted there
     $target = str_replace('original', '', drupal_dirname($video->uri));
-    $converted = $target . '/converted/' . $video->fid;
+    $converted = $target . 'converted/' . $video->fid;
     if (!file_prepare_directory($converted, FILE_CREATE_DIRECTORY)) {
       watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted, array(), WATCHDOG_ERROR);
       return false;
@@ -114,16 +114,22 @@ class video_ffmpeg implements transcoder_interface {
     $converted_files = array();
     foreach ($presets as $name => $preset) {
       $settings = $preset['settings'];
+      // override with preset settings
+      if (isset($settings['width']) && isset($settings['height'])) {
+        $video->dimensions = $settings['width'] . 'x' . $settings['height'];
+      }
       $converted .= '/' . file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '.' . $settings['video_extension'], $settings['video_extension']);
+      //get the actual video file path from the stream wrappers
+      $converted_video_path = drupal_realpath($converted);
       $dimensions = $this->dimensions($video);
       $dimention = explode('x', $dimensions);
       if ($this->params['enable_faststart'] && in_array($settings['video_extension'], array('mov', 'mp4'))) {
-        $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
+        $ffmpeg_output = file_directory_temp() . '/' . basename($converted_video_path);
       } else {
-        $ffmpeg_output = $converted;
+        $ffmpeg_output = $converted_video_path;
       }
       // Setup our default command to be run.
-      $command = strtr($settings['command'], array(
+      $command = strtr($settings['cli_code'], array(
             '!cmd_path' => $this->params['cmd_path'],
             '!videofile' => '"' . $original_video_path . '"',
             '!audiobitrate' => $settings['audio_bitrate'],
@@ -136,12 +142,12 @@ class video_ffmpeg implements transcoder_interface {
       $command_output = $this->run_command($command);
 
 
-      if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
+      if ($ffmpeg_output != $converted_video_path && file_exists($ffmpeg_output)) {
         // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
         // the command to be execute so we need to fudge the command to run qt-faststart.
         $cmd_path = $this->params['cmd_path'];
         $this->params['cmd_path'] = $this->params['faststart_cmd'];
-        $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted, $verbose);
+        $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted_video_path, $verbose);
         $this->params['cmd_path'] = $cmd_path;
 
         // Delete the temporary output file.
@@ -149,18 +155,18 @@ class video_ffmpeg implements transcoder_interface {
       }
 
       //lets check to make sure our file exists, if not error out
-      if (!file_exists($converted) || !filesize($converted)) {
-        watchdog('video_conversion', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->filepath, '%preset' => $name), WATCHDOG_ERROR);
+      if (!file_exists($converted_video_path) || !filesize($converted_video_path)) {
+        watchdog('transcoder', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->uri, '%preset' => $name), WATCHDOG_ERROR);
         $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
         return FALSE;
       }
       // Setup our converted video object
-      $video_info = pathinfo($converted);
+      $video_info = pathinfo($converted_video_path);
       //update our converted video
       $video->converted = new stdClass();
       $video->converted->vid = $video->vid;
       $video->converted->filename = $video_info['basename'];
-      $video->converted->filepath = $converted;
+      $video->converted->uri = $converted;
       $video->converted->filemime = file_get_mimetype($converted);
       $video->converted->filesize = filesize($converted);
       $video->converted->status = VIDEO_RENDERING_COMPLETE;
@@ -176,7 +182,7 @@ class video_ffmpeg implements transcoder_interface {
           'data' => serialize($converted_files)))
         ->condition('vid', $video->converted->vid, '=')
         ->execute();
-    watchdog('video_conversion', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
+    watchdog('transcoder', 'Successfully converted %orig to %dest', array('%orig' => $video->uri, '%dest' => $video->converted->uri), WATCHDOG_INFO);
     return TRUE;
   }
 
@@ -432,10 +438,10 @@ class video_ffmpeg implements transcoder_interface {
     $data = unserialize($file->data);
     if (!empty($data))
       foreach ($data as $value) {
-        $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
-        $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) . '.' . $extension;
-        $video->files->{$extension}->filepath = $value->filepath;
-        $video->files->{$extension}->url = file_create_url($value->filepath);
+        $extension = pathinfo(drupal_realpath($value->uri), PATHINFO_EXTENSION);
+        $video->files->{$extension}->filename = $value->filename;
+        $video->files->{$extension}->uri = $value->uri;
+        $video->files->{$extension}->url = file_create_url($value->uri);
         $video->files->{$extension}->extension = $extension;
         $video->player = strtolower($extension);
       }
@@ -467,7 +473,7 @@ class video_ffmpeg implements transcoder_interface {
 
   public function dimensions($video) {
     //lets setup our dimensions.  Make sure our aspect ratio matches the dimensions to be used, if not lets add black bars.
-    $aspect_ratio = _video_aspect_ratio($video->filepath);
+    $aspect_ratio = _video_aspect_ratio(drupal_realpath($video->uri));
     $ratio = $aspect_ratio['ratio'];
     $width = $aspect_ratio ['width'];
     $height = $aspect_ratio['height'];

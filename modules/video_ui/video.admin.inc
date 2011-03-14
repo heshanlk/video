@@ -162,20 +162,3 @@ function video_cron_admin_settings() {
   );
   return system_settings_form($form);
 }
-
-/**
- * File system admin settings
- * @return <type>
- */
-function video_filesystem_admin_settings() {
-  $filesystem = new video_filesystem;
-  $form = $filesystem->admin_settings();
-  return system_settings_form($form);
-}
-
-function video_filesystem_admin_settings_validate($form, &$form_state) {
-  // add vallidations by metadata interface
-  $filesystem = $form_state['values']['video_filesystem'];
-  $filesystem = new video_filesystem($filesystem);
-  $filesystem->admin_settings_validate($form, $form_state);
-}

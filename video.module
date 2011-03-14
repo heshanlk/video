@@ -127,6 +127,7 @@ function video_theme() {
  */
 
 function video_cron() {
+  return;
   module_load_include('inc', 'video', 'includes/conversion');
   if (variable_get('video_cron', TRUE)) {
     $video_conversion = new video_conversion;
@@ -164,7 +165,8 @@ function video_thumb_process(&$element, &$form_state) {
       if (!empty($thumbss)) {
         $element['thumbanail'] = array(
           '#type' => 'radios',
-          '#title' => t('Video Thumbnails'),
+          '#title' => t('Video thumbnails'),
+          '#element_validate' => array('video_thumbnail_validate'),
           '#options' => $thumbss,
           '#default_value' => !empty($file['thumbanail']) ? $file['thumbanail'] : $thumbs[$default_thumb]->fid,
           '#weight' => 10,
@@ -179,9 +181,10 @@ function video_thumb_process(&$element, &$form_state) {
         $field['settings']['autothumbnail'] == 'manual_upload') {
       $element['thumbanail'] = array(
         '#title' => t('Video thumbnail'),
+//        '#element_validate' => array('video_thumbnail_validate'),
         '#type' => 'managed_file',
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
-        '#default_value' => !empty($file['thumbanail']) ? $file['thumbanail'] : NULL,
+        '#default_value' => !empty($file['thumbanail']['fid']) && is_integer($file['thumbanail']['fid']) ? $file['thumbanail']['fid'] : NULL,
         '#upload_location' => file_default_scheme() . '://' . variable_get('video_thumb_path', 'videos/thumbnails') . '/' . $file['fid'],
       );
     }
@@ -419,7 +422,6 @@ function _video_dimensions_options(&$options, $video) {
 
 function _video_aspect_ratio($video) {
   //lets get our video dimensions from the file
-  module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;
   $wxh = $transcoder->get_dimensions($video);
   $width = $wxh['width'];
@@ -579,9 +581,9 @@ function video_default_field_settings($settings) {
   $form['default_video_thumbnail'] = array(
     '#title' => t('Default video thumbnail'),
     '#type' => 'managed_file',
-//    '#element_validate' => array('video_field_default_thumbnail_validate'),
+    '#element_validate' => array('video_field_default_thumbnail_validate'),
     '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
-    '#default_value' => !empty($settings['default_video_thumbnail']) ? $settings['default_video_thumbnail'] : '',
+    '#default_value' => !empty($settings['default_video_thumbnail']['fid']) ? $settings['default_video_thumbnail']['fid'] : '',
     '#upload_location' => 'public://videos/thumbnails/default',
     '#weight' => 19,
   );

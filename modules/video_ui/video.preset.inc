@@ -50,7 +50,8 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#type' => 'select',
     '#title' => t('Video output extension'),
     '#description' => t('Extension of the output video.'),
-    '#options' => $video_extension
+    '#options' => $video_extension,
+    '#default_value' => (!empty($preset['settings']['video_extension'])) ? $preset['settings']['video_extension'] : 'flv'
   );
   $form['settings']['video']['video_codec'] = array(
     '#type' => 'select',

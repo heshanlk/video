@@ -128,6 +128,13 @@ function video_field_prepare_view($entity_type, $entities, $field, $instances, $
  * Implements hook_field_presave().
  */
 function video_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  // change the theumbnails if default is checked
+  if (!empty($field['settings']['default_video_thumbnail'])) {
+    foreach ($items as $delta => $item) {
+      if ($item['use_default_video_thumb'])
+        $items[$delta]['thumbanail'] = $field['settings']['default_video_thumbnail']['fid'];
+    }
+  }
   file_field_presave($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
@@ -444,4 +451,19 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
     );
   }
   return $element;
+}
+
+/**
+ * Element specific validation for video thumbnail value.
+ *
+ */
+function video_thumbnail_validate($element, &$form_state) {
+  $fid = $element['#value'];
+  // Make the file permanent and store it in the form.
+  if (!empty($fid)) {
+    $file = file_load($fid);
+    $file->status |= FILE_STATUS_PERMANENT;
+    $file = file_save($file);
+//    $element['#value'] = (array) $file;
+  }
 }

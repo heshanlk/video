@@ -61,14 +61,6 @@ function video_ui_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 3,
   );
-
-//  $items['admin/structure/video'] = array(
-//    'title' => 'Video Presets',
-//    'file' => 'includes/video.preset.inc',
-//    'description' => 'Manage and configure the presets for Video.',
-//    'page callback' => 'video_presets_overview',
-//    'access arguments' => array('administer video presets')
-//  );
   $items['admin/config/media/video/presets/all'] = array(
     'title' => 'Presets',
     'description' => 'Configure your transcoder presets to convert your videos.',
@@ -148,17 +140,6 @@ function video_ui_menu() {
     'file' => 'video.admin.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
-  );
-  // Filesystem settings
-  $items['admin/config/media/video/filesystem'] = array(
-    'title' => 'Filesystem',
-    'description' => 'Configure your filesystem settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_filesystem_admin_settings'),
-    'access arguments' => array('administer site configuration'),
-    'file' => 'video.admin.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 5,
   );
   // Cron settings
   $items['admin/config/media/video/cron'] = array(
