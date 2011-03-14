@@ -77,7 +77,6 @@ class video_helper {
 
     // Moved to last to recheck incase we changed our extension above.
     $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');
-
     // Return our object
     return $video;
   }

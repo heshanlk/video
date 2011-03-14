@@ -127,12 +127,38 @@ function video_theme() {
  */
 
 function video_cron() {
-  return;
-  module_load_include('inc', 'video', 'includes/conversion');
   if (variable_get('video_cron', TRUE)) {
+    module_load_include('inc', 'video', 'includes/conversion');
     $video_conversion = new video_conversion;
-    $video_conversion->run_queue();
+    if ($videos = $video_conversion->load_job_queue()) {
+      $queue = DrupalQueue::get('video_queue');
+      foreach ($videos as $video) {
+        if ($queue->createItem($video)) {
+          $video_conversion->change_status($video->vid, VIDEO_RENDERING_INQUEUE);
+        }
+      }
+    }
   }
+}
+
+/**
+ * Implmentation of hook_cron_queue_info()
+ */
+function video_cron_queue_info() {
+  $queues['video_queue'] = array(
+    'worker callback' => 'video_queue_process',
+    'time' => variable_get('video_queue_timeout', 90),
+  );
+  return $queues;
+}
+
+/**
+ * Process video transcoding queue
+ */
+function video_queue_process($video) {
+  module_load_include('inc', 'video', 'includes/conversion');
+  $video_conversion = new video_conversion;
+  $video_conversion->process($video);
 }
 
 /*

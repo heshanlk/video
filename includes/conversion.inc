@@ -7,6 +7,8 @@
  */
 defined('VIDEO_RENDERING_PENDING') ||
     define('VIDEO_RENDERING_PENDING', 1);
+defined('VIDEO_RENDERING_INQUEUE') ||
+    define('VIDEO_RENDERING_INQUEUE', 2);
 defined('VIDEO_RENDERING_ACTIVE') ||
     define('VIDEO_RENDERING_ACTIVE', 5);
 defined('VIDEO_RENDERING_COMPLETE') ||
@@ -42,8 +44,7 @@ class video_conversion {
    * @return
    *   An array containing all the videos to be proccessed.
    */
-  private function load_job_queue() {
-    // @TODO : allow only limited jobs to process
+  public function load_job_queue() {
     return $this->transcoder->load_job_queue();
   }
 
@@ -95,6 +96,10 @@ class video_conversion {
 
   public function delete_job($video) {
     return $this->transcoder->delete_job($video);
+  }
+
+  public function change_status($vid, $status) {
+    return $this->transcoder->change_status($vid, $status);
   }
 
   /**

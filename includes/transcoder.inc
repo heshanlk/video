@@ -172,6 +172,10 @@ class video_transcoder {
     return $this->transcoder->delete_job($video);
   }
 
+  public function change_status($vid, $status) {
+    return $this->transcoder->change_status($vid, $status);
+  }
+
   /**
    * Load a file based on the file id ($fid)
    *

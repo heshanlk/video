@@ -385,8 +385,8 @@ class video_ffmpeg implements transcoder_interface {
     $converted = unserialize($video->data);
     if (!empty($converted)) {
       foreach ($converted as $file) {
-        if (file_exists($file->filepath))
-          @unlink($file->filepath);
+        if (file_exists(drupal_realpath($file->uri)))
+          @drupal_unlink($file->uri);
       }
     }
     //now delete our rows.
@@ -416,7 +416,6 @@ class video_ffmpeg implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#load_job_queue()
    */
   public function load_job_queue() {
-//    return;
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
@@ -440,7 +439,7 @@ class video_ffmpeg implements transcoder_interface {
       foreach ($data as $value) {
         $extension = pathinfo(drupal_realpath($value->uri), PATHINFO_EXTENSION);
         $video->files->{$extension}->filename = $value->filename;
-        $video->files->{$extension}->uri = $value->uri;
+        $video->files->{$extension}->filepath = $value->uri;
         $video->files->{$extension}->url = file_create_url($value->uri);
         $video->files->{$extension}->extension = $extension;
         $video->player = strtolower($extension);

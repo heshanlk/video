@@ -154,6 +154,12 @@ function video_cron_admin_settings() {
     '#default_value' => variable_get('video_cron', TRUE),
     '#description' => t('If you would like to use Drupals built in cron hook, check this box.  Please be warned that transcoding videos is very resource intensive.  If you use poor mans cron, I highly discourage this option.  I also suggest you setup your cron to call this function through CLI instead of WGET.'),
   );
+  $form['video_queue_timeout'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Video queue timeout (s).'),
+    '#default_value' => variable_get('video_queue_timeout', 90),
+    '#description' => t('The maximum time allow a video to complete their transcoding. Put a larger value for larger size video.'),
+  );
   $form['video_ffmpeg_instances'] = array(
     '#type' => 'textfield',
     '#title' => t('Total videos to convert during each cron process.'),
