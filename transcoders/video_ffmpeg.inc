@@ -296,6 +296,12 @@ class video_ffmpeg implements transcoder_interface {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
+    $form['autothumb']['video_thumb_save_all'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Save all thumbnails in file_manged table'),
+      '#description' => t('Save all auto created thumbnails to the file_managed table.'),
+      '#default_value' => variable_get('video_thumb_save_all', TRUE),
+    );
     $form['autothumb']['video_thumb_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),

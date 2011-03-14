@@ -62,7 +62,8 @@ class video_preset {
    * @return array $properties
    */
   public function properties() {
-    module_load_include('inc', 'video_ui', 'video.preset');
+    // adding modules/video_ui to load this file even if UI module is disabled
+    module_load_include('inc', 'video', 'modules/video_ui/video.preset');
     $presets = array();
     $preset = $this->preset;
     foreach ($preset as $preset_name) {

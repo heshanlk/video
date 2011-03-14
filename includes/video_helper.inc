@@ -89,21 +89,19 @@ class video_helper {
     $thumbnail->filepath = '';
     $thumbnail->url = '';
     //@todo future enhancements for our thumbnails
-    $thumbnail->alt = '';
-    $thumbnail->title = '';
-    $thumbnail->description = '';
-
+    $thumbnail->alt = $variables['entity']->title;
+    $thumbnail->title = $variables['entity']->title;
+//    $thumbnail->description = '';
     // Setup our thumbnail path.
-    $default_thumbnail = file_load($field_settings['default_video_thumbnail']);
-    $use_default_img = isset($variables['item']['use_default_video_thumb']) ?
-        $variables['item']['use_default_video_thumb'] : FALSE;
 
+    $use_default_img = isset($variables['item']['use_default_video_thumb']) ? TRUE : FALSE;
     if ($use_default_img && !empty($field_settings['default_video_thumbnail'])) {
+      $default_thumbnail = file_load($field_settings['default_video_thumbnail']['fid']);
       // Check the checkbox to use default thumbnail on node
       $thumbnail->filepath = $default_thumbnail->uri;
-    } elseif (isset($variables['item']['video_thumb']) ? $variables['item']['video_thumb'] : FALSE) {
+    } elseif (isset($variables['item']['thumbanail']) ? TRUE : FALSE) {
       // actual video thumbnails is present
-      $thumbnail_load = file_load($variables['item']['video_thumb']);
+      $thumbnail_load = file_load($variables['item']['thumbanail']);
       $thumbnail->filepath = $thumbnail_load->uri;
     } else {
       //need some type of default if nothing is present

@@ -143,33 +143,8 @@ function video_field_presave($entity_type, $entity, $field, $instance, $langcode
  */
 function video_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_insert($entity_type, $entity, $field, $instance, $langcode, $items);
-  // Create entry for video conversion if auto converison is enabled
-  if ($field['settings']['autoconversion'] == 1) {
-    $nid = $entity->vid;
-    module_load_include('inc', 'video', '/includes/conversion');
-    $video_conversion = new video_conversion;
-    foreach ($items as $delta => $item) {
-      // skip adding entry if bypass conversion is checked
-      if ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE)) {
-        // delete the conversion job if any
-        $video_conversion->delete_job($item);
-        return;
-      }
-      // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-      if (!$video = $video_conversion->load_job($item['fid'])) {
-        if (!($video_conversion->create_job($item, $nid)))
-          drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
-      }
-      // if convert on save is checked
-      if ($item['convert_video_on_save'] == 1 || variable_get('video_convert_on_save', FALSE)) {
-        if (!$video_conversion->process($item['fid'])) {
-          drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
-        } else {
-          drupal_set_message(t('Successfully converted your video.'));
-        }
-      }
-    }
-  }
+  // calling function to handle conversion when auto conversion is enabled
+  _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
@@ -177,6 +152,14 @@ function video_field_insert($entity_type, $entity, $field, $instance, $langcode,
  */
 function video_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_update($entity_type, $entity, $field, $instance, $langcode, $items);
+  // calling function to handle conversion when auto conversion is enabled
+  _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
+}
+
+/**
+ * Video file save to the video_files table for conversions
+ */
+function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
   // Create entry for video conversion if auto converison is enabled
   if ($field['settings']['autoconversion'] == 1) {
     $nid = $entity->vid;
@@ -188,6 +171,10 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
         // delete the conversion job if any
         $video_conversion->delete_job($item);
         return;
+      }
+      // re queue for video conversion
+      if ($item['re_convert_video'] == 1) {
+        $video_conversion->change_status($item['fid'], VIDEO_RENDERING_PENDING);
       }
       // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
       if (!$video = $video_conversion->load_job($item['fid'])) {

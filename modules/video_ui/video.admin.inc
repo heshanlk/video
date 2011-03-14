@@ -60,19 +60,19 @@ function video_general_admin_settings() {
   );
   $form['video_bypass_conversion'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Bypass Video Conversion'),
+    '#title' => t('Bypass video conversion'),
     '#default_value' => variable_get('video_bypass_conversion', FALSE),
     '#description' => t('Bypass video conversion when creating videos.')
   );
   $form['video_convert_on_save'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Video Convert on Node Submit'),
+    '#title' => t('Video convert on node submit'),
     '#default_value' => variable_get('video_convert_on_save', FALSE),
-    '#description' => t('Convert videos on node submit.')
+    '#description' => t('Convert videos on node submit will enable by default for all users.')
   );
   $form['video_use_default_thumb'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Override Auto Thumbnails with Default'),
+    '#title' => t('Override video thumbnails with default thumbnail'),
     '#default_value' => variable_get('video_use_default_thumb', FALSE),
     '#description' => t('Override auto thumbnails with default thumbnail.')
   );

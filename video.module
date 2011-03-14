@@ -38,6 +38,9 @@ function video_permission() {
     'use default thumb' => array(
       'title' => t('Use default thumbnail'),
     ),
+    're convert video' => array(
+      'title' => t('Re queue video'),
+    ),
     'administer video presets' => array(
       'title' => t('Administer video presets'),
       'description' => t('Perform administration tasks for the video presets.'),
@@ -363,6 +366,18 @@ function video_widget_element_settings(&$element, &$form_state) {
 
   // only in preview mode and then create thumbnails
   if ($field['settings']['autoconversion']) {
+    // check if already converted
+    module_load_include('inc', 'video', '/includes/conversion');
+    $video_conversion = new video_conversion;
+    $video = $video_conversion->load_job($file['fid']);
+    if (user_access('re convert video') && $video->video_status == VIDEO_RENDERING_COMPLETE) {
+      $element['re_convert_video'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Re-queue video for conversion.'),
+        '#description' => t('This will re-convert your video to output formats when you save, or scheduling it for cron.'),
+        '#attributes' => array('class' => array('video-re-convert')),
+      );
+    }
     if (user_access('bypass conversion video')) {
       $element['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
@@ -372,7 +387,7 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#attributes' => array('class' => array('video-bypass-auto-conversion')),
       );
     }
-// check this to convert the video on save
+    // check this to convert the video on save
     $convert = isset($file['convert_video_on_save']) ? $file['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE);
     if (user_access('convert on submission')) {
       $element['convert_video_on_save'] = array(
@@ -381,15 +396,6 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#default_value' => $convert,
         '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
         '#attributes' => array('class' => array('video-convert-video-on-save')),
-      );
-
-      if ($convert) {
-        $element['convert_video_on_save']['#attributes']['checked'] = 'checked';
-      }
-    } else {
-      $element['convert_video_on_save'] = array(
-        '#type' => 'value',
-        '#value' => $convert,
       );
     }
   }
