@@ -5,16 +5,6 @@
  * Class file to handle video conversion using ffmpeg and webservices.
  *
  */
-defined('VIDEO_RENDERING_PENDING') ||
-    define('VIDEO_RENDERING_PENDING', 1);
-defined('VIDEO_RENDERING_INQUEUE') ||
-    define('VIDEO_RENDERING_INQUEUE', 2);
-defined('VIDEO_RENDERING_ACTIVE') ||
-    define('VIDEO_RENDERING_ACTIVE', 5);
-defined('VIDEO_RENDERING_COMPLETE') ||
-    define('VIDEO_RENDERING_COMPLETE', 10);
-defined('VIDEO_RENDERING_FAILED') ||
-    define('VIDEO_RENDERING_FAILED', 20);
 
 class video_conversion {
 
@@ -69,14 +59,18 @@ class video_conversion {
 
   private function render($video) {
     if (!is_object($video)) {
-      watchdog('video_conversion', 'Video object is not present', array(), WATCHDOG_ERROR);
+      watchdog('transcoder', 'Video object is not present', array(), WATCHDOG_ERROR);
       return FALSE;
     }
     // Make sure this video is pending or do nothing.
     if ($video->video_status == VIDEO_RENDERING_PENDING) {
       return $this->transcoder->convert_video($video);
+    } else {
+      $status = array(VIDEO_RENDERING_COMPLETE => 'completed', VIDEO_RENDERING_FAILED => 'failed');
+      watchdog('transcoder', 'Video conversion has been !status. You should add video to the queue. Please check the re-queue to enable the video conversion.',
+          array('!status' => $status[$video->video_status]), WATCHDOG_WARNING);
+      return FALSE;
     }
-    return NULL;
   }
 
   /**

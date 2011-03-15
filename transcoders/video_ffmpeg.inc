@@ -102,10 +102,10 @@ class video_ffmpeg implements transcoder_interface {
     // get the paths so tokens will compatible with this
     // @todo : add best method to get existing file path and add converted there
     $target = str_replace('original', '', drupal_dirname($video->uri));
-    $converted = $target . 'converted/' . $video->fid;
-    if (!file_prepare_directory($converted, FILE_CREATE_DIRECTORY)) {
-      watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted, array(), WATCHDOG_ERROR);
-      return false;
+    $converted_base_dir = $target . 'converted/' . $video->fid;
+    if (!file_prepare_directory($converted_base_dir, FILE_CREATE_DIRECTORY)) {
+      watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted_base_dir, array(), WATCHDOG_ERROR);
+      return FALSE;
     }
     //get the actual video file path from the stream wrappers
     $original_video_path = drupal_realpath($video->uri);
@@ -115,10 +115,11 @@ class video_ffmpeg implements transcoder_interface {
     foreach ($presets as $name => $preset) {
       $settings = $preset['settings'];
       // override with preset settings
-      if (isset($settings['width']) && isset($settings['height'])) {
+      if (isset($settings['width']) && !empty($settings['width']) && isset($settings['height']) && !empty($settings['height'])
+          && variable_get('video_use_preset_wxh', FALSE)) {
         $video->dimensions = $settings['width'] . 'x' . $settings['height'];
       }
-      $converted .= '/' . file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '.' . $settings['video_extension'], $settings['video_extension']);
+      $converted = $converted_base_dir . '/' . file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '.' . $settings['video_extension'], $settings['video_extension']);
       //get the actual video file path from the stream wrappers
       $converted_video_path = drupal_realpath($converted);
       $dimensions = $this->dimensions($video);
@@ -294,12 +295,12 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'fieldset',
       '#title' => t('Video Thumbnails'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => FALSE,
     );
     $form['autothumb']['video_thumb_save_all'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Save all thumbnails in file_manged table'),
-      '#description' => t('Save all auto created thumbnails to the file_managed table.'),
+      '#title' => t('Save all thumbnails in {file_manged} table'),
+      '#description' => t('Save all auto created thumbnails to the {file_managed} table.'),
       '#default_value' => variable_get('video_thumb_save_all', TRUE),
     );
     $form['autothumb']['video_thumb_path'] = array(
@@ -326,7 +327,7 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'fieldset',
       '#title' => t('Video Conversion'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE
+      '#collapsed' => FALSE
     );
     $form['autoconv']['video_ffmpeg_enable_faststart'] = array(
       '#type' => 'checkbox',
@@ -446,10 +447,13 @@ class video_ffmpeg implements transcoder_interface {
         $extension = pathinfo(drupal_realpath($value->uri), PATHINFO_EXTENSION);
         $video->files->{$extension}->filename = $value->filename;
         $video->files->{$extension}->filepath = $value->uri;
+        $video->files->{$extension}->filemime = file_get_mimetype($value->uri);
         $video->files->{$extension}->url = file_create_url($value->uri);
         $video->files->{$extension}->extension = $extension;
         $video->player = strtolower($extension);
       }
+    else
+      return FALSE;
   }
 
   /**

@@ -105,6 +105,9 @@ function video_field_instance_settings_form($field, $instance) {
  * Implements hook_field_load().
  */
 function video_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
+  if ($field['settings']['autoconversion'] == 1) {
+    //load the converted video
+  }
   file_field_load($entity_type, $entities, $field, $instances, $langcode, $items, $age);
 }
 
@@ -167,14 +170,15 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
     $video_conversion = new video_conversion;
     foreach ($items as $delta => $item) {
       // skip adding entry if bypass conversion is checked
-      if ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE)) {
+      if (isset($item['bypass_autoconversion']) && ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE))) {
         // delete the conversion job if any
         $video_conversion->delete_job($item);
         return;
       }
       // re queue for video conversion
-      if ($item['re_convert_video'] == 1) {
-        $video_conversion->change_status($item['fid'], VIDEO_RENDERING_PENDING);
+      if (isset($item['re_convert_video']) && $item['re_convert_video'] == 1) {
+        $video = $video_conversion->load_job($item['fid']);
+        $video_conversion->change_status($video->vid, VIDEO_RENDERING_PENDING);
       }
       // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
       if (!$video = $video_conversion->load_job($item['fid'])) {
@@ -182,11 +186,14 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
           drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
       }
       // if convert on save is checked
-      if ($item['convert_video_on_save'] == 1 || variable_get('video_convert_on_save', FALSE)) {
-        if (!$video_conversion->process($item['fid'])) {
-          drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
-        } else {
-          drupal_set_message(t('Successfully converted your video.'));
+      if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1 || variable_get('video_convert_on_save', FALSE)) {
+        switch ($video_conversion->process($item['fid'])) {
+          case FALSE:
+            drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
+            break;
+          case TRUE;
+            drupal_set_message(t('Successfully converted your video.'));
+            break;
         }
       }
     }

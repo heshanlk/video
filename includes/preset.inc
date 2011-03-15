@@ -39,7 +39,12 @@ class video_preset {
       $preset[$value['name']] = $value['name'] . ' ' . l(t('edit'), ('admin/config/media/video/presets/preset/' . $value['name']));
 //      $help[] = $value['name'] . ' - ' . $value['description'] . ' ' . l(t('edit'), preset_get_preset_path('video', $value['name']));
     }
-
+    $form['video_use_preset_wxh'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use preset WxH for video conversion.'),
+      '#default_value' => variable_get('video_use_preset_wxh', FALSE),
+      '#description' => t('Override the user selected WxH with the preset values. This is recommend.')
+    );
     $form['video_preset'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
@@ -67,7 +72,9 @@ class video_preset {
     $presets = array();
     $preset = $this->preset;
     foreach ($preset as $preset_name) {
-      $presets[$preset_name] = video_get_preset($preset_name);
+      // skip selecting disabled presets 0=>0
+      if (!empty($preset_name))
+        $presets[$preset_name] = video_get_preset($preset_name);
     }
     return $presets;
   }

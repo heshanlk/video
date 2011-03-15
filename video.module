@@ -5,6 +5,17 @@
  * @file video.module
  *
  */
+defined('VIDEO_RENDERING_PENDING') ||
+    define('VIDEO_RENDERING_PENDING', 1);
+defined('VIDEO_RENDERING_INQUEUE') ||
+    define('VIDEO_RENDERING_INQUEUE', 2);
+defined('VIDEO_RENDERING_ACTIVE') ||
+    define('VIDEO_RENDERING_ACTIVE', 5);
+defined('VIDEO_RENDERING_COMPLETE') ||
+    define('VIDEO_RENDERING_COMPLETE', 10);
+defined('VIDEO_RENDERING_FAILED') ||
+    define('VIDEO_RENDERING_FAILED', 20);
+
 // include the field element
 module_load_include('inc', 'video', 'video.field');
 module_load_include('inc', 'video', 'video.features');
@@ -366,16 +377,17 @@ function video_widget_element_settings(&$element, &$form_state) {
 
   // only in preview mode and then create thumbnails
   if ($field['settings']['autoconversion']) {
-    // check if already converted
+    // check if already converted or failed
     module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
     $video = $video_conversion->load_job($file['fid']);
-    if (user_access('re convert video') && $video->video_status == VIDEO_RENDERING_COMPLETE) {
+    if (user_access('re convert video') && isset($video->video_status) && ($video->video_status == VIDEO_RENDERING_COMPLETE || $video->video_status == VIDEO_RENDERING_FAILED)) {
+      $status = array(VIDEO_RENDERING_COMPLETE => 'completed', VIDEO_RENDERING_FAILED => 'failed');
       $element['re_convert_video'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Re-queue video for conversion.'),
+        '#title' => t('Video conversion has been <b>' . $status[$video->video_status] . '!</b>. Re-queue video?.'),
         '#description' => t('This will re-convert your video to output formats when you save, or scheduling it for cron.'),
-        '#attributes' => array('class' => array('video-re-convert')),
+        '#attributes' => array('class' => array('video-re-convert', 'video-' . $video->video_status)),
       );
     }
     if (user_access('bypass conversion video')) {
