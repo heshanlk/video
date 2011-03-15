@@ -1,7 +1,7 @@
 <?php
 
 // include the preset file
-module_load_include('inc', 'video', 'includes/video.preset');
+module_load_include('inc', 'video', 'modules/video_ui/video.preset');
 
 /**
  * Implementation of hook_features_export_options().

@@ -688,3 +688,17 @@ function rmdirr($dir) {
   }
   @rmdir($dir);
 }
+
+/**
+ * Implementation of hook_features_api()
+ *
+ */
+function video_features_api() {
+  return array(
+    'video' => array(
+      'name' => t('Video Presets'),
+      'default_hook' => 'video_default_presets',
+      'file' => drupal_get_path('module', 'video') . '/video.features.inc',
+    ),
+  );
+}
