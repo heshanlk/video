@@ -20,7 +20,7 @@ class video_ffmpeg implements transcoder_interface {
     $this->params['ffmpeg'] = variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg');
     $this->params['ffmpeg2theora'] = variable_get('video_ffmpeg2theora_path', '/usr/bin/ffmpeg2theora');
     $this->params['mcoder'] = variable_get('video_mcoder_path', '/usr/bin/mcoder');
-    $this->params['handbreke'] = variable_get('video_handbreke_path', '/usr/bin/handbreke_cli');
+    $this->params['handbreke'] = variable_get('video_handbreke_path', '/usr/bin/HandBrakeCLI');
     $this->params['other'] = variable_get('video_other_path', '');
 
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
@@ -306,9 +306,9 @@ class video_ffmpeg implements transcoder_interface {
     );
     $form['transcoders']['video_handbreke_path'] = array(
       '#type' => 'textfield',
-      '#title' => t('HandBreke'),
+      '#title' => t('HandBrakeCLI'),
       '#description' => t('Absolute path to Handbreke executable. This will provide a token of !handbreke to preset commands.'),
-      '#default_value' => variable_get('video_handbreke_path', '/usr/bin/handbrekecli'),
+      '#default_value' => variable_get('video_handbreke_path', '/usr/bin/HandBrakeCLI'),
     );
     $form['transcoders']['video_other_path'] = array(
       '#type' => 'textfield',
