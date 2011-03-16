@@ -1,0 +1,17 @@
+'C:\projects\schlitterbahn\sites\all\modules\video\libraries\phpvideotoolkit\examples\working\tmp\' is not recognized as an internal or external command,
+operable program or batch file.
+-------------------------------
+FFMPEG OUTPUT
+-------------------------------
+-------------------------------
+COMMAND
+-------------------------------
+C:\projects\schlitterbahn\sites\all\modules\video\libraries\phpvideotoolkit\examples\working\tmp\ -i "C:\projects\schlitterbahn\sites\all\modules\video\libraries\phpvideotoolkit\examples\working\to-be-processed\MOV00007.3gp" -s "128x96"  -y /tmp/1300218680-4d7fc338a3461-%12d.jpg
+-------------------------------
+RESULT
+-------------------------------
+Execute error. Output for file "C:\projects\schlitterbahn\sites\all\modules\video\libraries\phpvideotoolkit\examples\working\to-be-processed\MOV00007.3gp" was not found. No images were generated.
+-------------------------------
+COMMAND
+-------------------------------
+C:\projects\schlitterbahn\sites\all\modules\video\libraries\phpvideotoolkit\examples\working\tmp\ -i "C:\projects\schlitterbahn\sites\all\modules\video\libraries\phpvideotoolkit\examples\working\to-be-processed\MOV00007.3gp" -s "128x96"  -y /tmp/1300218680-4d7fc338a3461-%12d.jpg
