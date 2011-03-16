@@ -59,6 +59,11 @@ class video_transcoder {
     $vid = $video['fid'];
     $thumbs = $this->transcoder->generate_thumbnails($video);
     foreach ($thumbs as $file) {
+      // media module is altering file_manged table with type, so if we do not consider about is then we might get entity load issue.
+      // #1015580
+      // if media module exists add type as an image
+      if (module_exists('media'))
+        $file->type = 'image';
       $existing_file = file_load_multiple(array(), array('uri' => $file->uri));
       if ($existing_file) // check thumbnail file exists
         $file = (array) $existing_file;

@@ -239,8 +239,8 @@ function video_thumb_process(&$element, &$form_state) {
     // @todo Add smaller video preview instead of thumbnail?
     if (isset($file['thumbanail']) && !empty($file['thumbanail'])) {
       $large_thumb = file_load($file['thumbanail']);
-    } elseif (!empty($field['settings']['default_video_thumbnail'])) {
-      $large_thumb = file_load($field['settings']['default_video_thumbnail']);
+    } elseif (!empty($field['settings']['default_video_thumbnail']['fid'])) {
+      $large_thumb = file_load($field['settings']['default_video_thumbnail']['fid']);
     } else {
 //      $large_thumb = file_load($default_thumb);
     }
