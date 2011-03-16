@@ -201,6 +201,10 @@ class video_transcoder {
     return $this->transcoder->load_completed_job($video);
   }
 
+  public function get_codecs() {
+    return $this->transcoder->get_codecs();
+  }
+
 }
 
 interface transcoder_interface {
@@ -212,6 +216,8 @@ interface transcoder_interface {
   public function load_job($fid);
 
   public function load_job_queue();
+  
+  public function get_codecs();
 
   public function load_completed_job(&$video);
 

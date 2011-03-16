@@ -105,6 +105,10 @@ class video_conversion {
   public function load_job($fid) {
     return $this->transcoder->load_job($fid);
   }
+  
+  public function get_codecs() {
+    return $this->transcoder->get_codecs();
+  }
 
 }
 
