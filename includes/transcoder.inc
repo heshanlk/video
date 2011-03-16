@@ -64,6 +64,8 @@ class video_transcoder {
       // if media module exists add type as an image
       if (module_exists('media'))
         $file->type = 'image';
+      if (variable_get('video_thumb_save_all', FALSE))
+        $file->status = FILE_STATUS_PERMANENT;
       $existing_file = file_load_multiple(array(), array('uri' => $file->uri));
       if ($existing_file) // check thumbnail file exists
         $file = (array) $existing_file;

@@ -12,33 +12,32 @@ class video_ffmpeg implements transcoder_interface {
   private $name = 'Locally Installed Transcoders (FFMPEG/Handbreke/Mcoder)';
   private $value = 'video_ffmpeg';
   protected $params = array();
-  protected $audio_bitrate = 64;
-  protected $video_bitrate = 200;
-  protected $video_width = 640;
-  protected $video_height = 480;
-  protected $command = '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile';
   protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
-  protected $ffmpeg = '/usr/bin/ffmpeg';
   protected $nice;
-  protected $video_ext = 'flv';
 
   public function __construct() {
-    $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
-    $this->params['videobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', $this->video_bitrate);
-    //@todo: move this to the actual widget and save in video_files table.
-    $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
-    $this->params['command'] = variable_get('video_ffmpeg_helper_auto_cvr_options', $this->command);
-    $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
+    // setting up trasncoders path
+    $this->params['ffmpeg'] = variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg');
+    $this->params['ffmpeg2theora'] = variable_get('video_ffmpeg2theora_path', '/usr/bin/ffmpeg2theora');
+    $this->params['mcoder'] = variable_get('video_mcoder_path', '/usr/bin/mcoder');
+    $this->params['handbreke'] = variable_get('video_handbreke_path', '/usr/bin/handbreke_cli');
+    $this->params['other'] = variable_get('video_other_path', '');
+
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
     $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19 ' : '';
-    $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
     $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
     $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
   }
 
-  public function run_command($options) {
-//    $command = $this->nice . ' ' . $this->params['cmd_path'] . ' ' . $options . '  2>&1';
-    $command = $this->nice . $options . '  2>&1';
+  public function run_command($command) {
+    $command = strtr($command, array(
+          '!ffmpeg' => $this->params['ffmpeg'],
+          '!ffmpeg2theora' => $this->params['ffmpeg2theora'],
+          '!mcoder' => $this->params['mcoder'],
+          '!handbreke' => $this->params['handbreke'],
+          '!other' => $this->params['other'],
+        ));
+    $command = $this->nice . $command . '  2>&1';
     watchdog('transcoder', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
     ob_start();
     passthru($command, $command_return);
@@ -65,16 +64,20 @@ class video_ffmpeg implements transcoder_interface {
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
       $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
-      $filename = file_munge_filename("video-thumb-for-" . $video['fid'] . "-$i.jpg", '', TRUE);
+      $filename = file_munge_filename("video-thumb-" . $video['fid'] . "-$i.jpg", '', TRUE);
       $thumbfile = $schema_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file(drupal_realpath($thumbfile))) {
         //setup the command to be passed to the transcoder.
-        $options = $this->params['cmd_path'] . ' ' . t($this->params['thumb_command'], array('!videofile' => $videopath, '!seek' => $seek, '!thumbfile' => drupal_realpath($thumbfile)));
+        $command = strtr($this->params['thumb_command'], array(
+              '!videofile' => '"' . $videopath . '"',
+              '!seek' => $seek,
+              '!thumbfile' => '"' . drupal_realpath($thumbfile) . '"'
+            ));
         // Generate the thumbnail from the video.
-        $command_output = $this->run_command($options);
+        $command_output = $this->run_command($command);
         if (!file_exists(drupal_realpath($thumbfile))) {
-          $error_param = array('%file' => $thumbfile, '%cmd' => $options, '%out' => $command_output);
+          $error_param = array('%file' => $thumbfile, '%cmd' => $command, '%out' => $command_output);
           $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
           // Log the error message.
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
@@ -131,7 +134,6 @@ class video_ffmpeg implements transcoder_interface {
       }
       // Setup our default command to be run.
       $command = strtr($settings['cli_code'], array(
-            '!cmd_path' => $this->params['cmd_path'],
             '!videofile' => '"' . $original_video_path . '"',
             '!audiobitrate' => $settings['audio_bitrate'],
             '!width' => $dimention[0],
@@ -197,7 +199,7 @@ class video_ffmpeg implements transcoder_interface {
 
     $file = escapeshellarg($video);
     // Execute the command
-    $options = $this->params['cmd_path'] . ' -i ' . $file;
+    $options = '!ffmpeg -i ' . $file;
     $command_output = $this->run_command($options);
     return $command_output;
   }
@@ -271,25 +273,50 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'markup',
       '#value' => '<div id="video_ffmpeg">',
     );
-
-    $form['video_transcoder_path'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Path to Video Transcoder'),
-      '#description' => t('Absolute path to ffmpeg.'),
-      '#default_value' => variable_get('video_transcoder_path', '/usr/bin/ffmpeg'),
-    );
-    $form['video_thumbs'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Number of thumbnails'),
-      '#description' => t('Number of thumbnails to display from video.'),
-      '#default_value' => variable_get('video_thumbs', 5),
-    );
     $form['video_ffmpeg_nice_enable'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Enable the use of nice when calling the ffmpeg command.'),
+      '#title' => t('Enable the use of <b>nice</b> when calling the command.'),
       '#default_value' => variable_get('video_ffmpeg_nice_enable', TRUE),
       '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
     );
+    // FFMPEG
+    $form['transcoders'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Path to Transcoder Executables'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE
+    );
+    $form['transcoders']['video_ffmpeg_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('FFMPEG'),
+      '#description' => t('Absolute path to ffmpeg executable. This will provide a token of !ffmpeg to preset commands.'),
+      '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
+    );
+    $form['transcoders']['video_ffmpeg2theora_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Ffmpeg2Theora'),
+      '#description' => t('Absolute path to ffmpeg2theora executable. This will provide a token of !ffmpeg2theora to preset commands.'),
+      '#default_value' => variable_get('video_ffmpeg2theora_path', '/usr/bin/ffmpeg2theora'),
+    );
+    $form['transcoders']['video_macoder_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Mcoder'),
+      '#description' => t('Absolute path to Mcoder executable. This will provide a token of !macoder to preset commands.'),
+      '#default_value' => variable_get('video_macoder_path', '/usr/bin/macoder'),
+    );
+    $form['transcoders']['video_handbreke_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('HandBreke'),
+      '#description' => t('Absolute path to Handbreke executable. This will provide a token of !handbreke to preset commands.'),
+      '#default_value' => variable_get('video_handbreke_path', '/usr/bin/handbrekecli'),
+    );
+    $form['transcoders']['video_other_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Other'),
+      '#description' => t('Absolute path to other transcoder executable. This will provide a token of !other to preset commands.'),
+      '#default_value' => variable_get('video_other_path', ''),
+    );
+
     // Thumbnail Videos We need to put this stuff last.
     $form['autothumb'] = array(
       '#type' => 'fieldset',
@@ -297,17 +324,23 @@ class video_ffmpeg implements transcoder_interface {
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
-    $form['autothumb']['video_thumb_save_all'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Save all thumbnails in {file_manged} table'),
-      '#description' => t('Save all auto created thumbnails to the {file_managed} table.'),
-      '#default_value' => variable_get('video_thumb_save_all', TRUE),
-    );
     $form['autothumb']['video_thumb_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),
       '#description' => t('Path to save video thumbnails extracted from the videos.'),
       '#default_value' => variable_get('video_thumb_path', 'videos/thumbnails'),
+    );
+    $form['autothumb']['video_thumbs'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of thumbnails'),
+      '#description' => t('Number of thumbnails to extract from video.'),
+      '#default_value' => variable_get('video_thumbs', 5),
+    );
+    $form['autothumb']['video_thumb_save_all'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Save all thumbnails in {file_manged} table'),
+      '#description' => t('Save all auto created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
+      '#default_value' => variable_get('video_thumb_save_all', FALSE),
     );
     $form['autothumb']['advanced'] = array(
       '#type' => 'fieldset',
@@ -319,15 +352,15 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'textarea',
       '#title' => t('Video thumbnailer options'),
       '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ') . '<ol><li>' . t('!videofile (the video file to thumbnail)') . '<li>' . t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
-      '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile'),
+      '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '!ffmpeg -i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile'),
     );
 
     // Video conversion settings.
     $form['autoconv'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Video Conversion'),
+      '#title' => t('Advanced Video Conversion'),
       '#collapsible' => TRUE,
-      '#collapsed' => FALSE
+      '#collapsed' => TRUE
     );
     $form['autoconv']['video_ffmpeg_enable_faststart'] = array(
       '#type' => 'checkbox',
