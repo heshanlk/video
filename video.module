@@ -256,16 +256,9 @@ function video_thumb_process(&$element, &$form_state) {
  * Implementation of hook_file_delete().
  */
 function video_file_delete($file) {
-  // @TODO : check for enable trancoder
-  // delete the transcoder job
-  $transcoder = new video_transcoder;
-  $transcoder->delete_job($file);
-
-  //now lets delete our video thumbnails and folder.
-  $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
-  $thumb_folder = file_default_scheme() . ':/' . $video_thumb_path . '/' . $file->fid;
-  // Recursively delete our folder and files
-  rmdirr($thumb_folder);
+  db_delete('video_files')
+      ->condition('fid', $file->fid)
+      ->execute();
 }
 
 /**

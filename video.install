@@ -195,6 +195,8 @@ function video_install() {
  */
 function video_uninstall() {
   drupal_uninstall_schema('video');
+  // remove variables
+  db_query("DELETE FROM {variable} WHERE name LIKE 'video_%'");
   // Remove the video directory and generated images.
   file_unmanaged_delete_recursive(file_default_scheme() . '://videos');
 }

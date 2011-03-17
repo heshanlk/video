@@ -296,7 +296,7 @@ class video_ffmpeg implements transcoder_interface {
     $form = array();
     $form['video_ffmpeg_start'] = array(
       '#type' => 'markup',
-      '#value' => '<div id="video_ffmpeg">',
+      '#markup' => '<div id="video_ffmpeg">',
     );
     $form['video_ffmpeg_nice_enable'] = array(
       '#type' => 'checkbox',
@@ -410,7 +410,7 @@ class video_ffmpeg implements transcoder_interface {
 
     $form['video_ffmpeg_end'] = array(
       '#type' => 'markup',
-      '#value' => '</div>',
+      '#markup' => '</div>',
     );
     return $form;
   }

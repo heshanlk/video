@@ -112,15 +112,23 @@ function video_players_admin_settings() {
       '#suffix' => '</div>',
     );
 
-    $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
-      '#type' => !empty($flv_players) ? 'radios' : 'markup',
-      '#title' => t('Flash Player for') . ' ' . $ext,
-      '#value' => !empty($flv_players) ? '' : t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools'), 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
-      '#options' => $flv_players,
-      '#default_value' => variable_get('video_extension_' . $ext . '_flash_player', ''),
-      '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
-      '#suffix' => '</div>',
-    );
+    if (!empty($flv_players)) {
+      $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
+        '#type' => 'radios',
+        '#title' => t('Flash Player for') . ' ' . $ext,
+        '#options' => $flv_players,
+        '#default_value' => variable_get('video_extension_' . $ext . '_flash_player', ''),
+        '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
+        '#suffix' => '</div>',
+      );
+    } else {
+      $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
+        '#type' => 'markup',
+        '#markup' => t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools'), 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
+        '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
+        '#suffix' => '</div>',
+      );
+    }
   }
   return system_settings_form($form);
 }

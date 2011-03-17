@@ -405,7 +405,7 @@ class video_phpvideotoolkit implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#get_help()
    */
   public function get_help() {
-    return l(t('FFMPEG Online Manual'), 'http://www.ffmpeg.org/');
+    return l(t('PHP Video Toolkit online documentation'), 'http://sourceforge.net/projects/phpvideotoolkit/');
   }
 
   /**
@@ -414,6 +414,34 @@ class video_phpvideotoolkit implements transcoder_interface {
    */
   public function admin_settings() {
     $form = array();
+    $form = array();
+    $form['video_ffmpeg_toolkit_start'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div id="video_phpvideotoolkit">',
+    );
+    $form['phpvideotoolkit']['video_ffmpeg_nice_enable'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable the use of <b>nice</b> when calling the command.'),
+      '#default_value' => variable_get('video_ffmpeg_nice_enable', TRUE),
+      '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
+    );
+    // FFMPEG
+    $form['phpvideotoolkit']['transcoders'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Path to Transcoder Executables'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE
+    );
+    $form['phpvideotoolkit']['transcoders']['video_ffmpeg_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('FFMPEG'),
+      '#description' => t('Absolute path to ffmpeg executable. This will provide a token of !ffmpeg to preset commands.'),
+      '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
+    );
+    $form['video_ffmpeg_toolkit_end'] = array(
+      '#type' => 'markup',
+      '#markup' => '</div>',
+    );
     return $form;
   }
 
