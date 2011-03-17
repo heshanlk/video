@@ -11,11 +11,8 @@ define('VIDEO_PRESET_MAX_LENGTH', 64);
  * @return <array> - The additional form settings that you would like to add to your preset.
  */
 function video_preset_default_form($form, &$form_state, $preset) {
-  module_load_include('inc', 'video', '/includes/conversion');
-  $video_conversion = new video_conversion;
-    
-  $codecs = $video_conversion->get_codecs();
-    
+  $video_transcoder = new video_transcoder;
+  $codecs = $video_transcoder->get_codecs();
   $form = array();
   $form['settings']['device_profile'] = array(
     '#type' => 'fieldset',

@@ -19,55 +19,53 @@ class video_phpvideotoolkit implements transcoder_interface {
   protected $ffmpeg = '/usr/bin/ffmpeg';
   protected $nice;
   protected $video_ext = 'flv';
-  
   protected $toolkit;
 
   public function __construct() {
-  	$this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
+    $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
     $this->params['videobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', $this->video_bitrate);
     //@todo: move this to the actual widget and save in video_files table.
     $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
-    $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
+    $this->params['ffmpeg'] = variable_get('video_ffmpeg_path', $this->ffmpeg);
     $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19 ' : '';
     $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
     $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
     $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
-    
-  	$use_version = 'php5';
-	// 	check if php5 is ok
-	if($use_version == 'php5' && version_compare(PHP_VERSION, '5.0.0', '<'))
-	{
-		$use_version = 'php4';
-	}
-	
-	module_load_include('php','video','libraries/phpvideotoolkit/phpvideotoolkit.'.$use_version);
-	
-	$this->toolkit = new PHPVideoToolkit($this->params['cmd_path'], file_directory_temp().'/');
+
+    $use_version = 'php5';
+    // 	check if php5 is ok
+    if ($use_version == 'php5' && version_compare(PHP_VERSION, '5.0.0', '<')) {
+      $use_version = 'php4';
+    }
+
+    module_load_include('php', 'video', 'libraries/phpvideotoolkit/phpvideotoolkit.' . $use_version);
+
+    $this->toolkit = new PHPVideoToolkit($this->params['ffmpeg'], file_directory_temp() . '/');
   }
-  
+
   // Returns an array of available encoding & decoding codecs
   public function get_codecs() {
-  	$info = $this->toolkit->getFFmpegInfo(false);
-  	
-  	$available_codecs = $info['codecs'];
-  	
-  	$codecs = array('decode' => array(), 'encode' => array());
+    $info = $this->toolkit->getFFmpegInfo(false);
 
-  	foreach($available_codecs as $key => $value) {
-  		$codecs['encode'][$key] = array();
-  		$codecs['decode'][$key] = array();
-  		
-  		foreach($value as $codec_key => $codec) {
-  			if ($codec['encode']) {
-  				$codecs['encode'][$key][$codec_key] = $codec['fullname'];
-  			}
-  			if ($codec['decode']) {
-  				$codecs['decode'][$key][$codec_key] = $codec['fullname'];
-  			}
-  		}
-  	}
-  	
-  	return $codecs;
+    $available_codecs = $info['codecs'];
+
+    $codecs = array('decode' => array(), 'encode' => array());
+
+    foreach ($available_codecs as $key => $value) {
+      $codecs['encode'][$key] = array();
+      $codecs['decode'][$key] = array();
+
+      foreach ($value as $codec_key => $codec) {
+        if ($codec['encode']) {
+          $codecs['encode'][$key][$codec_key] = $codec['fullname'];
+        }
+        if ($codec['decode']) {
+          $codecs['decode'][$key][$codec_key] = $codec['fullname'];
+        }
+      }
+    }
+
+    return $codecs;
   }
 
   public function generate_thumbnails($video) {
@@ -84,7 +82,7 @@ class video_phpvideotoolkit implements transcoder_interface {
     $videopath = drupal_realpath($videofile->uri);
     //get the playtime from the current transcoder
     $duration = $this->get_playtime($videopath);
-    
+
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
       $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
@@ -92,37 +90,34 @@ class video_phpvideotoolkit implements transcoder_interface {
       $thumbfile = $schema_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file(drupal_realpath($thumbfile))) {
-      	$result = $this->toolkit->setInputFile($videopath);
-      	if(!$result)
-		{
+        $result = $this->toolkit->setInputFile($videopath);
+        if (!$result) {
 // 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
+          $error_msg = t($this->toolkit->getLastError());
+          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          $this->toolkit->reset();
+          continue;
+        }
 
-		$this->toolkit->extractFrame($seek);
-		
-		$result = $this->toolkit->setOutput(drupal_realpath($schema_thumb_path).'/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
-      	if(!$result)
-		{
+        $this->toolkit->extractFrame($seek);
+
+        $result = $this->toolkit->setOutput(drupal_realpath($schema_thumb_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
+        if (!$result) {
 // 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-		$result = $this->toolkit->execute(false, true);
-      	if($result !== PHPVideoToolkit::RESULT_OK)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
+          $error_msg = t($this->toolkit->getLastError());
+          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          $this->toolkit->reset();
+          continue;
+        }
+
+        $result = $this->toolkit->execute(false, true);
+        if ($result !== PHPVideoToolkit::RESULT_OK) {
+// 			if there was an error then get it
+          $error_msg = t($this->toolkit->getLastError());
+          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          $this->toolkit->reset();
+          continue;
+        }
 
         if (!file_exists(drupal_realpath($thumbfile))) {
           $error_param = array('%file' => $thumbfile);
@@ -148,7 +143,7 @@ class video_phpvideotoolkit implements transcoder_interface {
   }
 
   public function convert_video($video) {
-  	
+
     // This will update our current video status to active.
 //    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     // get the paths so tokens will compatible with this
@@ -177,154 +172,143 @@ class video_phpvideotoolkit implements transcoder_interface {
       $converted_video_path = drupal_realpath($converted);
       $dimensions = $this->dimensions($video);
       $dimension = explode('x', $dimensions);
-      
+
       $video_info = $this->get_video_info($original_video_path);
-      
+
       if ($this->params['enable_faststart'] && in_array($settings['video_extension'], array('mov', 'mp4'))) {
         $ffmpeg_output = file_directory_temp() . '/' . basename($converted_video_path);
       } else {
         $ffmpeg_output = $converted_video_path;
       }
-      
-    	$result = $this->toolkit->setInputFile($original_video_path);
-      	if(!$result)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-		if (!empty($settings['max_frame_rate'])) {
-	    	$result = $this->toolkit->setVideoFrameRate($settings['max_frame_rate']);
-	      	if(!$result)
-			{
-	// 			if there was an error then get it 
-				$error_msg = t($this->toolkit->getLastError());
-				watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-				$this->toolkit->reset();
-				continue;
-			}
-		}
-		
-        $result = $this->toolkit->setVideoCodec($settings['video_codec'],false);
-      	if(!$result)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-		$settings['audio_sample_rate'] = (!empty($settings['audio_sample_rate'])) ? $settings['audio_sample_rate'] : $video_info['audio']['sample_rate']; 
-		
-		if ($settings['audio_sample_rate'] < 1000) {
-			$settings['audio_sample_rate'] *= 1000;
-		}
-		
-		$settings['audio_sample_rate'] = min($settings['audio_sample_rate'],44100);
-		
-        $result = $this->toolkit->setAudioSampleFrequency($settings['audio_sample_rate']);
-      	if(!$result)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-    	$result = $this->toolkit->setAudioCodec($settings['audio_codec'],false);
-      	if(!$result)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-    	$result = $this->toolkit->setAudioChannels($settings['audio_channels']);
-      	if(!$result)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-		if (empty($settings['audio_bitrate'])) {
-			$settings['audio_bitrate'] = $this->audio_bitrate;
-		}
-		
-    	if ($settings['audio_bitrate'] < 1000) {
-			$settings['audio_bitrate'] *= 1000;
-		}
-		
-        $result = $this->toolkit->setAudioBitRate($settings['audio_bitrate']);
-      	if(!$result)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-    	if (empty($settings['video_bitrate'])) {
-			$settings['video_bitrate'] = $this->video_bitrate;
-		}
-		
-    	if ($settings['video_bitrate'] < 1000) {
-			$settings['video_bitrate'] *= 1000;
-		}
-		
-    	$result = $this->toolkit->setVideoBitRate($settings['video_bitrate']);
-      	if(!$result)
-		{
-// 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
 
-    	$result = $this->toolkit->setVideoDimensions($dimension[0],$dimension[1]);
-      	if(!$result)
-		{
+      $result = $this->toolkit->setInputFile($original_video_path);
+      if (!$result) {
+// 			if there was an error then get it
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      if (!empty($settings['max_frame_rate'])) {
+        $result = $this->toolkit->setVideoFrameRate($settings['max_frame_rate']);
+        if (!$result) {
+          // 			if there was an error then get it
+          $error_msg = t($this->toolkit->getLastError());
+          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          $this->toolkit->reset();
+          continue;
+        }
+      }
+
+      $result = $this->toolkit->setVideoCodec($settings['video_codec'], false);
+      if (!$result) {
+// 			if there was an error then get it
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      $settings['audio_sample_rate'] = (!empty($settings['audio_sample_rate'])) ? $settings['audio_sample_rate'] : $video_info['audio']['sample_rate'];
+
+      if ($settings['audio_sample_rate'] < 1000) {
+        $settings['audio_sample_rate'] *= 1000;
+      }
+
+      $settings['audio_sample_rate'] = min($settings['audio_sample_rate'], 44100);
+
+      $result = $this->toolkit->setAudioSampleFrequency($settings['audio_sample_rate']);
+      if (!$result) {
+// 			if there was an error then get it
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      $result = $this->toolkit->setAudioCodec($settings['audio_codec'], false);
+      if (!$result) {
 // 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-    	$result = $this->toolkit->setOutput(dirname($ffmpeg_output).'/',$converted_filename, PHPVideoToolkit::OVERWRITE_EXISTING);
-      	if(!$result)
-		{
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      $result = $this->toolkit->setAudioChannels($settings['audio_channels']);
+      if (!$result) {
 // 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-    	$result = $this->toolkit->execute(false, true);
-      	if($result !== PHPVideoToolkit::RESULT_OK)
-		{
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      if (empty($settings['audio_bitrate'])) {
+        $settings['audio_bitrate'] = $this->audio_bitrate;
+      }
+
+      if ($settings['audio_bitrate'] < 1000) {
+        $settings['audio_bitrate'] *= 1000;
+      }
+
+      $result = $this->toolkit->setAudioBitRate($settings['audio_bitrate']);
+      if (!$result) {
 // 			if there was an error then get it 
-			$error_msg = t($this->toolkit->getLastError());
-			watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-			$this->toolkit->reset();
-			continue;
-		}
-		
-		$command_output = $this->toolkit->getLastOutput();
-/*
-      if ($ffmpeg_output != $converted_video_path && file_exists($ffmpeg_output)) {
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      if (empty($settings['video_bitrate'])) {
+        $settings['video_bitrate'] = $this->video_bitrate;
+      }
+
+      if ($settings['video_bitrate'] < 1000) {
+        $settings['video_bitrate'] *= 1000;
+      }
+
+      $result = $this->toolkit->setVideoBitRate($settings['video_bitrate']);
+      if (!$result) {
+// 			if there was an error then get it
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      $result = $this->toolkit->setVideoDimensions($dimension[0], $dimension[1]);
+      if (!$result) {
+// 			if there was an error then get it
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      $result = $this->toolkit->setOutput(dirname($ffmpeg_output) . '/', $converted_filename, PHPVideoToolkit::OVERWRITE_EXISTING);
+      if (!$result) {
+// 			if there was an error then get it 
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      $result = $this->toolkit->execute(false, true);
+      if ($result !== PHPVideoToolkit::RESULT_OK) {
+// 			if there was an error then get it 
+        $error_msg = t($this->toolkit->getLastError());
+        watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+        $this->toolkit->reset();
+        continue;
+      }
+
+      $command_output = $this->toolkit->getLastOutput();
+      /*
+        if ($ffmpeg_output != $converted_video_path && file_exists($ffmpeg_output)) {
         // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
         // the command to be execute so we need to fudge the command to run qt-faststart.
         $cmd_path = $this->params['cmd_path'];
@@ -334,8 +318,8 @@ class video_phpvideotoolkit implements transcoder_interface {
 
         // Delete the temporary output file.
         drupal_unlink($ffmpeg_output);
-      }
-*/
+        }
+       */
       //lets check to make sure our file exists, if not error out
       if (!file_exists($converted_video_path) || !filesize($converted_video_path)) {
         watchdog('transcoder', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->uri, '%preset' => $name), WATCHDOG_ERROR);
@@ -382,7 +366,7 @@ class video_phpvideotoolkit implements transcoder_interface {
    */
   public function get_playtime($video) {
     $video_info = $this->get_video_info($video);
-    
+
     return $video_info['duration']['seconds'];
   }
 
@@ -396,7 +380,7 @@ class video_phpvideotoolkit implements transcoder_interface {
     // Get dimensions
     $res['width'] = $video_info['video']['dimensions']['width'] ? $video_info['video']['dimensions']['width'] : NULL;
     $res['height'] = $video_info['video']['dimensions']['height'] ? $video_info['video']['dimensions']['height'] : NULL;
-      
+
     return $res;
   }
 

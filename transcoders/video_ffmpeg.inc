@@ -99,29 +99,29 @@ class video_ffmpeg implements transcoder_interface {
     }
     return $files;
   }
-  
+
   // Returns available codecs
   public function get_codecs() {
-  	$codecs = array(
-  		'encoding' => array(
-  			'video' => array(
-		      'h264' => 'H.264 (default)',
-		      'vp8' => 'VP8',
-		      'theora' => 'Theora',
-		      'vp6' => 'VP6',
-		      'mpeg4' => 'MPEG-4',
-		      'wmv' => 'WMV'
-		    ),
-		    'audio' => array(
-		      'aac' => 'AAC (default for most cases)',
-		      'mp3' => 'MP3',
-		      'vorbis' => 'Vorbis (default for VP8 and Theora)',
-		      'wma' => 'WMA'
-		    )
-  		),
-  		'decoding' => array()
-  	);
-  	return $codecs;
+    $codecs = array(
+      'encode' => array(
+        'video' => array(
+          'h264' => 'H.264 (default)',
+          'vp8' => 'VP8',
+          'theora' => 'Theora',
+          'vp6' => 'VP6',
+          'mpeg4' => 'MPEG-4',
+          'wmv' => 'WMV'
+        ),
+        'audio' => array(
+          'aac' => 'AAC (default for most cases)',
+          'mp3' => 'MP3',
+          'vorbis' => 'Vorbis (default for VP8 and Theora)',
+          'wma' => 'WMA'
+        )
+      ),
+      'decoding' => array()
+    );
+    return $codecs;
   }
 
   public function convert_video($video) {
