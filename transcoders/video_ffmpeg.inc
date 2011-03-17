@@ -30,6 +30,7 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function run_command($command) {
+    // transcoder switching
     $command = strtr($command, array(
           '!ffmpeg' => $this->params['ffmpeg'],
           '!ffmpeg2theora' => $this->params['ffmpeg2theora'],
@@ -39,11 +40,11 @@ class video_ffmpeg implements transcoder_interface {
         ));
     $command = $this->nice . $command . '  2>&1';
     watchdog('transcoder', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
-    ob_start();
-    passthru($command, $command_return);
-    $output = ob_get_contents();
-    ob_end_clean();
-    return $output;
+//    ob_start();
+    $command_return = shell_exec($command);
+//    $output = ob_get_contents();
+//    ob_end_clean();
+    return $command_return;
   }
 
   public function generate_thumbnails($video) {
@@ -302,7 +303,7 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'textfield',
       '#title' => t('Mcoder'),
       '#description' => t('Absolute path to Mcoder executable. This will provide a token of !macoder to preset commands.'),
-      '#default_value' => variable_get('video_macoder_path', '/usr/bin/macoder'),
+      '#default_value' => variable_get('video_macoder_path', '/usr/bin/mcoder'),
     );
     $form['transcoders']['video_handbreke_path'] = array(
       '#type' => 'textfield',

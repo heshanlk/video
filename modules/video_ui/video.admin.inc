@@ -80,8 +80,8 @@ function video_general_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Publish when conversion complete'),
     '#default_value' => variable_get('video_publish_on_complete', TRUE),
-    '#description' => t('Initially un-publish till conversion complete and then
-      publish the node only when conversion complete and successful.')
+    '#description' => t('Un-publish the node on submit and once conversion complete
+      turn node in to publish.')
   );
   return system_settings_form($form);
 }

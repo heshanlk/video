@@ -102,13 +102,19 @@ class video_transcoder {
     $video->presets = $presets;
     $output = $this->transcoder->convert_video($video);
     // if successfully converted the video then update the status to publish
-    if ($output && variable_get('video_publish_on_complete', TRUE))
-    // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
+    if ($output && variable_get('video_publish_on_complete', TRUE)) {
+      // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
       db_update('node')
           ->fields(array(
             'status' => NODE_PUBLISHED))
           ->condition('nid', $video->nid, '=')
           ->execute();
+      db_update('node_revision')
+          ->fields(array(
+            'status' => NODE_PUBLISHED))
+          ->condition('nid', $video->nid, '=')
+          ->execute();
+    }
     return $output;
   }
 

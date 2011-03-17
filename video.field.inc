@@ -165,6 +165,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
 function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
   // Create entry for video conversion if auto converison is enabled
   if ($field['settings']['autoconversion'] == 1) {
+    $job = FALSE;
     $nid = $entity->vid;
     module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
@@ -179,14 +180,19 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
       if (isset($item['re_convert_video']) && $item['re_convert_video'] == 1) {
         $video = $video_conversion->load_job($item['fid']);
         $video_conversion->change_status($video->vid, VIDEO_RENDERING_PENDING);
+        $job = TRUE;
       }
       // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
       if (!$video = $video_conversion->load_job($item['fid'])) {
         if (!($video_conversion->create_job($item, $nid)))
           drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
+        else
+          $job = TRUE;
       }
       // if convert on save is checked
       if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1 || variable_get('video_convert_on_save', FALSE)) {
+        // set to false when convert on save
+        $job = FALSE;
         switch ($video_conversion->process($item['fid'])) {
           case FALSE:
             drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
@@ -196,6 +202,20 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
             break;
         }
       }
+    }
+    // set node status to unpublish
+    if ($job && variable_get('video_publish_on_complete', TRUE)) {
+      // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
+      db_update('node')
+          ->fields(array(
+            'status' => NODE_NOT_PUBLISHED))
+          ->condition('nid', $nid, '=')
+          ->execute();
+      db_update('node_revision')
+          ->fields(array(
+            'status' => NODE_NOT_PUBLISHED))
+          ->condition('nid', $nid, '=')
+          ->execute();
     }
   }
 }
