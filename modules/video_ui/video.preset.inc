@@ -11,6 +11,11 @@ define('VIDEO_PRESET_MAX_LENGTH', 64);
  * @return <array> - The additional form settings that you would like to add to your preset.
  */
 function video_preset_default_form($form, &$form_state, $preset) {
+  module_load_include('inc', 'video', '/includes/conversion');
+  $video_conversion = new video_conversion;
+    
+  $codecs = $video_conversion->get_codecs();
+    
   $form = array();
   $form['settings']['device_profile'] = array(
     '#type' => 'fieldset',
@@ -57,14 +62,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#type' => 'select',
     '#title' => t('Video codec'),
     '#description' => t('The video codec used in the video file can affect the ability to play the video on certain devices. The default codec used is H.264.'),
-    '#options' => array(
-      'h264' => 'H.264 (default)',
-      'vp8' => 'VP8',
-      'theora' => 'Theora',
-      'vp6' => 'VP6',
-      'mpeg4' => 'MPEG-4',
-      'wmv' => 'WMV'
-    ),
+    '#options' => $codecs['encode']['video'],
     '#default_value' => (!empty($preset['settings']['video_codec'])) ? $preset['settings']['video_codec'] : 'h264'
   );
   $form['settings']['video']['video_quality'] = array(
@@ -134,12 +132,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#type' => 'select',
     '#title' => t('Audio codec'),
     '#description' => t('The audio codec to be used.'),
-    '#options' => array(
-      'aac' => 'AAC (default for most cases)',
-      'mp3' => 'MP3',
-      'vorbis' => 'Vorbis (default for VP8 and Theora)',
-      'wma' => 'WMA'
-    ),
+    '#options' => $codecs['encode']['audio'],
     '#default_value' => (!empty($preset['settings']['audio_codec'])) ? $preset['settings']['audio_codec'] : 'h264'
   );
   $form['settings']['audio']['audio_quality'] = array(
