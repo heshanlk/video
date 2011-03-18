@@ -26,7 +26,7 @@
   <?php $videojs_sources .= "<source src=\"$filepath\" type='$mimetype; codecs=\"" . $codecs[$mimetype] . "\"' />"; ?>
   <?php endif; ?>
   <?php endforeach; ?>
-<?php print $videojs_sources; ?>
+  <?php print $videojs_sources; ?>
       <!-- Flash Fallback. Use any flash video player here. Make sure to keep the vjs-flash-fallback class. -->
-<?php //echo theme('video_flv', (array)$video, array()); ?>
+  <?php echo theme('video_flv', array('video' => $video)); ?>
 </video>

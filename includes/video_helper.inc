@@ -49,7 +49,7 @@ class video_helper {
     $video->player_height = trim($player_dimensions[1]);
     // load thumbnail object
     $video->thumbnail = $this->thumbnail_object($variables);
-//    $video->formatter = $variables['#formatter'];
+    $video->formatter = $variables['instance']['display']['default']['type'];
     $video->autoplay = variable_get('video_autoplay', FALSE);
     $video->autobuffering = variable_get('video_autobuffering', TRUE);
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');

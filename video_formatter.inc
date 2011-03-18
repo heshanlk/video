@@ -162,7 +162,8 @@ function theme_video_encoding_failed() {
   return '<div class="video-ffmpeg-helper-encoding-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
 }
 
-function theme_video_flv($video, $node) {
+function theme_video_flv($video) {
+  $video = (object) $video;
   if ($video->flash_player == 'swftools') {
     $options = array(
       'params' => array(
@@ -177,7 +178,7 @@ function theme_video_flv($video, $node) {
     $themed_output = swf($video->files->{$video->player}->url, $options);
   } elseif ($video->flash_player == 'flowplayer') {
     // kjh: use a playlist to display the thumbnail if not auto playing
-    if (!$video->autoplay && $video->thumbnail->url) {
+    if (isset($video->autoplay) && isset($video->thumbnail->url)) {
       $options = array(
         'playlist' => array($video->thumbnail->url,
           array('url' => urlencode($video->files->{$video->player}->url),
@@ -191,18 +192,11 @@ function theme_video_flv($video, $node) {
           'autoBuffering' => $video->autobuffering,
         ),);
     }
-
-    $themed_output = theme(
-            'flowplayer',
-            $options,
-            $video->formatter,
-            // adding 24px to height #973636
-            array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')
-    );
+    $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->formatter, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
   } else {
     $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
   }
-  return theme('video_play_flv', $video, $node, $themed_output);
+  return theme('video_play_flv', array('video' => $video, 'themed_output' => $themed_output));
 }
 
 /**
