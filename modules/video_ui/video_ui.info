@@ -1,0 +1,7 @@
+name = Video UI
+description = Administrative interface to Video. Without this module you cannot configure the video module.
+package = Video
+core = 7.x
+configure = admin/config/media/video
+dependencies[] = video
+files[] = video_ui.module

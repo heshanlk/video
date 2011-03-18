@@ -1,5 +1,21 @@
 name = Video
+<<<<<<< HEAD
 description = Allows video nodes.
 package = "Video"
 core = 6.x
 
+=======
+description = Upload and manage video content with Drupal
+package = Video
+core = 7.x
+dependencies[] = file
+dependencies[] = image
+files[] = video.module
+# Including class files to lazyload
+files[] = includes/conversion.inc
+files[] = includes/filesystem.inc
+files[] = includes/metadata.inc
+files[] = includes/preset.inc
+files[] = includes/transcoder.inc
+files[] = includes/video_helper.inc
+>>>>>>> 7.x-1.x
