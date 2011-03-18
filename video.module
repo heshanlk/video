@@ -67,49 +67,23 @@ function video_theme() {
   $theme = array();
   $theme['video'] = array(
     'variables' => array('item' => NULL, 'path' => NULL, 'video_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL),
-    'file' => 'video_formatter.inc',
+    'file' => 'video.theme.inc',
   );
   $theme['video_thumbnail'] = array(
     'variables' => array('item' => NULL, 'path' => NULL, 'video_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL),
-    'file' => 'video_formatter.inc',
-  );
-
-  $theme['video_thumbnails'] = array(
-    'variables' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE),
     'file' => 'video.theme.inc',
   );
   $theme['video_widget'] = array(
     'render element' => 'element',
     'file' => 'video.theme.inc',
   );
-  $theme['video_widget_preview'] = array(
-    'variables' => array('item' => TRUE),
-    'file' => 'video.theme.inc',
-  );
-  $theme['video_image'] = array(
-    'variables' => array('file' => NULL, 'alt' => '', 'title' => '', 'attributes' => NULL, 'getsize' => TRUE, 'imagecache' => NULL),
-    'file' => 'video.theme.inc',
-  );
-  $theme['video_widget_video_thumb'] = array(
-    'variables' => array('item' => TRUE),
-    'file' => 'video.theme.inc',
-  );
-
-  //$theme['video_formatter_video_colorbox'] = array(
-  //  'arguments' => array('element' => NULL, 'imagecache' => NULL),
-  //  'file' => 'video_formatter.inc',
-  //);
-  $theme['video_formatter_video_media_js'] = array(
-    'variables' => array('element' => NULL),
-    'file' => 'video_formatter.inc',
-  );
-  $theme['video_encoding_failed'] = array(
+  $theme['video_conversion_failed'] = array(
     'variables' => array(),
-    'file' => 'video_formatter.inc',
+    'file' => 'video.theme.inc',
   );
   $theme['video_inprogress'] = array(
     'variables' => array(),
-    'file' => 'video_formatter.inc',
+    'file' => 'video.theme.inc',
   );
 
   $path = drupal_get_path('module', 'video') . '/theme';
@@ -125,13 +99,8 @@ function video_theme() {
   //We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
   //calling our flv template file.
   $theme['video_flv'] = array(
-    'variables' => array('video' => NULL, 'node' => NULL),
-    'file' => 'video_formatter.inc'
-  );
-  // @TODO : check is there any other optimal way to do this?
-  $theme['video_formatter'] = array(
-    'variables' => array('item' => NULL, 'path' => NULL, 'video_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL),
-    'file' => 'video_formatter.inc'
+    'variables' => array('video' => NULL),
+    'file' => 'video.theme.inc'
   );
   return $theme;
 }
@@ -391,6 +360,11 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#description' => t('This will bypass your auto conversion of videos.'),
         '#attributes' => array('class' => array('video-bypass-auto-conversion')),
       );
+    } else if (variable_get('video_bypass_conversion', FALSE)) {
+      $element['bypass_autoconversion'] = array(
+        '#type' => 'value',
+        '#value' => variable_get('video_bypass_conversion', FALSE),
+      );
     }
     // check this to convert the video on save
     $convert = isset($file['convert_video_on_save']) ? $file['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE);
@@ -401,6 +375,11 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#default_value' => $convert,
         '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
         '#attributes' => array('class' => array('video-convert-video-on-save')),
+      );
+    } else if (variable_get('video_convert_on_save', FALSE)) {
+      $element['convert_video_on_save'] = array(
+        '#type' => 'value',
+        '#value' => variable_get('video_convert_on_save', FALSE),
       );
     }
   }
@@ -543,29 +522,11 @@ function video_video_flv_players() {
   }
   return $options;
 }
-
 /**
- * Get the object for the suitable player for the parameter resource
+ * Field instances settings
+ * @param <type> $widget
+ * @return <type>
  */
-function video_get_player($variables) {
-  // Setup our node object to be passed along with the player.
-//  $node = $variables['entity'];
-  // Setup our video object
-  module_load_include('inc', 'video', '/includes/video_helper');
-  $video_helper = new video_helper;
-  $video = $video_helper->video_object($variables);
-  // Lets spit out our theme based on the extension
-  $defaults = video_video_extensions();
-  $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
-
-  // Lets do some special handling for our flv files to accomdate multiple players.
-  if ($theme_function == 'video_play_flv') {
-    return theme('video_flv', (array) $video);
-  } else {
-    return theme($theme_function, (array) $video);
-  }
-}
-
 function video_default_instance_settings($widget) {
   $form = array();
   // Default video settings.

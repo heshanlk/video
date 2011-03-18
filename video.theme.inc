@@ -1,111 +1,6 @@
 <?php
 
 /**
- *
- * @file
- * Theme functions for the video module.
- *
- */
-function theme_video_thumbnails($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
-  $file = (array) $file;
-  //  return $file['filepath'];
-  if (!is_file($file['filepath'])) {
-    return '<!-- File not found: ' . $file['filepath'] . ' -->';
-  }
-
-  if ($getsize) {
-    // Use cached width and height if available.
-    if (!empty($file['data']['width']) && !empty($file['data']['height'])) {
-      $attributes['width'] = $file['data']['width'];
-      $attributes['height'] = $file['data']['height'];
-    }
-    // Otherwise pull the width and height from the file.
-    elseif (list($width, $height, $type, $image_attributes) = @getimagesize($file['filepath'])) {
-      $attributes['width'] = $width;
-      $attributes['height'] = $height;
-    }
-  }
-
-  if (!empty($title)) {
-    $attributes['title'] = $title;
-  }
-
-  // Alt text should be added even if it is an empty string.
-  $attributes['alt'] = $alt;
-
-  // Add a timestamp to the URL to ensure it is immediately updated after editing.
-  $query_string = '';
-  if (isset($file['timestamp'])) {
-    $query_character = (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PRIVATE && variable_get('clean_url', '0') == '0') ? '&' : '?';
-    $query_string = $query_character . $file['timestamp'];
-  }
-
-  $url = file_create_url($file['filepath']) . $query_string;
-  $attributes['src'] = $url;
-  $attributes = drupal_attributes($attributes);
-  return '<span></span><img ' . $attributes . ' />';
-}
-
-function theme_video_widget_preview($item) {
-  $output .= '<div class="image-preview">';
-  $output .= drupal_render($item['preview']);
-  $output .= '</div>';
-  return $item;
-}
-
-function theme_video_widget_video_thumb($item = NULL) {
-  return '<div class="video-thumb">' . theme('video_image', $item, '', '', '', FALSE) . '</div>';
-}
-
-/**
- * @defgroup "Theme Callbacks"
- * @{
- * @see uploadfield_theme().
- */
-function theme_video_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE, $imagecache = FALSE) {
-  $file = (array) $file;
-  //if this is imagecache skip this as the file might not be created yet
-  if (!$imagecache && !is_file($file['filepath'])) {
-    return '<!-- File not found: ' . str_replace("--", "-", $file['filepath']) . '" -->';
-  }
-
-  if ($getsize && $imagecache && ($image = image_get_info($file['filepath']))) {
-    $attributes['width'] = $image['width'];
-    $attributes['height'] = $image['height'];
-  } elseif ($getsize) {
-    // Use cached width and height if available.
-    if (!empty($file['data']['width']) && !empty($file['data']['height'])) {
-      $attributes['width'] = $file['data']['width'];
-      $attributes['height'] = $file['data']['height'];
-    }
-    // Otherwise pull the width and height from the file.
-    elseif (list($width, $height, $type, $image_attributes) = @getimagesize($file['filepath'])) {
-      $attributes['width'] = $width;
-      $attributes['height'] = $height;
-    }
-  }
-
-  if (!empty($title)) {
-    $attributes['title'] = $title;
-  }
-
-  // Alt text should be added even if it is an empty string.
-  $attributes['alt'] = $alt;
-
-  // Add a timestamp to the URL to ensure it is immediately updated after editing.
-  $query_string = '';
-  if (isset($file['timestamp'])) {
-    $query_character = (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PRIVATE && variable_get('clean_url', '0') == '0') ? '&' : '?';
-    $query_string = $query_character . $file['timestamp'];
-  }
-
-  $url = file_create_url($file['filepath']) . $query_string;
-  $attributes['src'] = $url;
-  $attributes = drupal_attributes($attributes);
-  return '<img ' . $attributes . ' />';
-}
-
-/**
  * Returns HTML for an video field widget.
  *
  * @param $variables
@@ -132,6 +27,91 @@ function theme_video_widget($variables) {
   $output .= drupal_render_children($element);
   $output .= '</div>';
   $output .= '</div>';
+
+  return $output;
+}
+
+/*
+ * Default video cck formatter.  Makes sure the video being displayed exists, has been converted (if in que).
+ * If not or the video is processed, then it will get the default player for the specific video type for output.
+ */
+
+function theme_video($variables) {
+  $themed_output = '';
+  if (empty($variables['item']['fid']))
+    return '';
+  $field_settings = $variables['field']['settings'];
+  $instance_settings = $variables['instance']['settings'];
+  // Only needs to be ran if they are converting videos
+  if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
+    module_load_include('inc', 'video', '/includes/conversion');
+    $conversion = new video_conversion;
+    if ($video = $conversion->load_job($variables['item']['fid'])) {
+      if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
+        return theme('video_inprogress');
+      } else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+        return theme('video_conversion_failed');
+      }
+    }
+  }
+  // Setup our video object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  $video = $video_helper->video_object($variables);
+  // Lets spit out our theme based on the extension
+  $defaults = video_video_extensions();
+  $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
+
+  // Lets do some special handling for our flv files to accomdate multiple players.
+  if ($theme_function == 'video_play_flv') {
+    return theme('video_flv', array('video' => $video, 'themed_output' => $themed_output));
+  } else {
+    return theme($theme_function, array('video' => $video, 'themed_output' => $themed_output));
+  }
+}
+
+/*
+ * Renders the video thumbnail as a link to the node page.
+ */
+
+function theme_video_thumbnail($variables) {
+  // Inside a view $variables may contain null data. In that case, just return.
+  if (empty($variables['item']['fid']))
+    return '<!-- File not found: ' . $variables['item']['fid'] . ' -->';
+
+  //setup our thumbnail object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  // @TODO : change the object to an array
+  $thumbnail = (array) $video_helper->thumbnail_object($variables);
+  // return if no file path found for the video thumbnails and add log message
+  if (empty($thumbnail['filepath'])) {
+    watchdog('video', 'Unable to find the video thumbnail for the %node.', array('%node' => $variables['entity']->title), WATCHDOG_ERROR);
+    return '<!-- File not found: ' . $thumbnail['filepath'] . ' -->';
+  }
+  $image = array(
+    'path' => $thumbnail['filepath'],
+    'alt' => $thumbnail['alt'],
+  );
+  // Do not output an empty 'title' attribute.
+  if (drupal_strlen($thumbnail['title']) > 0) {
+    $image['title'] = $thumbnail['title'];
+  }
+
+  if ($variables['video_style']) {
+    $image['style_name'] = $variables['video_style'];
+    $output = theme('image_style', $image);
+  } else {
+    $output = theme('image', $image);
+  }
+
+  if ($variables['path']) {
+    $path = $variables['path']['path'];
+    $options = $variables['path']['options'];
+    // When displaying an image inside a link, the html option must be TRUE.
+    $options['html'] = TRUE;
+    $output = l($output, $path, $options);
+  }
 
   return $output;
 }
@@ -167,4 +147,62 @@ function theme_video_thumb_style($variables) {
   }
   $variables['path'] = $style_path;
   return theme('image', $variables);
+}
+
+/**
+ * Displays a "encoding in progress message"
+ */
+function theme_video_inprogress() {
+  return '<div class="video-inprogress">' . t('This video is currently being processed. Please wait.') . '</div>';
+}
+
+/**
+ * Display an "encoding failed" message"
+ */
+function theme_video_conversion_failed() {
+  return '<div class="video-conversion-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
+}
+
+/*
+ * Theme wraper on Flahs play on 3rd party
+ */
+
+function theme_video_flv($variables) {
+  $video = $variables['video'];
+  // set the video flash player
+  // Moved to last to recheck incase we changed our extension above.
+  $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');
+  if ($video->flash_player == 'swftools') {
+    $options = array(
+      'params' => array(
+        'width' => $video->player_width,
+        'height' => $video->player_height,
+      ),
+      'othervars' => array(
+        //@todo: swftools bug, can't enable this until they fix their pathing for the images.
+        'image' => $video->thumbnail->swfthumb,
+      ),
+    );
+    $themed_output = swf($video->files->{$video->player}->url, $options);
+  } elseif ($video->flash_player == 'flowplayer') {
+    // kjh: use a playlist to display the thumbnail if not auto playing
+    if (isset($video->autoplay) && isset($video->thumbnail->url)) {
+      $options = array(
+        'playlist' => array($video->thumbnail->url,
+          array('url' => urlencode($video->files->{$video->player}->url),
+            'autoPlay' => $video->autoplay,
+            'autoBuffering' => $video->autobuffering,
+          ),),);
+    } else {
+      $options = array(
+        'clip' => array('url' => urlencode($video->files->{$video->player}->url),
+          'autoPlay' => $video->autoplay,
+          'autoBuffering' => $video->autobuffering,
+        ),);
+    }
+    $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->formatter, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
+  } else {
+    $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
+  }
+  return theme('video_play_flv', array('video' => $video, 'themed_output' => $themed_output));
 }

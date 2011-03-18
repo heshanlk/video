@@ -10,5 +10,5 @@
  * $themed_output is the rendered html.
  *
  */
-echo ($variables['themed_output']->themed_output);
+print $themed_output;
 ?>

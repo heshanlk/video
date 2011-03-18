@@ -49,7 +49,11 @@ br.video_image_clear {
   /* inser here rules for node page image */
 }
 
-.video-ffmpeg-helper-inprogress {
+.video-inprogress {
+  border: 1px solid red;
+  padding: .5em;
+}
+.video-conversion-failed{
   border: 1px solid red;
   padding: .5em;
 }

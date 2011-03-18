@@ -64,9 +64,6 @@ class video_helper {
         $conversion->load_completed_job($video);
       }
     }
-    // Let othere module to load the video files by referance
-    // Moved to last to recheck incase we changed our extension above.
-    $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');
     // Return our object
     return $video;
   }

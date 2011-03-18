@@ -28,5 +28,7 @@
   <?php endforeach; ?>
   <?php print $videojs_sources; ?>
       <!-- Flash Fallback. Use any flash video player here. Make sure to keep the vjs-flash-fallback class. -->
+  <?php $video->player = 'flv'; ?>
+  <?php $video->files->flv->url = $flash; ?>
   <?php echo theme('video_flv', array('video' => $video)); ?>
 </video>
