@@ -52,6 +52,7 @@ class video_ffmpeg implements transcoder_interface {
     // Setup our thmbnail path.
     $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
     // Get the file system directory.
+    // @todo : get the field file system settings to this
     $schema_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
     // Total thumbs to generate
@@ -255,7 +256,7 @@ class video_ffmpeg implements transcoder_interface {
     $ffmpeg_output = $this->get_video_info($video);
     $res = array('width' => 0, 'height' => 0);
     // Get dimensions
-    $regex = ereg('[0-9]?[0-9][0-9][0-9]x[0-9][0-9][0-9][0-9]?', $ffmpeg_output, $regs);
+    $regex = preg_replace('[0-9]?[0-9][0-9][0-9]x[0-9][0-9][0-9][0-9]?', $ffmpeg_output, $regs);
     if (isset($regs[0])) {
       $dimensions = explode("x", $regs[0]);
       $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
