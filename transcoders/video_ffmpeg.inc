@@ -256,7 +256,7 @@ class video_ffmpeg implements transcoder_interface {
     $ffmpeg_output = $this->get_video_info($video);
     $res = array('width' => 0, 'height' => 0);
     // Get dimensions
-    $regex = preg_replace('[0-9]?[0-9][0-9][0-9]x[0-9][0-9][0-9][0-9]?', $ffmpeg_output, $regs);
+    $regex = preg_match('/([0-9]{1,5})x([0-9]{1,5})/', $ffmpeg_output, $regs);
     if (isset($regs[0])) {
       $dimensions = explode("x", $regs[0]);
       $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
