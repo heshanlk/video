@@ -66,7 +66,11 @@ class video_conversion {
     if ($video->video_status == VIDEO_RENDERING_PENDING) {
       return $this->transcoder->convert_video($video);
     } else {
-      $status = array(VIDEO_RENDERING_COMPLETE => 'completed', VIDEO_RENDERING_FAILED => 'failed');
+      $status = array(
+        VIDEO_RENDERING_INQUEUE => 'in queue',
+        VIDEO_RENDERING_COMPLETE => 'completed',
+        VIDEO_RENDERING_FAILED => 'failed'
+      );
       watchdog('transcoder', 'Video conversion has been !status. You should add video to the queue. Please check the re-queue to enable the video conversion.',
           array('!status' => $status[$video->video_status]), WATCHDOG_WARNING);
       return FALSE;
@@ -105,6 +109,7 @@ class video_conversion {
   public function load_job($fid) {
     return $this->transcoder->load_job($fid);
   }
+
 }
 
 ?>

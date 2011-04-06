@@ -102,6 +102,10 @@ function video_theme() {
     'variables' => array('video' => NULL),
     'file' => 'video.theme.inc'
   );
+  $theme['video_html5'] = array(
+    'variables' => array('video' => NULL),
+    'file' => 'video.theme.inc'
+  );
   return $theme;
 }
 
@@ -524,6 +528,21 @@ function video_video_flv_players() {
   return $options;
 }
 
+/*
+ * Return our possible flash players.
+ */
+
+function video_video_html5_players() {
+  $options = array();
+  if (module_exists('videojs')) {
+    $options['videojs'] = t('VideoJS');
+  }
+  if (module_exists('video')) {
+    $options['video'] = t('Default HTML5');
+  }
+  return $options;
+}
+
 /**
  * Field instances settings
  * @param <type> $widget
@@ -629,7 +648,7 @@ function video_format_right($value) {
  */
 
 function video_default_dimensions() {
-  return "176x144\n352x288\n704x576\n1408x1152\n128x96\n160x120\n320x240\n640x480\n800x600\n1024x768\n1600x1200\n2048x1024\n1280x1024\n2560x2048\n5120x4096\n852x480\n1366x768\n1600x1024\n1920x1200\n2560x1600\n3200x2048\n3840x2400\n6400x4096\n7680x4800\n320x200\n640x350\n852x480\n1280x720\n1920x1080";
+  return "176x144\n352x288\n704x576\n1408x1152\n128x96\n160x120\n320x240\n640x480\n800x600\n1024x768\n1600x1200\n2048x1024\n1280x1024\n2560x2048\n5120x4096\n852x480\n1366x768\n1600x1024\n1920x1200\n2560x1600\n3200x2048\n3840x2400\n6400x4096\n7680x4800\n320x200\n640x350\n852x480\n1280x720\n1920x1080\n640x360\n320x180";
 }
 
 /*
@@ -657,4 +676,18 @@ function video_features_api() {
       'file' => drupal_get_path('module', 'video') . '/video.features.inc',
     ),
   );
+}
+
+/**
+ * Helper funcations
+ */
+function _video_object_to_array($data) {
+  if (is_array($data) || is_object($data)) {
+    $result = array();
+    foreach ($data as $key => $value) {
+      $result[$key] = _video_object_to_array($value);
+    }
+    return $result;
+  }
+  return $data;
 }

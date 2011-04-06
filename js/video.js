@@ -31,10 +31,19 @@
           } else {
             $('#flv_player_'+ext).hide();
           }
+          if($(this).val() == 'video_play_html5') {
+            $('#html5_player_'+ext).show();
+          } else {
+            $('#html5_player_'+ext).hide();
+          }
         });
-        if($('select', this).val() == 'video_play_flv') {
+        if($('select', this).val() == 'video_play_flv')
           $('#flv_player_'+ext).show();
-        }
+        
+        if($('select', this).val() == 'video_play_html5')
+          $('#html5_player_'+ext).show();
+        else
+          $('#html5_player_'+ext).hide();
       });
 	
       if(settings.video) {

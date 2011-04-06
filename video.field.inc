@@ -24,8 +24,8 @@ function video_field_info() {
         'file_extensions' => 'mp4 ogg avi mov wmv flv ogv webm',
         'file_directory' => 'videos/original',
         'max_filesize' => '',
-        'default_dimensions' => '640x350',
-        'default_player_dimensions' => '640x350'
+        'default_dimensions' => '640x360',
+        'default_player_dimensions' => '640x360'
       ),
       'default_widget' => 'video_upload',
       'default_formatter' => 'video',

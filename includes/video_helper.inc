@@ -40,6 +40,7 @@ class video_helper {
     $video->files->{$extension}->filename = pathinfo($variables['item']['filename'], PATHINFO_FILENAME) . '.' . $extension;
     $video->files->{$extension}->filepath = $variables['item']['uri'];
     $video->files->{$extension}->url = file_create_url($variables['item']['uri']);
+    $video->files->{$extension}->uri = $variables['item']['uri'];
     $video->files->{$extension}->extension = $extension;
     // set the player to play
     $video->player = $extension;
@@ -97,6 +98,10 @@ class video_helper {
     }
 
     $thumbnail->url = file_create_url($thumbnail->filepath);
+    // uri
+    $thumbnail->uri = $thumbnail->filepath;
+    //mime
+    $thumbnail->filemime = file_get_mimetype($thumbnail->filepath);
 
     //swftools appends sites/default/files to the front of our path...
     //@todo Is this a setting?  Need to figure this out.

@@ -508,6 +508,7 @@ class video_ffmpeg implements transcoder_interface {
         $video->files->{$extension}->filepath = $value->uri;
         $video->files->{$extension}->filemime = file_get_mimetype($value->uri);
         $video->files->{$extension}->url = file_create_url($value->uri);
+        $video->files->{$extension}->uri = $value->uri;
         $video->files->{$extension}->extension = $extension;
         $video->player = strtolower($extension);
       }
