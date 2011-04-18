@@ -483,7 +483,7 @@ function video_web_extensions($ext) {
   $extensions = array_filter(explode(' ', $ext));
   $web_extensions = array(
     'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
-    'divx', //divx
+    'divx', 'mkv', //divx
     'rm', // realplayer
     'flv', 'f4v', //flash player
     'swf', // swf player
@@ -756,6 +756,7 @@ function _video_aspect_ratio($video) {
 function video_video_extensions() {
   $extensions = array(
     'divx' => 'video_play_divx',
+    'mkv' => 'video_play_divx',
     'mov' => 'video_play_quicktime',
     '3gp' => 'video_play_quicktime',
     '3g2' => 'video_play_quicktime',
