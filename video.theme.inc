@@ -223,7 +223,7 @@ function theme_video_flv($variables) {
 function theme_video_html5($variables) {
   $themed_output = NULL;
   $video = $variables['video'];
-  echo $video->html5_player = variable_get('video_extension_' . $video->player . '_html5_player', '');
+  $video->html5_player = variable_get('video_extension_' . $video->player . '_html5_player', '');
   switch ($video->html5_player) {
     case 'video':
       return theme('video_play_html5', array('video' => $video, 'themed_output' => $themed_output));
