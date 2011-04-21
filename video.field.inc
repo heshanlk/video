@@ -118,7 +118,7 @@ function video_field_prepare_view($entity_type, $entities, $field, $instances, $
   // If there are no files specified at all, use the default.
   foreach ($entities as $id => $entity) {
     if (empty($items[$id]) && $field['settings']['default_video_thumbnail']) {
-      if ($file = file_load($field['settings']['default_video_thumbnail'])) {
+      if ($file = file_load($field['settings']['default_video_thumbnail']['fid'])) {
         $items[$id][0] = (array) $file + array(
           'is_default' => TRUE,
         );
