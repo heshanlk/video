@@ -24,7 +24,7 @@ class video_conversion {
         $this->process($video);
       }
       //clear cache once completed the conversion to update the file paths
-      cache_clear_all('*', 'cache_content', true);
+      cache_clear_all();
     }
   }
 
