@@ -294,8 +294,7 @@ function video_widget_element_settings(&$element, &$form_state) {
       You are shown dimensions that match your aspect ratio,
       if you choose dimensions that do not match your ratio, we will pad your
       video by adding black bars on either the top or bottom while maintaining
-      your videos original aspect ratio.',
-            array('!size' => $video_info['width'] . 'x' . $video_info['height']));
+      your videos original aspect ratio.', array('!size' => $video_info['width'] . 'x' . $video_info['height']));
     //setup our default display of dimensions.
     //lets go through our options looking for a matching resolution
     foreach ($options as $key => $value) {
@@ -676,6 +675,60 @@ function video_features_api() {
       'file' => drupal_get_path('module', 'video') . '/video.features.inc',
     ),
   );
+}
+
+/**
+ * Implements hook_file_download().
+ *
+ * Control the access to files underneath the styles directory.
+ */
+function video_file_download($uri) {
+  $path = file_uri_target($uri);
+
+  // Private file access for image style derivatives.
+  if (strpos($path, 'styles/') === 0) {
+    $args = explode('/', $path);
+    // Discard the first part of the path (styles).
+    array_shift($args);
+    // Get the style name from the second part.
+    $style_name = array_shift($args);
+    // Remove the scheme from the path.
+    array_shift($args);
+
+    // Then the remaining parts are the path to the image.
+    $original_uri = file_uri_scheme($uri) . '://' . implode('/', $args);
+
+    // Check that the file exists and is an image.
+    if ($info = image_get_info($uri)) {
+      // Check the permissions of the original to grant access to this image.
+      $headers = module_invoke_all('file_download', $original_uri);
+      if (!in_array(-1, $headers)) {
+        return array(
+          // Send headers describing the image's size, and MIME-type...
+          'Content-Type' => $info['mime_type'],
+          'Content-Length' => $info['file_size'],
+          // ...and allow the file to be cached for two weeks (matching the
+          // value we/ use for the mod_expires settings in .htaccess) and
+          // ensure that caching proxies do not share the image with other
+          // users.
+          'Expires' => gmdate(DATE_RFC1123, REQUEST_TIME + 1209600),
+          'Cache-Control' => 'max-age=1209600, private, must-revalidate',
+        );
+      }
+    }
+    return -1;
+  }
+
+  // Private file access for the original files. Note that we only
+  // check access for non-temporary images, since file.module will
+  // grant access for all temporary files.
+  $files = file_load_multiple(array(), array('uri' => $uri));
+  if (count($files)) {
+    $file = reset($files);
+    if ($file->status) {
+      return file_file_download($uri, 'video');
+    }
+  }
 }
 
 /**
