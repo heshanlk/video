@@ -32,11 +32,11 @@ class video_ffmpeg implements transcoder_interface {
   public function run_command($command) {
     // transcoder switching
     $command = strtr($command, array(
-          '!ffmpeg' => $this->params['ffmpeg'],
-          '!ffmpeg2theora' => $this->params['ffmpeg2theora'],
-          '!mcoder' => $this->params['mcoder'],
-          '!handbreke' => $this->params['handbreke'],
-          '!other' => $this->params['other'],
+      '!ffmpeg' => $this->params['ffmpeg'],
+      '!ffmpeg2theora' => $this->params['ffmpeg2theora'],
+      '!mcoder' => $this->params['mcoder'],
+      '!handbreke' => $this->params['handbreke'],
+      '!other' => $this->params['other'],
         ));
     $command = $this->nice . $command . '  2>&1';
     watchdog('transcoder', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
@@ -72,9 +72,9 @@ class video_ffmpeg implements transcoder_interface {
       if (!is_file(drupal_realpath($thumbfile))) {
         //setup the command to be passed to the transcoder.
         $command = strtr($this->params['thumb_command'], array(
-              '!videofile' => '"' . $videopath . '"',
-              '!seek' => $seek,
-              '!thumbfile' => '"' . drupal_realpath($thumbfile) . '"'
+          '!videofile' => '"' . $videopath . '"',
+          '!seek' => $seek,
+          '!thumbfile' => '"' . drupal_realpath($thumbfile) . '"'
             ));
         // Generate the thumbnail from the video.
         $command_output = $this->run_command($command);
@@ -160,12 +160,12 @@ class video_ffmpeg implements transcoder_interface {
       }
       // Setup our default command to be run.
       $command = strtr($settings['cli_code'], array(
-            '!videofile' => '"' . $original_video_path . '"',
-            '!audiobitrate' => $settings['audio_bitrate'],
-            '!width' => $dimention[0],
-            '!height' => $dimention[1],
-            '!videobitrate' => $settings['video_bitrate'],
-            '!convertfile' => '"' . $ffmpeg_output . '"',
+        '!videofile' => '"' . $original_video_path . '"',
+        '!audiobitrate' => $settings['audio_bitrate'],
+        '!width' => $dimention[0],
+        '!height' => $dimention[1],
+        '!videobitrate' => $settings['video_bitrate'],
+        '!convertfile' => '"' . $ffmpeg_output . '"',
           ));
       // process our video
       $command_output = $this->run_command($command);
@@ -174,11 +174,8 @@ class video_ffmpeg implements transcoder_interface {
       if ($ffmpeg_output != $converted_video_path && file_exists($ffmpeg_output)) {
         // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
         // the command to be execute so we need to fudge the command to run qt-faststart.
-        $cmd_path = $this->params['cmd_path'];
-        $this->params['cmd_path'] = $this->params['faststart_cmd'];
-        $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted_video_path, $verbose);
-        $this->params['cmd_path'] = $cmd_path;
-
+        $command = implode(' ', array($this->params['faststart_cmd'], $ffmpeg_output, $converted_video_path));
+        $command_output .= $this->run_command($command);
         // Delete the temporary output file.
         drupal_unlink($ffmpeg_output);
       }
@@ -468,9 +465,8 @@ class video_ffmpeg implements transcoder_interface {
   public function load_job($fid) {
     $job = null;
     $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
-      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid",
-                array(':fid' => $fid))
-            ->fetch();
+      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
+        ->fetch();
     if (!empty($job))
       return $job;
     else
@@ -486,8 +482,7 @@ class video_ffmpeg implements transcoder_interface {
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
       FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
-      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp',
-            0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
+      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
       $videos[] = $row;
     }
