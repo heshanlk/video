@@ -79,18 +79,18 @@ class video_transcoder {
     $exists = db_query('SELECT 1 FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField();
     if ($exists == FALSE) { // returns TRUE is there is a record.
       $insertquery = db_insert('video_thumbnails') // Table name no longer needs {}
-              ->fields(array(
-                'vid' => $vid,
-                'thumbnails' => serialize($thumbnails),
-              ))
-              ->execute();
+          ->fields(array(
+            'vid' => $vid,
+            'thumbnails' => serialize($thumbnails),
+          ))
+          ->execute();
     } else {
       $updatequery = db_update('video_thumbnails')
-              ->fields(array(
-                'thumbnails' => serialize($thumbnails),
-              ))
-              ->condition('vid', $vid)
-              ->execute();
+          ->fields(array(
+            'thumbnails' => serialize($thumbnails),
+          ))
+          ->condition('vid', $vid)
+          ->execute();
     }
     return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
   }
@@ -144,20 +144,20 @@ class video_transcoder {
     // Lets find our transcoder classes and build our radio options
     // We do this by scanning our transcoders folder
     $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
-    $path = drupal_get_path('module', 'video') . '/transcoders';
-    $files = file_scan_directory($path, '/.*\.inc/');
     // check inside sub modules
     $modules = module_list();
+    $files = array();
     foreach ($modules as $module) {
       $mobule_files = array();
       $module_path = drupal_get_path('module', $module) . '/transcoders';
-      $mobule_files = file_scan_directory($module_path, '/.*\.inc/');
+      foreach (file_scan_directory($module_path, '/.*\.inc/') as $filekey => $file) {
+        $file->module = $module;
+        $mobule_files[] = $file;
+      }
       $files = array_merge($files, $mobule_files);
     }
-
     foreach ($files as $file) {
-      if (!module_load_include('inc', 'video', '/transcoders/' . $file->name))
-        require_once $file->filename;
+      module_load_include('inc', $file->module, '/transcoders/' . $file->name);
       $focus = new $file->name;
       $form['radios'][$focus->get_value()] = $focus->get_name();
       $form['help'][] = $focus->get_help();
@@ -222,7 +222,7 @@ interface transcoder_interface {
   public function load_job($fid);
 
   public function load_job_queue();
-  
+
   public function get_codecs();
 
   public function load_completed_job(&$video);

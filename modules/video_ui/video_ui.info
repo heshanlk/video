@@ -5,3 +5,4 @@ core = 7.x
 configure = admin/config/media/video
 dependencies[] = video
 files[] = video_ui.module
+version = 7.x-1.x-dev
