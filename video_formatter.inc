@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @file
  * Video formatter hooks and callbacks.
@@ -203,16 +202,52 @@ function theme_video_flv($video, $node) {
     }
 
     $themed_output = theme(
-            'flowplayer',
-            $options,
-            $video->formatter,
-            // adding 24px to height #973636
-            array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')
+        'flowplayer', $options, $video->formatter,
+        // adding 24px to height #973636
+        array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')
     );
   } else {
     $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
   }
   return theme('video_play_flv', $video, $node, $themed_output);
+}
+
+/**
+ * Play HTML5 videos
+ */
+function theme_video_html5($video, $node) {
+  $themed_output = NULL;
+  $video->html5_player = variable_get('video_extension_' . $video->player . '_html5_player', '');
+  switch ($video->html5_player) {
+    case 'video':
+      return theme('video_play_html5', $video, $node, $themed_output);
+      break;
+    case 'videojs':
+      $items = _video_object_to_array($video->files);
+      $items +=array('thumbnail' => (array) $video->thumbnail);
+      $attributes = array();
+      $attributes['width'] = $video->width;
+      $attributes['height'] = $video->height;
+      return theme('videojs', $items, 'video-' . $video->fid, $attributes);
+      break;
+    default:
+      return t('No HTML5 player has been setup. ' . l(t('Please select a player to play HTML5 videos.'), 'admin/settings/video/players'));
+      break;
+  }
+}
+
+/**
+ * Helper funcations
+ */
+function _video_object_to_array($data) {
+  if (is_array($data) || is_object($data)) {
+    $result = array();
+    foreach ($data as $key => $value) {
+      $result[$key] = _video_object_to_array($value);
+    }
+    return $result;
+  }
+  return $data;
 }
 
 function theme_video_formatter_imagecache($element) {

@@ -12,7 +12,7 @@
  */
 ?>
 <!-- Using the Video for Everybody Embed Code http://camendesign.com/code/video_for_everybody -->
-<video width="<?php echo $video->player_width; ?>" autobuffer="<?php print $video->autobuffering; ?>" height="<?php echo $video->player_height; ?>" controls="controls" preload="auto" poster="<?php echo $video->thumbnail->url; ?>">
+<video width="<?php echo $video->player_width; ?>" autobuffer="<?php print $video->autobuffering; ?>" height="<?php echo $video->player_height; ?>" controls="0" preload="<?php print $video->autobuffering ? 'auto' : 'metadata'; ?>" poster="<?php echo $video->thumbnail->url; ?>">
   <?php //dd($items); ?>
   <?php static $videojs_sources; ?>
   <?php $codecs = array('video/mp4' => 'avc1.42E01E, mp4a.40.2', 'video/webm' => 'vp8, vorbis', 'video/ogg' => 'theora, vorbis', 'application/ogg' => 'theora, vorbis', 'video/ogv' => 'theora, vorbis', 'video/quicktime' => 'avc1.42E01E, mp4a.40.2'); ?>

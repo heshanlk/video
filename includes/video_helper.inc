@@ -71,6 +71,7 @@ class video_helper {
 
     // Moved to last to recheck incase we changed our extension above.
     $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');
+    $video->html5_player = variable_get('video_extension_' . $video->player . '_html5_player', '');
 
     // Return our object
     return $video;
@@ -108,6 +109,8 @@ class video_helper {
     //swftools appends sites/default/files to the front of our path...
     //@todo Is this a setting?  Need to figure this out.
     $thumbnail->swfthumb = $thumbnail->filepath;
+    // filemime
+    $thumbnail->filemime = file_get_mimetype($thumbnail->filepath);
     // Return our object
     return $thumbnail;
   }

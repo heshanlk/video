@@ -363,6 +363,7 @@ class video_zencoder implements transcoder_interface {
       $video->files->{$extension}->filepath = $value->url;
       $video->files->{$extension}->url = (!variable_get('amazon_s3_private', FALSE)) ? $value->url : video_s3_get_authenticated_url($video->filename);
       $video->files->{$extension}->extension = $extension;
+      $video->files->{$extension}->filemime = file_get_mimetype($value->url);
       $video->player = strtolower($extension);
     }
     return $video;

@@ -27,7 +27,7 @@ function video_init() {
  * be passed by reference.
  */
 function video_module_invoke($action, &$array, &$video = NULL, $other = NULL) {
-  foreach (module_list () as $module) {
+  foreach (module_list() as $module) {
     $function = $module . '_video_' . $action;
     if (function_exists($function)) {
       $function($array, $video, $other);
@@ -201,14 +201,17 @@ function video_theme() {
     'arguments' => array('video' => NULL, 'node' => NULL),
     'file' => 'video_formatter.inc'
   );
-
+  $theme['video_html5'] = array(
+    'arguments' => array('video' => NULL, 'node' => NULL),
+    'file' => 'video_formatter.inc'
+  );
   //setup our imagecache presets
   if (module_exists('imagecache')) {
     //we need formatters for each of our thumbnails.
     //@todo create a function to check for our colorbox module and only add theme elements that could be used.
     $thumb_types = array('video_nodelink', 'video_thumbnail', 'video_nonodelink'); //array('video_colorbox', 'video_nodelink');
     foreach ($thumb_types as $types) {
-      foreach (imagecache_presets () as $preset) {
+      foreach (imagecache_presets() as $preset) {
         $theme['video_formatter_' . $preset['presetname'] . '__' . $types] = array(
           'arguments' => array('element' => NULL),
           'function' => 'theme_video_formatter_imagecache',
@@ -261,7 +264,7 @@ function video_field_formatter_info() {
     //we need formatters for each of our thumbnails.
     $thumb_types = array('video_nodelink', 'video_thumbnail', 'video_nonodelink'); //array('video_colorbox', 'video_nodelink');
     foreach ($thumb_types as $types) {
-      foreach (imagecache_presets () as $preset) {
+      foreach (imagecache_presets() as $preset) {
         $formatters[$preset['presetname'] . '__' . $types] = array(
           'label' => t('@preset @label', array('@preset' => $preset['presetname'], '@label' => $formatters[$types]['label'])),
           'field types' => array('filefield'),
@@ -813,6 +816,21 @@ function video_video_flv_players() {
   return $options;
 }
 
+/*
+ * Return our possible html5 players.
+ */
+
+function video_video_html5_players() {
+  $options = array();
+  if (module_exists('videojs')) {
+    $options['videojs'] = t('Video JS');
+  }
+  if (module_exists('video')) {
+    $options['video'] = t('Video (Default)');
+  }
+  return $options;
+}
+
 /**
  * Get the object for the suitable player for the parameter resource
  */
@@ -829,6 +847,8 @@ function video_get_player($element) {
   // Lets do some special handling for our flv files to accomdate multiple players.
   if ($theme_function == 'video_play_flv') {
     return theme('video_flv', $video, $node);
+  } elseif ($theme_function == 'video_play_html5') {
+    return theme('video_html5', $video, $node);
   } else {
     return theme($theme_function, $video, $node);
   }
