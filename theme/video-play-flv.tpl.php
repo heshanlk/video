@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 /*
  * @file
  * Theme file to handle flv output.

@@ -198,7 +198,7 @@ class ZencoderCURL {
 
     // Initialize session
     $ch = curl_init($url);
-
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     // Set transfer options
     curl_setopt_array($ch, $this->options);
 

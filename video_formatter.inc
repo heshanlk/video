@@ -22,7 +22,8 @@ function theme_video_formatter_video_plain($element) {
     $video = $conversion->load_job($element['#item']['fid']);
     if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
       return theme('video_inprogress');
-    } else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+    }
+    else if ($video->video_status == VIDEO_RENDERING_FAILED) {
       return theme('video_encoding_failed');
     }
   }
@@ -171,6 +172,9 @@ function theme_video_encoding_failed() {
   return '<div class="video-ffmpeg-helper-encoding-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
 }
 
+/**
+ * Callback to FLV
+ */
 function theme_video_flv($video, $node) {
   if ($video->flash_player == 'swftools') {
     $options = array(
@@ -184,7 +188,8 @@ function theme_video_flv($video, $node) {
       ),
     );
     $themed_output = swf($video->files->{$video->player}->url, $options);
-  } elseif ($video->flash_player == 'flowplayer') {
+  }
+  elseif ($video->flash_player == 'flowplayer') {
     // kjh: use a playlist to display the thumbnail if not auto playing
     if (!$video->autoplay && $video->thumbnail->url) {
       $options = array(
@@ -193,7 +198,8 @@ function theme_video_flv($video, $node) {
             'autoPlay' => $video->autoplay,
             'autoBuffering' => $video->autobuffering,
           ),),);
-    } else {
+    }
+    else {
       $options = array(
         'clip' => array('url' => urlencode($video->files->{$video->player}->url),
           'autoPlay' => $video->autoplay,
@@ -206,7 +212,8 @@ function theme_video_flv($video, $node) {
         // adding 24px to height #973636
         array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')
     );
-  } else {
+  }
+  else {
     $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
   }
   return theme('video_play_flv', $video, $node, $themed_output);
