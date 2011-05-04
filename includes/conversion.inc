@@ -50,7 +50,8 @@ class video_conversion {
   public function process($video) {
     if (is_object($video) && isset($video->fid)) {
       $return = $this->render($video);
-    } else {
+    }
+    else {
       $video_object = $this->load_job($video);
       $return = $this->render($video_object);
     }
@@ -65,14 +66,14 @@ class video_conversion {
     // Make sure this video is pending or do nothing.
     if ($video->video_status == VIDEO_RENDERING_PENDING) {
       return $this->transcoder->convert_video($video);
-    } else {
+    }
+    else {
       $status = array(
         VIDEO_RENDERING_INQUEUE => 'in queue',
         VIDEO_RENDERING_COMPLETE => 'completed',
         VIDEO_RENDERING_FAILED => 'failed'
       );
-      watchdog('transcoder', 'Video conversion has been !status. You should add video to the queue. Please check the re-queue to enable the video conversion.',
-          array('!status' => $status[$video->video_status]), WATCHDOG_WARNING);
+      watchdog('transcoder', 'Video conversion has been !status. You should add video to the queue. Please check the re-queue to enable the video conversion.', array('!status' => $status[$video->video_status]), WATCHDOG_WARNING);
       return FALSE;
     }
   }

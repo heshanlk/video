@@ -87,11 +87,13 @@ class video_helper {
       $default_thumbnail = file_load($field_settings['default_video_thumbnail']['fid']);
       // Check the checkbox to use default thumbnail on node
       $thumbnail->filepath = $default_thumbnail->uri;
-    } elseif (isset($variables['item']['thumbanail']) ? TRUE : FALSE) {
+    }
+    elseif (isset($variables['item']['thumbanail']) ? TRUE : FALSE) {
       // actual video thumbnails is present
       $thumbnail_load = file_load($variables['item']['thumbanail']);
       $thumbnail->filepath = $thumbnail_load->uri;
-    } else {
+    }
+    else {
       //need some type of default if nothing is present
 //      drupal_set_message(t('No thumbnail has been configured for the video !title.', array('!title' => $variables['entity']->title)), 'error');
       return;

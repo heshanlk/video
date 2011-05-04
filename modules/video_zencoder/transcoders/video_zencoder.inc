@@ -100,7 +100,8 @@ class video_zencoder implements transcoder_interface {
       if ($this->update($video)) {
         watchdog('zencoder', t('Successfully created trancoding job on !jobid.', array('!jobid' => $video->jobid)), array(), WATCHDOG_INFO);
       }
-    } else {
+    }
+    else {
       watchdog('zencoder', 'Failed to queus our file to Zencoder.', array(), WATCHDOG_ERROR);
       $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
@@ -168,7 +169,8 @@ class video_zencoder implements transcoder_interface {
         '#title' => t('Agree Zencoder !link.', array('!link' => l(t('Terms and Conditions'), 'http://zencoder.com/terms', array('attributes' => array('target' => '_blank'))))),
         '#default_value' => variable_get('agree_terms_zencoder', TRUE),
       );
-    } else {
+    }
+    else {
       // Zencoder API is exists
       $form['zencoder_info'] = array(
         '#type' => 'fieldset',
@@ -237,7 +239,7 @@ class video_zencoder implements transcoder_interface {
       $user = new stdClass;
       $user->email = $email;
       $result = $zc->create_user($user);
-      if ($result !== true)
+      if ($result !== TRUE)
         form_set_error('zencoder_username', $result);
     }
   }

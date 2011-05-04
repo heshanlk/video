@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * @file
+ * Implement an drush commands to trasncode videos.
+ */
 /**
  * Implementation of hook_drush_command().
  */

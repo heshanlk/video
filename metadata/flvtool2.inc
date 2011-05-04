@@ -5,6 +5,7 @@
  * Class file used to store metadata on the video.
  *
  */
+
 class flvtool2 extends video_metadata {
 
   protected $params = array();
@@ -76,7 +77,7 @@ class flvtool2 extends video_metadata {
     return $form;
   }
 
-  public function  admin_settings_validate($form, $form_state) {
+  public function admin_settings_validate($form, $form_state) {
     return;
   }
 

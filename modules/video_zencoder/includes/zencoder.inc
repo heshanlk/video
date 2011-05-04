@@ -180,16 +180,17 @@ class video_zencoder_api {
     // Check if it worked
     if ($encoding_job->created) {
       return $encoding_job;
-    } else {
+    }
+    else {
       foreach ($encoding_job->errors as $error) {
         watchdog('zencoder', 'Zencoder reports some errors. !error', array('!error' => $error), WATCHDOG_ERROR);
       }
-      return false;
+      return FALSE;
     }
   }
 
   /*
-   * Verifies the existence of a file id, returns the row or false if none found.
+   * Verifies the existence of a file id, returns the row or FALSE if none found.
    */
 
   public function load_job($jobid) {
@@ -209,7 +210,7 @@ class video_zencoder_api {
 
     $request = new ZencoderRequest(
             'https://app.zencoder.com/api/account',
-            false, // API key isn't needed for new account creation
+            FALSE, // API key isn't needed for new account creation
             array(
               "terms_of_service" => "1",
               "email" => $user->email,
@@ -223,14 +224,16 @@ class video_zencoder_api {
       $message = drupal_mail('video_zencoder', 'video_zencoder', $user->email, language_default(), $results);
       if (!$message['result']) {
         drupal_set_message(t('Unable to send e-mail!. Your Zencoder Details are as below.<br/> <b>API Key</b> : !api_key<br/> <b>Password</b> : !password<br/>', array('!api_key' => $results['api_key'], '!password' => $results['password'])), 'status');
-      } else {
+      }
+      else {
 //        drupal_mail('video_zencoder', 'video_zencoder', 'heshanmw@gmail.com', language_default(), $results);
         drupal_set_message(t('Your account has been created and is ready to start processing on Zencoder'));
       }
 //      return $request->results;
-      return true;
+      return TRUE;
 //      variable_set('video_zencoder_api_key', '');
-    } else {
+    }
+    else {
       $errors = '';
       foreach ($request->errors as $error) {
         if ($error == 'Email has already been taken') {

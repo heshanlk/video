@@ -307,7 +307,8 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
     if (empty($elements[0]['#default_value']['fid'])) {
       $elements[0]['#description'] = theme('file_upload_help', array('description' => $instance['description'], 'upload_validators' => $elements[0]['#upload_validators']));
     }
-  } else {
+  }
+  else {
     $elements['#file_upload_description'] = theme('file_upload_help', array('upload_validators' => $elements[0]['#upload_validators']));
   }
   return $elements;
@@ -416,7 +417,8 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
   // their styles in code.
   if (isset($image_styles[$settings['video_style']])) {
     $summary[] = t('Video thumbnail style: @style', array('@style' => $image_styles[$settings['video_style']]));
-  } else {
+  }
+  else {
     $summary[] = t('Original video thumbnail');
   }
 
@@ -441,7 +443,8 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
   // Check if the formatter involves a link.
   if ($display['settings']['video_link'] == 'content') {
     $uri = entity_uri($entity_type, $entity);
-  } elseif ($display['settings']['video_link'] == 'file') {
+  }
+  elseif ($display['settings']['video_link'] == 'file') {
     $link_file = TRUE;
   }
 

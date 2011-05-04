@@ -49,7 +49,8 @@ function theme_video($variables) {
     if ($video = $conversion->load_job($variables['item']['fid'])) {
       if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
         return theme('video_inprogress');
-      } else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+      }
+      else if ($video->video_status == VIDEO_RENDERING_FAILED) {
         return theme('video_conversion_failed');
       }
     }
@@ -107,7 +108,8 @@ function theme_video_thumbnail($variables) {
   if ($variables['video_style']) {
     $image['style_name'] = $variables['video_style'];
     $output = theme('image_style', $image);
-  } else {
+  }
+  else {
     $output = theme('image', $image);
   }
 
@@ -201,7 +203,8 @@ function theme_video_flv($variables) {
               'autoPlay' => $video->autoplay,
               'autoBuffering' => $video->autobuffering,
             ),),);
-      } else {
+      }
+      else {
         $options = array(
           'clip' => array('url' => urlencode($video->files->{$video->player}->url),
             'autoPlay' => $video->autoplay,

@@ -122,7 +122,8 @@ function video_players_admin_settings() {
         '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
         '#suffix' => '</div>',
       );
-    } else {
+    }
+    else {
       $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
         '#type' => 'markup',
         '#markup' => t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools'), 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),

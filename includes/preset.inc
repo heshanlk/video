@@ -27,8 +27,7 @@ class video_preset {
     if (count($presets) == 0) {
       $form['video_preset'] = array(
         '#markup' => t('No Preset were found. Please use the !create_link link to create
-      a new Video Preset, or upload an existing Feature to your modules directory.',
-            array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
+      a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
         '#prefix' => '<div id="preset-checkboxes">',
         '#suffix' => '</div>',
       );
@@ -52,9 +51,8 @@ class video_preset {
       '#default_value' => variable_get('video_preset', array()),
       '#description' => t('Please use the !manage_link link to manage
        Video Presets. Use the !create_link link to create
-      a new Video Preset, or upload an existing Feature to your modules directory.',
-          array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),
-            '!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
+      a new Video Preset, or upload an existing Feature to your modules directory.', array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),
+        '!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
       '#prefix' => '<div id="preset-checkboxes">',
       '#suffix' => '</div>',
     );

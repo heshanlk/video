@@ -45,7 +45,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#collapsed' => FALSE
   );
   $video_extension = array();
-  foreach (video_video_extensions () as $extension => $theme) {
+  foreach (video_video_extensions() as $extension => $theme) {
     $video_extension[$extension] = $extension;
   }
   $form['settings']['video']['video_extension'] = array(
@@ -202,7 +202,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $form['settings']['adv_video']['one_pass'] = array(
     '#type' => 'checkbox',
     '#title' => t('One pass'),
-    '#description' => t('Force one-pass encoding when targeting a specific video_bitrate. True or False.'),
+    '#description' => t('Force one-pass encoding when targeting a specific video_bitrate. TRUE or FALSE.'),
     '#default_value' => !empty($preset['settings']['one_pass']) ? $preset['settings']['one_pass'] : ''
   );
   $form['settings']['adv_video']['skip_video'] = array(
@@ -366,10 +366,10 @@ function video_presets_overview() {
       $rows[] = $row;
     }
     return theme('table', array('header' => $header, 'rows' => $rows));
-  } else {
+  }
+  else {
     return t('No Preset were found. Please use the !create_link link to create
-      a new video preset, or upload an existing Feature to your modules directory.',
-        array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add')));
+      a new video preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add')));
   }
 }
 
@@ -380,7 +380,7 @@ function video_presets_overview() {
  * @param <type> $preset
  * @return string
  */
-function video_preset_form($form, &$form_state, $preset = false) {
+function video_preset_form($form, &$form_state, $preset = FALSE) {
   $form = array();
   // basic preset details
   $form['preset'] = array(
@@ -393,7 +393,8 @@ function video_preset_form($form, &$form_state, $preset = false) {
       '#type' => 'value',
       '#value' => $preset['pid'],
     );
-  } elseif (video_is_default_preset($preset['name'])) {
+  }
+  elseif (video_is_default_preset($preset['name'])) {
     $form['preset']['default'] = array(
       '#type' => 'value',
       '#value' => TRUE,
@@ -445,7 +446,7 @@ function video_preset_form($form, &$form_state, $preset = false) {
  * Validation for the preset form.
  */
 function video_preset_validate($form, &$form_state) {
-
+  
 }
 
 /**
@@ -459,7 +460,8 @@ function video_preset_array_flatten($array, $return=array()) {
   foreach ($array as $key => $value) {
     if (is_array($value)) {
       $return = video_preset_array_flatten($value, $return);
-    } else {
+    }
+    else {
       $return[$key] = $value;
     }
   }
@@ -477,11 +479,7 @@ function video_preset_submit($form, &$form_state) {
   $preset['name'] = $form_state['values']['name'];
   $preset['description'] = $form_state['values']['description'];
   // unset unwanted values saved to database
-  unset($form_state['values']['pid'], $form_state['values']['name'],
-      $form_state['values']['description'], $form_state['values']['submit'],
-      $form_state['values']['delete'], $form_state['values']['form_build_id'],
-      $form_state['values']['form_token'], $form_state['values']['form_id'],
-      $form_state['values']['op']);
+  unset($form_state['values']['pid'], $form_state['values']['name'], $form_state['values']['description'], $form_state['values']['submit'], $form_state['values']['delete'], $form_state['values']['form_build_id'], $form_state['values']['form_token'], $form_state['values']['form_id'], $form_state['values']['op']);
   $preset['settings'] = video_preset_array_flatten($form_state['values']);
 
   // Save this preset.
@@ -568,7 +566,8 @@ function video_preset_import_validate($form, &$form_state) {
     if ($error = video_validate_preset_name($name)) {
       form_set_error('name', $error);
     }
-  } else {
+  }
+  else {
     form_set_error('name', 'Invalid preset import.');
   }
 
@@ -593,7 +592,7 @@ function video_preset_export_form($form, &$form_state, $preset) {
   unset($preset['default']);
 
   // Get the code string representation.
-  $code = var_export($preset, true);
+  $code = var_export($preset, TRUE);
 
   // Make sure to format the arrays like drupal.
   $code = str_replace("=> \n  ", '=> ', $code);
@@ -663,9 +662,9 @@ function video_preset_get_presets() {
 
   // Get all the presets from the database.
   $result = db_select('video_preset', 'p')
-          ->fields('p')
-          ->orderBy('p.name', 'ASC')
-          ->execute();
+      ->fields('p')
+      ->orderBy('p.name', 'ASC')
+      ->execute();
 
   // Iterate through all the presets and structure them in an array.
   foreach ($result as $preset) {
@@ -676,7 +675,7 @@ function video_preset_get_presets() {
   }
 
   // Now allow other modules to add their default presets.
-  foreach (video_preset_get_default_presets () as $preset) {
+  foreach (video_preset_get_default_presets() as $preset) {
     // adding default TRUE
     $preset['default'] = TRUE;
     if (!empty($preset['name']) && !isset($normal_presets[$preset['name']])) {
@@ -693,13 +692,14 @@ function video_preset_get_presets() {
 function video_get_preset($preset_name) {
   // Get the preset from the database.
   $preset = db_select('video_preset', 'p')
-          ->fields('p')
-          ->condition('p.name', $preset_name)
-          ->execute()
-          ->fetchAssoc();
+      ->fields('p')
+      ->condition('p.name', $preset_name)
+      ->execute()
+      ->fetchAssoc();
   if ($preset) {
     $preset['settings'] = $preset['settings'] ? unserialize($preset['settings']) : array();
-  } else {
+  }
+  else {
     // Get all of the default presets.
     $default_presets = video_preset_get_default_presets();
 
@@ -737,8 +737,9 @@ function video_preset_name_exists($preset_name) {
 
   // See if there is a default preset name.
   if ($default_presets && isset($default_presets[$preset_name])) {
-    return true;
-  } else {
+    return TRUE;
+  }
+  else {
     return (bool) db_select('video_preset', 'p')
         ->fields('p')
         ->condition('p.name', $preset_name)

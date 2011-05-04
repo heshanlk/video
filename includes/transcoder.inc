@@ -48,7 +48,8 @@ class video_transcoder {
       $transcoder_instance = new $transcoder;
       $this->transcoder = $transcoder_instance;
       return $transcoder_instance;
-    } else {
+    }
+    else {
       drupal_set_message(t('The transcoder is not configured properly.'), 'error');
     }
   }
@@ -84,7 +85,8 @@ class video_transcoder {
             'thumbnails' => serialize($thumbnails),
           ))
           ->execute();
-    } else {
+    }
+    else {
       $updatequery = db_update('video_thumbnails')
           ->fields(array(
             'thumbnails' => serialize($thumbnails),

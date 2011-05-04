@@ -100,7 +100,8 @@ function _video_zencoder_postback_jobs() {
 //    echo 'working failed';
     $zc->change_status($vid, VIDEO_RENDERING_FAILED);
     watchdog('zencoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
-  } else {
+  }
+  else {
     echo 'zencoder postback is working';
   }
 }

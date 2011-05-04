@@ -27,7 +27,7 @@ class video_phpvideotoolkit implements transcoder_interface {
     //@todo: move this to the actual widget and save in video_files table.
     $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
     $this->params['ffmpeg'] = variable_get('video_ffmpeg_path', $this->ffmpeg);
-    $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19 ' : '';
+    $this->nice = variable_get('video_ffmpeg_nice_enable', FALSE) ? 'nice -n 19 ' : '';
     $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
     $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
     $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
@@ -45,7 +45,7 @@ class video_phpvideotoolkit implements transcoder_interface {
 
   // Returns an array of available encoding & decoding codecs
   public function get_codecs() {
-    $info = $this->toolkit->getFFmpegInfo(false);
+    $info = $this->toolkit->getFFmpegInfo(FALSE);
 
     $available_codecs = $info['codecs'];
 
@@ -110,7 +110,7 @@ class video_phpvideotoolkit implements transcoder_interface {
           continue;
         }
 
-        $result = $this->toolkit->execute(false, true);
+        $result = $this->toolkit->execute(FALSE, TRUE);
         if ($result !== PHPVideoToolkit::RESULT_OK) {
 // 			if there was an error then get it
           $error_msg = t($this->toolkit->getLastError());
@@ -177,7 +177,8 @@ class video_phpvideotoolkit implements transcoder_interface {
 
       if ($this->params['enable_faststart'] && in_array($settings['video_extension'], array('mov', 'mp4'))) {
         $ffmpeg_output = file_directory_temp() . '/' . basename($converted_video_path);
-      } else {
+      }
+      else {
         $ffmpeg_output = $converted_video_path;
       }
 
@@ -201,7 +202,7 @@ class video_phpvideotoolkit implements transcoder_interface {
         }
       }
 
-      $result = $this->toolkit->setVideoCodec($settings['video_codec'], false);
+      $result = $this->toolkit->setVideoCodec($settings['video_codec'], FALSE);
       if (!$result) {
 // 			if there was an error then get it
         $error_msg = t($this->toolkit->getLastError());
@@ -227,7 +228,7 @@ class video_phpvideotoolkit implements transcoder_interface {
         continue;
       }
 
-      $result = $this->toolkit->setAudioCodec($settings['audio_codec'], false);
+      $result = $this->toolkit->setAudioCodec($settings['audio_codec'], FALSE);
       if (!$result) {
 // 			if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
@@ -297,7 +298,7 @@ class video_phpvideotoolkit implements transcoder_interface {
         continue;
       }
 
-      $result = $this->toolkit->execute(false, true);
+      $result = $this->toolkit->execute(FALSE, TRUE);
       if ($result !== PHPVideoToolkit::RESULT_OK) {
 // 			if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
@@ -497,9 +498,8 @@ class video_phpvideotoolkit implements transcoder_interface {
   public function load_job($fid) {
     $job = null;
     $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
-      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid",
-                array(':fid' => $fid))
-            ->fetch();
+      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
+        ->fetch();
     if (!empty($job))
       return $job;
     else
@@ -515,8 +515,7 @@ class video_phpvideotoolkit implements transcoder_interface {
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
       FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
-      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp',
-            0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
+      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
       $videos[] = $row;
     }
@@ -586,7 +585,8 @@ class video_phpvideotoolkit implements transcoder_interface {
       if ($ratio < $output_width / $output_height) {
         $end_width = $output_height * $ratio;
         $end_height = $output_height;
-      } else {
+      }
+      else {
         $end_height = $output_width / $ratio;
         $end_width = $output_width;
       }
@@ -604,11 +604,13 @@ class video_phpvideotoolkit implements transcoder_interface {
         }
         if (variable_get('video_ffmpeg_pad_method', 0)) {
           $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':0:' . $pad1 . '"';
-        } else {
+        }
+        else {
           $options[] = '-padtop ' . $pad1;
           $options[] = '-padbottom ' . $pad2;
         }
-      } else {
+      }
+      else {
         // We are padding the left/right of the video.
         $padding = round($output_width - $end_width);
         $pad1 = $pad2 = floor($padding / 2);  //@todo does padding need to be an even number?
@@ -618,7 +620,8 @@ class video_phpvideotoolkit implements transcoder_interface {
         }
         if (variable_get('video_ffmpeg_pad_method', 0)) {
           $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':' . $pad1 . ':0"';
-        } else {
+        }
+        else {
           $options[] = '-padleft ' . $pad1;
           $options[] = '-padright ' . $pad2;
         }
@@ -629,7 +632,8 @@ class video_phpvideotoolkit implements transcoder_interface {
       //add our size to the beginning to make sure it hits our -s
       array_unshift($options, $end_width . 'x' . $end_height);
       return implode(' ', $options);
-    } else {
+    }
+    else {
       return $video->dimensions;
     }
   }

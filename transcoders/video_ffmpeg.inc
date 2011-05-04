@@ -24,7 +24,7 @@ class video_ffmpeg implements transcoder_interface {
     $this->params['other'] = variable_get('video_other_path', '');
 
     $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
-    $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19 ' : '';
+    $this->nice = variable_get('video_ffmpeg_nice_enable', FALSE) ? 'nice -n 19 ' : '';
     $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
     $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
   }
@@ -155,7 +155,8 @@ class video_ffmpeg implements transcoder_interface {
       $dimention = explode('x', $dimensions);
       if ($this->params['enable_faststart'] && in_array($settings['video_extension'], array('mov', 'mp4'))) {
         $ffmpeg_output = file_directory_temp() . '/' . basename($converted_video_path);
-      } else {
+      }
+      else {
         $ffmpeg_output = $converted_video_path;
       }
       // Setup our default command to be run.
@@ -553,7 +554,8 @@ class video_ffmpeg implements transcoder_interface {
       if ($ratio < $output_width / $output_height) {
         $end_width = $output_height * $ratio;
         $end_height = $output_height;
-      } else {
+      }
+      else {
         $end_height = $output_width / $ratio;
         $end_width = $output_width;
       }
@@ -571,11 +573,13 @@ class video_ffmpeg implements transcoder_interface {
         }
         if (variable_get('video_ffmpeg_pad_method', 0)) {
           $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':0:' . $pad1 . '"';
-        } else {
+        }
+        else {
           $options[] = '-padtop ' . $pad1;
           $options[] = '-padbottom ' . $pad2;
         }
-      } else {
+      }
+      else {
         // We are padding the left/right of the video.
         $padding = round($output_width - $end_width);
         $pad1 = $pad2 = floor($padding / 2);  //@todo does padding need to be an even number?
@@ -585,7 +589,8 @@ class video_ffmpeg implements transcoder_interface {
         }
         if (variable_get('video_ffmpeg_pad_method', 0)) {
           $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':' . $pad1 . ':0"';
-        } else {
+        }
+        else {
           $options[] = '-padleft ' . $pad1;
           $options[] = '-padright ' . $pad2;
         }
@@ -596,7 +601,8 @@ class video_ffmpeg implements transcoder_interface {
       //add our size to the beginning to make sure it hits our -s
       array_unshift($options, $end_width . 'x' . $end_height);
       return implode(' ', $options);
-    } else {
+    }
+    else {
       return $video->dimensions;
     }
   }

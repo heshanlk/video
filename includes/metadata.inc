@@ -31,7 +31,8 @@ class video_metadata {
     }
     if (class_exists($metadata)) {
       $this->metadata = new $metadata;
-    } else {
+    }
+    else {
       drupal_set_message(t('The metadata is not configured properly.'), 'error');
     }
   }
