@@ -166,7 +166,7 @@ class video_phpvideotoolkit implements transcoder_interface {
           && variable_get('video_use_preset_wxh', FALSE)) {
         $video->dimensions = $settings['width'] . 'x' . $settings['height'];
       }
-      $converted_filename = file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '.' . $settings['video_extension'], $settings['video_extension']);
+      $converted_filename = file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '_' . strtolower($name) . '.' . $settings['video_extension'], $settings['video_extension']);
       $converted = $converted_base_dir . '/' . $converted_filename;
       //get the actual video file path from the stream wrappers
       $converted_video_path = drupal_realpath($converted);

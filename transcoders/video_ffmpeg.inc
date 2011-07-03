@@ -148,7 +148,7 @@ class video_ffmpeg implements transcoder_interface {
           && variable_get('video_use_preset_wxh', FALSE)) {
         $video->dimensions = $settings['width'] . 'x' . $settings['height'];
       }
-      $converted = $converted_base_dir . '/' . file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '.' . $settings['video_extension'], $settings['video_extension']);
+      $converted = $converted_base_dir . '/' . file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '_' . strtolower($name) . '.' . $settings['video_extension'], $settings['video_extension']);
       //get the actual video file path from the stream wrappers
       $converted_video_path = drupal_realpath($converted);
       $dimensions = $this->dimensions($video);
