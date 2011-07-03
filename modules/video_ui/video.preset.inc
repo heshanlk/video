@@ -328,7 +328,8 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#collapsed' => FALSE
   );
   $tokes = array(
-    '!cmd_path - Path to transcoder',
+    '!ffmpeg - Path to ffmpeg',
+    '!ffmpeg2theora - Path to ffmpeg2theora',
     '!videofile - Input video file',
     '!convertfile - Output video file',
     '!width - Width of output video',
@@ -338,7 +339,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#type' => 'textarea',
     '#title' => t('Command line codes to run'),
     '#description' => t('Please add command line codes each to run separated by a new line.') . theme('item_list', array('items' => $tokes, 'title' => 'Available Tokes')),
-    '#default_value' => !empty($preset['settings']['cli_code']) ? $preset['settings']['cli_code'] : '!cmd_path -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile'
+    '#default_value' => !empty($preset['settings']['cli_code']) ? $preset['settings']['cli_code'] : '!ffmpeg -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile'
   );
   return $form;
 }
