@@ -235,8 +235,8 @@ function theme_video_html5($variables) {
       $items = _video_object_to_array($video->files);
       $items +=array('thumbnail' => (array) $video->thumbnail);
       $attributes = array();
-      $attributes['width'] = $video->width;
-      $attributes['height'] = $video->height;
+      $attributes['width'] = $video->player_width;;
+      $attributes['height'] = $video->player_height;
       return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $video->fid, 'attributes' => $attributes));
       break;
   }
