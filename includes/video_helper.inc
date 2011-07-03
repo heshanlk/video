@@ -88,9 +88,9 @@ class video_helper {
       // Check the checkbox to use default thumbnail on node
       $thumbnail->filepath = $default_thumbnail->uri;
     }
-    elseif (isset($variables['item']['thumbanail']) ? TRUE : FALSE) {
+    elseif (isset($variables['item']['thumbnail']) ? TRUE : FALSE) {
       // actual video thumbnails is present
-      $thumbnail_load = file_load($variables['item']['thumbanail']);
+      $thumbnail_load = file_load($variables['item']['thumbnail']);
       $thumbnail->filepath = $thumbnail_load->uri;
     }
     else {

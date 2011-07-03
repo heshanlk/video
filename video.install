@@ -156,7 +156,7 @@ function video_field_schema($field) {
         'not null' => FALSE,
         'unsigned' => TRUE,
       ),
-      'thumbanail' => array(
+      'thumbnail' => array(
         'description' => 'The {file_managed}.fid being referenced for video thumbanil.',
         'type' => 'int',
         'not null' => FALSE,

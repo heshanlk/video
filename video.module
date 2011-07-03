@@ -176,12 +176,12 @@ function video_thumb_process(&$element, &$form_state) {
       }
 
       if (!empty($thumbss)) {
-        $element['thumbanail'] = array(
+        $element['thumbnail'] = array(
           '#type' => 'radios',
           '#title' => t('Video thumbnails'),
           '#element_validate' => array('video_thumbnail_validate'),
           '#options' => $thumbss,
-          '#default_value' => !empty($file['thumbanail']) ? $file['thumbanail'] : $thumbs[$default_thumb]->fid,
+          '#default_value' => !empty($file['thumbnail']) ? $file['thumbnail'] : $thumbs[$default_thumb]->fid,
           '#weight' => 10,
           '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
         );
@@ -193,26 +193,26 @@ function video_thumb_process(&$element, &$form_state) {
     // if fail creating thumbnails fall back to manual or manual upload
     if ((!empty($gen_fail) && $field['settings']['autothumbnail'] == 'auto_fallback') ||
         $field['settings']['autothumbnail'] == 'manual_upload') {
-      $element['thumbanail'] = array(
+      $element['thumbnail'] = array(
         '#title' => t('Video thumbnail'),
 //        '#element_validate' => array('video_thumbnail_validate'),
         '#type' => 'managed_file',
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
-        '#default_value' => !empty($file['thumbanail']['fid']) && is_integer($file['thumbanail']['fid']) ? $file['thumbanail']['fid'] : NULL,
+        '#default_value' => !empty($file['thumbnail']['fid']) && is_integer($file['thumbnail']['fid']) ? $file['thumbnail']['fid'] : NULL,
         '#upload_location' => file_default_scheme() . '://' . variable_get('video_thumb_path', 'videos/thumbnails') . '/' . $file['fid'],
       );
     }
     // if no thumbnail creation
     if ($field['settings']['autothumbnail'] == 'no') {
-      $element['thumbanail'] = array(
+      $element['thumbnail'] = array(
         '#type' => 'value',
         '#value' => NULL,
       );
     }
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (isset($file['thumbanail']) && !empty($file['thumbanail'])) {
-      $large_thumb = file_load($file['thumbanail']);
+    if (isset($file['thumbnail']) && !empty($file['thumbnail'])) {
+      $large_thumb = file_load($file['thumbnail']);
     }
     elseif (!empty($field['settings']['default_video_thumbnail']['fid'])) {
       $large_thumb = file_load($field['settings']['default_video_thumbnail']['fid']);

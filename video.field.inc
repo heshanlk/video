@@ -135,7 +135,7 @@ function video_field_presave($entity_type, $entity, $field, $instance, $langcode
   if (!empty($field['settings']['default_video_thumbnail'])) {
     foreach ($items as $delta => $item) {
       if ($item['use_default_video_thumb'])
-        $items[$delta]['thumbanail'] = $field['settings']['default_video_thumbnail']['fid'];
+        $items[$delta]['thumbnail'] = $field['settings']['default_video_thumbnail']['fid'];
     }
   }
   file_field_presave($entity_type, $entity, $field, $instance, $langcode, $items);
