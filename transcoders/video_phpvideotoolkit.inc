@@ -27,7 +27,7 @@ class video_phpvideotoolkit implements transcoder_interface {
     //@todo: move this to the actual widget and save in video_files table.
     $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
     $this->params['ffmpeg'] = variable_get('video_ffmpeg_path', $this->ffmpeg);
-    $this->nice = variable_get('video_ffmpeg_nice_enable', FALSE) ? 'nice -n 19 ' : '';
+    $this->nice = variable_get('video_phpvideotoolkit_nice_enable', FALSE) ? 'nice -n 19 ' : '';
     $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
     $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
     $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
@@ -420,10 +420,10 @@ class video_phpvideotoolkit implements transcoder_interface {
       '#type' => 'markup',
       '#markup' => '<div id="video_phpvideotoolkit">',
     );
-    $form['phpvideotoolkit']['video_ffmpeg_nice_enable'] = array(
+    $form['phpvideotoolkit']['video_phpvideotoolkit_nice_enable'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable the use of <b>nice</b> when calling the command.'),
-      '#default_value' => variable_get('video_ffmpeg_nice_enable', TRUE),
+      '#default_value' => variable_get('video_phpvideotoolkit_nice_enable', TRUE),
       '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
     );
     // FFMPEG
