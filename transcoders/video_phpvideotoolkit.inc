@@ -54,7 +54,6 @@ class video_phpvideotoolkit implements transcoder_interface {
     foreach ($available_codecs as $key => $value) {
       $codecs['encode'][$key] = array();
       $codecs['decode'][$key] = array();
-
       foreach ($value as $codec_key => $codec) {
         if ($codec['encode']) {
           $codecs['encode'][$key][$codec_key] = $codec['fullname'];
@@ -64,7 +63,6 @@ class video_phpvideotoolkit implements transcoder_interface {
         }
       }
     }
-
     return $codecs;
   }
 
