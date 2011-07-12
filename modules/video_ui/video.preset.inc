@@ -62,6 +62,42 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#options' => $codecs['encode']['video'],
     '#default_value' => (!empty($preset['settings']['video_codec'])) ? $preset['settings']['video_codec'] : 'h264'
   );
+  $form['settings']['video']['video_preset'] = array(
+    '#type' => 'select',
+    '#title' => t('Video preset'),
+    '#description' => t('A preset file contains a sequence of option=value pairs, one for each line, specifying a sequence of options which would be awkward to specify on the command line. Lines starting with the hash (\'#\') character are ignored and are used to provide comments. Check the \`ffpresets\' directory in the FFmpeg source tree for examples. See the !doc', array('!doc' => l('ffmpeg documentation', 'http://ffmpeg.org/ffmpeg.html#TOC13'))),
+    '#options' => array(
+      'none' => 'None',
+      'libx264-baseline' => 'libx264-baseline',
+      'libx264-default' => 'libx264-default',
+      'libx264-fast' => 'libx264-fast',
+      'libx264-faster' => 'libx264-faster',
+      'libx264-hq' => 'libx264-hq',
+      'libx264-ipod320' => 'libx264-ipod320',
+      'libx264-ipod640' => 'libx264-ipod640',
+      'libx264-main' => 'libx264-main',
+      'libx264-max' => 'libx264-max',
+      'libx264-medium' => 'libx264-medium',
+      'libx264-normal' => 'libx264-normal',
+      'libx264-slow' => 'libx264-slow',
+      'libx264-slower' => 'libx264-slower',
+      'libx264-superfast' => 'libx264-superfast',
+      'libx264-ultrafast' => 'libx264-ultrafast',
+      'libx264-veryfast' => 'libx264-veryfast',
+      'libvpx-1080p' => 'libvpx-1080p',
+      'libvpx-1080p50_60' => 'libvpx-1080p50_60',
+      'libvpx-360p' => 'libvpx-360p',
+      'libvpx-720p' => 'libvpx-720p',
+      'libvpx-720p50_60' => 'libvpx-720p50_60',
+      'libx264-lossless_fast' => 'libx264-lossless_fast',
+      'libx264-lossless_max' => 'libx264-lossless_max',
+      'libx264-lossless_medium' => 'libx264-lossless_medium',
+      'libx264-lossless_slow' => 'libx264-lossless_slow',
+      'libx264-lossless_slower' => 'libx264-lossless_slower',
+      'libx264-lossless_ultrafast' => 'libx264-lossless_ultrafast'
+    ),
+    '#default_value' => (!empty($preset['settings']['video_preset'])) ? $preset['settings']['video_preset'] : 2
+  );
   $form['settings']['video']['video_quality'] = array(
     '#type' => 'select',
     '#title' => t('Video quality'),

@@ -46,7 +46,6 @@ class video_phpvideotoolkit implements transcoder_interface {
   // Returns an array of available encoding & decoding codecs
   public function get_codecs() {
     $info = $this->toolkit->getFFmpegInfo(FALSE);
-
     $available_codecs = $info['codecs'];
 
     $codecs = array('decode' => array(), 'encode' => array());
@@ -209,6 +208,19 @@ class video_phpvideotoolkit implements transcoder_interface {
         continue;
       }
 
+      // set video preset if any
+      if ($settings['video_preset'] !== 'none') {
+        $result = $this->toolkit->setVideoPreset($settings['video_preset'], FALSE);
+        if (!$result) {
+// 			if there was an error then get it
+          $error_msg = t($this->toolkit->getLastError());
+          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          $this->toolkit->reset();
+          continue;
+        }
+      }
+
+
       $settings['audio_sample_rate'] = (!empty($settings['audio_sample_rate'])) ? $settings['audio_sample_rate'] : $video_info['audio']['sample_rate'];
 
       if ($settings['audio_sample_rate'] < 1000) {
@@ -300,25 +312,13 @@ class video_phpvideotoolkit implements transcoder_interface {
       if ($result !== PHPVideoToolkit::RESULT_OK) {
 // 			if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
+        dsm($this->toolkit->getCommands());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
         continue;
       }
 
       $command_output = $this->toolkit->getLastOutput();
-      /*
-        if ($ffmpeg_output != $converted_video_path && file_exists($ffmpeg_output)) {
-        // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
-        // the command to be execute so we need to fudge the command to run qt-faststart.
-        $cmd_path = $this->params['cmd_path'];
-        $this->params['cmd_path'] = $this->params['faststart_cmd'];
-        $command_output .= $this->run_command($ffmpeg_output . ' ' . $converted_video_path, $verbose);
-        $this->params['cmd_path'] = $cmd_path;
-
-        // Delete the temporary output file.
-        drupal_unlink($ffmpeg_output);
-        }
-       */
       //lets check to make sure our file exists, if not error out
       if (!file_exists($converted_video_path) || !filesize($converted_video_path)) {
         watchdog('transcoder', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->uri, '%preset' => $name), WATCHDOG_ERROR);
@@ -341,15 +341,19 @@ class video_phpvideotoolkit implements transcoder_interface {
     }
 
     // Update our video_files table with the converted video information.
-    db_update('video_files')
-        ->fields(array(
-          'status' => VIDEO_RENDERING_COMPLETE,
-          'completed' => time(),
-          'data' => serialize($converted_files)))
-        ->condition('vid', $video->converted->vid, '=')
-        ->execute();
-    watchdog('transcoder', 'Successfully converted %orig to %dest', array('%orig' => $video->uri, '%dest' => $video->converted->uri), WATCHDOG_INFO);
-    return TRUE;
+    if (!empty($converted_files)) {
+      db_update('video_files')
+          ->fields(array(
+            'status' => VIDEO_RENDERING_COMPLETE,
+            'completed' => time(),
+            'data' => serialize($converted_files)))
+          ->condition('vid', $video->converted->vid, '=')
+          ->execute();
+      watchdog('transcoder', 'Successfully converted %orig to %dest', array('%orig' => $video->uri, '%dest' => $video->converted->uri), WATCHDOG_INFO);
+      return TRUE;
+    }
+    else
+      return FALSE;
   }
 
   /**

@@ -672,7 +672,6 @@ function rmdirr($dir) {
 
 /**
  * Implementation of hook_features_api()
- *
  */
 function video_features_api() {
   return array(
