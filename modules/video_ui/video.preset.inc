@@ -13,6 +13,7 @@ define('VIDEO_PRESET_MAX_LENGTH', 64);
 function video_preset_default_form($form, &$form_state, $preset) {
   $video_transcoder = new video_transcoder;
   $codecs = $video_transcoder->get_codecs();
+  $formats = $video_transcoder->get_available_formats('muxing');
   $form = array();
   $form['settings']['device_profile'] = array(
     '#type' => 'fieldset',
@@ -44,15 +45,11 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE
   );
-  $video_extension = array();
-  foreach (video_video_extensions() as $extension => $theme) {
-    $video_extension[$extension] = $extension;
-  }
   $form['settings']['video']['video_extension'] = array(
     '#type' => 'select',
     '#title' => t('Video output extension'),
     '#description' => t('Extension of the output video.'),
-    '#options' => $video_extension,
+    '#options' => $formats,
     '#default_value' => (!empty($preset['settings']['video_extension'])) ? $preset['settings']['video_extension'] : 'flv'
   );
   $form['settings']['video']['video_codec'] = array(
