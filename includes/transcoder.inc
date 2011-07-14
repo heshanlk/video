@@ -1,4 +1,4 @@
-  <?php
+<?php
 
 /*
  * @file
@@ -213,6 +213,10 @@ class video_transcoder {
     return $this->transcoder->get_codecs();
   }
 
+  public function get_available_formats($method = false) {
+    return $this->transcoder->get_available_formats($method);
+  }
+
 }
 
 interface transcoder_interface {
@@ -226,6 +230,8 @@ interface transcoder_interface {
   public function load_job_queue();
 
   public function get_codecs();
+
+  public function get_available_formats($method = false);
 
   public function load_completed_job(&$video);
 
