@@ -45,6 +45,7 @@ class video_phpvideotoolkit implements transcoder_interface {
 
   // Returns an array of available encoding & decoding codecs
   public function get_codecs() {
+    //@todo : add to cache
     $info = $this->toolkit->getFFmpegInfo(FALSE);
     $available_codecs = $info['codecs'];
 
@@ -65,6 +66,40 @@ class video_phpvideotoolkit implements transcoder_interface {
     return $codecs;
   }
 
+// retuan the available muxing formats
+  public function get_available_formats($method = false) {
+    //@todo : add to cache
+    $info = $this->toolkit->getFFmpegInfo(FALSE);
+    $formats = array();
+    switch ($method) {
+      case false :
+        return array_keys($info['formats']);
+      case 'both' :
+        foreach ($info['formats'] as $id => $data) {
+          if ($data['mux'] === true && $data['demux'] === true) {
+            $formats[$id] = $data['fullname'];
+          }
+        }
+        break;
+      case 'muxing' :
+        foreach ($info['formats'] as $id => $data) {
+          if ($data['mux'] === true) {
+            $formats[$id] = $data['fullname'];
+          }
+        }
+        break;
+      case 'demuxing' :
+        foreach ($info['formats'] as $id => $data) {
+          if ($data['demux'] === true) {
+            $formats[$id] = $data['fullname'];
+          }
+        }
+        break;
+    }
+    return $formats;
+  }
+
+  // generate thumbnails
   public function generate_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
