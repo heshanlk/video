@@ -2647,21 +2647,21 @@ class PHPVideoToolkit {
         return array_keys($info['formats']);
       case 'both' :
         foreach ($info['formats'] as $id => $data) {
-          if ($data['muxing'] === true && $data['demuxing'] === true) {
+          if ($data['mux'] === true && $data['demux'] === true) {
             array_push($return_vals, $id);
           }
         }
         break;
       case 'muxing' :
         foreach ($info['formats'] as $id => $data) {
-          if ($data['muxing'] === true) {
+          if ($data['mux'] === true) {
             array_push($return_vals, $id);
           }
         }
         break;
       case 'demuxing' :
         foreach ($info['formats'] as $id => $data) {
-          if ($data['demuxing'] === true) {
+          if ($data['demux'] === true) {
             array_push($return_vals, $id);
           }
         }
