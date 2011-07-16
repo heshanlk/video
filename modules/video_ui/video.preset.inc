@@ -15,29 +15,6 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $codecs = $video_transcoder->get_codecs();
   $formats = $video_transcoder->get_available_formats('muxing');
   $form = array();
-  $form['settings']['device_profile'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Output parameter'),
-    '#description' => t('All output settings are optional. We choose sensible defaults for web and iPhone playback.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
-  );
-  $form['settings']['device_profile']['device_profile'] = array(
-    '#type' => 'select',
-    '#title' => t('Device profile'),
-    '#description' => t('A profile for your target device.'),
-    '#options' => array(
-      '0' => 'None',
-      'mobile/advanced' => 'mobile/advanced',
-      'mobile/baseline' => 'mobile/baseline',
-      'mobile/legacy' => 'mobile/legacy',
-      'v1/mobile/advanced' => 'v1/mobile/advanced',
-      'v1/mobile/baseline' => 'v1/mobile/baseline',
-      'v1/mobile/legacy' => 'v1/mobile/legacy',
-      'v2/mobile/legacy' => 'v2/mobile/legacy'
-    ),
-    '#default_value' => (!empty($preset['settings']['device_profile'])) ? $preset['settings']['device_profile'] : 0
-  );
   // video settings
   $form['settings']['video'] = array(
     '#type' => 'fieldset',
@@ -121,17 +98,12 @@ function video_preset_default_form($form, &$form_state, $preset) {
     ),
     '#default_value' => (!empty($preset['settings']['video_speed'])) ? $preset['settings']['video_speed'] : 2
   );
-  $form['settings']['video']['width'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Width'),
-    '#description' => t('The maximum width of the output video (in pixels).'),
-    '#default_value' => !empty($preset['settings']['width']) ? $preset['settings']['width'] : ''
-  );
-  $form['settings']['video']['height'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Height'),
-    '#description' => t('The maximum height of the output video (in pixels).'),
-    '#default_value' => !empty($preset['settings']['height']) ? $preset['settings']['height'] : ''
+  $form['settings']['video']['wxh'] = array(
+    '#type' => 'select',
+    '#title' => t('Dimensions'),
+    '#description' => t('The maximum width and height of the output video (in pixels).'),
+    '#default_value' => !empty($preset['settings']['wxh']) ? $preset['settings']['wxh'] : '640x480',
+    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
   );
   $form['settings']['video']['video_aspectmode'] = array(
     '#type' => 'select',
@@ -213,6 +185,12 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#title' => t('Frame rate'),
     '#description' => t('Force a specific output frame rate (in frames per second). For best quality, do not use this setting.'),
     '#default_value' => !empty($preset['settings']['frame_rate']) ? $preset['settings']['frame_rate'] : ''
+  );
+  $form['settings']['adv_video']['keyframe_interval'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Frame rate'),
+    '#description' => t('By default, a keyframe will be created at most every 250 frames. Specifying a different keyframe interval will allow you to create more or less keyframes in your video. A greater number of keyframes will increase the size of your output file, but will allow for more precise scrubbing in most players. Keyframe interval should be specified as a positive integer. For example, a value of 100 will create a keyframe every 100 frames.'),
+    '#default_value' => !empty($preset['settings']['keyframe_interval']) ? $preset['settings']['keyframe_interval'] : ''
   );
   $form['settings']['adv_video']['video_bitrate'] = array(
     '#type' => 'textfield',
@@ -311,29 +289,6 @@ function video_preset_default_form($form, &$form_state, $preset) {
     ),
     '#default_value' => (!empty($preset['settings']['denoise'])) ? $preset['settings']['denoise'] : 2
   );
-  // Segmented Streaming
-  $form['settings']['segmented_streaming'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Segmented Streaming'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
-  );
-  $form['settings']['segmented_streaming']['segmented_type'] = array(
-    '#type' => 'select',
-    '#title' => t('Type'),
-    '#description' => t('Set to segmented for HTTP Live Streaming.'),
-    '#options' => array(
-      0 => 'Standard',
-      'segmented' => 'segmented'
-    ),
-    '#default_value' => (!empty($preset['settings']['segmented_type'])) ? $preset['settings']['segmented_type'] : 0
-  );
-  $form['settings']['segmented_streaming']['segmented_seconds'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Segment Seconds'),
-    '#description' => t('The maximum duration of each segment in segmented outputs.'),
-    '#default_value' => !empty($preset['settings']['segmented_seconds']) ? $preset['settings']['segmented_seconds'] : ''
-  );
   // Create clip
   $form['settings']['create_clip'] = array(
     '#type' => 'fieldset',
@@ -352,27 +307,6 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#title' => t('Clip length '),
     '#description' => t('The length of the subclip (in timecode or number of seconds).'),
     '#default_value' => !empty($preset['settings']['clip_length']) ? $preset['settings']['clip_length'] : ''
-  );
-  // Command line parameters
-  $form['settings']['command_line'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Command line options'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE
-  );
-  $tokes = array(
-    '!ffmpeg - Path to ffmpeg',
-    '!ffmpeg2theora - Path to ffmpeg2theora',
-    '!videofile - Input video file',
-    '!convertfile - Output video file',
-    '!width - Width of output video',
-    '!height - Height of output video'
-  );
-  $form['settings']['command_line']['cli_code'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Command line codes to run'),
-    '#description' => t('Please add command line codes each to run separated by a new line.') . theme('item_list', array('items' => $tokes, 'title' => 'Available Tokes')),
-    '#default_value' => !empty($preset['settings']['cli_code']) ? $preset['settings']['cli_code'] : '!ffmpeg -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile'
   );
   return $form;
 }
