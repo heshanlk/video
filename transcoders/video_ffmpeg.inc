@@ -66,7 +66,7 @@ class video_ffmpeg implements transcoder_interface {
     return $codecs;
   }
 
-// retuan the available muxing formats
+// return the available muxing formats
   public function get_available_formats($method = false) {
     //@todo : add to cache
     $info = $this->toolkit->getFFmpegInfo(FALSE);
@@ -452,67 +452,75 @@ class video_ffmpeg implements transcoder_interface {
   public function admin_settings() {
     $form = array();
     $form = array();
-    $form['video_ffmpeg_toolkit_start'] = array(
+    $form['video_ffmpeg_start'] = array(
       '#type' => 'markup',
       '#markup' => '<div id="video_ffmpeg">',
     );
     // FFMPEG
-    $form['video']['ffmpeg'] = array(
+    $form['ffmpeg']['ffmpeg'] = array(
       '#type' => 'fieldset',
       '#title' => t('Path to FFmpeg executables'),
-      '#collapsible' => TRUE,
+      '#collapsible' => FALSE,
       '#collapsed' => FALSE
     );
-    $form['video']['ffmpeg']['video_ffmpeg_path'] = array(
+    $form['ffmpeg']['ffmpeg']['video_ffmpeg_path'] = array(
       '#type' => 'textfield',
       '#title' => t('FFMPEG'),
-      '#description' => t('Absolute path to ffmpeg executable. This will provide a token of !ffmpeg to preset commands.'),
+      '#description' => t('Absolute path to ffmpeg executable.'),
       '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
     );
     // Thumbnail Videos We need to put this stuff last.
-    $form['thumbnail'] = array(
+    $form['ffmpeg']['thumbnail'] = array(
       '#type' => 'fieldset',
       '#title' => t('Video thumbnails'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
-    $form['thumbnail']['video_thumb_path'] = array(
+    $form['ffmpeg']['thumbnail']['video_thumb_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),
       '#description' => t('Path to save video thumbnails extracted from the videos.'),
       '#default_value' => variable_get('video_thumb_path', 'videos/thumbnails'),
     );
-    $form['thumbnail']['video_thumbs'] = array(
+    $form['ffmpeg']['thumbnail']['video_thumbs'] = array(
       '#type' => 'textfield',
       '#title' => t('Number of thumbnails'),
       '#description' => t('Number of thumbnails to extract from video.'),
       '#default_value' => variable_get('video_thumbs', 5),
     );
-    $form['thumbnail']['video_thumb_save_all'] = array(
+    $form['ffmpeg']['thumbnail']['video_thumb_save_all'] = array(
       '#type' => 'checkbox',
       '#title' => t('Save all thumbnails in {file_manged} table'),
       '#description' => t('Save all auto created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
       '#default_value' => variable_get('video_thumb_save_all', FALSE),
     );
 
-    // Video conversion settings.
-    $form['video_advanced'] = array(
+    // Watermark
+    $form['ffmpeg']['warermark'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Advanced Video Conversion'),
+      '#title' => t('Video watermark'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE
+      '#collapsed' => FALSE,
     );
-    $form['video_advanced']['video_ffmpeg_pad_method'] = array(
-      '#type' => 'radios',
-      '#title' => t('FFMPeg Padding method'),
-      '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
-      '#options' => array(
-        0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
-        1 => t('Use -vf "pad:w:h:x:y:c" for padding'),
-      ),
+    $form['ffmpeg']['warermark']['video_watermark_url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('URL'),
+      '#description' => t('The URL of a PNG or JPG image.'),
+      '#default_value' => variable_get('video_watermark_url', ''),
     );
-
-    $form['video_ffmpeg_toolkit_end'] = array(
+    $form['ffmpeg']['warermark']['warermarkx'] = array(
+      '#type' => 'textfield',
+      '#title' => t('X-axis'),
+      '#description' => t('Where to place the watermark, on the x axis..'),
+      '#default_value' => variable_get('warermarkx', 0),
+    );
+    $form['ffmpeg']['warermark']['warermarky'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Y-axis'),
+      '#description' => t('Where to place the watermark, on the y axis.'),
+      '#default_value' => variable_get('warermarky', 0),
+    );
+    $form['video_ffmpeg_end'] = array(
       '#type' => 'markup',
       '#markup' => '</div>',
     );
