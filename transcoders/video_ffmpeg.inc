@@ -24,6 +24,8 @@ class video_ffmpeg implements transcoder_interface {
 
   /**
    * Extract thumbnails from the video.
+   * Interface Implementation
+   * @see sites/all/modules/video/includes/transcoder_interface#get_thumbnails()
    * @global object $user Drupal use object.
    * @param object $video Video file object
    * @return stdClass 
@@ -122,7 +124,12 @@ class video_ffmpeg implements transcoder_interface {
     return $files;
   }
 
-  // Returns an array of available encoding & decoding codecs
+  /**
+   * Returns an array of available encoding & decoding codecs
+   * Interface Implementation
+   * @see sites/all/modules/video/includes/transcoder_interface#get_codecs()
+   * @return array available audio/video encode/decode codecs. 
+   */
   public function get_codecs() {
     //@todo : add to cache
     $info = $this->toolkit->getFFmpegInfo(FALSE);
@@ -145,7 +152,13 @@ class video_ffmpeg implements transcoder_interface {
     return $codecs;
   }
 
-  // return the available muxing formats
+  /**
+   * Get the available muxing formats
+   * Interface Implementation
+   * @see sites/all/modules/video/includes/transcoder_interface#get_available_formats()
+   * @param string $method
+   * @return array formats available 
+   */
   public function get_available_formats($method = false) {
     //@todo : add to cache
     $info = $this->toolkit->getFFmpegInfo(FALSE);
@@ -178,11 +191,15 @@ class video_ffmpeg implements transcoder_interface {
     return $formats;
   }
 
+  /**
+   * Interface Implementation
+   * @see sites/all/modules/video/includes/transcoder_interface#convert_video()
+   * @param object video file object
+   * @return object 
+   */
   public function convert_video($video) {
-    // This will update our current video status to active.
-    //    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
-    // get the paths so tokens will compatible with this
-    // @todo : add best method to get existing file path and add converted there
+    // set current video status to active.
+    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     $target = str_replace('original', '', drupal_dirname($video->uri));
     $converted_base_dir = $target . 'converted/' . $video->fid;
     if (!file_prepare_directory($converted_base_dir, FILE_CREATE_DIRECTORY)) {
