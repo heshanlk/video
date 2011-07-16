@@ -101,6 +101,9 @@ class video_transcoder {
     // load the presets
     $video_preset = new video_preset();
     $presets = $video_preset->properties();
+    // if no presets enabled then write an error log
+    if (empty($presets))
+      watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l('enable or create new preset', 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
     $video->presets = $presets;
     $output = $this->transcoder->convert_video($video);
     // if successfully converted the video then update the status to publish
