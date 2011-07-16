@@ -9,7 +9,7 @@
 class video_ffmpeg implements transcoder_interface {
 
   // Naming for our radio options.  Makes it easy to extend our transcoders.
-  private $name = 'PHP Video Toolkit (FFMPEG)';
+  private $name = 'FFmpeg Binary';
   private $value = 'video_ffmpeg';
   protected $params = array();
   protected $audio_bitrate = 64;
@@ -103,12 +103,12 @@ class video_ffmpeg implements transcoder_interface {
   public function generate_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
+    $video_thumbnail_path = variable_get('video_thumbnail_path', 'videos/thumbnails');
     // Get the file system directory.
-    $schema_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
+    $schema_thumb_path = file_default_scheme() . '://' . $video_thumbnail_path . '/' . $video['fid'];
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
     // Total thumbs to generate
-    $total_thumbs = variable_get('video_thumbs', 5);
+    $total_thumbs = variable_get('video_thumbnail_count', 5);
     $videofile = file_load($video['fid']);
     //get the actual video file path from the stream wrappers
     $videopath = drupal_realpath($videofile->uri);
@@ -175,9 +175,8 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function convert_video($video) {
-
     // This will update our current video status to active.
-//    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+    //    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     // get the paths so tokens will compatible with this
     // @todo : add best method to get existing file path and add converted there
     $target = str_replace('original', '', drupal_dirname($video->uri));
@@ -236,7 +235,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setVideoCodec($settings['video_codec'], FALSE);
       if (!$result) {
-// 			if there was an error then get it
+        // 			if there was an error then get it
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -247,7 +246,7 @@ class video_ffmpeg implements transcoder_interface {
       if ($settings['video_preset'] !== 'none') {
         $result = $this->toolkit->setVideoPreset($settings['video_preset'], FALSE);
         if (!$result) {
-// 			if there was an error then get it
+          // 			if there was an error then get it
           $error_msg = t($this->toolkit->getLastError());
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
           $this->toolkit->reset();
@@ -403,7 +402,6 @@ class video_ffmpeg implements transcoder_interface {
    */
   public function get_playtime($video) {
     $video_info = $this->get_video_info($video);
-
     return $video_info['duration']['seconds'];
   }
 
@@ -459,7 +457,7 @@ class video_ffmpeg implements transcoder_interface {
     // FFMPEG
     $form['ffmpeg']['ffmpeg'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Path to FFmpeg executables'),
+      '#title' => t('Path to FFmpeg executable'),
       '#collapsible' => FALSE,
       '#collapsed' => FALSE
     );
@@ -476,17 +474,17 @@ class video_ffmpeg implements transcoder_interface {
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
-    $form['ffmpeg']['thumbnail']['video_thumb_path'] = array(
+    $form['ffmpeg']['thumbnail']['video_thumbnail_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),
       '#description' => t('Path to save video thumbnails extracted from the videos.'),
-      '#default_value' => variable_get('video_thumb_path', 'videos/thumbnails'),
+      '#default_value' => variable_get('video_thumbnail_path', 'videos/thumbnails'),
     );
-    $form['ffmpeg']['thumbnail']['video_thumbs'] = array(
+    $form['ffmpeg']['thumbnail']['video_thumbnail_count'] = array(
       '#type' => 'textfield',
       '#title' => t('Number of thumbnails'),
       '#description' => t('Number of thumbnails to extract from video.'),
-      '#default_value' => variable_get('video_thumbs', 5),
+      '#default_value' => variable_get('video_thumbnail_count', 5),
     );
     $form['ffmpeg']['thumbnail']['video_thumb_save_all'] = array(
       '#type' => 'checkbox',
@@ -506,19 +504,19 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'textfield',
       '#title' => t('URL'),
       '#description' => t('The URL of a PNG or JPG image.'),
-      '#default_value' => variable_get('video_watermark_url', ''),
+      '#default_value' => variable_get('video_watermark_url', 'http://heidisoft.com/watermark_drupal_40x40.png'),
     );
     $form['ffmpeg']['warermark']['warermarkx'] = array(
       '#type' => 'textfield',
       '#title' => t('X-axis'),
       '#description' => t('Where to place the watermark, on the x axis..'),
-      '#default_value' => variable_get('warermarkx', 0),
+      '#default_value' => variable_get('warermarkx', 5),
     );
     $form['ffmpeg']['warermark']['warermarky'] = array(
       '#type' => 'textfield',
       '#title' => t('Y-axis'),
       '#description' => t('Where to place the watermark, on the y axis.'),
-      '#default_value' => variable_get('warermarky', 0),
+      '#default_value' => variable_get('warermarky', 5),
     );
     $form['video_ffmpeg_end'] = array(
       '#type' => 'markup',
