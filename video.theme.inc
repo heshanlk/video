@@ -214,7 +214,7 @@ function theme_video_flv($variables) {
       $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->formatter, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
       break;
     default:
-      $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/settings/video/players'));
+      $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/config/media/video/players'));
       break;
   }
   return theme('video_play_flv', array('video' => $video, 'themed_output' => $themed_output));
@@ -235,7 +235,8 @@ function theme_video_html5($variables) {
       $items = _video_object_to_array($video->files);
       $items +=array('thumbnail' => (array) $video->thumbnail);
       $attributes = array();
-      $attributes['width'] = $video->player_width;;
+      $attributes['width'] = $video->player_width;
+      ;
       $attributes['height'] = $video->player_height;
       return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $video->fid, 'attributes' => $attributes));
       break;
