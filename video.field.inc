@@ -160,7 +160,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
 }
 
 /**
- * Video file save to the video_files table for conversions
+ * Video file save to the video_queue table for conversions
  */
 function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
   // Create entry for video conversion if auto converison is enabled
