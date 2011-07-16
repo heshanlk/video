@@ -98,33 +98,50 @@ class video_ffmpeg implements transcoder_interface {
       $thumbfile = $schema_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file(drupal_realpath($thumbfile))) {
-        $result = $this->toolkit->setInputFile($videopath);
-        if (!$result) {
-          //if there was an error then get it 
-          $error_msg = t($this->toolkit->getLastError());
-          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-          $this->toolkit->reset();
-          continue;
+        // if FFmpeg-php library installed use it
+        if (class_exists('ffmpeg_movie')) {
+          $movie = new ffmpeg_movie($videopath);
+          $frames = $movie->getFrameCount();
+          $fps = $movie->getFrameRate();
+          // Get the right frame number
+          $framenumber = (int) $seek * $fps;
+          if ($framenumber > $frames) {
+            $framenumber = $frames;
+          }
+          // Get the frame and create thumb file
+          $frame = $movie->getFrame($framenumber);
+          $thumb = $frame->toGDImage();
+          imagejpeg($thumb, drupal_realpath($thumbfile));
         }
-        // create thuumbnail file
-        $this->toolkit->extractFrame($seek);
+        else {
+          $result = $this->toolkit->setInputFile($videopath);
+          if (!$result) {
+            //if there was an error then get it 
+            $error_msg = t($this->toolkit->getLastError());
+            watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+            $this->toolkit->reset();
+            continue;
+          }
+          // create thuumbnail file
+          $this->toolkit->extractFrame($seek);
 
-        $result = $this->toolkit->setOutput(drupal_realpath($schema_thumb_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
-        if (!$result) {
-          //if there was an error then get it 
-          $error_msg = t($this->toolkit->getLastError());
-          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-          $this->toolkit->reset();
-          continue;
-        }
+          $result = $this->toolkit->setOutput(drupal_realpath($schema_thumb_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
+          if (!$result) {
+            //if there was an error then get it 
+            $error_msg = t($this->toolkit->getLastError());
+            watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+            $this->toolkit->reset();
+            continue;
+          }
 
-        $result = $this->toolkit->execute(FALSE, TRUE);
-        if ($result !== PHPVideoToolkit::RESULT_OK) {
-          //if there was an error then get it
-          $error_msg = t($this->toolkit->getLastError());
-          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-          $this->toolkit->reset();
-          continue;
+          $result = $this->toolkit->execute(FALSE, TRUE);
+          if ($result !== PHPVideoToolkit::RESULT_OK) {
+            //if there was an error then get it
+            $error_msg = t($this->toolkit->getLastError());
+            watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+            $this->toolkit->reset();
+            continue;
+          }
         }
 
         if (!file_exists(drupal_realpath($thumbfile))) {
