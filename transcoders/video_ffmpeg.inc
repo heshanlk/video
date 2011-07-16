@@ -94,10 +94,11 @@ class video_ffmpeg implements transcoder_interface {
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
       $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
-      $filename = file_munge_filename("video-thumb-for-" . $video['fid'] . "-$i.jpg", '', TRUE);
-      $thumbfile = $schema_thumb_path . '/' . $filename;
+      $filename = file_munge_filename("video-thumbnail-" . $video['fid'] . "-$i.jpg", '', TRUE);
+      $thumbnail_path = $schema_thumb_path . '/' . $filename;
+      $thumbnail_real_path = drupal_realpath($thumbnail_path);
       //skip files already exists, this will save ffmpeg traffic
-      if (!is_file(drupal_realpath($thumbfile))) {
+      if (!is_file($thumbnail_real_path)) {
         // if FFmpeg-php library installed use it
         if (class_exists('ffmpeg_movie')) {
           $movie = new ffmpeg_movie($videopath);
@@ -111,7 +112,8 @@ class video_ffmpeg implements transcoder_interface {
           // Get the frame and create thumb file
           $frame = $movie->getFrame($framenumber);
           $thumb = $frame->toGDImage();
-          imagejpeg($thumb, drupal_realpath($thumbfile));
+          // @todo use image_save() function for this.
+          imagejpeg($thumb, $thumbnail_real_path);
         }
         else {
           $result = $this->toolkit->setInputFile($videopath);
@@ -144,8 +146,8 @@ class video_ffmpeg implements transcoder_interface {
           }
         }
 
-        if (!file_exists(drupal_realpath($thumbfile))) {
-          $error_param = array('%file' => $thumbfile);
+        if (!file_exists($thumbnail_real_path)) {
+          $error_param = array('%file' => $thumbnail_path);
           $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.", $error_param);
           // Log the error message.
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
@@ -158,9 +160,9 @@ class video_ffmpeg implements transcoder_interface {
       $file->uid = $user->uid;
       $file->status = 0;
       $file->filename = trim($filename);
-      $file->uri = $thumbfile;
+      $file->uri = $thumbnail_path;
       $file->filemime = file_get_mimetype($filename);
-      $file->filesize = filesize(drupal_realpath($thumbfile));
+      $file->filesize = filesize($thumbnail_real_path);
       $file->timestamp = time();
       $files[] = $file;
     }
