@@ -13,68 +13,21 @@ class video_ffmpeg implements transcoder_interface {
   private $value = 'video_ffmpeg';
   protected $toolkit;
 
+  /**
+   * @construct
+   * load the PHPVideoToolkit() object
+   */
   public function __construct() {
     module_load_include('php', 'video', 'libraries/phpvideotoolkit/phpvideotoolkit.php5');
     $this->toolkit = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), file_directory_temp() . '/');
   }
 
-  // Returns an array of available encoding & decoding codecs
-  public function get_codecs() {
-    //@todo : add to cache
-    $info = $this->toolkit->getFFmpegInfo(FALSE);
-    $available_codecs = $info['codecs'];
-
-    $codecs = array('decode' => array(), 'encode' => array());
-
-    foreach ($available_codecs as $key => $value) {
-      $codecs['encode'][$key] = array();
-      $codecs['decode'][$key] = array();
-      foreach ($value as $codec_key => $codec) {
-        if ($codec['encode']) {
-          $codecs['encode'][$key][$codec_key] = $codec['fullname'];
-        }
-        if ($codec['decode']) {
-          $codecs['decode'][$key][$codec_key] = $codec['fullname'];
-        }
-      }
-    }
-    return $codecs;
-  }
-
-  // return the available muxing formats
-  public function get_available_formats($method = false) {
-    //@todo : add to cache
-    $info = $this->toolkit->getFFmpegInfo(FALSE);
-    $formats = array();
-    switch ($method) {
-      case false :
-        return array_keys($info['formats']);
-      case 'both' :
-        foreach ($info['formats'] as $id => $data) {
-          if ($data['mux'] === true && $data['demux'] === true) {
-            $formats[$id] = $data['fullname'];
-          }
-        }
-        break;
-      case 'muxing' :
-        foreach ($info['formats'] as $id => $data) {
-          if ($data['mux'] === true) {
-            $formats[$id] = $data['fullname'];
-          }
-        }
-        break;
-      case 'demuxing' :
-        foreach ($info['formats'] as $id => $data) {
-          if ($data['demux'] === true) {
-            $formats[$id] = $data['fullname'];
-          }
-        }
-        break;
-    }
-    return $formats;
-  }
-
-  // generate thumbnails
+  /**
+   * Extract thumbnails from the video.
+   * @global object $user Drupal use object.
+   * @param object $video Video file object
+   * @return stdClass 
+   */
   public function get_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
@@ -167,6 +120,62 @@ class video_ffmpeg implements transcoder_interface {
       $files[] = $file;
     }
     return $files;
+  }
+
+  // Returns an array of available encoding & decoding codecs
+  public function get_codecs() {
+    //@todo : add to cache
+    $info = $this->toolkit->getFFmpegInfo(FALSE);
+    $available_codecs = $info['codecs'];
+
+    $codecs = array('decode' => array(), 'encode' => array());
+
+    foreach ($available_codecs as $key => $value) {
+      $codecs['encode'][$key] = array();
+      $codecs['decode'][$key] = array();
+      foreach ($value as $codec_key => $codec) {
+        if ($codec['encode']) {
+          $codecs['encode'][$key][$codec_key] = $codec['fullname'];
+        }
+        if ($codec['decode']) {
+          $codecs['decode'][$key][$codec_key] = $codec['fullname'];
+        }
+      }
+    }
+    return $codecs;
+  }
+
+  // return the available muxing formats
+  public function get_available_formats($method = false) {
+    //@todo : add to cache
+    $info = $this->toolkit->getFFmpegInfo(FALSE);
+    $formats = array();
+    switch ($method) {
+      case false :
+        return array_keys($info['formats']);
+      case 'both' :
+        foreach ($info['formats'] as $id => $data) {
+          if ($data['mux'] === true && $data['demux'] === true) {
+            $formats[$id] = $data['fullname'];
+          }
+        }
+        break;
+      case 'muxing' :
+        foreach ($info['formats'] as $id => $data) {
+          if ($data['mux'] === true) {
+            $formats[$id] = $data['fullname'];
+          }
+        }
+        break;
+      case 'demuxing' :
+        foreach ($info['formats'] as $id => $data) {
+          if ($data['demux'] === true) {
+            $formats[$id] = $data['fullname'];
+          }
+        }
+        break;
+    }
+    return $formats;
   }
 
   public function convert_video($video) {
