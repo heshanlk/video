@@ -6,11 +6,11 @@
  *
  */
 
-class video_phpvideotoolkit implements transcoder_interface {
+class video_ffmpeg implements transcoder_interface {
 
   // Naming for our radio options.  Makes it easy to extend our transcoders.
   private $name = 'PHP Video Toolkit (FFMPEG)';
-  private $value = 'video_phpvideotoolkit';
+  private $value = 'video_ffmpeg';
   protected $params = array();
   protected $audio_bitrate = 64;
   protected $video_bitrate = 200;
@@ -24,10 +24,10 @@ class video_phpvideotoolkit implements transcoder_interface {
   public function __construct() {
     $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
     $this->params['videobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', $this->video_bitrate);
-    //@todo: move this to the actual widget and save in video_files table.
+    //@todo: move this to the actual widget and save in video_queue table.
     $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
     $this->params['ffmpeg'] = variable_get('video_ffmpeg_path', $this->ffmpeg);
-    $this->nice = variable_get('video_phpvideotoolkit_nice_enable', FALSE) ? 'nice -n 19 ' : '';
+    $this->nice = variable_get('video_ffmpeg_nice_enable', FALSE) ? 'nice -n 19 ' : '';
     $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
     $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
     $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
@@ -255,7 +255,6 @@ class video_phpvideotoolkit implements transcoder_interface {
         }
       }
 
-
       $settings['audio_sample_rate'] = (!empty($settings['audio_sample_rate'])) ? $settings['audio_sample_rate'] : $video_info['audio']['sample_rate'];
 
       if ($settings['audio_sample_rate'] < 1000) {
@@ -375,9 +374,9 @@ class video_phpvideotoolkit implements transcoder_interface {
       $converted_files[] = $video->converted;
     }
 
-    // Update our video_files table with the converted video information.
+    // Update our video_queue table with the converted video information.
     if (!empty($converted_files)) {
-      db_update('video_files')
+      db_update('video_queue')
           ->fields(array(
             'status' => VIDEO_RENDERING_COMPLETE,
             'completed' => time(),
@@ -455,27 +454,64 @@ class video_phpvideotoolkit implements transcoder_interface {
     $form = array();
     $form['video_ffmpeg_toolkit_start'] = array(
       '#type' => 'markup',
-      '#markup' => '<div id="video_phpvideotoolkit">',
-    );
-    $form['phpvideotoolkit']['video_phpvideotoolkit_nice_enable'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Enable the use of <b>nice</b> when calling the command.'),
-      '#default_value' => variable_get('video_phpvideotoolkit_nice_enable', TRUE),
-      '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
+      '#markup' => '<div id="video_ffmpeg">',
     );
     // FFMPEG
-    $form['phpvideotoolkit']['transcoders'] = array(
+    $form['video']['ffmpeg'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Path to Transcoder Executables'),
+      '#title' => t('Path to FFmpeg executables'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE
     );
-    $form['phpvideotoolkit']['transcoders']['video_ffmpeg_path'] = array(
+    $form['video']['ffmpeg']['video_ffmpeg_path'] = array(
       '#type' => 'textfield',
       '#title' => t('FFMPEG'),
       '#description' => t('Absolute path to ffmpeg executable. This will provide a token of !ffmpeg to preset commands.'),
       '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
     );
+    // Thumbnail Videos We need to put this stuff last.
+    $form['thumbnail'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Video thumbnails'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    $form['thumbnail']['video_thumb_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to save thumbnails'),
+      '#description' => t('Path to save video thumbnails extracted from the videos.'),
+      '#default_value' => variable_get('video_thumb_path', 'videos/thumbnails'),
+    );
+    $form['thumbnail']['video_thumbs'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of thumbnails'),
+      '#description' => t('Number of thumbnails to extract from video.'),
+      '#default_value' => variable_get('video_thumbs', 5),
+    );
+    $form['thumbnail']['video_thumb_save_all'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Save all thumbnails in {file_manged} table'),
+      '#description' => t('Save all auto created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
+      '#default_value' => variable_get('video_thumb_save_all', FALSE),
+    );
+
+    // Video conversion settings.
+    $form['video_advanced'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced Video Conversion'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+    $form['video_advanced']['video_ffmpeg_pad_method'] = array(
+      '#type' => 'radios',
+      '#title' => t('FFMPeg Padding method'),
+      '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
+      '#options' => array(
+        0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
+        1 => t('Use -vf "pad:w:h:x:y:c" for padding'),
+      ),
+    );
+
     $form['video_ffmpeg_toolkit_end'] = array(
       '#type' => 'markup',
       '#markup' => '</div>',
@@ -496,7 +532,7 @@ class video_phpvideotoolkit implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#create_job()
    */
   public function create_job($video, $nid) {
-    return db_insert('video_files')
+    return db_insert('video_queue')
         ->fields(array(
           'fid' => $video['fid'],
           'nid' => $nid,
@@ -523,7 +559,7 @@ class video_phpvideotoolkit implements transcoder_interface {
       }
     }
     //now delete our rows.
-    db_delete('video_files')
+    db_delete('video_queue')
         ->condition('fid', $video->fid)
         ->execute();
   }
@@ -535,7 +571,7 @@ class video_phpvideotoolkit implements transcoder_interface {
   public function load_job($fid) {
     $job = null;
     $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
-      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
+      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
         ->fetch();
     if (!empty($job))
       return $job;
@@ -551,7 +587,7 @@ class video_phpvideotoolkit implements transcoder_interface {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
-      FROM {video_files} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
+      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
       WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
       $videos[] = $row;
@@ -587,7 +623,7 @@ class video_phpvideotoolkit implements transcoder_interface {
    * @param (int) $status
    */
   public function change_status($vid, $status) {
-    db_update('video_files')->fields(array(
+    db_update('video_queue')->fields(array(
           'status' => $status,))
         ->condition('vid', $vid, '=')
         ->execute();
