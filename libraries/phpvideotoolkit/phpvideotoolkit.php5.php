@@ -1,26 +1,13 @@
 <?php
 
-/* SVN FILE: $Id$ */
-
 /**
  * @author Oliver Lillie (aka buggedcom) <publicmail@buggedcom.co.uk>
  *
- * @license BSD
- * @copyright Copyright (c) 2008 Oliver Lillie <http://www.buggedcom.co.uk>
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
- * is furnished to do so, subject to the following conditions:  The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
+ * @license GPL 2.0
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
- * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * @package PHPVideoToolkit (was called ffmpeg)
- * @version 0.1.9
- * @changelog SEE CHANGELOG
+ * @package FFMPEG (was called PHPVideoToolkit)
+ * @version 0.1
+ * 
  * @abstract This class can be used in conjunction with several server binary libraries to manipulate video and audio
  * through PHP. It is not intended to solve any particular problems, however you may find it useful. This php class
  * is in no way associated with the actual FFmpeg releases. Any mistakes contained in this php class are mine and mine
@@ -34,26 +21,7 @@
  * by me however I found it useful when installing ffmpeg for the first time. The original source for the install.txt file
  * is located http://www.luar.com.hk/blog/?p=669 and the author is Lunar.
  *
- * @see install.txt
- *
- * @uses ffmpeg http://ffmpeg.sourceforge.net/
- * @uses lame http://lame.sourceforge.net/
- * @uses flvtool2 http://www.inlet-media.de/flvtool2 (and ruby http://www.ruby-lang.org/en/)
- *
- * @config examples/example-config.php Please edit this files in order for the examples to work.
- * @example examples/example01.php Converts video to Flash Video (ie FLV).
- * @example examples/example02.php Screen grabs video frames.
- * @example examples/example03.php Compile a movie from multiple jpegs
- * @example examples/example04.php Watermark a video.
- * @example examples/example05.php Access media metadata without using the ffmpeg-php library.
- * @example examples/example06.php Extract audio from video.
- * @example examples/example07.php Join multiple videos together.
- * @example examples/example08.php Easy video conversion to common formats using the adapters.
- * @example examples/example09.php Shows you how to access the information about your ffmpeg installation.
- * @example examples/example10.php Shows you how to extract a specific frame from a movie.
- * @example examples/example11.php Shows you how to use the ffmpeg-php adapters to provide a pure php emulation of ffmpeg-php.
- * @example examples/example12.php Shows you how to manipulate/format timecode strings.
- * @example examples/example13.php This demonstrates how to simply create a FLV stream script.
+ * @uses ffmpeg http://ffmpeg.org
  */
 if (!defined('DS')) {
   define('DS', DIRECTORY_SEPARATOR);
