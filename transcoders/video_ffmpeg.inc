@@ -11,36 +11,11 @@ class video_ffmpeg implements transcoder_interface {
   // Naming for our radio options.  Makes it easy to extend our transcoders.
   private $name = 'FFmpeg Binary';
   private $value = 'video_ffmpeg';
-  protected $params = array();
-  protected $audio_bitrate = 64;
-  protected $video_bitrate = 200;
-  protected $video_width = 640;
-  protected $video_height = 480;
-  protected $ffmpeg = '/usr/bin/ffmpeg';
-  protected $nice;
-  protected $video_ext = 'flv';
   protected $toolkit;
 
   public function __construct() {
-    $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
-    $this->params['videobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', $this->video_bitrate);
-    //@todo: move this to the actual widget and save in video_queue table.
-    $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
-    $this->params['ffmpeg'] = variable_get('video_ffmpeg_path', $this->ffmpeg);
-    $this->nice = variable_get('video_ffmpeg_nice_enable', FALSE) ? 'nice -n 19 ' : '';
-    $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
-    $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
-    $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
-
-    $use_version = 'php5';
-    // 	check if php5 is ok
-    if ($use_version == 'php5' && version_compare(PHP_VERSION, '5.0.0', '<')) {
-      $use_version = 'php4';
-    }
-
-    module_load_include('php', 'video', 'libraries/phpvideotoolkit/phpvideotoolkit.' . $use_version);
-
-    $this->toolkit = new PHPVideoToolkit($this->params['ffmpeg'], file_directory_temp() . '/');
+    module_load_include('php', 'video', 'libraries/phpvideotoolkit/phpvideotoolkit.php5');
+    $this->toolkit = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), file_directory_temp() . '/');
   }
 
   // Returns an array of available encoding & decoding codecs
@@ -66,7 +41,7 @@ class video_ffmpeg implements transcoder_interface {
     return $codecs;
   }
 
-// return the available muxing formats
+  // return the available muxing formats
   public function get_available_formats($method = false) {
     //@todo : add to cache
     $info = $this->toolkit->getFFmpegInfo(FALSE);
@@ -100,11 +75,12 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   // generate thumbnails
-  public function generate_thumbnails($video) {
+  public function get_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
     $video_thumbnail_path = variable_get('video_thumbnail_path', 'videos/thumbnails');
     // Get the file system directory.
+    //@todo, we should load the field based schema for this.
     $schema_thumb_path = file_default_scheme() . '://' . $video_thumbnail_path . '/' . $video['fid'];
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
     // Total thumbs to generate
@@ -124,18 +100,18 @@ class video_ffmpeg implements transcoder_interface {
       if (!is_file(drupal_realpath($thumbfile))) {
         $result = $this->toolkit->setInputFile($videopath);
         if (!$result) {
-// 			if there was an error then get it 
+          //if there was an error then get it 
           $error_msg = t($this->toolkit->getLastError());
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
           $this->toolkit->reset();
           continue;
         }
-
+        // create thuumbnail file
         $this->toolkit->extractFrame($seek);
 
         $result = $this->toolkit->setOutput(drupal_realpath($schema_thumb_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
         if (!$result) {
-// 			if there was an error then get it 
+          //if there was an error then get it 
           $error_msg = t($this->toolkit->getLastError());
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
           $this->toolkit->reset();
@@ -144,7 +120,7 @@ class video_ffmpeg implements transcoder_interface {
 
         $result = $this->toolkit->execute(FALSE, TRUE);
         if ($result !== PHPVideoToolkit::RESULT_OK) {
-// 			if there was an error then get it
+          //if there was an error then get it
           $error_msg = t($this->toolkit->getLastError());
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
           $this->toolkit->reset();

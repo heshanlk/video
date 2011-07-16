@@ -37,9 +37,9 @@ class video_zencoder_api {
     $filename = $file->filename;
     // Get varialbes
     $bucket = $this->bucket;
-    $thumb_no = variable_get('video_thumbs', 5);
+    $thumb_no = variable_get('video_thumbnail_count', 5);
 
-    $thumb_size = variable_get('video_thumbs_size', '160x120');
+    $thumb_size = variable_get('video_thumbnail_count_size', '160x120');
     $thumb_base = $baseurl;
     $thumb_prefix = $filename;
     // dimentions
@@ -54,8 +54,8 @@ class video_zencoder_api {
 //    watchdog('zencoder', $input_name);
     // thumbnails
     // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
-    $final_thumb_path = $video_thumb_path . '/' . $file->fid;
+    $video_thumbnail_path = variable_get('video_thumbnail_path', 'videos/thumbnails');
+    $final_thumb_path = $video_thumbnail_path . '/' . $file->fid;
 
     // Notifications
 //    if(!empty($notify_url))

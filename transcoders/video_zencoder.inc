@@ -16,18 +16,18 @@ class video_zencoder implements transcoder_interface {
   private $name = 'Zencoder';
   private $value = 'video_zencoder';
 
-  public function generate_thumbnails($video) {
+  public function get_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
-    $final_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
+    $video_thumbnail_path = variable_get('video_thumbnail_path', 'videos/thumbnails');
+    $final_thumb_path = file_default_scheme() . '://' . $video_thumbnail_path . '/' . $video['fid'];
 
     // Ensure the destination directory exists and is writable.
     file_prepare_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
 
     $files = array();
     // no thumbnails to generate
-    $number_of_thumbs = variable_get('video_thumbs', 5);
+    $number_of_thumbs = variable_get('video_thumbnail_count', 5);
     for ($i = 0; $i < $number_of_thumbs; $i++) {
       // @TODO Remove hard coded file types
       $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
@@ -41,8 +41,8 @@ class video_zencoder implements transcoder_interface {
         $secret_key = variable_get('media_amazon_key_secret', '');
         $bucket = variable_get('media_amazon_s3_bucket', '');
         $s3 = new AmazonS3($key, $secret_key);
-        if ($s3->get_object_metadata($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename))
-          $s3->get_object($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
+        if ($s3->get_object_metadata($bucket, $video_thumbnail_path . '/' . $video['fid'] . '/' . $filename))
+          $s3->get_object($bucket, $video_thumbnail_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
         else {
           $thumbfile = $final_thumb_path . '/no-thumb.png';
           @copy($default, drupal_realpath($thumbfile), FILE_EXISTS_REPLACE);
@@ -139,10 +139,7 @@ class video_zencoder implements transcoder_interface {
    */
   public function admin_settings() {
     global $user;
-    // check amazon s3 module is exists or not
-    if (!module_exists('media_amazon'))
-      drupal_set_message(t('You must enable Video Amazon S3 Module to enable this module.'), 'error');
-
+    
     $form = array();
     $form['video_zencoder_start'] = array(
       '#type' => 'markup',
@@ -184,18 +181,18 @@ class video_zencoder implements transcoder_interface {
         '#default_value' => variable_get('video_zencoder_api_key', null),
         '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add new account.')
       );
-      $form['zencoder_info']['video_thumbs'] = array(
+      $form['zencoder_info']['video_thumbnail_count'] = array(
         '#type' => 'textfield',
         '#title' => t('Number of thumbnails'),
         '#description' => t('Number of thumbnails to display from video.'),
-        '#default_value' => variable_get('video_thumbs', 5),
+        '#default_value' => variable_get('video_thumbnail_count', 5),
         '#size' => 5
       );
-      $form['zencoder_info']['video_thumbs_size'] = array(
+      $form['zencoder_info']['video_thumbnail_count_size'] = array(
         '#type' => 'textfield',
         '#title' => t('Dimention of thumbnails'),
         '#description' => t('Size of thumbnails to extract from video.'),
-        '#default_value' => variable_get('video_thumbs_size', '160x120'),
+        '#default_value' => variable_get('video_thumbnail_count_size', '160x120'),
         '#size' => 10
       );
       global $base_url;
@@ -276,6 +273,11 @@ class video_zencoder implements transcoder_interface {
     return $codecs;
   }
 
+  // return the available muxing formats
+  public function get_available_formats($method = false) {
+    return array('FLV');
+  }
+  
   /**
    * Interface Implementations
    * @see sites/all/modules/video/includes/transcoder_interface#create_job()

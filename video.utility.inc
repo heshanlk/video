@@ -25,7 +25,7 @@ function video_thumb_process(&$element, &$form_state) {
     if (in_array($field['settings']['autothumbnail'], array('auto', 'auto_fallback'))) {
       $default_thumb = array();
       $transcoder = new video_transcoder;
-      if ($thumbs = $transcoder->generate_thumbnails($file)) {
+      if ($thumbs = $transcoder->get_thumbnails($file)) {
         $default_thumb = array_rand($thumbs);
         if (!empty($thumbs)) {
           foreach ($thumbs as $fid => $img) {
@@ -59,7 +59,7 @@ function video_thumb_process(&$element, &$form_state) {
         '#type' => 'managed_file',
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
         '#default_value' => !empty($file['thumbnail']['fid']) && is_integer($file['thumbnail']['fid']) ? $file['thumbnail']['fid'] : NULL,
-        '#upload_location' => file_default_scheme() . '://' . variable_get('video_thumb_path', 'videos/thumbnails') . '/' . $file['fid'],
+        '#upload_location' => file_default_scheme() . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file['fid'],
       );
     }
     // if no thumbnail creation

@@ -54,11 +54,11 @@ class video_transcoder {
     }
   }
 
-  public function generate_thumbnails($video) {
+  public function get_thumbnails($video) {
     // Save thiumnails to the vide_thumbnails table
     $thumbnails = array();
     $vid = $video['fid'];
-    $thumbs = $this->transcoder->generate_thumbnails($video);
+    $thumbs = $this->transcoder->get_thumbnails($video);
     foreach ($thumbs as $file) {
       // media module is altering file_manged table with type, so if we do not consider about is then we might get entity load issue.
       // #1015580
@@ -240,7 +240,7 @@ interface transcoder_interface {
 
   public function change_status($vid, $status);
 
-  public function generate_thumbnails($video);
+  public function get_thumbnails($video);
 
   public function convert_video($video);
 
