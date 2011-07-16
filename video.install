@@ -12,7 +12,7 @@
  */
 function video_schema() {
   // video files
-  $schema['video_files'] = array(
+  $schema['video_queue'] = array(
     'description' => 'Store video transcoding queue.',
     'fields' => array(
       'vid' => array(
@@ -120,7 +120,7 @@ function video_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'description' => 'Foreign Key {video_files}.fid.',
+        'description' => 'Foreign Key {video_queue}.fid.',
       ),
       'thumbnails' => array(
         'type' => 'blob',
@@ -136,7 +136,7 @@ function video_schema() {
     ),
     'foreign keys' => array(
       'thumbnails' => array(
-        'table' => 'video_files',
+        'table' => 'video_queue',
         'columns' => array('vid' => 'vid'),
       ),
     ),
