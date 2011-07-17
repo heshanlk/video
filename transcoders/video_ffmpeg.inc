@@ -9,8 +9,8 @@
 class video_ffmpeg implements transcoder_interface {
 
   // Naming for our radio options.  Makes it easy to extend our transcoders.
-  private $name = 'FFmpeg Binary';
-  private $value = 'video_ffmpeg';
+  protected $name = 'FFmpeg Binary';
+  protected $value = 'video_ffmpeg';
   protected $toolkit;
 
   /**
@@ -110,7 +110,6 @@ class video_ffmpeg implements transcoder_interface {
         }
       }
       // Begin building the file object.
-      // @TODO : use file_munge_filename()
       $file = new stdClass();
       $file->uid = $user->uid;
       $file->status = 0;
@@ -134,9 +133,7 @@ class video_ffmpeg implements transcoder_interface {
     //@todo : add to cache
     $info = $this->toolkit->getFFmpegInfo(FALSE);
     $available_codecs = $info['codecs'];
-
     $codecs = array('decode' => array(), 'encode' => array());
-
     foreach ($available_codecs as $key => $value) {
       $codecs['encode'][$key] = array();
       $codecs['decode'][$key] = array();
@@ -200,14 +197,14 @@ class video_ffmpeg implements transcoder_interface {
   public function convert_video($video) {
     // set current video status to active.
     $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
-    $target = str_replace('original', '', drupal_dirname($video->uri));
-    $converted_base_dir = $target . 'converted/' . $video->fid;
-    if (!file_prepare_directory($converted_base_dir, FILE_CREATE_DIRECTORY)) {
-      watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $converted_base_dir, array(), WATCHDOG_ERROR);
+    // set output path for video files.
+    $video_final_path = str_replace('original', '', drupal_dirname($video->uri)) . 'converted/' . $video->fid;
+    if (!file_prepare_directory($video_final_path, FILE_CREATE_DIRECTORY)) {
+      watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $video_final_path, array(), WATCHDOG_ERROR);
       return FALSE;
     }
     //get the actual video file path from the stream wrappers
-    $original_video_path = drupal_realpath($video->uri);
+    $video_real_path = drupal_realpath($video->uri);
     // process presets
     $presets = $video->presets;
     $converted_files = array();
@@ -218,25 +215,18 @@ class video_ffmpeg implements transcoder_interface {
           && variable_get('video_use_preset_wxh', FALSE)) {
         $video->dimensions = $settings['width'] . 'x' . $settings['height'];
       }
-      $converted_filename = file_munge_filename(str_replace(' ', '_', pathinfo($original_video_path, PATHINFO_FILENAME)) . '_' . strtolower($name) . '.' . $settings['video_extension'], $settings['video_extension']);
-      $converted = $converted_base_dir . '/' . $converted_filename;
-      //get the actual video file path from the stream wrappers
-      $converted_video_path = drupal_realpath($converted);
-      $dimensions = $this->dimensions($video);
+      $filename = file_munge_filename(str_replace(' ', '_', pathinfo($video_real_path, PATHINFO_FILENAME)) . '_' . strtolower($name) . '.' . $settings['video_extension'], $settings['video_extension']);
+      $video_final_file_path = $video_final_path . '/' . $filename;
+      // get the actual video file path from the stream wrappers
+      $video_final_file_real_path = drupal_realpath($video_final_file_path);
+      $dimensions = $video->dimensions;
       $dimension = explode('x', $dimensions);
 
-      $video_info = $this->get_video_info($original_video_path);
+      $video_info = $this->get_video_info($video_real_path);
 
-      if ($this->params['enable_faststart'] && in_array($settings['video_extension'], array('mov', 'mp4'))) {
-        $ffmpeg_output = file_directory_temp() . '/' . basename($converted_video_path);
-      }
-      else {
-        $ffmpeg_output = $converted_video_path;
-      }
-
-      $result = $this->toolkit->setInputFile($original_video_path);
+      $result = $this->toolkit->setInputFile($video_real_path);
       if (!$result) {
-// 			if there was an error then get it
+        // if there was an error then get it
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -246,7 +236,7 @@ class video_ffmpeg implements transcoder_interface {
       if (!empty($settings['max_frame_rate'])) {
         $result = $this->toolkit->setVideoFrameRate($settings['max_frame_rate']);
         if (!$result) {
-          // 			if there was an error then get it
+          //if there was an error then get it
           $error_msg = t($this->toolkit->getLastError());
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
           $this->toolkit->reset();
@@ -256,7 +246,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setVideoCodec($settings['video_codec'], FALSE);
       if (!$result) {
-        // 			if there was an error then get it
+        //if there was an error then get it
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -267,7 +257,7 @@ class video_ffmpeg implements transcoder_interface {
       if ($settings['video_preset'] !== 'none') {
         $result = $this->toolkit->setVideoPreset($settings['video_preset'], FALSE);
         if (!$result) {
-          // 			if there was an error then get it
+          //if there was an error then get it
           $error_msg = t($this->toolkit->getLastError());
           watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
           $this->toolkit->reset();
@@ -285,7 +275,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setAudioSampleFrequency($settings['audio_sample_rate']);
       if (!$result) {
-// 			if there was an error then get it
+        // if there was an error then get it
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -294,7 +284,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setAudioCodec($settings['audio_codec'], FALSE);
       if (!$result) {
-// 			if there was an error then get it 
+        //if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -303,7 +293,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setAudioChannels($settings['audio_channels']);
       if (!$result) {
-// 			if there was an error then get it 
+        //if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -320,7 +310,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setAudioBitRate($settings['audio_bitrate']);
       if (!$result) {
-// 			if there was an error then get it 
+        //if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -337,7 +327,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setVideoBitRate($settings['video_bitrate']);
       if (!$result) {
-// 			if there was an error then get it
+        //if there was an error then get it
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -346,16 +336,16 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->setVideoDimensions($dimension[0], $dimension[1]);
       if (!$result) {
-// 			if there was an error then get it
+        //if there was an error then get it
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
         continue;
       }
 
-      $result = $this->toolkit->setOutput(dirname($ffmpeg_output) . '/', $converted_filename, PHPVideoToolkit::OVERWRITE_EXISTING);
+      $result = $this->toolkit->setOutput(dirname($video_final_file_real_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
       if (!$result) {
-// 			if there was an error then get it 
+        //if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
@@ -364,7 +354,7 @@ class video_ffmpeg implements transcoder_interface {
 
       $result = $this->toolkit->execute(FALSE, TRUE);
       if ($result !== PHPVideoToolkit::RESULT_OK) {
-// 			if there was an error then get it 
+        //if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
         dsm($this->toolkit->getCommands());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
@@ -374,24 +364,23 @@ class video_ffmpeg implements transcoder_interface {
 
       $command_output = $this->toolkit->getLastOutput();
       //lets check to make sure our file exists, if not error out
-      if (!file_exists($converted_video_path) || !filesize($converted_video_path)) {
+      if (!file_exists($video_final_file_real_path) || !filesize($video_final_file_real_path)) {
         watchdog('transcoder', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->uri, '%preset' => $name), WATCHDOG_ERROR);
         $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
         return FALSE;
       }
       // Setup our converted video object
-      $video_info = pathinfo($converted_video_path);
-      //update our converted video
       $video->converted = new stdClass();
       $video->converted->vid = $video->vid;
-      $video->converted->filename = $video_info['basename'];
-      $video->converted->uri = $converted;
+      $video->converted->filename = $filename;
+      $video->converted->uri = $video_final_file_path;
       $video->converted->filemime = file_get_mimetype($converted);
       $video->converted->filesize = filesize($converted);
       $video->converted->status = VIDEO_RENDERING_COMPLETE;
       $video->converted->preset = $name;
       $video->converted->completed = time();
       $converted_files[] = $video->converted;
+      // add files to file_manged table and add reference to the file_usage table
     }
 
     // Update our video_queue table with the converted video information.
@@ -461,7 +450,7 @@ class video_ffmpeg implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#get_help()
    */
   public function get_help() {
-    return l(t('PHP Video Toolkit online documentation'), 'http://sourceforge.net/projects/phpvideotoolkit/');
+    return l(t('FFmpeg'), 'http://ffmpeg.org/');
   }
 
   /**
