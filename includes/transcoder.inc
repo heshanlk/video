@@ -139,7 +139,7 @@ class video_transcoder {
   }
 
   /**
-   * Clean before convert videos.
+   * Clean tables before convert videos.
    * @param type $vid
    */
   protected function clean_converted($vid) {
