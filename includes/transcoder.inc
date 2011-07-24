@@ -98,14 +98,29 @@ class video_transcoder {
   }
 
   public function convert_video(&$video) {
+//    dsm($video);
+    global $user;
     // load the presets
     $video_preset = new video_preset();
     $presets = $video_preset->properties();
     // if no presets enabled then write an error log
-    if (empty($presets))
+    if (empty($presets)) {
       watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l('enable or create new preset', 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
+      return FALSE;
+    }
     $video->presets = $presets;
     $output = $this->transcoder->convert_video($video);
+    // add files to file_manged table and add reference to the file_usage table
+    if (is_array($output)) {
+      $this->clean_converted($video->vid);
+      foreach ($output as $file) {
+        $file->status = FILE_STATUS_PERMANENT;
+        $file->uid = $user->uid;
+        drupal_write_record('file_managed', $file);
+        $output_vid = array('vid' => $video->vid, 'original_fid' => $video->fid, 'output_fid' => $file->fid);
+        drupal_write_record('video_output', $output_vid);
+      }
+    }
     // if successfully converted the video then update the status to publish
     if ($output && variable_get('video_publish_on_complete', TRUE)) {
       // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
@@ -123,6 +138,35 @@ class video_transcoder {
     return $output;
   }
 
+  /**
+   * Clean before convert videos.
+   * @param type $vid
+   */
+  protected function clean_converted($vid) {
+    $result = db_select('video_output', 'vo')
+        ->fields('vo', array('original_fid', 'output_fid'))
+        ->condition('vid', $vid)
+        ->execute();
+    foreach ($result as $file) {
+      // delete from file_managed
+      db_delete('file_managed')
+          ->condition('fid', $file->output_fid)
+          ->execute();
+      // delete from file_usagle
+      db_delete('file_usage')
+          ->condition('fid', $file->output_fid)
+          ->execute();
+      // delete from video_output
+      db_delete('video_output')
+          ->condition('output_fid', $file->output_fid)
+          ->execute();
+    }
+  }
+
+  /**
+   * Administrator setting per transcoder
+   * @return type 
+   */
   public function admin_settings() {
     $form = array();
     $options = $this->_transcoders();
@@ -232,13 +276,13 @@ interface transcoder_interface {
 
   public function load_job_queue();
 
-  public function get_codecs();
-
-  public function get_available_formats($method = false);
-
   public function load_completed_job(&$video);
 
   public function change_status($vid, $status);
+
+  public function get_codecs();
+
+  public function get_available_formats($method = false);
 
   public function get_thumbnails($video);
 
