@@ -11,7 +11,7 @@
  * Implementation of hook_schema().
  */
 function video_schema() {
-  // video files
+  // video queue
   $schema['video_queue'] = array(
     'description' => 'Store video transcoding queue.',
     'fields' => array(
@@ -141,6 +141,33 @@ function video_schema() {
       ),
     ),
   );
+  // video converted file reference
+  $schema['video_output'] = array(
+    'description' => 'Track file id for conveted files.',
+    'fields' => array(
+      'vid' => array(
+        'description' => 'Video ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'original_fid' => array(
+        'description' => 'Original File ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'output_fid' => array(
+        'description' => 'Converted file fid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('vid', 'original_fid', 'output_fid')
+  );
+
   return $schema;
 }
 
