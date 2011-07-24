@@ -23,6 +23,33 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   /**
+   * Get trasncoder class name
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#get_name()
+   */
+  public function get_name() {
+    return $this->name;
+  }
+
+  /**
+   * Get trasncoder calss values for creating instances.
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#get_value()
+   */
+  public function get_value() {
+    return $this->value;
+  }
+
+  /**
+   * Get help
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#get_help()
+   */
+  public function get_help() {
+    return l(t('FFmpeg'), 'http://ffmpeg.org/');
+  }
+
+  /**
    * Extract thumbnails from the video.
    * Interface Implementation
    * @see sites/all/modules/video/includes/transcoder_interface#get_thumbnails()
@@ -209,21 +236,21 @@ class video_ffmpeg implements transcoder_interface {
     $presets = $video->presets;
     $converted_files = array();
     foreach ($presets as $name => $preset) {
+      // get preset settings
       $settings = $preset['settings'];
-      // override with preset settings
-      if (isset($settings['width']) && !empty($settings['width']) && isset($settings['height']) && !empty($settings['height'])
-          && variable_get('video_use_preset_wxh', FALSE)) {
-        $video->dimensions = $settings['width'] . 'x' . $settings['height'];
-      }
+      // file name and paths for the final output
       $filename = file_munge_filename(str_replace(' ', '_', pathinfo($video_real_path, PATHINFO_FILENAME)) . '_' . strtolower($name) . '.' . $settings['video_extension'], $settings['video_extension']);
       $video_final_file_path = $video_final_path . '/' . $filename;
       // get the actual video file path from the stream wrappers
       $video_final_file_real_path = drupal_realpath($video_final_file_path);
-      $dimensions = $video->dimensions;
-      $dimension = explode('x', $dimensions);
-
+      // override with preset settings
+      if (isset($settings['wxh']) && !empty($settings['wxh']) && variable_get('video_use_preset_wxh', FALSE)) {
+        $video->dimensions = trim($settings['wxh']);
+      }
+      $dimension = explode('x', $video->dimensions);
+      // get video meta informations
       $video_info = $this->get_video_info($video_real_path);
-
+      // set input file
       $result = $this->toolkit->setInputFile($video_real_path);
       if (!$result) {
         // if there was an error then get it
@@ -232,7 +259,7 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // set max frame rate
       if (!empty($settings['max_frame_rate'])) {
         $result = $this->toolkit->setVideoFrameRate($settings['max_frame_rate']);
         if (!$result) {
@@ -243,7 +270,7 @@ class video_ffmpeg implements transcoder_interface {
           continue;
         }
       }
-
+      // set video codecs
       $result = $this->toolkit->setVideoCodec($settings['video_codec'], FALSE);
       if (!$result) {
         //if there was an error then get it
@@ -253,7 +280,7 @@ class video_ffmpeg implements transcoder_interface {
         continue;
       }
 
-      // set video preset if any
+      // set video preset
       if ($settings['video_preset'] !== 'none') {
         $result = $this->toolkit->setVideoPreset($settings['video_preset'], FALSE);
         if (!$result) {
@@ -264,7 +291,7 @@ class video_ffmpeg implements transcoder_interface {
           continue;
         }
       }
-
+      // set audio sample rate
       $settings['audio_sample_rate'] = (!empty($settings['audio_sample_rate'])) ? $settings['audio_sample_rate'] : $video_info['audio']['sample_rate'];
 
       if ($settings['audio_sample_rate'] < 1000) {
@@ -281,7 +308,7 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // set audio codec
       $result = $this->toolkit->setAudioCodec($settings['audio_codec'], FALSE);
       if (!$result) {
         //if there was an error then get it 
@@ -290,7 +317,7 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // set audio channels
       $result = $this->toolkit->setAudioChannels($settings['audio_channels']);
       if (!$result) {
         //if there was an error then get it 
@@ -299,9 +326,9 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // set audio bit rate
       if (empty($settings['audio_bitrate'])) {
-        $settings['audio_bitrate'] = $this->audio_bitrate;
+        $settings['audio_bitrate'] = 64;
       }
 
       if ($settings['audio_bitrate'] < 1000) {
@@ -316,9 +343,9 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // set video bitrate
       if (empty($settings['video_bitrate'])) {
-        $settings['video_bitrate'] = $this->video_bitrate;
+        $settings['video_bitrate'] = 200;
       }
 
       if ($settings['video_bitrate'] < 1000) {
@@ -333,7 +360,7 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // set video dimensions
       $result = $this->toolkit->setVideoDimensions($dimension[0], $dimension[1]);
       if (!$result) {
         //if there was an error then get it
@@ -342,7 +369,7 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // set out out file
       $result = $this->toolkit->setOutput(dirname($video_final_file_real_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
       if (!$result) {
         //if there was an error then get it 
@@ -351,7 +378,7 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
-
+      // execute command
       $result = $this->toolkit->execute(FALSE, TRUE);
       if ($result !== PHPVideoToolkit::RESULT_OK) {
         //if there was an error then get it 
@@ -365,7 +392,7 @@ class video_ffmpeg implements transcoder_interface {
       $command_output = $this->toolkit->getLastOutput();
       //lets check to make sure our file exists, if not error out
       if (!file_exists($video_final_file_real_path) || !filesize($video_final_file_real_path)) {
-        watchdog('transcoder', 'Video conversion failed for preset %preset.  FFMPEG reported the following output: ' . $command_output, array('%orig' => $video->uri, '%preset' => $name), WATCHDOG_ERROR);
+        watchdog('transcoder', 'Video conversion failed for preset %preset.  FFmpeg reported the following output: ' . $command_output, array('%orig' => $video->uri, '%preset' => $name), WATCHDOG_ERROR);
         $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
         return FALSE;
       }
@@ -374,13 +401,12 @@ class video_ffmpeg implements transcoder_interface {
       $video->converted->vid = $video->vid;
       $video->converted->filename = $filename;
       $video->converted->uri = $video_final_file_path;
-      $video->converted->filemime = file_get_mimetype($converted);
-      $video->converted->filesize = filesize($converted);
+      $video->converted->filemime = file_get_mimetype($video_final_file_path);
+      $video->converted->filesize = filesize($video_final_file_real_path);
       $video->converted->status = VIDEO_RENDERING_COMPLETE;
       $video->converted->preset = $name;
       $video->converted->completed = time();
       $converted_files[] = $video->converted;
-      // add files to file_manged table and add reference to the file_usage table
     }
 
     // Update our video_queue table with the converted video information.
@@ -393,7 +419,7 @@ class video_ffmpeg implements transcoder_interface {
           ->condition('vid', $video->converted->vid, '=')
           ->execute();
       watchdog('transcoder', 'Successfully converted %orig to %dest', array('%orig' => $video->uri, '%dest' => $video->converted->uri), WATCHDOG_INFO);
-      return TRUE;
+      return $converted_files;
     }
     else
       return FALSE;
@@ -427,30 +453,6 @@ class video_ffmpeg implements transcoder_interface {
     $res['height'] = $video_info['video']['dimensions']['height'] ? $video_info['video']['dimensions']['height'] : NULL;
 
     return $res;
-  }
-
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_name()
-   */
-  public function get_name() {
-    return $this->name;
-  }
-
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_value()
-   */
-  public function get_value() {
-    return $this->value;
-  }
-
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_help()
-   */
-  public function get_help() {
-    return l(t('FFmpeg'), 'http://ffmpeg.org/');
   }
 
   /**
