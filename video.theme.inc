@@ -36,7 +36,7 @@ function theme_video_widget($variables) {
  * If not or the video is processed, then it will get the default player for the specific video type for output.
  */
 
-function theme_video($variables) {
+function theme_video_formatter_player($variables) {
   $themed_output = '';
   if (empty($variables['item']['fid']))
     return '';
@@ -81,7 +81,7 @@ function theme_video($variables) {
  * Renders the video thumbnail as a link to the node page.
  */
 
-function theme_video_thumbnail($variables) {
+function theme_video_formatter_thumbnail($variables) {
 // Inside a view $variables may contain null data. In that case, just return.
   if (empty($variables['item']['fid']))
     return '<!-- File not found: ' . $variables['item']['fid'] . ' -->';
