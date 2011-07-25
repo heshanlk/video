@@ -98,7 +98,6 @@ class video_transcoder {
   }
 
   public function convert_video(&$video) {
-//    dsm($video);
     global $user;
     // load the presets
     $video_preset = new video_preset();
@@ -143,6 +142,7 @@ class video_transcoder {
    * @param type $vid
    */
   protected function clean_converted($vid) {
+    // @todo : if this impact on performance then think about other way
     $result = db_select('video_output', 'vo')
         ->fields('vo', array('original_fid', 'output_fid'))
         ->condition('vid', $vid)
