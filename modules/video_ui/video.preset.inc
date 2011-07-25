@@ -101,7 +101,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $form['settings']['video']['wxh'] = array(
     '#type' => 'select',
     '#title' => t('Dimensions'),
-    '#description' => t('The maximum width and height of the output video (in pixels).'),
+    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimention from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
     '#default_value' => !empty($preset['settings']['wxh']) ? $preset['settings']['wxh'] : '640x480',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
   );
