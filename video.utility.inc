@@ -7,7 +7,6 @@
  * @author Heshan <heshan@heidisoft.com>
  * 
  */
-
 /*
  * Utility function that will add a preview of thumbnails for you to select when uploading videos.
  */
@@ -53,13 +52,14 @@ function video_thumb_process(&$element, &$form_state) {
     // if fail creating thumbnails fall back to manual or manual upload
     if ((!empty($gen_fail) && $field['settings']['autothumbnail'] == 'auto_fallback') ||
         $field['settings']['autothumbnail'] == 'manual_upload') {
+      $scheme = file_uri_scheme($file['uri']);
       $element['thumbnail'] = array(
         '#title' => t('Video thumbnail'),
 //        '#element_validate' => array('video_thumbnail_validate'),
         '#type' => 'managed_file',
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
         '#default_value' => !empty($file['thumbnail']['fid']) && is_integer($file['thumbnail']['fid']) ? $file['thumbnail']['fid'] : NULL,
-        '#upload_location' => file_default_scheme() . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file['fid'],
+        '#upload_location' => $scheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file['fid'],
       );
     }
     // if no thumbnail creation
