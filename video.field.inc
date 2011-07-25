@@ -364,8 +364,8 @@ function video_field_formatter_info() {
       'field types' => array('video'),
       'settings' => array(
         'image_style' => '',
-        'width' => 640,
-        'height' => 360,
+        'image_link' => '',
+        'widthxheight' => '640x360',
       ),
     ),
     'video_formatter_thumbnail' => array(
@@ -407,7 +407,16 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
     '#empty_option' => t('Nothing'),
     '#options' => $link_types,
   );
-
+  // set the player wxh
+  if ($display['type'] == 'video_formatter_player') {
+    $element['widthxheight'] = array(
+      '#title' => t('Dimensions'),
+      '#type' => 'select',
+      '#default_value' => $settings['widthxheight'],
+      '#description' => t('Select the desired widthxheight of the video player. You can add your own dimention from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
+      '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
+    );
+  }
   return $element;
 }
 
