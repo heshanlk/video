@@ -3,7 +3,6 @@
 /*
  * @file
  * Class file used to create our video and thumbnail objects.
- * @todo : remove video_zencoder validation form the class
  *
  */
 
