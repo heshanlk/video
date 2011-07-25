@@ -108,7 +108,10 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
   if ($field['settings']['autoconversion'] == 1) {
     //load the converted video
   }
+//  dsm($items);
+//  $items['16'][] = array('fid' => '16');
   file_field_load($entity_type, $entities, $field, $instances, $langcode, $items, $age);
+//  dsm($items);
 }
 
 /**
@@ -356,15 +359,22 @@ function video_field_widget_process($element, &$form_state, $form) {
  */
 function video_field_formatter_info() {
   $formatters = array(
-    'video' => array(
-      'label' => t('Video'),
+    'video_formatter_player' => array(
+      'label' => t('Video player'),
       'field types' => array('video'),
-      'settings' => array('video_style' => '', 'video_link' => ''),
+      'settings' => array(
+        'image_style' => '',
+        'width' => 640,
+        'height' => 360,
+      ),
     ),
-    'video_thumbnail' => array(
+    'video_formatter_thumbnail' => array(
       'label' => t('Video thumbnail'),
       'field types' => array('video'),
-      'settings' => array('video_style' => '', 'video_link' => ''),
+      'settings' => array(
+        'image_style' => '',
+        'image_link' => ''
+      ),
     ),
   );
   return $formatters;
@@ -378,10 +388,10 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
   $settings = $display['settings'];
 
   $image_styles = image_style_options(FALSE);
-  $element['video_style'] = array(
+  $element['image_style'] = array(
     '#title' => t('Video thumbnail style'),
     '#type' => 'select',
-    '#default_value' => $settings['video_style'],
+    '#default_value' => $settings['image_style'],
     '#empty_option' => t('None (original video thumbnail)'),
     '#options' => $image_styles,
   );
@@ -390,10 +400,10 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
     'content' => t('Content'),
     'file' => t('File'),
   );
-  $element['video_link'] = array(
+  $element['image_link'] = array(
     '#title' => t('Link video or video thumbanil to'),
     '#type' => 'select',
-    '#default_value' => $settings['video_link'],
+    '#default_value' => $settings['image_link'],
     '#empty_option' => t('Nothing'),
     '#options' => $link_types,
   );
@@ -415,8 +425,8 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
   unset($image_styles['']);
   // Styles could be lost because of enabled/disabled modules that defines
   // their styles in code.
-  if (isset($image_styles[$settings['video_style']])) {
-    $summary[] = t('Video thumbnail style: @style', array('@style' => $image_styles[$settings['video_style']]));
+  if (isset($image_styles[$settings['image_style']])) {
+    $summary[] = t('Video thumbnail style: @style', array('@style' => $image_styles[$settings['image_style']]));
   }
   else {
     $summary[] = t('Original video thumbnail');
@@ -427,8 +437,8 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
     'file' => t('Linked to video file'),
   );
   // Display this setting only if image is linked.
-  if (isset($link_types[$settings['video_link']])) {
-    $summary[] = $link_types[$settings['video_link']];
+  if (isset($link_types[$settings['image_link']])) {
+    $summary[] = $link_types[$settings['image_link']];
   }
 
   return implode('<br />', $summary);
@@ -441,10 +451,10 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
   $element = array();
 
   // Check if the formatter involves a link.
-  if ($display['settings']['video_link'] == 'content') {
+  if ($display['settings']['image_link'] == 'content') {
     $uri = entity_uri($entity_type, $entity);
   }
-  elseif ($display['settings']['video_link'] == 'file') {
+  elseif ($display['settings']['image_link'] == 'file') {
     $link_file = TRUE;
   }
 
@@ -460,7 +470,7 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
     $element[$delta] = array(
       '#theme' => $theme,
       '#item' => $item,
-      '#video_style' => $display['settings']['video_style'],
+      '#image_style' => $display['settings']['image_style'],
       '#path' => isset($uri) ? $uri : '',
       '#entity' => $entity,
       '#field' => $field,
