@@ -42,7 +42,7 @@ function video_thumb_process(&$element, &$form_state) {
           '#options' => $thumbss,
           '#default_value' => !empty($file['thumbnail']) ? $file['thumbnail'] : $thumbs[$default_thumb]->fid,
           '#weight' => 10,
-          '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
+          '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'Drupal.behaviors.videoEdit()', 'rel' => 'video_large_thumbnail-' . $delta),
         );
       }
       else {
