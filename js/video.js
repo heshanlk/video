@@ -82,6 +82,19 @@
       });
     }
   };
+  
+  Drupal.behaviors.videoEdit = function(context){
+    // on change of the thumbnails when edit
+    $(".video-thumbnails input").each(function() {
+      var path = $(this).val();
+      if($(this).is(':checked')) {
+        var holder = $(this).attr('rel');
+        var id = $(this).attr('id');
+        var src = $('label[for="'+id+'"]').find('img').attr('src');
+        $('.'+holder+' img').attr('src', src);
+      }
+    });
+  }
 
 
   function video_hide_all_options() {
@@ -93,19 +106,7 @@
       }
     });
   }
-
-  function videoftp_thumbnail_change() {
-    // Add handlers for the video thumbnail radio buttons to update the large thumbnail onchange.
-    $(".video-thumbnails input").each(function() {
-      var path = $(this).val();
-      if($(this).is(':checked')) {
-        var holder = $(this).attr('rel');
-        $('.'+holder+' img').attr('src', settings.basePath + path);
-      }
-    });
-
-  }
-
+  
   function video_hide_all__metadata_options() {
     $("input[name='video_metadata']").each(function() {
       var id = $(this).val();
