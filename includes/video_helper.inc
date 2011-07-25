@@ -10,11 +10,11 @@
 class video_helper {
 
   public function video_object($variables) {
+    //@todo cache the video object
     $field_settings = $variables['field']['settings'];
     $instance_settings = $variables['instance']['settings'];
     //setup our width x height
-
-    $player_dimensions = explode("x", $variables['item']['player_dimensions']);
+    $player_dimensions = explode("x", $variables['player_dimensions']);
     // set the video dimentions
     if (!isset($variables['item']['dimensions'])) {
       $dimensions = explode("x", $instance_settings['default_dimensions']);
