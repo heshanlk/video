@@ -115,6 +115,9 @@ class video_transcoder {
       foreach ($output as $file) {
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $user->uid;
+        // if media module exists add type as an image
+        if (module_exists('media'))
+          $file->type = 'video';
         drupal_write_record('file_managed', $file);
         $output_vid = array('vid' => $video->vid, 'original_fid' => $video->fid, 'output_fid' => $file->fid);
         drupal_write_record('video_output', $output_vid);
