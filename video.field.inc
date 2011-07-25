@@ -426,9 +426,7 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
 function video_field_formatter_settings_summary($field, $instance, $view_mode) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
-
   $summary = array();
-
   $image_styles = image_style_options(FALSE);
   // Unset possible 'No defined styles' option.
   unset($image_styles['']);
@@ -450,6 +448,10 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
     $summary[] = $link_types[$settings['image_link']];
   }
 
+  if ($display['type'] == 'video_formatter_player') {
+    $summary[] = t('WidthxHeight of the player: @widthxheight', array('@widthxheight' => $settings['widthxheight']));
+  }
+
   return implode('<br />', $summary);
 }
 
@@ -458,12 +460,12 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
  */
 function video_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
-
+  $settings = $display['settings'];
   // Check if the formatter involves a link.
-  if ($display['settings']['image_link'] == 'content') {
+  if ($settings['image_link'] == 'content') {
     $uri = entity_uri($entity_type, $entity);
   }
-  elseif ($display['settings']['image_link'] == 'file') {
+  elseif ($settings['image_link'] == 'file') {
     $link_file = TRUE;
   }
 
@@ -479,12 +481,17 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
     $element[$delta] = array(
       '#theme' => $theme,
       '#item' => $item,
-      '#image_style' => $display['settings']['image_style'],
+      '#image_style' => $settings['image_style'],
       '#path' => isset($uri) ? $uri : '',
       '#entity' => $entity,
       '#field' => $field,
       '#instance' => $instance
     );
+    if ($display['type'] == 'video_formatter_player') {
+      $element[$delta] += array(
+        '#player_dimensions' => $settings['widthxheight']
+      );
+    }
   }
   return $element;
 }
