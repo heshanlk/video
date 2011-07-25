@@ -60,14 +60,14 @@ class video_ffmpeg implements transcoder_interface {
   public function get_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
+    $videofile = file_load($video['fid']);
+    $scheme = file_uri_scheme($videofile->uri);
     $video_thumbnail_path = variable_get('video_thumbnail_path', 'videos/thumbnails');
     // Get the file system directory.
-    //@todo, we should load the field based schema for this.
-    $schema_thumb_path = file_default_scheme() . '://' . $video_thumbnail_path . '/' . $video['fid'];
+    $schema_thumb_path = $scheme . '://' . $video_thumbnail_path . '/' . $video['fid'];
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
     // Total thumbs to generate
     $total_thumbs = variable_get('video_thumbnail_count', 5);
-    $videofile = file_load($video['fid']);
     //get the actual video file path from the stream wrappers
     $videopath = drupal_realpath($videofile->uri);
     //get the playtime from the current transcoder
