@@ -46,7 +46,10 @@ class video_ffmpeg implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#get_help()
    */
   public function get_help() {
-    return l(t('FFmpeg'), 'http://ffmpeg.org/');
+    return t('!ffmpeg sould be installed on your server to convert videos. Please see the !help.', array(
+      '!ffmpeg' => l(t('FFmpeg'), 'http://ffmpeg.org/'),
+      '!help' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts')
+    ));
   }
 
   /**

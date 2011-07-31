@@ -1,6 +1,6 @@
 name = Video
 description = Upload and manage video content with Drupal
-package = Media
+package = Video
 core = 7.x
 dependencies[] = file
 dependencies[] = image

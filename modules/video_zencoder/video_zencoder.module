@@ -79,7 +79,7 @@ function _video_zencoder_postback_jobs() {
     file_prepare_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
 //    $i = rand(0, (variable_get('no_of_video_thumbnail_count', 5) - 1));
     $filename = $fid . '_' . sprintf("%04d", 1) . '.png';
-    $thumbfile = $final_thumb_path . '/' . $filename;
+    $thumbnail_path = $final_thumb_path . '/' . $filename;
     // s3
     libraries_load('awssdk');
     $key = variable_get('media_amazon_key', '');
@@ -87,7 +87,7 @@ function _video_zencoder_postback_jobs() {
     $bucket = variable_get('media_amazon_s3_bucket', '');
     $s3 = new AmazonS3($key, $secret_key);
     if ($s3->get_object_metadata($bucket, $video_thumbnail_path . '/' . $fid . '/' . $filename)) {
-      $response = $s3->get_object($bucket, $video_thumbnail_path . '/' . $fid . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
+      $response = $s3->get_object($bucket, $video_thumbnail_path . '/' . $fid . '/' . $filename, array('fileDownload' => drupal_realpath($thumbnail_path)));
       $default = $final_thumb_path . '/no-thumb.png';
       @unlink(drupal_realpath($default));
       if ($response->status == 200)

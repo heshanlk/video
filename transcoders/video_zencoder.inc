@@ -19,8 +19,9 @@ class video_zencoder implements transcoder_interface {
   public function get_thumbnails($video) {
     global $user;
     // Setup our thmbnail path.
+    $scheme = file_uri_scheme($video['uri']);
     $video_thumbnail_path = variable_get('video_thumbnail_path', 'videos/thumbnails');
-    $final_thumb_path = file_default_scheme() . '://' . $video_thumbnail_path . '/' . $video['fid'];
+    $final_thumb_path = $scheme . '://' . $video_thumbnail_path . '/' . $video['fid'];
 
     // Ensure the destination directory exists and is writable.
     file_prepare_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
@@ -31,9 +32,9 @@ class video_zencoder implements transcoder_interface {
     for ($i = 0; $i < $number_of_thumbs; $i++) {
       // @TODO Remove hard coded file types
       $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
-      $thumbfile = $final_thumb_path . '/' . $filename;
+      $thumbnail_path = $final_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
-      if (!file_exists(drupal_realpath($thumbfile))) {
+      if (!file_exists(drupal_realpath($thumbnail_path))) {
         $default = drupal_get_path('module', 'video') . '/images/no-thumb.png';
         // Download generated thumbnails from S3.
         libraries_load('awssdk');
@@ -42,14 +43,14 @@ class video_zencoder implements transcoder_interface {
         $bucket = variable_get('media_amazon_s3_bucket', '');
         $s3 = new AmazonS3($key, $secret_key);
         if ($s3->get_object_metadata($bucket, $video_thumbnail_path . '/' . $video['fid'] . '/' . $filename))
-          $s3->get_object($bucket, $video_thumbnail_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
+          $s3->get_object($bucket, $video_thumbnail_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbnail_path)));
         else {
-          $thumbfile = $final_thumb_path . '/no-thumb.png';
-          @copy($default, drupal_realpath($thumbfile), FILE_EXISTS_REPLACE);
+          $thumbnail_path = $final_thumb_path . '/no-thumb.png';
+          @copy($default, drupal_realpath($thumbnail_path), FILE_EXISTS_REPLACE);
         }
-//          $thumbfile = drupal_get_path('module', 'video') . '/images/no_thumb.gif';
-        if (!file_exists(drupal_realpath($thumbfile))) {
-          $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
+//          $thumbnail_path = drupal_get_path('module', 'video') . '/images/no_thumb.gif';
+        if (!file_exists(drupal_realpath($thumbnail_path))) {
+          $error_param = array('%file' => $thumbnail_path, '%out' => $s3_get_object);
           $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
           // Log the error message.
           watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
@@ -62,9 +63,9 @@ class video_zencoder implements transcoder_interface {
       $file->uid = $user->uid;
       $file->status = 0;
       $file->filename = trim($filename);
-      $file->uri = $thumbfile;
+      $file->uri = $thumbnail_path;
       $file->filemime = file_get_mimetype($filename);
-      $file->filesize = filesize(drupal_realpath($thumbfile));
+      $file->filesize = filesize(drupal_realpath($thumbnail_path));
       $file->timestamp = time();
       $files[] = $file;
     }
@@ -139,7 +140,7 @@ class video_zencoder implements transcoder_interface {
    */
   public function admin_settings() {
     global $user;
-    
+
     $form = array();
     $form['video_zencoder_start'] = array(
       '#type' => 'markup',
@@ -277,7 +278,7 @@ class video_zencoder implements transcoder_interface {
   public function get_available_formats($method = false) {
     return array('FLV');
   }
-  
+
   /**
    * Interface Implementations
    * @see sites/all/modules/video/includes/transcoder_interface#create_job()

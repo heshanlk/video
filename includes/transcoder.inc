@@ -171,6 +171,7 @@ class video_transcoder {
    * @return type 
    */
   public function admin_settings() {
+    //@todo use Drupal Form API status facility for this
     $form = array();
     $options = $this->_transcoders();
     $form['video_convertor'] = array(
@@ -178,7 +179,7 @@ class video_transcoder {
       '#title' => t('Video transcoder'),
       '#default_value' => variable_get('video_convertor', 'video_ffmpeg'),
       '#options' => $options['radios'],
-      '#description' => t('Selecting a video transcoder will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', $options['help']))),
+      '#description' => t('Selecting a video transcoder will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', array('items' => $options['help'])))),
       '#prefix' => '<div id="transcoder-radios">',
       '#suffix' => '</div>',
     );
