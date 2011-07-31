@@ -385,7 +385,7 @@ function video_video_html5_players() {
     $options['videojs'] = t('VideoJS');
   }
   if (module_exists('video')) {
-    $options['video'] = t('Default HTML5');
+    $options['video'] = t('Video for everybody');
   }
   return $options;
 }
@@ -400,19 +400,19 @@ function video_default_instance_settings($widget) {
   // Default video settings.
   $form['default_dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Default Video Resolution Dimensions'),
+    '#title' => t('Output video dimensions'),
     '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-    '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that FFMPEG will use to transcode your video files.'),
-    '#weight' => 15,
+    '#description' => t('This settings can be overridden when node edit or preset settings. You can select most suitable values to output dimensions when node edit and selecting a wrong value may cause failure of the video conversion.'),
+    '#weight' => 16,
   );
   $form['default_player_dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Default Video Player Dimensions'),
+    '#title' => t('Player dimensions'),
     '#default_value' => !empty($widget['default_player_dimensions']) ? $widget['default_player_dimensions'] : '',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-    '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.'),
-    '#weight' => 16,
+    '#description' => t('This settings can be overridden when node edit or from video formatter settings(display settings). Those WIDTHxHEIGHT values are in px.'),
+    '#weight' => 15,
   );
   return $form;
 }
@@ -422,24 +422,27 @@ function video_default_field_settings($settings) {
   // Default video field settings.
   $form['autoconversion'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Enable video conversion.'),
-    '#description' => t('Use ffmpeg(Default) or Zencoder to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
+    '#title' => t('<b>Enable auto video conversion.</b>'),
+    '#description' => t('Convert videos automatically using FFmpeg or Zencoder. You can define videos presets at !preset to automatically convert videos to web compatible formats eg. FLV, MP4. Please make sure to configure your !settings to make this work properly.', array(
+      '!settings' => l(t('transcoder settings'), 'admin/config/media/video/transcoders'),
+      '!preset' => l(t('preset settings'), 'admin/config/media/video/presets'),
+    )),
     '#default_value' => isset($settings['autoconversion']) ? $settings['autoconversion'] : '',
     '#weight' => 17,
   );
 
   $thumb_options = array(
-    'auto' => 'Automatically generate thumbnails',
-    'auto_fallback' => 'Automatically generate thumbnails, with fallback to manual upload if fail',
+    'auto' => 'Automatically extract thumbnails from video',
+    'auto_fallback' => 'Automatically extract thumbnails, with fallback to manual upload (If not thumbnails extracted from video)',
     'manual_upload' => 'Manually upload a thumbnail',
     'no' => 'Don\'t create thumbnail',
   );
 
   $form['autothumbnail'] = array(
     '#type' => 'radios',
-    '#title' => t('Thumbnail Generation'),
+    '#title' => t('Video thumbnails'),
     '#options' => $thumb_options,
-    '#description' => t('To use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings before using ffmpeg to create thumbnails.'),
+    '#description' => t('If you choose <i>Automatically extract thumbnails from video</i> then please make sure to configure your !settings to make this work properly.', array('!settings' => l('transcoder settings', 'admin/config/media/video/transcoders'))),
     '#default_value' => isset($settings['autothumbnail']) ? $settings['autothumbnail'] : 'no',
     '#weight' => 18,
   );
@@ -448,7 +451,7 @@ function video_default_field_settings($settings) {
     '#title' => t('Default video thumbnail'),
     '#type' => 'managed_file',
     '#element_validate' => array('video_field_default_thumbnail_validate'),
-    '#description' => t('If use default thumbnanil is selected, this image will be shown on display.'),
+    '#description' => t('You can use a default thumbnail for all videos or some videos which are failed to extract thumbnail from the video. Settings to use default video thumbnails will be available on node edit (You can change the permissions for other users too).'),
     '#default_value' => !empty($settings['default_video_thumbnail']['fid']) ? $settings['default_video_thumbnail']['fid'] : '',
     '#upload_location' => 'public://videos/thumbnails/default',
     '#weight' => 19,
@@ -459,7 +462,7 @@ function video_default_field_settings($settings) {
     '#options' => image_style_options(FALSE),
     '#empty_option' => '<' . t('no preview') . '>',
     '#default_value' => !empty($settings['preview_video_thumb_style']) ? $settings['preview_video_thumb_style'] : '',
-    '#description' => t('The preview image will be shown while editing the content.'),
+    '#description' => t('This image styles will be use to show extracted video thumbnails on video node edit. Extracted thumbnail preview will also use this style too.'),
     '#weight' => 20,
   );
   return $form;
