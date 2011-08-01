@@ -257,6 +257,58 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#description' => t('The audio track will be omitted from the output. You must specify a video format and no audio track will be present in the resulting file.'),
     '#default_value' => !empty($preset['settings']['skip_audio']) ? $preset['settings']['skip_audio'] : ''
   );
+  // Watermark
+//  $form['settings']['warermark'] = array(
+//    '#type' => 'fieldset',
+//    '#title' => t('Video watermark'),
+//    '#collapsible' => TRUE,
+//    '#collapsed' => ($preset['settings']['video_enable_watermark'] == TRUE) ? FALSE : TRUE,
+//  );
+//  $form['settings']['warermark']['video_enable_watermark'] = array(
+//    '#type' => 'checkbox',
+//    '#title' => t('<b>Enable watermark video</b>'),
+//    '#default_value' => !empty($preset['settings']['video_enable_watermark']) ? $preset['settings']['video_enable_watermark'] : FALSE,
+//    '#description' => t('In visible digital watermarking, the information is 
+//        visible in the video. Typically, the information is text or a 
+//        logo, which identifies the owner of the media. When a television broadcaster adds its logo to the 
+//        corner of transmitted video, this also is a visible watermark.')
+//  );
+//  $form['settings']['warermark']['video_watermark_fid'] = array(
+//    '#type' => 'managed_file',
+//    '#title' => t('Upload watermark image'),
+//    '#description' => t('Watermark image should be a PNG or JPG image.'),
+//    '#default_value' => !empty($preset['settings']['video_watermark_fid']) ? $preset['settings']['video_watermark_fid'] : 'http://heidisoft.com/watermark_drupal_40x40.png',
+//    '#upload_location' => 'public://videos/warermark',
+//  );
+//  $form['settings']['warermark']['video_warermarkx'] = array(
+//    '#type' => 'textfield',
+//    '#title' => t('X-axis'),
+//    '#description' => t('Where to place the watermark, on the x axis..'),
+//    '#default_value' => !empty($preset['settings']['video_warermarkx']) ? $preset['settings']['video_warermarkx'] : 5,
+//  );
+//  $form['settings']['warermark']['video_warermarky'] = array(
+//    '#type' => 'textfield',
+//    '#title' => t('Y-axis'),
+//    '#description' => t('Where to place the watermark, on the y axis.'),
+//    '#default_value' => !empty($preset['settings']['video_warermarky']) ? $preset['settings']['video_warermarky'] : 5,
+//  );
+//  $form['settings']['warermark']['video_warermark_position'] = array(
+//    '#title' => t('Position'),
+//    '#type' => 'select',
+//    '#options' => array(
+//      'top-left' => 'top-left',
+//      'top-middle' => 'top-middle',
+//      'top-right' => 'top-right',
+//      'center-left' => 'center-left',
+//      'center-middle' => 'center-middle',
+//      'center-right' => 'center-right',
+//      'bottom-left' => 'bottom-left',
+//      'bottom-middle' => 'bottom-middle',
+//      'bottom-right' => 'bottom-right'
+//    ),
+//    '#default_value' => !empty($preset['settings']['video_warermark_position']) ? $preset['settings']['video_warermark_position'] : 'bottom-right',
+//    '#weight' => 20,
+//  );
   // video optimizations
   $form['settings']['vid_optimization'] = array(
     '#type' => 'fieldset',
@@ -443,6 +495,15 @@ function video_preset_submit($form, &$form_state) {
   $preset = array();
   if (isset($form_state['values']['pid'])) {
     $preset['pid'] = $form_state['values']['pid'];
+  }
+  // save watermark image if exists
+  // Load the file via file.fid.
+  if (!empty($form_state['values']['video_watermark_fid'])) {
+    $file = file_load($form_state['values']['video_watermark_fid']);
+    // Change status to permanent.
+    $file->status = FILE_STATUS_PERMANENT;
+    // Save.
+    file_save($file);
   }
   $preset['name'] = $form_state['values']['name'];
   $preset['description'] = $form_state['values']['description'];

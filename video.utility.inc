@@ -141,7 +141,7 @@ function video_widget_element_settings(&$element, &$form_state) {
   if ($field['settings']['autoconversion']) {
     $element['dimensions'] = array(
       '#type' => 'select',
-      '#title' => t('Dimensions for Video Transcoding'),
+      '#title' => t('Output video dimensions'),
       '#default_value' => $dimensions,
       '#description' => $description,
       '#options' => $options,
@@ -150,7 +150,7 @@ function video_widget_element_settings(&$element, &$form_state) {
   // get the player dimentions
   $element['player_dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Dimensions for Video Player'),
+    '#title' => t('Video player dimensions'),
     '#default_value' => $player_dimensions,
     '#description' => t('WxH of your video player.'),
     '#options' => $options,
@@ -408,7 +408,7 @@ function video_default_instance_settings($widget) {
   );
   $form['default_player_dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Player dimensions'),
+    '#title' => t('Video player dimensions'),
     '#default_value' => !empty($widget['default_player_dimensions']) ? $widget['default_player_dimensions'] : '',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
     '#description' => t('This settings can be overridden when node edit or from video formatter settings(display settings). Those WIDTHxHEIGHT values are in px.'),
@@ -417,9 +417,14 @@ function video_default_instance_settings($widget) {
   return $form;
 }
 
+/**
+ * Default video field settings.
+ * @param type $settings
+ * @return string 
+ */
 function video_default_field_settings($settings) {
   $form = array();
-  // Default video field settings.
+  // Video auto conversion.
   $form['autoconversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('<b>Enable auto video conversion.</b>'),
@@ -430,7 +435,7 @@ function video_default_field_settings($settings) {
     '#default_value' => isset($settings['autoconversion']) ? $settings['autoconversion'] : '',
     '#weight' => 17,
   );
-
+  // video auto thumbnails.
   $thumb_options = array(
     'auto' => 'Automatically extract thumbnails from video',
     'auto_fallback' => 'Automatically extract thumbnails, with fallback to manual upload (If not thumbnails extracted from video)',

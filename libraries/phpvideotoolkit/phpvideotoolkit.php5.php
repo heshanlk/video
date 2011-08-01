@@ -6,7 +6,7 @@
  * @license GPL 2.0
  *
  * @package FFMPEG (was called PHPVideoToolkit)
- * @version 0.1
+ * @version 0.1.9
  * 
  * @abstract This class can be used in conjunction with several server binary libraries to manipulate video and audio
  * through PHP. It is not intended to solve any particular problems, however you may find it useful. This php class
@@ -577,18 +577,13 @@ class PHPVideoToolkit {
     preg_match('/' . implode('(.*)', $pregs) . '(.*)/s', $buffer, $matches);
 
     $configuration = trim($matches[$indexs['configuration']]);
-
 // 			grab the ffmpeg configuration flags
     preg_match_all('/--[a-zA-Z0-9\-]+/', $configuration, $config_flags);
     $data['binary']['configuration'] = $config_flags[0];
     $data['binary']['vhook-support'] = in_array('--enable-vhook', $config_flags[0]) || !in_array('--disable-vhook', $config_flags[0]);
-// 			grab the versions
-    $data['binary']['versions'] = array();
-    preg_match_all('/([a-zA-Z0-9\-]+) version: ([0-9\.]+)/', $configuration, $versions);
-    for ($i = 0, $a = count($versions[0]); $i < $a; $i++) {
-      $data['binary']['versions'][strtolower(trim($versions[1][$i]))] = $versions[2][$i];
-    }
-// 			grab the ffmpeg compile info 
+    // 			grab the versions
+    $data['binary']['versions'] = self::getVersion($buffer);
+    // 			grab the ffmpeg compile info 
     preg_match('/built on (.*), gcc: (.*)/', $configuration, $conf);
     if (count($conf) > 0) {
       $data['compiler']['gcc'] = $conf[2];
@@ -690,6 +685,59 @@ class PHPVideoToolkit {
     }
 
     return $data;
+  }
+
+  /**
+   * Returns the installed version of FFmpeg
+   * @param $format
+   *   one of raw, version
+   * @return $version
+   *   String, FFmpeg version
+   */
+  protected function getVersion($output) {
+    // Search for SVN string
+    // FFmpeg version SVN-r20438, Copyright (c) 2000-2009 Fabrice Bellard, et al.
+    $pattern = "/ffmpeg version SVN-r([0-9.]*)/i";
+    if (preg_match($pattern, $output, $matches)) {
+      return $matches[1];
+    }
+
+    // Some OSX versions are built from a very early CVS
+    // I do not know what to do with this version- using 1 for now
+    $pattern = "/ffmpeg version.*CVS.*Mac OSX universal/msUi";
+    if (preg_match($pattern, $output, $matches)) {
+      return 0;
+    }
+
+    // Search for git string
+    // FFmpeg version git-N-29240-gefb5fa7, Copyright (c) 2000-2011 the FFmpeg developers.
+    // ffmpeg version N-31145-g59bd0fe, Copyright (c) 2000-2011 the FFmpeg developers
+    $pattern = "/ffmpeg version.*N-([0-9.]*)/i";
+    if (preg_match($pattern, $output, $matches)) {
+      // Versions above this seem to be ok
+      if ($matches[1] >= 29240) {
+        return array(
+          'svn' => (int) $matches[1],
+          'version' => NULL, // Return NULL as there appears to be no version number.
+        );
+      }
+    }
+
+    // Do we have a release?
+    // ffmpeg version 0.4.9-pre1, build 4736, Copyright (c) 2000-2004 Fabrice Bellard
+    $pattern = "/ffmpeg version ([0-9.]*)/i";
+    if (preg_match($pattern, $output, $matches)) {
+      return $matches[1];
+    }
+
+    // Do we have a build version?
+    // ffmpeg version 0.4.9-pre1, build 4736, Copyright (c) 2000-2004 Fabrice Bellard
+    $pattern = "/ffmpeg version.*, build ([0-9]*)/i";
+    if (preg_match($pattern, $output, $matches)) {
+      return $matches[1];
+    }
+
+    return FALSE;
   }
 
   /**
@@ -1853,6 +1901,7 @@ class PHPVideoToolkit {
       return $this->_raiseError('addWatermark_img_404', array('watermark' => $watermark_url));
     }
 //          determine which vhook library is being called and set appropriate input param
+    //vhook depricated so now we have to ues http://ffmpeg.org/libavfilter.html
     $file_input_switch = preg_match("/watermark.*/", $vhook) ? ' -f ' : ' -i ';
     $this->addCommand('-vhook', $vhook . $file_input_switch . $watermark_url . ($watermark_options !== false ? ' ' . $watermark_options : ''));
   }

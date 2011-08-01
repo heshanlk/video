@@ -372,6 +372,27 @@ class video_ffmpeg implements transcoder_interface {
         $this->toolkit->reset();
         continue;
       }
+      // set watermarking videos if enabled
+      if ($settings['video_enable_watermark'] == TRUE) {
+        // @todo vhook depricated so use http://ffmpeg.org/libavfilter.html
+//        $file = file_load($settings['video_watermark_fid']);
+//        $watermark_url = drupal_realpath($file->uri);
+////        dsm($file);
+//        $options = array(
+//          'x-offset' => variable_get('video_warermarkx', 5),
+//          'y-offset' => variable_get('video_warermarky', 5),
+//          'position' => variable_get('video_warermark_position', 'bottom-right')
+//        );
+//        $result = $this->toolkit->addWatermark($watermark_url);
+//        if (!$result) {
+//          //if there was an error then get it
+//          $error_msg = t($this->toolkit->getLastError());
+//          dsm($this->toolkit->getCommands());
+////          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+//          $this->toolkit->reset();
+//          continue;
+//        }
+      }
       // set out out file
       $result = $this->toolkit->setOutput(dirname($video_final_file_real_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
       if (!$result) {
@@ -507,32 +528,6 @@ class video_ffmpeg implements transcoder_interface {
       '#description' => t('Save all auto created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
       '#default_value' => variable_get('video_thumb_save_all', FALSE),
     );
-
-    // Watermark
-    $form['ffmpeg']['warermark'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Video watermark'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-    );
-    $form['ffmpeg']['warermark']['video_watermark_url'] = array(
-      '#type' => 'textfield',
-      '#title' => t('URL'),
-      '#description' => t('The URL of a PNG or JPG image.'),
-      '#default_value' => variable_get('video_watermark_url', 'http://heidisoft.com/watermark_drupal_40x40.png'),
-    );
-    $form['ffmpeg']['warermark']['warermarkx'] = array(
-      '#type' => 'textfield',
-      '#title' => t('X-axis'),
-      '#description' => t('Where to place the watermark, on the x axis..'),
-      '#default_value' => variable_get('warermarkx', 5),
-    );
-    $form['ffmpeg']['warermark']['warermarky'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Y-axis'),
-      '#description' => t('Where to place the watermark, on the y axis.'),
-      '#default_value' => variable_get('warermarky', 5),
-    );
     $form['video_ffmpeg_end'] = array(
       '#type' => 'markup',
       '#markup' => '</div>',
@@ -545,6 +540,25 @@ class video_ffmpeg implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
    */
   public function admin_settings_validate($form, &$form_state) {
+    $ffmpeg_path = $form_state['values']['video_ffmpeg_path'];
+//    dsm($form_state['values']);
+    if (!empty($ffmpeg_path)) {
+      $toolkit = new PHPVideoToolkit($ffmpeg_path);
+      $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
+//      dsm($ffmpeg);
+      if ($ffmpeg['ffmpeg-found'] == TRUE) {
+        drupal_set_message(t('FFmpeg !version found on your server.', array('!version' => $ffmpeg['binary']['versions'])), 'status');
+      }
+      else {
+        drupal_set_message(t('FFmpeg not found on your system. To convert 
+          videos and create thumbnails you have to install FFmpeg on your server. 
+          For more informations please see the !documentation', array(l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
+        form_set_error('video_ffmpeg_path' . t('FFmpeg not found on your system. To convert 
+          videos and create thumbnails you have to install FFmpeg on your server. 
+          For more informations please see the !documentation', array(l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+      }
+    }
+//    if($ffmpeg[''])
     return;
   }
 
