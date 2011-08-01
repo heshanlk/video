@@ -546,16 +546,16 @@ class video_ffmpeg implements transcoder_interface {
       $toolkit = new PHPVideoToolkit($ffmpeg_path);
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
 //      dsm($ffmpeg);
-      if ($ffmpeg['ffmpeg-found'] == TRUE) {
-        drupal_set_message(t('FFmpeg !version found on your server.', array('!version' => $ffmpeg['binary']['versions'])), 'status');
+      if ($ffmpeg['ffmpeg-found'] != TRUE) {
+        drupal_set_message(t('FFmpeg version !version found on your system.', array('!version' => $ffmpeg['binary']['versions'])), 'status');
       }
       else {
         drupal_set_message(t('FFmpeg not found on your system. To convert 
           videos and create thumbnails you have to install FFmpeg on your server. 
-          For more informations please see the !documentation', array(l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
+          For more informations please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
         form_set_error('video_ffmpeg_path' . t('FFmpeg not found on your system. To convert 
           videos and create thumbnails you have to install FFmpeg on your server. 
-          For more informations please see the !documentation', array(l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+          For more informations please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
     }
 //    if($ffmpeg[''])
