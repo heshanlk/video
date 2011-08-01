@@ -541,12 +541,10 @@ class video_ffmpeg implements transcoder_interface {
    */
   public function admin_settings_validate($form, &$form_state) {
     $ffmpeg_path = $form_state['values']['video_ffmpeg_path'];
-//    dsm($form_state['values']);
     if (!empty($ffmpeg_path)) {
       $toolkit = new PHPVideoToolkit($ffmpeg_path);
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
-//      dsm($ffmpeg);
-      if ($ffmpeg['ffmpeg-found'] != TRUE) {
+      if ($ffmpeg['ffmpeg-found'] == TRUE) {
         drupal_set_message(t('FFmpeg version !version found on your system.', array('!version' => $ffmpeg['binary']['versions'])), 'status');
       }
       else {
@@ -558,7 +556,6 @@ class video_ffmpeg implements transcoder_interface {
           For more informations please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
     }
-//    if($ffmpeg[''])
     return;
   }
 
