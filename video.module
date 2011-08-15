@@ -20,16 +20,7 @@ defined('VIDEO_RENDERING_FAILED') ||
 module_load_include('inc', 'video', 'video.utility');
 module_load_include('inc', 'video', 'video.field');
 module_load_include('inc', 'video', 'video.features');
-
-/**
- * Implementation of hook_views_api().
- */
-function video_views_api() {
-  return array(
-    'api' => 2.0,
-    'path' => drupal_get_path('module', 'video') . '/views',
-  );
-}
+module_load_include('inc', 'video', 'video.filters');
 
 /*
  * Implementation of hook_init().
@@ -178,6 +169,16 @@ function video_features_api() {
       'default_hook' => 'video_default_presets',
       'file' => drupal_get_path('module', 'video') . '/video.features.inc',
     ),
+  );
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function video_views_api() {
+  return array(
+    'api' => 3.0,
+    'path' => drupal_get_path('module', 'video') . '/views',
   );
 }
 
