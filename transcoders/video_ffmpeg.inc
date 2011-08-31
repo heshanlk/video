@@ -373,7 +373,7 @@ class video_ffmpeg implements transcoder_interface {
         continue;
       }
       // set watermarking videos if enabled
-      if ($settings['video_enable_watermark'] == TRUE) {
+      if (isset($settings['video_enable_watermark']) && $settings['video_enable_watermark'] == TRUE) {
         // @todo vhook depricated so use http://ffmpeg.org/libavfilter.html
 //        $file = file_load($settings['video_watermark_fid']);
 //        $watermark_url = drupal_realpath($file->uri);
