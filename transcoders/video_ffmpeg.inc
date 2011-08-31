@@ -407,7 +407,7 @@ class video_ffmpeg implements transcoder_interface {
       if ($result !== PHPVideoToolkit::RESULT_OK) {
         //if there was an error then get it 
         $error_msg = t($this->toolkit->getLastError());
-        dsm($this->toolkit->getCommands());
+//        dsm($this->toolkit->getCommands());
         watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
         $this->toolkit->reset();
         continue;
