@@ -220,6 +220,19 @@ class video_ffmpeg implements transcoder_interface {
 
   /**
    * Interface Implementation
+   * @see sites/all/modules/video/includes/transcoder_interface#get_version()
+   * @return string 
+   */
+  public function get_version() {
+    $ffmpeg = $this->toolkit->getFFmpegInfo();
+    if ($ffmpeg['ffmpeg-found'] == TRUE)
+      return $ffmpeg['binary']['versions'];
+    else
+      return FALSE;
+  }
+
+  /**
+   * Interface Implementation
    * @see sites/all/modules/video/includes/transcoder_interface#convert_video()
    * @param object video file object
    * @return object 
@@ -542,6 +555,7 @@ class video_ffmpeg implements transcoder_interface {
   public function admin_settings_validate($form, &$form_state) {
     $ffmpeg_path = $form_state['values']['video_ffmpeg_path'];
     if (!empty($ffmpeg_path)) {
+      // we have to initialize PHP toolkit object again, if changed the path of executable
       $toolkit = new PHPVideoToolkit($ffmpeg_path);
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
       if ($ffmpeg['ffmpeg-found'] == TRUE) {
