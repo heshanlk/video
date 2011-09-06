@@ -18,7 +18,7 @@ class video_transcoder {
   }
 
   /**
-   *
+   * Create the transcoder instance
    * @param <type> $transcoder 
    */
   private function get_instance($transcoder = null) {
@@ -268,6 +268,14 @@ class video_transcoder {
     return $this->transcoder->get_available_formats($method);
   }
 
+  public function get_version() {
+    return $this->transcoder->get_version();
+  }
+
+  public function get_name() {
+    return $this->transcoder->get_name();
+  }
+
 }
 
 interface transcoder_interface {
@@ -287,6 +295,8 @@ interface transcoder_interface {
   public function get_codecs();
 
   public function get_available_formats($method = false);
+
+  public function get_version();
 
   public function get_thumbnails($video);
 
