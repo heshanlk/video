@@ -227,3 +227,26 @@ function video_uninstall() {
   // Remove the video directory and generated images.
   file_unmanaged_delete_recursive(file_default_scheme() . '://videos');
 }
+
+/**
+ * Implementation of hook_requirements().
+ */
+function video_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+//    
+//    $requirements['video']['title'] = t('FFmpeg');
+//    if ($videojs_version = videojs_get_version()) {
+//      $requirements['video']['value'] = $videojs_version;
+//      $requirements['video']['severity'] = REQUIREMENT_OK;
+//    }
+//    else {
+//      $requirements['video']['value'] = t('Not found');
+//      $requirements['video']['description'] = t('Missing the videojs library. Please <a href="!url">download videojs</a> and extract it into the %directory directory.', array('!url' => url('http://videojs.com'), '%directory' => variable_get('videojs_directory', 'sites/all/libraries/video-js')));
+//      $requirements['video']['severity'] = REQUIREMENT_ERROR;
+//    }
+  }
+
+  return $requirements;
+}
