@@ -255,7 +255,7 @@ class video_ffmpeg implements transcoder_interface {
       // get preset settings
       $settings = $preset['settings'];
       // file name and paths for the final output
-      $filename = file_munge_filename(str_replace(' ', '_', pathinfo($video_real_path, PATHINFO_FILENAME)) . '_' . strtolower($name) . '.' . $settings['video_extension'], $settings['video_extension']);
+      $filename = file_munge_filename(str_replace(' ', '_', pathinfo($video_real_path, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $settings['video_extension'], '');
       $video_final_file_path = $video_final_path . '/' . $filename;
       // get the actual video file path from the stream wrappers
       $video_final_file_real_path = drupal_realpath($video_final_file_path);
