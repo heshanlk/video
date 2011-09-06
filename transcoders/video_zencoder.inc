@@ -135,6 +135,15 @@ class video_zencoder implements transcoder_interface {
   }
 
   /**
+   * Interface Implementation
+   * @see sites/all/modules/video/includes/transcoder_interface#get_version()
+   * @return string 
+   */
+  public function get_version() {
+    return '1.1';
+  }
+
+  /**
    * Interface Implementations
    * @see sites/all/modules/video/includes/transcoder_interface#admin_settings()
    */
