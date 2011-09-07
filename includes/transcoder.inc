@@ -11,49 +11,6 @@
 
 class video_transcoder {
 
-  private $transcoder;
-
-  public function __construct($transcoder = null) {
-    $this->transcoder = $this->get_instance($transcoder);
-  }
-
-  /**
-   * Create the transcoder instance
-   * @param <type> $transcoder 
-   */
-  private function get_instance($transcoder = null) {
-    //get our configured transcoder.
-    if (!isset($transcoder))
-      $transcoder = variable_get('video_convertor', 'video_ffmpeg');
-//    module_load_include('inc', 'video', '/transcoders/' . $transcoder);
-    if (!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
-      $modules = module_list();
-      $files = array();
-      foreach ($modules as $module) {
-        $module_path = drupal_get_path('module', $module) . '/transcoders';
-        $inc_files = file_scan_directory($module_path, '/.*\.inc/');
-        if (!empty($inc_files))
-          $files[$module] = $inc_files;
-      }
-      // @TODO : add lazy load
-      foreach ($files as $module => $_files) {
-        foreach ($_files as $file) {
-          if ($file->name == $transcoder)
-            module_load_include('inc', $module, '/transcoders/' . $file->name);
-        }
-      }
-    }
-
-    if (class_exists($transcoder)) {
-      $transcoder_instance = new $transcoder;
-      $this->transcoder = $transcoder_instance;
-      return $transcoder_instance;
-    }
-    else {
-      drupal_set_message(t('The transcoder is not configured properly.'), 'error');
-    }
-  }
-
   public function get_thumbnails($video) {
     // Save thiumnails to the vide_thumbnails table
     $thumbnails = array();
@@ -100,9 +57,10 @@ class video_transcoder {
     return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
   }
 
-  public function convert_video(&$video) {
+  public function convert_video($video) {
     global $user;
     // load the presets
+    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
     $video_preset = new video_preset();
     $presets = $video_preset->properties();
     // if no presets enabled then write an error log
@@ -110,8 +68,26 @@ class video_transcoder {
       watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l('enable or create new preset', 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
       return FALSE;
     }
-    $video->presets = $presets;
-    $output = $this->transcoder->convert_video($video);
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    $transcoder->setInput((array) $video);
+    foreach ($presets as $name => $preset) {
+      // set transcoder options
+      $transcoder->setOptions($preset['settings']);
+      //set up output path
+      $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
+      if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
+        watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $output_directory, array(), WATCHDOG_ERROR);
+        return FALSE;
+      }
+      $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
+      $transcoder->setOutput($output_directory, $output_name);
+      if ($output_file = $transcoder->execute()) {
+        $this->change_status($video->vid, VIDEO_RENDERING_COMPLETE);
+        $output[] = $output_file;
+      }
+    }
+//    $output = $this->transcoder->convert_video($video);
     // add files to file_manged table and add reference to the file_usage table
     if (is_array($output)) {
       $this->clean_converted($video->vid);
@@ -215,9 +191,9 @@ class video_transcoder {
     foreach ($files as $file) {
       module_load_include('inc', $file->module, '/transcoders/' . $file->name);
       $focus = new $file->name;
-      $form['radios'][$focus->get_value()] = $focus->get_name();
-      $form['help'][] = $focus->get_help();
-      $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings();
+      $form['radios'][$focus->getValue()] = $focus->getName();
+//      $form['help'][] = $focus->getHelp();
+      $form['admin_settings'] = $form['admin_settings'] + $focus->adminSettings();
     }
 //    //we need to move our video/thumbnail fieldsets to the bottom of our form as they are used for each trancoder
 //    $autothumb = $form['admin_settings']['autothumb'];
@@ -229,20 +205,33 @@ class video_transcoder {
     return $form;
   }
 
-  public function get_dimensions($video) {
-    return $this->transcoder->get_dimensions($video);
-  }
-
   public function create_job($video, $nid) {
-    return $this->transcoder->create_job($video, $nid);
+    return db_insert('video_queue')
+            ->fields(array(
+              'fid' => $video['fid'],
+              'nid' => $nid,
+              'status' => VIDEO_RENDERING_PENDING,
+              'dimensions' => $video['dimensions'],
+            ))
+            ->execute();
   }
 
   public function delete_job($video) {
-    return $this->transcoder->delete_job($video);
-  }
-
-  public function change_status($vid, $status) {
-    return $this->transcoder->change_status($vid, $status);
+    $video = (object) $video;
+    if (!$video = $this->load_job($video->fid))
+      return;
+    // converted output values
+    $converted = unserialize($video->data);
+    if (!empty($converted)) {
+      foreach ($converted as $file) {
+        if (file_exists(drupal_realpath($file->uri)))
+          @drupal_unlink($file->uri);
+      }
+    }
+    //now delete our rows.
+    db_delete('video_queue')
+        ->condition('fid', $video->fid)
+        ->execute();
   }
 
   /**
@@ -252,31 +241,54 @@ class video_transcoder {
    *   Integer of the file id to be loaded.
    */
   public function load_job($fid) {
-    return $this->transcoder->load_job($fid);
+    $job = null;
+    $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
+      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
+        ->fetch();
+    if (!empty($job))
+      return $job;
+    else
+      return FALSE;
   }
 
   public function load_job_queue() {
-    return $this->transcoder->load_job_queue();
+    $total_videos = variable_get('video_ffmpeg_instances', 5);
+    $videos = array();
+    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
+      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
+      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
+    foreach ($result as $row) {
+      $videos[] = $row;
+    }
+    return $videos;
   }
 
   public function load_completed_job(&$video) {
-    return $this->transcoder->load_completed_job($video);
-  }
-
-  public function get_codecs() {
-    return $this->transcoder->get_codecs();
-  }
-
-  public function get_available_formats($method = false) {
-    return $this->transcoder->get_available_formats($method);
-  }
-
-  public function get_version() {
-    return $this->transcoder->get_version();
+    $file = $this->load_job($video->fid);
+    $data = unserialize($file->data);
+    if (!empty($data))
+      foreach ($data as $value) {
+        $extension = pathinfo(drupal_realpath($value->uri), PATHINFO_EXTENSION);
+        $video->files->{$extension}->filename = $value->filename;
+        $video->files->{$extension}->filepath = $value->uri;
+        $video->files->{$extension}->filemime = file_get_mimetype($value->uri);
+        $video->files->{$extension}->url = file_create_url($value->uri);
+        $video->files->{$extension}->extension = $extension;
+        $video->player = strtolower($extension);
+      }
+    else
+      return FALSE;
   }
 
   public function get_name() {
     return $this->transcoder->get_name();
+  }
+
+  public function change_status($vid, $status) {
+    db_update('video_queue')->fields(array(
+          'status' => $status,))
+        ->condition('vid', $vid, '=')
+        ->execute();
   }
 
 }

@@ -26,8 +26,9 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
 
   // add vallidations by trnacoder interface
   $transcoder = $form_state['values']['video_convertor'];
-  $transcoder = new video_transcoder($transcoder);
-  $transcoder->admin_settings_validate($form, $form_state);
+  $factory = new TranscoderAbstractionAbstractFactory();
+  $transcoder = $factory->getProduct($transcoder);
+  $transcoder->adminSettingsValidate($form, $form_state);
 }
 
 /**

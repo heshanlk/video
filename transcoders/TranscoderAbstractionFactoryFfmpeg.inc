@@ -1,96 +1,5 @@
 <?php
 
-/**
- * @file
- * Transcoder Abstract Factory classes
- */
-interface TranscoderFactoryInterface {
-  public function extractFrames();
-
-  public function execute();
-
-  public function getName();
-
-  public function getValue();
-}
-
-abstract class TranscoderAbstractionFactory {
-
-  protected $settings = array();
-  protected $errors = array();
-
-  protected function __construct() {
-    
-  }
-
-  public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
-    // @TODO : do some validation to check the file exists;
-    if (!empty($file))
-      $this->settings['input'] = $file;
-    else
-      drupal_set_message('Video file not found!', 'error');
-  }
-
-  public function setOptions($options = NULL) {
-    if (is_array($options)) {
-      foreach ($options as $key => $value) {
-        $this->settings[$key] = $value;
-      }
-    }
-  }
-
-  public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
-    // @TODO : do some validation to check the file exists
-    if (count($output_directory) == 1)
-      $this->settings['base_url'] = $output_directory;
-    if (count($output_name) == 1)
-      $this->settings['filename'] = $output_name;
-    else
-      $this->errors['output'] = 'Output file not found.';
-  }
-
-  public function getCodecs() {
-    $codecs = array(
-      'encode' => array(
-        'video' => array(
-          'h264' => 'H.264 (default)',
-          'vp8' => 'VP8',
-          'theora' => 'Theora',
-          'vp6' => 'VP6',
-          'mpeg4' => 'MPEG-4',
-          'wmv' => 'WMV'
-        ),
-        'audio' => array(
-          'aac' => 'AAC (default for most cases)',
-          'mp3' => 'MP3',
-          'vorbis' => 'Vorbis (default for VP8 and Theora)',
-          'wma' => 'WMA'
-        )
-      ),
-      'decoding' => array()
-    );
-    return $codecs;
-  }
-
-  public function getAvailableFormats($type = false) {
-    return array('FLV');
-  }
-
-  public function getVersion() {
-    return '1.0';
-  }
-
-  public function getDimensions() {
-    $res['width'] = 640;
-    $res['height'] = 350;
-    return $res;
-  }
-
-  abstract public function adminSettings();
-
-  abstract public function adminSettingsValidate($form, &$form_state);
-}
-
 class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
 
   protected $transcoder = array();
@@ -103,15 +12,83 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
     parent::setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE);
-    $this->transcoder->setInputFile(drupal_realpath($file['uri']));
+    $this->transcoder->setInputFile(drupal_realpath($this->settings['input']['uri']));
   }
 
   public function setOptions($options = NULL) {
-    parent::setOptions();
+    $video_info = $this->getFileInfo();
+    foreach ($options as $key => $value) {
+      if (empty($value) || $value === 'none')
+        continue;
+      $result = TRUE;
+      switch ($key) {
+        case 'max_frame_rate':
+          $result = $this->transcoder->setVideoFrameRate($value);
+          break;
+        case 'video_codec':
+          $result = $this->transcoder->setVideoCodec($value);
+          break;
+        case 'video_preset':
+          $result = $this->transcoder->setVideoPreset($value);
+          break;
+        case 'audio_sample_rate':
+          $value = (!empty($value)) ? $value : $video_info['audio']['sample_rate'];
+          if ($value < 1000) {
+            $value *= 1000;
+          }
+          $value = min($value, 44100);
+          $result = $this->transcoder->setAudioSampleFrequency($value);
+          break;
+        case 'audio_codec':
+          $result = $this->transcoder->setAudioCodec($value);
+          break;
+        case 'audio_channels':
+          $result = $this->transcoder->setAudioChannels($value);
+          break;
+        case 'audio_bitrate':
+          if (empty($value)) {
+            $value = 64;
+          }
+
+          if ($value < 1000) {
+            $value *= 1000;
+          }
+          $result = $this->transcoder->setAudioBitRate($value);
+          break;
+        case 'video_bitrate':
+          if (empty($value)) {
+            $value = 200;
+          }
+
+          if ($value < 1000) {
+            $value *= 1000;
+          }
+          $result = $this->transcoder->setVideoBitRate($value);
+          break;
+        case 'wxh':
+          if (isset($value) && !empty($value) && variable_get('video_use_preset_wxh', FALSE)) {
+            $dimensions = trim($value);
+          }
+          else {
+            $dimensions = $this->settings['input']['dimensions'];
+          }
+          $dimension = explode('x', $dimensions);
+          $result = $this->transcoder->setVideoDimensions($dimension[0], $dimension[1]);
+          break;
+      }
+      if ($result !== PHPVideoToolkit::RESULT_OK) {
+        //if there was an error then get it
+        $error_msg = $this->transcoder->getLastError();
+        watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+        $this->transcoder->reset();
+        return FALSE;
+      }
+    }
   }
 
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
-    $this->transcoder->setOutput($output_directory, $output_name);
+    parent::setOutput($output_directory, $output_name, $overwrite_mode);
+    $this->transcoder->setOutput(drupal_realpath($output_directory) . '/', $output_name);
   }
 
   public function extractFrames() {
@@ -195,7 +172,31 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function execute() {
-    
+    // execute command
+    $result = $this->transcoder->execute(FALSE, TRUE);
+    if ($result !== PHPVideoToolkit::RESULT_OK) {
+      //if there was an error then get it 
+      $error_msg = $this->transcoder->getLastError();
+      watchdog('transcoder', t('!message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+      $this->transcoder->reset();
+      return FALSE;
+    }
+    $command_output = $this->transcoder->getLastOutput();
+    //lets check to make sure our file exists, if not error out
+    $output_file = $this->settings['base_url'] . '/' . $this->settings['filename'];
+    if (!file_exists(drupal_realpath($output_file)) || !filesize(drupal_realpath($output_file))) {
+      watchdog('transcoder', 'Video conversion has been failed!. FFmpeg reported the following output: !output', array('!output' => $command_output), WATCHDOG_ERROR);
+//      $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+      return FALSE;
+    }
+    // Setup our converted video object
+    $output = new stdClass();
+    $output->filename = $this->settings['filename'];
+    $output->uri = $output_file;
+    $output->filemime = file_get_mimetype($output_file);
+    $output->filesize = filesize(drupal_realpath($output_file));
+    $output->timestamp = time();
+    return $output;
   }
 
   protected function getFileInfo() {
@@ -301,7 +302,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function getValue() {
-    return 'video_ffmpeg';
+    return 'TranscoderAbstractionFactoryFfmpeg';
   }
 
   public function getDimensions() {
@@ -318,7 +319,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $form = array();
     $form['video_ffmpeg_start'] = array(
       '#type' => 'markup',
-      '#markup' => '<div id="video_ffmpeg">',
+      '#markup' => '<div id="' . $this->getValue() . '">',
     );
     // FFMPEG
     $form['ffmpeg']['ffmpeg'] = array(
@@ -387,81 +388,3 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
 }
-
-class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
-
-  public function __construct() {
-    parent::__construct();
-  }
-
-  public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
-    parent::setInput();
-  }
-
-  public function setOptions($options = NULL) {
-    parent::setOptions();
-  }
-
-  public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
-    parent::setOutput();
-  }
-
-  public function extractFrames() {
-    
-  }
-
-  public function execute() {
-    
-  }
-
-  public function getName() {
-    return 'Zencoder';
-  }
-
-  public function getValue() {
-    return 'video_zencoder';
-  }
-
-}
-
-interface TranscoderAbstractFactoryInterface {
-
-  public static function getProduct();
-}
-
-class TranscoderAbstractionAbstractFactory implements TranscoderAbstractFactoryInterface {
-
-  public static function getProduct($transcoder = NULL) {
-    //get our configured transcoder.
-    if (!isset($transcoder))
-      $transcoder = variable_get('video_convertor', 'video_ffmpeg');
-    if (!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
-      $modules = module_list();
-      $files = array();
-      foreach ($modules as $module) {
-        $module_path = drupal_get_path('module', $module) . '/transcoders';
-        $inc_files = file_scan_directory($module_path, '/.*\.inc/');
-        if (!empty($inc_files))
-          $files[$module] = $inc_files;
-      }
-      // @TODO : add lazy load
-      foreach ($files as $module => $_files) {
-        foreach ($_files as $file) {
-          if ($file->name == $transcoder)
-            module_load_include('inc', $module, '/transcoders/' . $file->name);
-        }
-      }
-    }
-    if (class_exists($transcoder)) {
-//      $factory = new $transcoder;
-      $factory = new TranscoderAbstractionFactoryFfmpeg();
-      return $factory;
-    }
-    else {
-      drupal_set_message(t('The transcoder is not configured properly.'), 'error');
-    }
-  }
-
-}
-
-?>
