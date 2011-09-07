@@ -119,11 +119,11 @@ function video_cron() {
   if (variable_get('video_cron', TRUE)) {
     module_load_include('inc', 'video', 'includes/conversion');
     $video_conversion = new video_conversion;
-    if ($videos = $video_conversion->load_job_queue()) {
+    if ($videos = $video_conversion->loadJobQueue()) {
       $queue = DrupalQueue::get('video_queue');
       foreach ($videos as $video) {
         if ($queue->createItem($video)) {
-          $video_conversion->change_status($video->vid, VIDEO_RENDERING_INQUEUE);
+          $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_INQUEUE);
         }
       }
     }

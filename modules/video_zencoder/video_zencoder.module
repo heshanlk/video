@@ -69,7 +69,7 @@ function _video_zencoder_postback_jobs() {
     $vid = $videodb->vid;
     $fid = $videodb->fid;
 
-    $zc->change_status($vid, VIDEO_RENDERING_COMPLETE);
+    $zc->changeStatus($vid, VIDEO_RENDERING_COMPLETE);
 // update the thumbanils
 // this will update the default thumbnails, if user want to select another one then they wil need to edit the node
 // Setup our thmbnail path.
@@ -98,7 +98,7 @@ function _video_zencoder_postback_jobs() {
     watchdog('zencoder', t('No thumbanils found.', array('!id' => $video->job->id, '!states' => $zc_output_state)));
   } else if ($video->output->state == VIDEO_RENDERING_FAILED) {
 //    echo 'working failed';
-    $zc->change_status($vid, VIDEO_RENDERING_FAILED);
+    $zc->changeStatus($vid, VIDEO_RENDERING_FAILED);
     watchdog('zencoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
   }
   else {

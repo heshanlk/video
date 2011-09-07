@@ -23,8 +23,8 @@ function video_thumb_process(&$element, &$form_state) {
   if (isset($element['preview']) && $file['fid'] != 0) {
     if (in_array($field['settings']['autothumbnail'], array('auto', 'auto_fallback'))) {
       $default_thumb = array();
-      $transcoder = new video_transcoder;
-      if ($thumbs = $transcoder->get_thumbnails($file)) {
+      $transcoder = new Transcoder;
+      if ($thumbs = $transcoder->getThumbnails($file)) {
         $default_thumb = array_rand($thumbs);
         if (!empty($thumbs)) {
           foreach ($thumbs as $fid => $img) {
@@ -292,10 +292,9 @@ function _video_aspect_ratio($video) {
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct();
   $transcoder->setInput((array) $video);
-  $wxh = $transcoder->getDimensions();
-  $width = $wxh['width'];
-  $height = $wxh['height'];
-
+  $wxh = $transcoder->getFileInfo();
+  $width = $wxh['video']['dimensions']['width'];
+  $height = $wxh['video']['dimensions']['height'];
   if (!$width || !$height) {
     //no width and height found just return.
     watchdog('video_conversion', 'We could not determine the height and width of the video: ' . $video, array(), WATCHDOG_DEBUG);

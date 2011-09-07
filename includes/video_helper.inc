@@ -61,7 +61,7 @@ class video_helper {
       if ($conversion->load_job($variables['item']['fid'])) {
         // reset the video files object and add converted videos in to it
         $video->files = new stdClass();
-        $conversion->load_completed_job($video);
+        $conversion->loadCompletedJob($video);
       }
     }
     // Return our object

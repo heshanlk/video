@@ -12,14 +12,14 @@ class video_conversion {
 
   public function __construct() {
     module_load_include('inc', 'video', '/includes/transcoder');
-    $this->transcoder = new video_transcoder;
+    $this->transcoder = new Transcoder;
   }
 
   /**
    * Our main function to call when converting queued up jobs.
    */
   public function run_queue() {
-    if ($videos = $this->load_job_queue()) {
+    if ($videos = $this->loadJobQueue()) {
       foreach ($videos as $video) {
         $this->process($video);
       }
@@ -34,8 +34,8 @@ class video_conversion {
    * @return
    *   An array containing all the videos to be proccessed.
    */
-  public function load_job_queue() {
-    return $this->transcoder->load_job_queue();
+  public function loadJobQueue() {
+    return $this->transcoder->loadJobQueue();
   }
 
   /**
@@ -65,7 +65,7 @@ class video_conversion {
     }
     // Make sure this video is pending or do nothing.
     if ($video->video_status != VIDEO_RENDERING_INQUEUE) {
-      return $this->transcoder->convert_video($video);
+      return $this->transcoder->convertVideo($video);
     }
     else {
       $status = array(
@@ -85,20 +85,20 @@ class video_conversion {
    * @param $fid
    *   Integer of the file id to be loaded.
    */
-  public function load_completed_job($video) {
-    return $this->transcoder->load_completed_job($video);
+  public function loadCompletedJob($video) {
+    return $this->transcoder->loadCompletedJob($video);
   }
 
-  public function create_job($video, $nid) {
-    return $this->transcoder->create_job($video, $nid);
+  public function createJob($video, $nid) {
+    return $this->transcoder->createJob($video, $nid);
   }
 
-  public function delete_job($video) {
-    return $this->transcoder->delete_job($video);
+  public function deleteJob($video) {
+    return $this->transcoder->deleteJob($video);
   }
 
-  public function change_status($vid, $status) {
-    return $this->transcoder->change_status($vid, $status);
+  public function changeStatus($vid, $status) {
+    return $this->transcoder->changeStatus($vid, $status);
   }
 
   /**

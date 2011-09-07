@@ -176,18 +176,18 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
       // skip adding entry if bypass conversion is checked
       if (isset($item['bypass_autoconversion']) && ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE))) {
         // delete the conversion job if any
-        $video_conversion->delete_job($item);
+        $video_conversion->deleteJob($item);
         return;
       }
       // re queue for video conversion
       if (isset($item['re_convert_video']) && $item['re_convert_video'] == 1) {
         $video = $video_conversion->load_job($item['fid']);
-        $video_conversion->change_status($video->vid, VIDEO_RENDERING_PENDING);
+        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_PENDING);
         $job = TRUE;
       }
       // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
       if (!$video = $video_conversion->load_job($item['fid'])) {
-        if (!($video_conversion->create_job($item, $nid)))
+        if (!($video_conversion->createJob($item, $nid)))
           drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
         else
           $job = TRUE;

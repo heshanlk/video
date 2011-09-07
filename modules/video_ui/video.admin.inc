@@ -10,8 +10,8 @@
  * @return <type>
  */
 function video_transcoder_admin_settings() {
-  $transcoder = new video_transcoder;
-  $form = $transcoder->admin_settings();
+  $transcoder = new Transcoder;
+  $form = $transcoder->adminSettings();
   return system_settings_form($form);
 }
 

@@ -84,9 +84,10 @@ abstract class TranscoderAbstractionFactory {
     return '1.0';
   }
 
-  public function getDimensions() {
-    $res['width'] = 640;
-    $res['height'] = 350;
+  public function getFileInfo() {
+    $file = array();
+    $file['duration']['seconds'] = 100;
+    $file['video']['dimensions'] = array('width' => 640, 'height' => 350);
     return $res;
   }
 

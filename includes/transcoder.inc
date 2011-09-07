@@ -3,15 +3,12 @@
 /*
  * @file
  * Class file used to wrap the transcoder functions.
- *
- * @todo need more commenting
- * - Add Metadata support
  * 
  */
 
-class video_transcoder {
+class Transcoder {
 
-  public function get_thumbnails($video) {
+  public function getThumbnails($video) {
     // Save thiumnails to the vide_thumbnails table
     $thumbnails = array();
     $vid = $video['fid'];
@@ -57,10 +54,10 @@ class video_transcoder {
     return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
   }
 
-  public function convert_video($video) {
+  public function convertVideo($video) {
     global $user;
     // load the presets
-    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+    $this->changeStatus($video->vid, VIDEO_RENDERING_ACTIVE);
     $video_preset = new video_preset();
     $presets = $video_preset->properties();
     // if no presets enabled then write an error log
@@ -83,14 +80,14 @@ class video_transcoder {
       $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
       $transcoder->setOutput($output_directory, $output_name);
       if ($output_file = $transcoder->execute()) {
-        $this->change_status($video->vid, VIDEO_RENDERING_COMPLETE);
+        $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
         $output[] = $output_file;
       }
     }
 //    $output = $this->transcoder->convert_video($video);
     // add files to file_manged table and add reference to the file_usage table
     if (is_array($output)) {
-      $this->clean_converted($video->vid);
+      $this->cleanConverted($video->vid);
       foreach ($output as $file) {
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $user->uid;
@@ -119,11 +116,7 @@ class video_transcoder {
     return $output;
   }
 
-  /**
-   * Clean tables before convert videos.
-   * @param type $vid
-   */
-  protected function clean_converted($vid) {
+  protected function cleanConverted($vid) {
     // @todo : if this impact on performance then think about other way
     $result = db_select('video_output', 'vo')
         ->fields('vo', array('original_fid', 'output_fid'))
@@ -145,11 +138,7 @@ class video_transcoder {
     }
   }
 
-  /**
-   * Administrator setting per transcoder
-   * @return type 
-   */
-  public function admin_settings() {
+  public function adminSettings() {
     //@todo use Drupal Form API status facility for this
     $form = array();
     $options = $this->_transcoders();
@@ -164,10 +153,6 @@ class video_transcoder {
     );
     $form = $form + $options['admin_settings'];
     return $form;
-  }
-
-  public function admin_settings_validate($form, &$form_state) {
-    return $this->transcoder->admin_settings_validate($form, $form_state);
   }
 
   private function _transcoders() {
@@ -205,7 +190,7 @@ class video_transcoder {
     return $form;
   }
 
-  public function create_job($video, $nid) {
+  public function createJob($video, $nid) {
     return db_insert('video_queue')
             ->fields(array(
               'fid' => $video['fid'],
@@ -216,7 +201,7 @@ class video_transcoder {
             ->execute();
   }
 
-  public function delete_job($video) {
+  public function deleteJob($video) {
     $video = (object) $video;
     if (!$video = $this->load_job($video->fid))
       return;
@@ -234,12 +219,6 @@ class video_transcoder {
         ->execute();
   }
 
-  /**
-   * Load a file based on the file id ($fid)
-   *
-   * @param $fid
-   *   Integer of the file id to be loaded.
-   */
   public function load_job($fid) {
     $job = null;
     $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
@@ -251,7 +230,7 @@ class video_transcoder {
       return FALSE;
   }
 
-  public function load_job_queue() {
+  public function loadJobQueue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
@@ -263,7 +242,7 @@ class video_transcoder {
     return $videos;
   }
 
-  public function load_completed_job(&$video) {
+  public function loadCompletedJob(&$video) {
     $file = $this->load_job($video->fid);
     $data = unserialize($file->data);
     if (!empty($data))
@@ -280,11 +259,7 @@ class video_transcoder {
       return FALSE;
   }
 
-  public function get_name() {
-    return $this->transcoder->get_name();
-  }
-
-  public function change_status($vid, $status) {
+  public function changeStatus($vid, $status) {
     db_update('video_queue')->fields(array(
           'status' => $status,))
         ->condition('vid', $vid, '=')

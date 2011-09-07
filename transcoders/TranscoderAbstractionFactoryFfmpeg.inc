@@ -186,7 +186,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $output_file = $this->settings['base_url'] . '/' . $this->settings['filename'];
     if (!file_exists(drupal_realpath($output_file)) || !filesize(drupal_realpath($output_file))) {
       watchdog('transcoder', 'Video conversion has been failed!. FFmpeg reported the following output: !output', array('!output' => $command_output), WATCHDOG_ERROR);
-//      $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+//      $this->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
     // Setup our converted video object
@@ -199,7 +199,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     return $output;
   }
 
-  protected function getFileInfo() {
+  public function getFileInfo() {
     //@todo Add to cache
     $file = $this->settings['input']['uri'];
     $cid = 'video:file:' . md5($file);
