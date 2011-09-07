@@ -110,7 +110,7 @@ function video_widget_element_settings(&$element, &$form_state) {
   if ($field['settings']['autoconversion'] && isset($element['preview']) &&
       $file['fid'] != 0 && $default_dimensions) {
     $file_object = file_load($file['fid']);
-    $video_info = _video_dimensions_options($options, drupal_realpath($file_object->uri));
+    $video_info = _video_dimensions_options($options, $file_object);
     $description = t('Set your video dimensions.  This will create your player
       and transcode your video with these dimensions.  Your video size is !size,
       if you choose a higher resolution, this could cause video distortion.
@@ -289,8 +289,10 @@ function _video_dimensions_options(&$options, $video) {
 
 function _video_aspect_ratio($video) {
   //lets get our video dimensions from the file
-  $transcoder = new video_transcoder;
-  $wxh = $transcoder->get_dimensions($video);
+  $factory = new TranscoderAbstractionAbstractFactory();
+  $transcoder = $factory->getProduct();
+  $transcoder->setInput((array) $video);
+  $wxh = $transcoder->getDimensions();
   $width = $wxh['width'];
   $height = $wxh['height'];
 

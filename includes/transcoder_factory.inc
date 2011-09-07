@@ -10,6 +10,8 @@ interface TranscoderFactoryInterface {
   public function execute();
 
   public function getName();
+
+  public function getValue();
 }
 
 abstract class TranscoderAbstractionFactory {
@@ -78,6 +80,15 @@ abstract class TranscoderAbstractionFactory {
     return '1.0';
   }
 
+  public function getDimensions() {
+    $res['width'] = 640;
+    $res['height'] = 350;
+    return $res;
+  }
+
+  abstract public function adminSettings();
+
+  abstract public function adminSettingsValidate($form, &$form_state);
 }
 
 class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
@@ -109,7 +120,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
     // get the video file informations
-    $file_info = $this->getFileInfo(drupal_realpath($this->settings['input']['uri']));
+    $file_info = $this->getFileInfo();
     // video duration
     $duration = $file_info['duration']['seconds'];
     // Total thumbs to generate
@@ -187,15 +198,16 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     
   }
 
-  protected function getFileInfo($file) {
+  protected function getFileInfo() {
     //@todo Add to cache
+    $file = $this->settings['input']['uri'];
     $cid = 'video:file:' . md5($file);
     $cache = cache_get($cid);
     if (!empty($cache->data)) {
       return $cache->data;
     }
     else {
-      $data = $this->transcoder->getFileInfo($file);
+      $data = $this->transcoder->getFileInfo(drupal_realpath($file));
       cache_set($cid, $data);
       return $data;
     }
@@ -288,6 +300,92 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     return 'FFmpeg';
   }
 
+  public function getValue() {
+    return 'video_ffmpeg';
+  }
+
+  public function getDimensions() {
+    $video_info = $this->getFileInfo();
+    $res = array('width' => 0, 'height' => 0);
+    // Get dimensions
+    $res['width'] = $video_info['video']['dimensions']['width'] ? $video_info['video']['dimensions']['width'] : NULL;
+    $res['height'] = $video_info['video']['dimensions']['height'] ? $video_info['video']['dimensions']['height'] : NULL;
+    return $res;
+  }
+
+  public function adminSettings() {
+    $form = array();
+    $form = array();
+    $form['video_ffmpeg_start'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div id="video_ffmpeg">',
+    );
+    // FFMPEG
+    $form['ffmpeg']['ffmpeg'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Path to FFmpeg executable'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE
+    );
+    $form['ffmpeg']['ffmpeg']['video_ffmpeg_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('FFMPEG'),
+      '#description' => t('Absolute path to ffmpeg executable.'),
+      '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
+    );
+    // Thumbnail Videos We need to put this stuff last.
+    $form['ffmpeg']['thumbnail'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Video thumbnails'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    $form['ffmpeg']['thumbnail']['video_thumbnail_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to save thumbnails'),
+      '#description' => t('Path to save video thumbnails extracted from the videos.'),
+      '#default_value' => variable_get('video_thumbnail_path', 'videos/thumbnails'),
+    );
+    $form['ffmpeg']['thumbnail']['video_thumbnail_count'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of thumbnails'),
+      '#description' => t('Number of thumbnails to extract from video.'),
+      '#default_value' => variable_get('video_thumbnail_count', 5),
+    );
+    $form['ffmpeg']['thumbnail']['video_thumb_save_all'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Save all thumbnails in {file_manged} table'),
+      '#description' => t('Save all auto created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
+      '#default_value' => variable_get('video_thumb_save_all', FALSE),
+    );
+    $form['video_ffmpeg_end'] = array(
+      '#type' => 'markup',
+      '#markup' => '</div>',
+    );
+    return $form;
+  }
+
+  public function adminSettingsValidate($form, &$form_state) {
+    $ffmpeg_path = $form_state['values']['video_ffmpeg_path'];
+    if (!empty($ffmpeg_path)) {
+      // we have to initialize PHP toolkit object again, if changed the path of executable
+      $toolkit = new PHPVideoToolkit($ffmpeg_path);
+      $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
+      if ($ffmpeg['ffmpeg-found'] == TRUE) {
+        drupal_set_message(t('FFmpeg version !version found on your system.', array('!version' => $ffmpeg['binary']['versions'])), 'status');
+      }
+      else {
+        drupal_set_message(t('FFmpeg not found on your system. To convert 
+          videos and create thumbnails you have to install FFmpeg on your server. 
+          For more informations please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
+        form_set_error('video_ffmpeg_path' . t('FFmpeg not found on your system. To convert 
+          videos and create thumbnails you have to install FFmpeg on your server. 
+          For more informations please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+      }
+    }
+    return;
+  }
+
 }
 
 class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
@@ -318,6 +416,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
   public function getName() {
     return 'Zencoder';
+  }
+
+  public function getValue() {
+    return 'video_zencoder';
   }
 
 }

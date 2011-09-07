@@ -11,7 +11,6 @@ define('VIDEO_PRESET_MAX_LENGTH', 64);
  * @return <array> - The additional form settings that you would like to add to your preset.
  */
 function video_preset_default_form($form, &$form_state, $preset) {
-  $video_transcoder = new video_transcoder;
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct();
   $codecs = $transcoder->getCodecs();
