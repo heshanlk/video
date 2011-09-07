@@ -292,38 +292,3 @@ class video_transcoder {
   }
 
 }
-
-interface transcoder_interface {
-
-  public function create_job($video, $nid);
-
-  public function delete_job($video);
-
-  public function load_job($fid);
-
-  public function load_job_queue();
-
-  public function load_completed_job(&$video);
-
-  public function change_status($vid, $status);
-
-  public function get_codecs();
-
-  public function get_available_formats($method = false);
-
-  public function get_version();
-
-  public function get_thumbnails($video);
-
-  public function convert_video($video);
-
-  public function get_name();
-
-  public function get_value();
-
-  public function get_help();
-
-  public function admin_settings();
-
-  public function admin_settings_validate($form, &$form_state);
-}
