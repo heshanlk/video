@@ -58,8 +58,11 @@ class video_transcoder {
     // Save thiumnails to the vide_thumbnails table
     $thumbnails = array();
     $vid = $video['fid'];
-    $thumbs = $this->transcoder->get_thumbnails($video);
-    foreach ($thumbs as $file) {
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    $transcoder->setInput($video);
+    $thumbanils = $transcoder->extractFrames();
+    foreach ($thumbanils as $file) {
       // media module is altering file_manged table with type, so if we do not consider about is then we might get entity load issue.
       // #1015580
       // if media module exists add type as an image

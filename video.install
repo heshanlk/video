@@ -235,9 +235,10 @@ function video_requirements($phase) {
   $requirements = array();
 
   if ($phase == 'runtime') {
-    $transcoder = new video_transcoder();
-    $requirements['video']['title'] = $transcoder->get_name();
-    if ($ffmpeg_version = $transcoder->get_version()) {
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    $requirements['video']['title'] = $transcoder->getName();
+    if ($ffmpeg_version = $transcoder->getVersion()) {
       $requirements['video']['value'] = $ffmpeg_version;
       $requirements['video']['severity'] = REQUIREMENT_OK;
     }

@@ -12,8 +12,10 @@ define('VIDEO_PRESET_MAX_LENGTH', 64);
  */
 function video_preset_default_form($form, &$form_state, $preset) {
   $video_transcoder = new video_transcoder;
-  $codecs = $video_transcoder->get_codecs();
-  $formats = $video_transcoder->get_available_formats('muxing');
+  $factory = new TranscoderAbstractionAbstractFactory();
+  $transcoder = $factory->getProduct();
+  $codecs = $transcoder->getCodecs();
+  $formats = $transcoder->getAvailableFormats('muxing');
   $form = array();
   // video settings
   $form['settings']['video'] = array(

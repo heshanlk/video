@@ -12,3 +12,4 @@ files[] = includes/metadata.inc
 files[] = includes/preset.inc
 files[] = includes/transcoder.inc
 files[] = includes/video_helper.inc
+files[] = includes/transcoder_factory.inc
