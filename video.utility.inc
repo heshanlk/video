@@ -24,7 +24,7 @@ function video_thumb_process(&$element, &$form_state) {
     if (in_array($field['settings']['autothumbnail'], array('auto', 'auto_fallback'))) {
       $default_thumb = array();
       $transcoder = new Transcoder;
-      if ($thumbs = $transcoder->getThumbnails($file)) {
+      if ($thumbs = $transcoder->extractFrames($file)) {
         $default_thumb = array_rand($thumbs);
         if (!empty($thumbs)) {
           foreach ($thumbs as $fid => $img) {

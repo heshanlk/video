@@ -192,21 +192,21 @@ function theme_video_flv($variables) {
           'image' => $video->thumbnail->swfthumb,
         ),
       );
-      $themed_output = swf($video->files->{$video->player}->url, $options);
+      $themed_output = swf(file_create_url($video->files->{$video->player}->uri), $options);
       break;
     case 'flowplayer':
       // kjh: use a playlist to display the thumbnail if not auto playing
       if (isset($video->autoplay) && isset($video->thumbnail->url)) {
         $options = array(
           'playlist' => array($video->thumbnail->url,
-            array('url' => urlencode($video->files->{$video->player}->url),
+            array('url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
               'autoPlay' => $video->autoplay,
               'autoBuffering' => $video->autobuffering,
             ),),);
       }
       else {
         $options = array(
-          'clip' => array('url' => urlencode($video->files->{$video->player}->url),
+          'clip' => array('url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
             'autoPlay' => $video->autoplay,
             'autoBuffering' => $video->autobuffering,
           ),);

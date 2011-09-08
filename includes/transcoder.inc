@@ -8,7 +8,7 @@
 
 class Transcoder {
 
-  public function getThumbnails($video) {
+  public function extractFrames($video) {
     // Save thiumnails to the vide_thumbnails table
     $thumbnails = array();
     $vid = $video['fid'];
@@ -17,8 +17,6 @@ class Transcoder {
     $transcoder->setInput($video);
     $thumbanils = $transcoder->extractFrames();
     foreach ($thumbanils as $file) {
-      // media module is altering file_manged table with type, so if we do not consider about is then we might get entity load issue.
-      // #1015580
       // if media module exists add type as an image
       if (module_exists('media'))
         $file->type = 'image';
@@ -54,7 +52,7 @@ class Transcoder {
     return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
   }
 
-  public function convertVideo($video) {
+  public function executeConvertion($video) {
     global $user;
     // load the presets
     $this->changeStatus($video->vid, VIDEO_RENDERING_ACTIVE);
@@ -188,17 +186,6 @@ class Transcoder {
 //    $form['admin_settings']['autothumb'] = $autothumb;
 //    $form['admin_settings']['autoconv'] = $autoconv;
     return $form;
-  }
-
-  public function createJob($video, $nid) {
-    return db_insert('video_queue')
-            ->fields(array(
-              'fid' => $video['fid'],
-              'nid' => $nid,
-              'status' => VIDEO_RENDERING_PENDING,
-              'dimensions' => $video['dimensions'],
-            ))
-            ->execute();
   }
 
   public function deleteJob($video) {

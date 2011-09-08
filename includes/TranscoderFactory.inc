@@ -92,6 +92,60 @@ abstract class TranscoderAbstractionFactory {
   abstract public function adminSettings();
 
   abstract public function adminSettingsValidate($form, &$form_state);
+
+  public function createJob($video, $nid) {
+    return db_insert('video_queue')
+            ->fields(array(
+              'fid' => $video['fid'],
+              'nid' => $nid,
+              'status' => VIDEO_RENDERING_PENDING,
+              'dimensions' => $video['dimensions'],
+            ))
+            ->execute();
+  }
+
+  public function deleteJob($video) {
+    $video = (object) $video;
+    if (!$video = $this->loadJob($video->fid))
+      return;
+    // converted output values
+    $converted = unserialize($video->data);
+    if (!empty($converted)) {
+      foreach ($converted as $file) {
+        if (file_exists(drupal_realpath($file->uri)))
+          @drupal_unlink($file->uri);
+      }
+    }
+    //now delete our rows.
+    db_delete('video_queue')
+        ->condition('fid', $video->fid)
+        ->execute();
+  }
+
+  public function loadJob($fid) {
+    $job = null;
+    $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
+      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
+        ->fetch();
+    if (!empty($job))
+      return $job;
+    else
+      return FALSE;
+  }
+
+  public function loadCompletedJob() {
+    $file = $this->settings['input'];
+    $output = null;
+    $output = db_query("SELECT vo.output_fid FROM {video_output} vo WHERE vo.original_fid = :fid", array(':fid' => $file['fid']))
+        ->fetch();
+    foreach ($output as $fid) {
+      $file = file_load($fid);
+      $extension = pathinfo(drupal_realpath($file->uri), PATHINFO_EXTENSION);
+      $video->{$extension} = $file;
+    }
+    return $video;
+  }
+
 }
 
 interface TranscoderAbstractFactoryInterface {

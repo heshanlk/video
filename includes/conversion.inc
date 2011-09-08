@@ -65,7 +65,7 @@ class Conversion {
     }
     // Make sure this video is pending or do nothing.
     if ($video->video_status != VIDEO_RENDERING_INQUEUE) {
-      return $this->transcoder->convertVideo($video);
+      return $this->transcoder->executeConvertion($video);
     }
     else {
       $status = array(

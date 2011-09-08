@@ -55,15 +55,18 @@ class VideoHelper {
     $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
     // lets find out if we have transcoded this file and update our paths.
     if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
-      // discard all existing file data
-      module_load_include('inc', 'video', '/includes/conversion');
-      $conversion = new Conversion;
-      if ($conversion->loadJob($variables['item']['fid'])) {
+      // transcoder factory
+      $factory = new TranscoderAbstractionAbstractFactory();
+      $transcoder = $factory->getProduct();
+      $transcoder->setInput($variables['item']);
+      if ($transcoder->loadJob($variables['item']['fid'])) {
         // reset the video files object and add converted videos in to it
         $video->files = new stdClass();
-        $conversion->loadCompletedJob($video);
+        $video->files = $transcoder->loadCompletedJob($video);
       }
     }
+    $video->player = 'flv';
+    dsm($video);
     // Return our object
     return $video;
   }

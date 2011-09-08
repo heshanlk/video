@@ -10,8 +10,8 @@
  */
 ?>
 
-<object type="video/x-ms-wmv" data="<?php print $video->files->{$video->player}->url; ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">
-  <param name="src" value="<?php print $video->files->{$video->player}->url; ?>" valuetype="ref" type="<?php print $video->files->{$video->player}->url; ?>">
+<object type="video/x-ms-wmv" data="<?php print file_create_url($video->files->{$video->player}->uri); ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">
+  <param name="src" value="<?php print file_create_url($video->files->{$video->player}->uri); ?>" valuetype="ref" type="<?php print file_create_url($video->files->{$video->player}->uri); ?>">
   <param name="animationatStart" value="true">
   <param name="transparentatStart" value="true">
   <param name="autostart" value="<?php print $video->autoplay; ?>">
