@@ -51,8 +51,14 @@ class Conversion {
       $return = $this->render($video);
     }
     else {
-      $video_object = $this->loadJob($video);
-      $return = $this->render($video_object);
+      $video = $this->loadJob($video);
+      $return = $this->render($video);
+    }
+    // clear the cache for the video id
+    $cid = 'video:video:' . md5($video->fid);
+    $cache = cache_get($cid);
+    if (!empty($cache->data)) {
+      cache_clear_all($cid, 'cache');
     }
     return $return;
   }

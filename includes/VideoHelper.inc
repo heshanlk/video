@@ -9,7 +9,7 @@
 class VideoHelper {
 
   public function video_object($variables) {
-    $cid = 'video:video:' . $variables['item']['fid'];
+    $cid = 'video:video:' . md5($variables['item']['fid']);
     $cache = cache_get($cid);
     if (!empty($cache->data)) {
       return $cache->data;
