@@ -445,8 +445,8 @@ function video_default_field_settings($settings) {
   );
   // video auto thumbnails.
   $thumb_options = array(
-    'auto' => 'Automatically extract thumbnails from video',
-    'auto_fallback' => 'Automatically extract thumbnails, with fallback to manual upload (If not thumbnails extracted from video)',
+    'auto' => 'Automatically extract thumbnails from video (with fallback to manual upload)',
+//    'auto_fallback' => 'Automatically extract thumbnails, with fallback to manual upload (If not thumbnails extracted from video)',
     'manual_upload' => 'Manually upload a thumbnail',
     'no' => 'Don\'t create thumbnail',
   );
