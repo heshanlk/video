@@ -56,8 +56,8 @@ function theme_video_formatter_player($variables) {
     }
   }
   // Setup our video object
-  module_load_include('inc', 'video', '/includes/video_helper');
-  $video_helper = new video_helper;
+  module_load_include('inc', 'video', '/includes/VideoHelper');
+  $video_helper = new VideoHelper;
   $video = $video_helper->video_object($variables);
   // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
@@ -87,8 +87,8 @@ function theme_video_formatter_thumbnail($variables) {
     return '<!-- File not found: ' . $variables['item']['fid'] . ' -->';
 
 //setup our thumbnail object
-  module_load_include('inc', 'video', '/includes/video_helper');
-  $video_helper = new video_helper;
+  module_load_include('inc', 'video', '/includes/VideoHelper');
+  $video_helper = new VideoHelper;
 // @TODO : change the object to an array
   $thumbnail = (array) $video_helper->thumbnail_object($variables);
 // return if no file path found for the video thumbnails and add log message

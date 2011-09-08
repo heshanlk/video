@@ -6,7 +6,7 @@
  *
  */
 
-class video_helper {
+class VideoHelper {
 
   public function video_object($variables) {
     //@todo cache the video object

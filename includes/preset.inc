@@ -6,7 +6,7 @@
  *
  */
 
-class video_preset {
+class Preset {
 
   private $preset;
 

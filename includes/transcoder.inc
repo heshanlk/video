@@ -58,7 +58,7 @@ class Transcoder {
     global $user;
     // load the presets
     $this->changeStatus($video->vid, VIDEO_RENDERING_ACTIVE);
-    $video_preset = new video_preset();
+    $video_preset = new Preset();
     $presets = $video_preset->properties();
     // if no presets enabled then write an error log
     if (empty($presets)) {

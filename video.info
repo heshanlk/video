@@ -7,11 +7,10 @@ dependencies[] = image
 files[] = video.module
 # Including class files to lazyload
 files[] = includes/Conversion.inc
-files[] = includes/filesystem.inc
 files[] = includes/metadata.inc
-files[] = includes/preset.inc
+files[] = includes/Preset.inc
 files[] = includes/Transcoder.inc
-files[] = includes/video_helper.inc
+files[] = includes/VideoHelper.inc
 files[] = includes/TranscoderFactory.inc
 files[] = transcoders/TranscoderAbstractionFactoryFfmpeg.inc
 files[] = transcoders/TranscoderAbstractionFactoryZencoder.inc
