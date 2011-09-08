@@ -11,7 +11,6 @@ class Conversion {
   protected $transcoder;
 
   public function __construct() {
-    module_load_include('inc', 'video', '/includes/transcoder');
     $this->transcoder = new Transcoder;
   }
 
@@ -78,25 +77,6 @@ class Conversion {
     }
   }
 
-  /**
-   * Load a converted video based on the file id ($fid)
-   *
-   * @todo: Need to figure something out here for multiple files (HTML 5)
-   * @param $fid
-   *   Integer of the file id to be loaded.
-   */
-  public function loadCompletedJob($video) {
-    return $this->transcoder->loadCompletedJob($video);
-  }
-
-  public function createJob($video, $nid) {
-    return $this->transcoder->createJob($video, $nid);
-  }
-
-  public function deleteJob($video) {
-    return $this->transcoder->deleteJob($video);
-  }
-
   public function changeStatus($vid, $status) {
     return $this->transcoder->changeStatus($vid, $status);
   }
@@ -108,7 +88,10 @@ class Conversion {
    *   Integer of the file id to be loaded.
    */
   public function loadJob($fid) {
-    return $this->transcoder->loadJob($fid);
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    $transcoder->setInput((array) file_load($fid));
+    return $transcoder->loadJob();
   }
 
 }

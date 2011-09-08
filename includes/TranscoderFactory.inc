@@ -106,7 +106,7 @@ abstract class TranscoderAbstractionFactory {
 
   public function deleteJob($video) {
     $video = (object) $video;
-    if (!$video = $this->loadJob($video->fid))
+    if (!$video = $this->loadJob())
       return;
     // converted output values
     $converted = unserialize($video->data);
@@ -120,12 +120,17 @@ abstract class TranscoderAbstractionFactory {
     db_delete('video_queue')
         ->condition('fid', $video->fid)
         ->execute();
+    //now delete our rows.
+    db_delete('video_output')
+        ->condition('original_fid', $video->fid)
+        ->execute();
   }
 
-  public function loadJob($fid) {
+  public function loadJob() {
+    $file = $this->settings['input'];
     $job = null;
     $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
-      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
+      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $file['fid']))
         ->fetch();
     if (!empty($job))
       return $job;

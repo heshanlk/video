@@ -59,7 +59,7 @@ class VideoHelper {
       $factory = new TranscoderAbstractionAbstractFactory();
       $transcoder = $factory->getProduct();
       $transcoder->setInput($variables['item']);
-      if ($transcoder->loadJob($variables['item']['fid'])) {
+      if ($transcoder->loadJob()) {
         // reset the video files object and add converted videos in to it
         $video->files = new stdClass();
         $video->files = $transcoder->loadCompletedJob($video);

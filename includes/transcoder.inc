@@ -188,35 +188,6 @@ class Transcoder {
     return $form;
   }
 
-  public function deleteJob($video) {
-    $video = (object) $video;
-    if (!$video = $this->loadJob($video->fid))
-      return;
-    // converted output values
-    $converted = unserialize($video->data);
-    if (!empty($converted)) {
-      foreach ($converted as $file) {
-        if (file_exists(drupal_realpath($file->uri)))
-          @drupal_unlink($file->uri);
-      }
-    }
-    //now delete our rows.
-    db_delete('video_queue')
-        ->condition('fid', $video->fid)
-        ->execute();
-  }
-
-  public function loadJob($fid) {
-    $job = null;
-    $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
-      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
-        ->fetch();
-    if (!empty($job))
-      return $job;
-    else
-      return FALSE;
-  }
-
   public function loadJobQueue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
@@ -227,23 +198,6 @@ class Transcoder {
       $videos[] = $row;
     }
     return $videos;
-  }
-
-  public function loadCompletedJob(&$video) {
-    $file = $this->loadJob($video->fid);
-    $data = unserialize($file->data);
-    if (!empty($data))
-      foreach ($data as $value) {
-        $extension = pathinfo(drupal_realpath($value->uri), PATHINFO_EXTENSION);
-        $video->files->{$extension}->filename = $value->filename;
-        $video->files->{$extension}->filepath = $value->uri;
-        $video->files->{$extension}->filemime = file_get_mimetype($value->uri);
-        $video->files->{$extension}->url = file_create_url($value->uri);
-        $video->files->{$extension}->extension = $extension;
-        $video->player = strtolower($extension);
-      }
-    else
-      return FALSE;
   }
 
   public function changeStatus($vid, $status) {
