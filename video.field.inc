@@ -120,7 +120,7 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
 function video_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
   // If there are no files specified at all, use the default.
   foreach ($entities as $id => $entity) {
-    if (empty($items[$id]) && $field['settings']['default_video_thumbnail']) {
+    if (empty($items[$id]) && $field['settings']['default_video_thumbnail']['fid']) {
       if ($file = file_load($field['settings']['default_video_thumbnail']['fid'])) {
         $items[$id][0] = (array) $file + array(
           'is_default' => TRUE,
@@ -135,7 +135,7 @@ function video_field_prepare_view($entity_type, $entities, $field, $instances, $
  */
 function video_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
   // change the theumbnails if default is checked
-  if (!empty($field['settings']['default_video_thumbnail'])) {
+  if (!empty($field['settings']['default_video_thumbnail']['fid'])) {
     foreach ($items as $delta => $item) {
       if ($item['use_default_video_thumb'])
         $items[$delta]['thumbnail'] = $field['settings']['default_video_thumbnail']['fid'];

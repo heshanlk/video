@@ -50,8 +50,9 @@ function video_thumb_process(&$element, &$form_state) {
       }
     }
     // if fail creating thumbnails fall back to manual or manual upload
-    if ((!empty($gen_fail) && $field['settings']['autothumbnail'] == 'auto_fallback') ||
+    if (($gen_fail || $field['settings']['autothumbnail'] == 'auto_fallback') ||
         $field['settings']['autothumbnail'] == 'manual_upload') {
+      $file += (array) file_load($file['fid']);
       $scheme = file_uri_scheme($file['uri']);
       $element['thumbnail'] = array(
         '#title' => t('Video thumbnail'),
@@ -71,7 +72,11 @@ function video_thumb_process(&$element, &$form_state) {
     }
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (isset($file['thumbnail']) && !empty($file['thumbnail'])) {
+    $large_thumb = NULL;
+    if (isset($file['thumbnail']['fid']) && is_array($file['thumbnail'])) {
+      $large_thumb = file_load($file['thumbnail']['fid']);
+    }
+    elseif (isset($file['thumbnail']['fid']) && !empty($file['thumbnail'])) {
       $large_thumb = file_load($file['thumbnail']);
     }
     elseif (!empty($field['settings']['default_video_thumbnail']['fid'])) {
@@ -83,6 +88,7 @@ function video_thumb_process(&$element, &$form_state) {
 //    print_r($field['settings']);
 //    $default_thumbnail = file_load($field['settings']['default_video_thumbnail']);
     // @todo Add video player
+//    dsm($large_thumb);
     if (!empty($large_thumb))
       $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
   }

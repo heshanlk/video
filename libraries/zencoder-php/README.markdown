@@ -1,10 +1,10 @@
 Zencoder API PHP Library
 ==========================
 
-Author:  [Steve Heffernan](http://www.steveheffernan.com) (steve (a) zencoder (.) c&#1;om)  
+Author:  [Steve Heffernan](http://www.steveheffernan.com) (steve (a) zencoder (.) c&#1;om)
 Company: [Zencoder - Online Video Encoder](http://zencoder.com)  
-Version: 1.1  
-Date:    2010-06-04  
+Version: 1.2
+Date:    2011-08-06
 Repository: <http://github.com/zencoder/zencoder-php/>  
 
 For more details on the Zencoder API requirements visit  
@@ -35,7 +35,7 @@ and pass it as the parameters for a new ZencoderJob object. Execute the script o
     $encoding_job = new ZencoderJob('
       {
         "api_key": "93h630j1dsyshjef620qlkavnmzui3",
-        "input": "s3://bucket-name/file-name.avi"
+        "input": "s3://bucket-name/file-name.avi",
         "outputs": [
           {
             "label": "web"
@@ -96,7 +96,7 @@ The third argument is the **request parameters** if needed. It can either be a J
 #### Example Job List Request
 
     $request = new ZencoderRequest(
-      'https://app.zencoder/api/jobs',
+      'https://app.zencoder.com/api/jobs',
       '93h630j1dsyshjef620qlkavnmzui3'
     );
 
@@ -111,7 +111,7 @@ The third argument is the **request parameters** if needed. It can either be a J
 #### Example Account Creation Request
 
     $request = new ZencoderRequest(
-      'https://app.zencoder/api/account', 
+      'https://app.zencoder.com/api/account', 
       false, // API key isn't needed for new account creation
       array(
         "terms_of_service" => "1",
@@ -195,5 +195,6 @@ Your [notifications page](https://app.zencoder.com/notifications) will come in h
 
 VERSIONS
 ---------
+    Version 1.2 - 2011-08-06    Added fixes for PHP Notices and SSL handling
     Version 1.1 - 2010-06-04    Added General API Requests
     Version 1.0 - 2010-04-02    Jobs and Notifications.

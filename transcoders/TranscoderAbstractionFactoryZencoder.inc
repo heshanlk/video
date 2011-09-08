@@ -8,19 +8,71 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
-    parent::setInput();
+    parent::setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE);
   }
 
   public function setOptions($options = NULL) {
-    parent::setOptions();
+    parent::setOptions($options = NULL);
   }
 
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
-    parent::setOutput();
+    parent::setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE);
   }
 
   public function extractFrames() {
-    
+    return;
+    global $user;
+    // Setup our thmbnail path.
+    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
+    $final_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
+
+    // Ensure the destination directory exists and is writable.
+    file_prepare_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
+
+    $files = array();
+    // no thumbnails to generate
+    $number_of_thumbs = variable_get('video_thumbs', 5);
+    for ($i = 0; $i < $number_of_thumbs; $i++) {
+      // @TODO Remove hard coded file types
+      $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
+      $thumbfile = $final_thumb_path . '/' . $filename;
+      //skip files already exists, this will save ffmpeg traffic
+      if (!file_exists(drupal_realpath($thumbfile))) {
+        $default = drupal_get_path('module', 'video') . '/images/no-thumb.png';
+        // Download generated thumbnails from S3.
+        libraries_load('awssdk');
+        $key = variable_get('media_amazon_key', '');
+        $secret_key = variable_get('media_amazon_key_secret', '');
+        $bucket = variable_get('media_amazon_s3_bucket', '');
+        $s3 = new AmazonS3($key, $secret_key);
+        if ($s3->get_object_metadata($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename))
+          $s3->get_object($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
+        else {
+          $thumbfile = $final_thumb_path . '/no-thumb.png';
+          @copy($default, drupal_realpath($thumbfile), FILE_EXISTS_REPLACE);
+        }
+//          $thumbfile = drupal_get_path('module', 'video') . '/images/no_thumb.gif';
+        if (!file_exists(drupal_realpath($thumbfile))) {
+          $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
+          $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
+          // Log the error message.
+          watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
+          continue;
+        }
+      }
+      // Begin building the file object.
+      // @TODO : use file_munge_filename()
+      $file = new stdClass();
+      $file->uid = $user->uid;
+      $file->status = 0;
+      $file->filename = trim($filename);
+      $file->uri = $thumbfile;
+      $file->filemime = file_get_mimetype($filename);
+      $file->filesize = filesize(drupal_realpath($thumbfile));
+      $file->timestamp = time();
+      $files[] = $file;
+    }
+    return $files;
   }
 
   public function execute() {
@@ -94,18 +146,17 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#size' => 5
       );
       $form['zencoder_info']['video_thumbnail_count_size'] = array(
-        '#type' => 'textfield',
+        '#type' => 'select',
         '#title' => t('Dimention of thumbnails'),
-        '#description' => t('Size of thumbnails to extract from video.'),
-        '#default_value' => variable_get('video_thumbnail_count_size', '320x240'),
-        '#size' => 10
+        '#default_value' => variable_get('video_thumbnail_size', '320x240'),
+        '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
       );
       global $base_url;
       $form['zencoder_info']['video_zencoder_postback'] = array(
         '#type' => 'textfield',
         '#title' => t('Postback URL for Zencoder'),
         '#description' => t('Important : Do not change this if you do not know
-          what your doing.<br/> This postback URL will receive video data when they are completed.'),
+          what your doing. This postback URL will receive video data when they are completed transcoding.'),
         '#default_value' => variable_get('video_zencoder_postback', $base_url . '/postback/jobs'),
       );
     }
