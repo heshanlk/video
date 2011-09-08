@@ -6,7 +6,7 @@
  * 
  */
 
-class video_metadata {
+class Metadata {
 
   private $metadata;
 
@@ -42,7 +42,7 @@ class video_metadata {
     return $command_output;
   }
 
-  public function admin_settings() {
+  public function adminSettings() {
     $form = array();
     $form['video_metadata'] = array(
       '#type' => 'checkbox',
@@ -91,28 +91,28 @@ class video_metadata {
       if (!module_load_include('inc', 'video', '/metadata/' . $file->name))
         require_once $file->filename;
       $focus = new $file->name;
-      $form['radios'][$focus->get_value()] = $focus->get_name();
-      $form['help'][] = $focus->get_help();
-      $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings();
+      $form['radios'][$file->name] = $focus->getName();
+      $form['help'][] = $focus->getHelp();
+      $form['admin_settings'] = $form['admin_settings'] + $focus->adminSettings();
     }
     return $form;
   }
 
-  public function admin_settings_validate($form, $form_state) {
-    return $this->metadata->admin_settings_validate($form, $form_state);
+  public function adminSettingsValidate($form, $form_state) {
+    return $this->metadata->adminSettingsValidate($form, $form_state);
   }
 
 }
 
 interface metadata_interface {
 
-  public function get_name();
+  public function getName();
 
-  public function get_help();
+  public function getHelp();
 
   public function process($video);
 
-  public function admin_settings();
+  public function adminSettings();
 
-  public function admin_settings_validate($form, &$form_state);
+  public function adminSettingsValidate($form, &$form_state);
 }

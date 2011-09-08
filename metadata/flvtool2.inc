@@ -6,7 +6,7 @@
  *
  */
 
-class flvtool2 extends video_metadata {
+class flvtool2 implements metadata_interface {
 
   protected $params = array();
   protected $nice = 'nice -n 19';
@@ -23,7 +23,7 @@ class flvtool2 extends video_metadata {
    * Interface Implementations
    * @see sites/all/modules/video/includes/metadata_interface#get_name()
    */
-  public function get_name() {
+  public function getName() {
     return $this->name;
   }
 
@@ -31,19 +31,11 @@ class flvtool2 extends video_metadata {
    * Interface Implementations
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
-  public function get_help() {
+  public function getHelp() {
     return t('!flvtools calculates various meta data and inserts a onMetaData tag in the video. It cuts FLV files and adds cue Points (onCuePoint). A debug command shows the inside of a FLV file and the print command gives meta data information in XML or YAML format.', array('!flvtools' => l(t('FlvTools2 '), 'http://github.com/unnu/flvtool2')));
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/metadata_interface#get_value()
-   */
-  public function get_value() {
-    return $this->value;
-  }
-
-  public function run_command($options) {
+  public function runCommand($options) {
     $command = $this->nice . ' ' . $this->params['cmd_path'] . ' ' . $options . '  2>&1';
     watchdog('video_metadata', 'Executing command: ' . $command, array(), WATCHDOG_DEBUG);
     ob_start();
@@ -54,11 +46,11 @@ class flvtool2 extends video_metadata {
   }
 
   public function process($video) {
-    $command_output = $this->run_command($this->meta_command . ' ' . $video);
+    $command_output = $this->runCommand($this->meta_command . ' ' . $video);
     return $command_output;
   }
 
-  public function admin_settings() {
+  public function adminSettings() {
     $form = array();
     $form['video_flvtool2_start'] = array(
       '#type' => 'markup',
@@ -77,7 +69,7 @@ class flvtool2 extends video_metadata {
     return $form;
   }
 
-  public function admin_settings_validate($form, $form_state) {
+  public function adminSettingsValidate($form, &$form_state) {
     return;
   }
 

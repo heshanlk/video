@@ -20,7 +20,7 @@ class Preset {
    * Show admin settings
    * @return array $form
    */
-  public function admin_settings() {
+  public function adminSettings() {
     $form = array();
     module_load_include('inc', 'video_ui', 'video.preset');
     $presets = video_preset_get_presets();
@@ -48,7 +48,7 @@ class Preset {
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
       '#options' => $preset,
-      '#default_value' => variable_get('video_preset', array()),
+      '#default_value' => variable_get('video_preset', 'FLV'),
       '#description' => t('Please use the !manage_link link to manage
        Video Presets. Use the !create_link link to create
       a new Video Preset, or upload an existing Feature to your modules directory.', array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),

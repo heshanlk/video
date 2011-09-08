@@ -37,7 +37,7 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
  */
 function video_preset_admin_settings() {
   $preset = new Preset();
-  $form = $preset->admin_settings();
+  $form = $preset->adminSettings();
   return system_settings_form($form);
 }
 
@@ -153,16 +153,16 @@ function video_players_admin_settings() {
  * @return <type>
  */
 function video_metadata_admin_settings() {
-  $metadata = new video_metadata;
-  $form = $metadata->admin_settings();
+  $metadata = new Metadata;
+  $form = $metadata->adminSettings();
   return system_settings_form($form);
 }
 
 function video_metadata_admin_settings_validate($form, &$form_state) {
   // add vallidations by metadata interface
   $metadata = $form_state['values']['video_metadata'];
-  $metadata = new video_metadata($metadata);
-  $metadata->admin_settings_validate($form, $form_state);
+  $metadata = new Metadata($metadata);
+  $metadata->adminSettingsValidate($form, $form_state);
 }
 
 /**
