@@ -2,81 +2,95 @@
 
 class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
 
+//  protected $settings = array();
+
   public function __construct() {
     parent::__construct();
     module_load_include('php', 'video', 'libraries/zencoder-php/Zencoder');
+    $this->settings['api_key'] = variable_get('video_zencoder_api_key', NULL);
   }
 
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
-    parent::setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE);
+    parent::setInput($file, $input_frame_rate, $validate_decode_codecs);
+    $this->settings['input'] = file_create_url($this->settings['input']['uri']);
   }
 
   public function setOptions($options = NULL) {
-    parent::setOptions($options = NULL);
+    if (is_array($options)) {
+      foreach ($options as $key => $value) {
+        if (empty($value) || $value === 'none')
+          continue;
+        switch ($key) {
+          case 'video_extension':
+            $this->settings['ouptut']['format'] = $value;
+            break;
+          case 'video_preset':
+            break;
+          default :
+            $this->settings['ouptut'][$key] = $value;
+        }
+      }
+    }
   }
 
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
-    parent::setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE);
+    $this->settings['ouptut']['label'] = $output_name;
+    $this->settings['ouptut']['base_url'] = $output_directory;
+    $this->settings['ouptut']['filename'] = $output_name;
   }
 
   public function extractFrames() {
-    return;
     global $user;
-    // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'videos/thumbnails');
-    $final_thumb_path = file_default_scheme() . '://' . $video_thumb_path . '/' . $video['fid'];
-
-    // Ensure the destination directory exists and is writable.
-    file_prepare_directory($final_thumb_path, FILE_CREATE_DIRECTORY);
+    // Get the file system directory.
+    $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
+    file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
 
     $files = array();
-    // no thumbnails to generate
-    $number_of_thumbs = variable_get('video_thumbs', 5);
-    for ($i = 0; $i < $number_of_thumbs; $i++) {
-      // @TODO Remove hard coded file types
-      $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
-      $thumbfile = $final_thumb_path . '/' . $filename;
+    // Total thumbs to generate
+    $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
+    for ($i = 0; $i < $no_of_thumbnails; $i++) {
+      $filename = file_munge_filename("video-thumbnail-" . $this->settings['input']['fid'] . "-$i.jpg", '', TRUE);
+      $thumbfile = $schema_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!file_exists(drupal_realpath($thumbfile))) {
-        $default = drupal_get_path('module', 'video') . '/images/no-thumb.png';
-        // Download generated thumbnails from S3.
-        libraries_load('awssdk');
-        $key = variable_get('media_amazon_key', '');
-        $secret_key = variable_get('media_amazon_key_secret', '');
-        $bucket = variable_get('media_amazon_s3_bucket', '');
-        $s3 = new AmazonS3($key, $secret_key);
-        if ($s3->get_object_metadata($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename))
-          $s3->get_object($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
-        else {
-          $thumbfile = $final_thumb_path . '/no-thumb.png';
-          @copy($default, drupal_realpath($thumbfile), FILE_EXISTS_REPLACE);
-        }
-//          $thumbfile = drupal_get_path('module', 'video') . '/images/no_thumb.gif';
-        if (!file_exists(drupal_realpath($thumbfile))) {
-          $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
-          $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
-          // Log the error message.
-          watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
-          continue;
+        // Download generated thumbnails from S3 if amasons3 module exists.
+        if (module_exists('amazons3')) {
+          libraries_load('awssdk');
+          $key = variable_get('media_amazon_key', '');
+          $secret_key = variable_get('media_amazon_key_secret', '');
+          $bucket = variable_get('media_amazon_s3_bucket', '');
+          $s3 = new AmazonS3($key, $secret_key);
+          if ($s3->get_object_metadata($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename))
+            $s3->get_object($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
+          if (!file_exists(drupal_realpath($thumbfile))) {
+            $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
+            $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
+            // Log the error message.
+            watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
+            continue;
+          }
         }
       }
-      // Begin building the file object.
-      // @TODO : use file_munge_filename()
-      $file = new stdClass();
-      $file->uid = $user->uid;
-      $file->status = 0;
-      $file->filename = trim($filename);
-      $file->uri = $thumbfile;
-      $file->filemime = file_get_mimetype($filename);
-      $file->filesize = filesize(drupal_realpath($thumbfile));
-      $file->timestamp = time();
-      $files[] = $file;
+      // Create file object only file is exists
+      if (file_exists(drupal_realpath($thumbfile))) {
+        $file = new stdClass();
+        $file->uid = $user->uid;
+        $file->status = 0;
+        $file->filename = trim($filename);
+        $file->uri = $thumbfile;
+        $file->filemime = file_get_mimetype($filename);
+        $file->filesize = filesize(drupal_realpath($thumbfile));
+        $file->timestamp = time();
+        $files[] = $file;
+      }
     }
-    return $files;
+    return!empty($files) ? $files : FALSE;
   }
 
   public function execute() {
-    
+    $settings = $this->settings;
+    dsm($settings, 'settings');
+    return FALSE;
   }
 
   public function getName() {
@@ -85,6 +99,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
   public function getValue() {
     return 'TranscoderAbstractionFactoryZencoder';
+  }
+
+  public function getVersion() {
+    return '1.2';
   }
 
   public function adminSettings() {
@@ -135,7 +153,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $form['zencoder_info']['video_zencoder_api_key'] = array(
         '#type' => 'textfield',
         '#title' => t('Zencoder API Key'),
-        '#default_value' => variable_get('video_zencoder_api_key', null),
+        '#default_value' => variable_get('video_zencoder_api_key', NULL),
         '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add new account.')
       );
       $form['zencoder_info']['video_thumbnail_count'] = array(

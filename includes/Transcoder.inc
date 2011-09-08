@@ -84,6 +84,7 @@ class Transcoder {
     }
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
+    dsm($transcoder);
     $transcoder->setInput((array) $video);
     foreach ($presets as $name => $preset) {
       // set transcoder options

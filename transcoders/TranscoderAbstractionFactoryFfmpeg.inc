@@ -157,18 +157,20 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           continue;
         }
       }
-      // Begin building the file object.
-      $file = new stdClass();
-      $file->uid = $user->uid;
-      $file->status = 0;
-      $file->filename = trim($filename);
-      $file->uri = $thumbnail_path;
-      $file->filemime = file_get_mimetype($filename);
-      $file->filesize = filesize($thumbnail_real_path);
-      $file->timestamp = time();
-      $files[] = $file;
+      if (file_exists($thumbnail_real_path)) {
+        // Begin building the file object.
+        $file = new stdClass();
+        $file->uid = $user->uid;
+        $file->status = 0;
+        $file->filename = trim($filename);
+        $file->uri = $thumbnail_path;
+        $file->filemime = file_get_mimetype($filename);
+        $file->filesize = filesize($thumbnail_real_path);
+        $file->timestamp = time();
+        $files[] = $file;
+      }
     }
-    return $files;
+    return!empty($files) ? $files : FALSE;
   }
 
   public function execute() {
