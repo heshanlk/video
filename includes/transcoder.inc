@@ -2,12 +2,19 @@
 
 /*
  * @file
- * Class file used to wrap the transcoder functions.
+ * Class file used to wrap the transcoder helper functions.
  * 
  */
 
 class Transcoder {
 
+  /**
+   * Extract frames from the video file. This helper function will intract with
+   * only the database and it will save all the thumbanil file reference in to
+   * the database.
+   * @param type $video
+   * @return type 
+   */
   public function extractFrames($video) {
     // Save thiumnails to the vide_thumbnails table
     $thumbnails = array();
@@ -52,6 +59,14 @@ class Transcoder {
     return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
   }
 
+  /**
+   * This helper function will help to execute video conversion job by loading
+   * job from the database and once it completed saving its data in to the
+   * database.
+   * @global type $user
+   * @param type $video
+   * @return type 
+   */
   public function executeConvertion($video) {
     global $user;
     // load the presets
@@ -114,6 +129,10 @@ class Transcoder {
     return $output;
   }
 
+  /**
+   * This helper function clean the database records if exist for current job.
+   * @param type $vid 
+   */
   protected function cleanConverted($vid) {
     // @todo : if this impact on performance then think about other way
     $result = db_select('video_output', 'vo')
@@ -136,6 +155,11 @@ class Transcoder {
     }
   }
 
+  /**
+   * Get admin settings forms from the transcoder classes and construct the admin
+   * form will do here.
+   * @return type 
+   */
   public function adminSettings() {
     //@todo use Drupal Form API status facility for this
     $form = array();
@@ -153,6 +177,11 @@ class Transcoder {
     return $form;
   }
 
+  /**
+   * Get all transcoders implemented to work with video  module and get its 
+   * values and names to display in admin settings form.
+   * @return type 
+   */
   private function _transcoders() {
     // @TODO : think to change this to observer patteren
     $files = array();
@@ -188,18 +217,12 @@ class Transcoder {
     return $form;
   }
 
-  public function loadJobQueue() {
-    $total_videos = variable_get('video_ffmpeg_instances', 5);
-    $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
-      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
-      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
-    foreach ($result as $row) {
-      $videos[] = $row;
-    }
-    return $videos;
-  }
-
+  /**
+   * Change the status of the job, this will effect in database and use when 
+   * represent a job data.
+   * @param type $vid
+   * @param type $status 
+   */
   public function changeStatus($vid, $status) {
     db_update('video_queue')->fields(array(
           'status' => $status,))

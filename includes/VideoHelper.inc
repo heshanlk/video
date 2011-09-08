@@ -62,11 +62,10 @@ class VideoHelper {
       if ($transcoder->loadJob()) {
         // reset the video files object and add converted videos in to it
         $video->files = new stdClass();
-        $video->files = $transcoder->loadCompletedJob($video);
+        $video->files = $transcoder->loadOutput($video);
       }
     }
     $video->player = 'flv';
-    dsm($video);
     // Return our object
     return $video;
   }

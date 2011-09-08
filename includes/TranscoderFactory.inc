@@ -4,6 +4,10 @@
  * @file
  * Transcoder Abstract Factory classes
  */
+
+/**
+ * Interface for transocder classes
+ */
 interface TranscoderFactoryInterface {
 
   public function extractFrames();
@@ -13,6 +17,9 @@ interface TranscoderFactoryInterface {
   public function getName();
 }
 
+/**
+ * Abstract class for the transcoder classes to keep common methods
+ */
 abstract class TranscoderAbstractionFactory {
 
   protected $settings = array();
@@ -22,6 +29,12 @@ abstract class TranscoderAbstractionFactory {
     
   }
 
+  /**
+   * Set Input file to add input file in to settings variable
+   * @param type $file
+   * @param type $input_frame_rate
+   * @param type $validate_decode_codecs 
+   */
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
     // @TODO : do some validation to check the file exists;
     if (!empty($file)) {
@@ -33,6 +46,10 @@ abstract class TranscoderAbstractionFactory {
       drupal_set_message('Video file not found!', 'error');
   }
 
+  /**
+   * Set options is to set transcoding settings before send to the transcoder.
+   * @param type $options 
+   */
   public function setOptions($options = NULL) {
     if (is_array($options)) {
       foreach ($options as $key => $value) {
@@ -41,6 +58,12 @@ abstract class TranscoderAbstractionFactory {
     }
   }
 
+  /**
+   * Set output file for transcoding, this would be the result file.
+   * @param type $output_directory
+   * @param type $output_name
+   * @param type $overwrite_mode 
+   */
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
     // @TODO : do some validation to check the file exists
     if (count($output_directory) == 1)
@@ -51,6 +74,10 @@ abstract class TranscoderAbstractionFactory {
       $this->errors['output'] = 'Output file not found.';
   }
 
+  /**
+   * Get enabled and supporting codecs by the transcoder.
+   * @return array 
+   */
   public function getCodecs() {
     $codecs = array(
       'encode' => array(
@@ -74,25 +101,51 @@ abstract class TranscoderAbstractionFactory {
     return $codecs;
   }
 
+  /**
+   * Get available output file formats from the transcoder.
+   * @param type $type
+   * @return type 
+   */
   public function getAvailableFormats($type = false) {
     return array('FLV');
   }
 
+  /**
+   * Get the installed transcoder version.
+   * @return type 
+   */
   public function getVersion() {
     return '1.0';
   }
 
+  /**
+   * Get file informations
+   * @return $file associative array with file informations
+   * like duration, dimentions
+   */
   public function getFileInfo() {
     $file = array();
     $file['duration']['seconds'] = 100;
     $file['video']['dimensions'] = array('width' => 640, 'height' => 350);
-    return $res;
+    return $file;
   }
 
+  /**
+   * Admin settings form for the transcoder
+   */
   abstract public function adminSettings();
 
+  /**
+   * Validate admin settings. This will call when Drupal admin settings validate.
+   */
   abstract public function adminSettingsValidate($form, &$form_state);
 
+  /**
+   * Create new transcoder job on database.
+   * @param type $video
+   * @param type $nid
+   * @return type 
+   */
   public function createJob($video, $nid) {
     return db_insert('video_queue')
             ->fields(array(
@@ -104,6 +157,11 @@ abstract class TranscoderAbstractionFactory {
             ->execute();
   }
 
+  /**
+   * Delete transcoder job and its details from database.
+   * @param type $video
+   * @return type 
+   */
   public function deleteJob($video) {
     $video = (object) $video;
     if (!$video = $this->loadJob())
@@ -126,6 +184,10 @@ abstract class TranscoderAbstractionFactory {
         ->execute();
   }
 
+  /**
+   * Load transcoding job from the database.
+   * @return type 
+   */
   public function loadJob() {
     $file = $this->settings['input'];
     $job = null;
@@ -138,7 +200,11 @@ abstract class TranscoderAbstractionFactory {
       return FALSE;
   }
 
-  public function loadCompletedJob() {
+  /**
+   * Load output from a transcoding job from the database.
+   * @return type 
+   */
+  public function loadOutput() {
     $file = $this->settings['input'];
     $output = null;
     $output = db_query("SELECT vo.output_fid FROM {video_output} vo WHERE vo.original_fid = :fid", array(':fid' => $file['fid']))
@@ -149,6 +215,22 @@ abstract class TranscoderAbstractionFactory {
       $video->{$extension} = $file;
     }
     return $video;
+  }
+
+  /**
+   * Select videos from our queue
+   * @return type 
+   */
+  public function loadJobQueue() {
+    $total_videos = variable_get('video_ffmpeg_instances', 5);
+    $videos = array();
+    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
+      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
+      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
+    foreach ($result as $row) {
+      $videos[] = $row;
+    }
+    return $videos;
   }
 
 }

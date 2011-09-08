@@ -8,10 +8,8 @@
 
 class Conversion {
 
-  protected $transcoder;
-
   public function __construct() {
-    $this->transcoder = new Transcoder;
+    
   }
 
   /**
@@ -34,7 +32,9 @@ class Conversion {
    *   An array containing all the videos to be proccessed.
    */
   public function loadJobQueue() {
-    return $this->transcoder->loadJobQueue();
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    return $transcoder->loadJobQueue();
   }
 
   /**
@@ -64,7 +64,8 @@ class Conversion {
     }
     // Make sure this video is pending or do nothing.
     if ($video->video_status != VIDEO_RENDERING_INQUEUE) {
-      return $this->transcoder->executeConvertion($video);
+      $transcoder = new Transcoder;
+      return $transcoder->executeConvertion($video);
     }
     else {
       $status = array(
@@ -78,7 +79,8 @@ class Conversion {
   }
 
   public function changeStatus($vid, $status) {
-    return $this->transcoder->changeStatus($vid, $status);
+    $transcoder = new Transcoder;
+    return $transcoder->changeStatus($vid, $status);
   }
 
   /**
