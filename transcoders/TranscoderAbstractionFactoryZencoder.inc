@@ -4,6 +4,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
   public function __construct() {
     parent::__construct();
+    module_load_include('php', 'video', 'libraries/zencoder-php/Zencoder');
   }
 
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
@@ -49,7 +50,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#title' => t('Zencoder User'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
-        '#description' => t('Save configurations to creare your Zencoder account to transcode and manage your videos using Zencode  API. Once you save your configurations then this will automatically create an account on the Zencoder.com and password and all ther other relevent details will be emailled to you.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com')))
+        '#description' => t('Add your email address, password and <em>save configurations</em> to creare your Zencoder account. It will help you to transcode and manage your videos using Zencode website. Once you save your configurations then this will automatically create an account on the Zencoder.com and password and all ther other relevent details will be emailled to you.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com')))
       );
       $form['zencoder_user']['zencoder_username'] = array(
         '#type' => 'textfield',
@@ -58,6 +59,13 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#size' => 50,
         '#description' => t('Make sure the email is accurate, since we will send all the password details to manage transcoding online and API key details to this.')
       );
+//      $form['zencoder_user']['zencoder_password'] = array(
+//        '#type' => 'password',
+//        '#title' => t('Password'),
+//        '#default_value' => variable_get('zencoder_password', ''),
+//        '#size' => 50,
+//        '#description' => t('Make sure the password is protect in somewhere, since it will need to login back to the Zencoder website.')
+//      );
       $form['zencoder_user']['agree_terms_zencoder'] = array(
         '#type' => 'checkbox',
         '#title' => t('Agree Zencoder !link.', array('!link' => l(t('Terms and Conditions'), 'http://zencoder.com/terms', array('attributes' => array('target' => '_blank'))))),
@@ -89,7 +97,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#type' => 'textfield',
         '#title' => t('Dimention of thumbnails'),
         '#description' => t('Size of thumbnails to extract from video.'),
-        '#default_value' => variable_get('video_thumbnail_count_size', '160x120'),
+        '#default_value' => variable_get('video_thumbnail_count_size', '320x240'),
         '#size' => 10
       );
       global $base_url;
@@ -123,14 +131,38 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     // get the API key from zencoder and save it to variable
     if (!form_get_errors()) {
-      $email = $form_state['values']['zencoder_username'];
-      module_load_include('inc', 'video_zencoder', '/includes/zencoder');
-      $zc = new video_zencoder_api;
       $user = new stdClass;
-      $user->email = $email;
-      $result = $zc->create_user($user);
+      $user->email = $form_state['values']['zencoder_username'];
+//      $user->password = $form_state['values']['zencoder_password'];
+      $result = $this->createUser($user);
       if ($result !== TRUE)
         form_set_error('zencoder_username', $result);
+    }
+  }
+
+  protected function createUser($user) {
+    $request = new ZencoderRequest(
+            'https://app.zencoder.com/api/account',
+            FALSE, // API key isn't needed for new account creation
+            array(
+              "terms_of_service" => "1",
+              "email" => $user->email,
+//              "password" => $user->password,
+              "affiliate_code" => "drupal-video"
+            )
+    );
+    if ($request->successful) {
+      $results = $request->results;
+      variable_set('video_zencoder_api_key', $results['api_key']);
+      drupal_set_message(t('Your Zencoder Details are as below.<br/><b>API Key</b> : !api_key<br/> <b>Password</b> : !password<br/> You can now login to !zencoder website and track your transcoding jobs online. Make sure you <b>save user/pass combination somewhere</b> before proceed.', array('!api_key' => $results['api_key'], '!password' => $results['password'], '!zencoder' => l('Zencoder', 'http://zencoder.com'))), 'status');
+      return TRUE;
+    }
+    else {
+      $errors = '';
+      foreach ($request->errors as $error) {
+        $errors .= $error;
+      }
+      return $errors;
     }
   }
 
