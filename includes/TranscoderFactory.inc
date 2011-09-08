@@ -264,8 +264,8 @@ class TranscoderAbstractionAbstractFactory implements TranscoderAbstractFactoryI
       }
     }
     if (class_exists($transcoder)) {
-//      $factory = new $transcoder;
-      $factory = new TranscoderAbstractionFactoryFfmpeg();
+      $factory = new $transcoder;
+//      $factory = new TranscoderAbstractionFactoryFfmpeg();
       return $factory;
     }
     else {
