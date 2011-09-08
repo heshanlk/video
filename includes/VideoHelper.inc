@@ -9,65 +9,82 @@
 class VideoHelper {
 
   public function video_object($variables) {
-    //@todo cache the video object
-    $field_settings = $variables['field']['settings'];
-    $instance_settings = $variables['instance']['settings'];
-    //setup our width x height
-    $player_dimensions = explode("x", $variables['player_dimensions']);
-    // set the video dimentions
-    if (!isset($variables['item']['dimensions'])) {
-      $dimensions = explode("x", $instance_settings['default_dimensions']);
-      if (!isset($dimensions[0]) || !isset($dimensions[1])) {
-        drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions in the form of WxH.'), 'error');
-      }
+    $cid = 'video:video:' . $variables['item']['fid'];
+    $cache = cache_get($cid);
+    if (!empty($cache->data)) {
+      return $cache->data;
     }
-    else
-      $dimensions = explode("x", $variables['item']['dimensions']);
+    else {
+      //@todo cache the video object
+      $field_settings = $variables['field']['settings'];
+      $instance_settings = $variables['instance']['settings'];
+      //setup our width x height
+      $player_dimensions = explode("x", $variables['player_dimensions']);
+      // set the video dimentions
+      if (!isset($variables['item']['dimensions'])) {
+        $dimensions = explode("x", $instance_settings['default_dimensions']);
+        if (!isset($dimensions[0]) || !isset($dimensions[1])) {
+          drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions in the form of WxH.'), 'error');
+        }
+      }
+      else
+        $dimensions = explode("x", $variables['item']['dimensions']);
 
-    if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
-      $player_dimensions = explode("x", $instance_settings['default_player_dimensions']);
       if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
-        drupal_set_message(t('Something is wrong with your player dimensions.  Make sure you enter the player dimensions in the form of WxH.'), 'error');
+        $player_dimensions = explode("x", $instance_settings['default_player_dimensions']);
+        if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
+          drupal_set_message(t('Something is wrong with your player dimensions.  Make sure you enter the player dimensions in the form of WxH.'), 'error');
+        }
       }
-    }
 
-    // Build our video object for all types.
-    $video = new stdClass();
-    $video->fid = $variables['item']['fid'];
-    $video->original = $variables['item'];
-    $extension = strtolower(pathinfo($variables['item']['filename'], PATHINFO_EXTENSION));
-    $video->files->{$extension}->filename = pathinfo($variables['item']['filename'], PATHINFO_FILENAME) . '.' . $extension;
-    $video->files->{$extension}->filepath = $variables['item']['uri'];
-    $video->files->{$extension}->url = file_create_url($variables['item']['uri']);
-    $video->files->{$extension}->uri = $variables['item']['uri'];
-    $video->files->{$extension}->extension = $extension;
-    // set the player to play
-    $video->player = $extension;
-    $video->width = trim($dimensions[0]);
-    $video->height = trim($dimensions[1]);
-    $video->player_width = trim($player_dimensions[0]);
-    $video->player_height = trim($player_dimensions[1]);
-    // load thumbnail object
-    $video->thumbnail = $this->thumbnail_object($variables);
-    $video->formatter = $variables['instance']['display']['default']['type'];
-    $video->autoplay = variable_get('video_autoplay', FALSE);
-    $video->autobuffering = variable_get('video_autobuffering', TRUE);
-    $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
-    // lets find out if we have transcoded this file and update our paths.
-    if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
-      // transcoder factory
-      $factory = new TranscoderAbstractionAbstractFactory();
-      $transcoder = $factory->getProduct();
-      $transcoder->setInput($variables['item']);
-      if ($transcoder->loadJob()) {
-        // reset the video files object and add converted videos in to it
-        $video->files = new stdClass();
-        $video->files = $transcoder->loadOutput($video);
+      // Build our video object for all types.
+      $video = new stdClass();
+      $video->fid = $variables['item']['fid'];
+      $video->original = $variables['item'];
+      $extension = strtolower(pathinfo($variables['item']['filename'], PATHINFO_EXTENSION));
+      $video->files->{$extension}->filename = pathinfo($variables['item']['filename'], PATHINFO_FILENAME) . '.' . $extension;
+      $video->files->{$extension}->filepath = $variables['item']['uri'];
+      $video->files->{$extension}->url = file_create_url($variables['item']['uri']);
+      $video->files->{$extension}->uri = $variables['item']['uri'];
+      $video->files->{$extension}->extension = $extension;
+      // set the player to play
+      $video->player = $extension;
+      $video->width = trim($dimensions[0]);
+      $video->height = trim($dimensions[1]);
+      $video->player_width = trim($player_dimensions[0]);
+      $video->player_height = trim($player_dimensions[1]);
+      // load thumbnail object
+      $video->thumbnail = $this->thumbnail_object($variables);
+      $video->formatter = $variables['instance']['display']['default']['type'];
+      $video->autoplay = variable_get('video_autoplay', FALSE);
+      $video->autobuffering = variable_get('video_autobuffering', TRUE);
+      $video->theora_player = variable_get('video_ogg_player', 'http://theora.org/cortado.jar');
+      // lets find out if we have transcoded this file and update our paths.
+      if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
+        // transcoder factory
+        $factory = new TranscoderAbstractionAbstractFactory();
+        $transcoder = $factory->getProduct();
+        $transcoder->setInput($variables['item']);
+        if ($transcoder->loadJob()) {
+          // reset the video files object and add converted videos in to it
+          $video->files = new stdClass();
+          $video->files = $transcoder->loadOutput($video);
+        }
       }
+      // add player to the video object
+      if (!empty($video->files)) {
+        //get the preset and check for output file type to set as player
+        $video_preset = new Preset();
+        $presets = $video_preset->properties();
+        foreach ($presets as $preset) {
+          $video->player = $preset['settings']['video_extension'];
+        }
+      }
+      // set cache
+      cache_set($cid, $video);
+      // Return our object
+      return $video;
     }
-    $video->player = 'flv';
-    // Return our object
-    return $video;
   }
 
   public function thumbnail_object($variables) {
