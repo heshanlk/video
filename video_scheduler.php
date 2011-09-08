@@ -11,11 +11,9 @@
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
  *
  */
-
 /**
  * Drupal shell execution script
  */
-
 $script = basename(array_shift($_SERVER['argv']));
 $script_name = realpath($script);
 $php_exec = realpath($_SERVER['PHP_SELF']);
@@ -63,14 +61,14 @@ EOF;
 }
 
 // define default settings
-$_SERVER['HTTP_HOST']       = 'default';
-$_SERVER['PHP_SELF']        = '/index.php';
-$_SERVER['REMOTE_ADDR']     = '127.0.0.1';
+$_SERVER['HTTP_HOST'] = 'default';
+$_SERVER['PHP_SELF'] = '/index.php';
+$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 $_SERVER['SERVER_SOFTWARE'] = 'PHP CLI';
-$_SERVER['REQUEST_METHOD']  = 'GET';
-$_SERVER['QUERY_STRING']    = '';
-$_SERVER['PHP_SELF']        = $_SERVER['REQUEST_URI'] = '/index.php';
-$_SERVER['SCRIPT_NAME']     = '/' . basename($_SERVER['SCRIPT_NAME']);
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_SERVER['QUERY_STRING'] = '';
+$_SERVER['PHP_SELF'] = $_SERVER['REQUEST_URI'] = '/index.php';
+$_SERVER['SCRIPT_NAME'] = '/' . basename($_SERVER['SCRIPT_NAME']);
 $_SERVER['HTTP_USER_AGENT'] = 'console';
 
 // Starting directory
@@ -96,7 +94,7 @@ else {
   while ($path && !(file_exists($path . '/index.php') && file_exists($path . '/includes/bootstrap.inc'))) {
     $path = dirname($path);
   }
-  
+
   if (!(file_exists($path . '/index.php') && file_exists($path . '/includes/bootstrap.inc'))) {
     echo "Unable to locate Drupal root, user -r option to specify path to Drupal root\n";
     exit(1);
@@ -132,5 +130,5 @@ ob_end_flush();
 
 //include our conversion class (also contains our defines)
 module_load_include('inc', 'video', 'includes/conversion');
-$video_conversion = new video_conversion;
-$video_conversion->run_queue();
+$video_conversion = new Conversion;
+$video_conversion->runQueue();

@@ -57,8 +57,8 @@ class video_helper {
     if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
       // discard all existing file data
       module_load_include('inc', 'video', '/includes/conversion');
-      $conversion = new video_conversion;
-      if ($conversion->load_job($variables['item']['fid'])) {
+      $conversion = new Conversion;
+      if ($conversion->loadJob($variables['item']['fid'])) {
         // reset the video files object and add converted videos in to it
         $video->files = new stdClass();
         $conversion->loadCompletedJob($video);

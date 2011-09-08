@@ -11,8 +11,6 @@ interface TranscoderFactoryInterface {
   public function execute();
 
   public function getName();
-
-  public function getValue();
 }
 
 abstract class TranscoderAbstractionFactory {

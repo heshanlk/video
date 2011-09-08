@@ -167,8 +167,8 @@ function video_widget_element_settings(&$element, &$form_state) {
   if ($field['settings']['autoconversion']) {
     // check if already converted or failed
     module_load_include('inc', 'video', '/includes/conversion');
-    $video_conversion = new video_conversion;
-    $video = $video_conversion->load_job($file['fid']);
+    $video_conversion = new Conversion;
+    $video = $video_conversion->loadJob($file['fid']);
     if (user_access('re convert video') && isset($video->video_status) && ($video->video_status == VIDEO_RENDERING_COMPLETE || $video->video_status == VIDEO_RENDERING_FAILED)) {
       $status = array(VIDEO_RENDERING_COMPLETE => 'completed', VIDEO_RENDERING_FAILED => 'failed');
       $element['re_convert_video'] = array(

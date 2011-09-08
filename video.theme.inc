@@ -45,8 +45,8 @@ function theme_video_formatter_player($variables) {
   // Only needs to be ran if they are converting videos
   if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
     module_load_include('inc', 'video', '/includes/conversion');
-    $conversion = new video_conversion;
-    if ($video = $conversion->load_job($variables['item']['fid'])) {
+    $conversion = new Conversion;
+    if ($video = $conversion->loadJob($variables['item']['fid'])) {
       if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
         return theme('video_inprogress');
       }

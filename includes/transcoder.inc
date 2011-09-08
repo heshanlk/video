@@ -176,7 +176,7 @@ class Transcoder {
     foreach ($files as $file) {
       module_load_include('inc', $file->module, '/transcoders/' . $file->name);
       $focus = new $file->name;
-      $form['radios'][$focus->getValue()] = $focus->getName();
+      $form['radios'][$file->name] = $focus->getName();
 //      $form['help'][] = $focus->getHelp();
       $form['admin_settings'] = $form['admin_settings'] + $focus->adminSettings();
     }
@@ -203,7 +203,7 @@ class Transcoder {
 
   public function deleteJob($video) {
     $video = (object) $video;
-    if (!$video = $this->load_job($video->fid))
+    if (!$video = $this->loadJob($video->fid))
       return;
     // converted output values
     $converted = unserialize($video->data);
@@ -219,7 +219,7 @@ class Transcoder {
         ->execute();
   }
 
-  public function load_job($fid) {
+  public function loadJob($fid) {
     $job = null;
     $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
       FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $fid))
@@ -243,7 +243,7 @@ class Transcoder {
   }
 
   public function loadCompletedJob(&$video) {
-    $file = $this->load_job($video->fid);
+    $file = $this->loadJob($video->fid);
     $data = unserialize($file->data);
     if (!empty($data))
       foreach ($data as $value) {

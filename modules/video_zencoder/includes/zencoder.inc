@@ -193,7 +193,7 @@ class video_zencoder_api {
    * Verifies the existence of a file id, returns the row or FALSE if none found.
    */
 
-  public function load_job($jobid) {
+  public function loadJob($jobid) {
     $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
       FROM {video_zencoder} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.jobid = :jobid", array(':jobid' => $jobid))
         ->fetch();

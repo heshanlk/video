@@ -6,7 +6,7 @@ dependencies[] = file
 dependencies[] = image
 files[] = video.module
 # Including class files to lazyload
-files[] = includes/conversion.inc
+files[] = includes/Conversion.inc
 files[] = includes/filesystem.inc
 files[] = includes/metadata.inc
 files[] = includes/preset.inc

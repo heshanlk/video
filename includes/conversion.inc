@@ -6,7 +6,7 @@
  *
  */
 
-class video_conversion {
+class Conversion {
 
   protected $transcoder;
 
@@ -18,7 +18,7 @@ class video_conversion {
   /**
    * Our main function to call when converting queued up jobs.
    */
-  public function run_queue() {
+  public function runQueue() {
     if ($videos = $this->loadJobQueue()) {
       foreach ($videos as $video) {
         $this->process($video);
@@ -52,7 +52,7 @@ class video_conversion {
       $return = $this->render($video);
     }
     else {
-      $video_object = $this->load_job($video);
+      $video_object = $this->loadJob($video);
       $return = $this->render($video_object);
     }
     return $return;
@@ -107,8 +107,8 @@ class video_conversion {
    * @param $fid
    *   Integer of the file id to be loaded.
    */
-  public function load_job($fid) {
-    return $this->transcoder->load_job($fid);
+  public function loadJob($fid) {
+    return $this->transcoder->loadJob($fid);
   }
 
 }

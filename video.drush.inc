@@ -30,6 +30,6 @@ function drush_video_scheduler() {
 
   // include our conversion class (also contains our defines)
   module_load_include('inc', 'video', 'includes/conversion');
-  $video_conversion = new video_conversion;
-  $video_conversion->run_queue();
+  $video_conversion = new Conversion;
+  $video_conversion->runQueue();
 }
