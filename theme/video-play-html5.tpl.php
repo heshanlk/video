@@ -10,7 +10,6 @@
  * @TODO : Fallback to flash should be done nicely
  *
  */
-dsm($video);
 ?>
 <!-- Using the Video for Everybody Embed Code http://camendesign.com/code/video_for_everybody -->
 <video width="<?php echo $video->player_width; ?>" autobuffer="<?php print $video->autobuffering; ?>" height="<?php echo $video->player_height; ?>" controls="controls" preload="<?php print $video->autobuffering ? 'auto' : 'metadata'; ?>" poster="<?php echo $video->thumbnail->url; ?>">
