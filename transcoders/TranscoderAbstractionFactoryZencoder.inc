@@ -347,7 +347,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     watchdog('transcoder', t('Zencoder : Postback received from the Zencoder Transcoding servers.' . serialize($data)));
     // we cannot use drupal_json_decode
     $video = json_decode($data);
-    watchdog('transocder', 'object is' . $video->job->state);
     $zc_job_state = trim($video->job->state);
     $zc_output_state = trim($video->output->state);
     if ($zc_output_state == 'finished' && $zc_job_state == 'finished')
@@ -358,14 +357,16 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       watchdog('transocder', t('Zencoder : Job !jobid is processing.', array('!jobid' => $video->job->id)));
       return;
     }
-    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video->job->id))->fetch();
+    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video->output->id))->fetch();
     if ($video->output->state == VIDEO_RENDERING_COMPLETE) {
       // change the job status
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('vid', $video_output->vid, '=')->execute();
+      echo 'Update the job JobID:' . $video->job->id;
     }
     else if ($video->output->state == VIDEO_RENDERING_FAILED) {
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED,))->condition('vid', $video_output->vid, '=')->execute();
       watchdog('transcoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
+      echo 'Update the job and marked as failed JobID:' . $video->job->id;
     }
     else {
       echo 'URL check was sucess!.';
