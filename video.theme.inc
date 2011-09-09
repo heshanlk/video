@@ -170,7 +170,7 @@ function theme_video_inprogress() {
  * Display an "encoding failed" message"
  */
 function theme_video_conversion_failed() {
-  return '<div class="video-conversion-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
+  return '<div class="video-conversion-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators. Please check logs for further debugging.') . '</div>';
 }
 
 /*

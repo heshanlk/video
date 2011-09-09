@@ -156,6 +156,14 @@ abstract class TranscoderAbstractionFactory {
     return $file;
   }
 
+  public function getErrors() {
+    return $this->errors;
+  }
+
+  public function checkErrors() {
+    return!empty($this->errors) ? TRUE : FALSE;
+  }
+
   /**
    * Admin settings form for the transcoder
    */
@@ -237,7 +245,7 @@ abstract class TranscoderAbstractionFactory {
         ->fetch();
     foreach ($output as $fid) {
       $file = file_load($fid);
-      $extension = pathinfo(drupal_realpath($file->uri), PATHINFO_EXTENSION);
+      $extension = end(explode('.', $file->filename));
       $video->{$extension} = $file;
     }
     return $video;
@@ -271,7 +279,7 @@ class TranscoderAbstractionAbstractFactory implements TranscoderAbstractFactoryI
   public static function getProduct($transcoder = NULL) {
     //get our configured transcoder.
     if (!isset($transcoder))
-      $transcoder = variable_get('video_convertor', 'video_ffmpeg');
+      $transcoder = variable_get('video_convertor', 'TranscoderAbstractionFactoryZencoder');
     if (!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
       $modules = module_list();
       $files = array();
@@ -281,7 +289,6 @@ class TranscoderAbstractionAbstractFactory implements TranscoderAbstractFactoryI
         if (!empty($inc_files))
           $files[$module] = $inc_files;
       }
-      // @TODO : add lazy load
       foreach ($files as $module => $_files) {
         foreach ($_files as $file) {
           if ($file->name == $transcoder)

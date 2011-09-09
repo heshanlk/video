@@ -117,7 +117,7 @@ function video_theme() {
 
 function video_cron() {
   if (variable_get('video_cron', TRUE)) {
-    module_load_include('inc', 'video', 'includes/conversion');
+    module_load_include('inc', 'video', 'includes/Conversion');
     $video_conversion = new Conversion;
     if ($videos = $video_conversion->loadJobQueue()) {
       $queue = DrupalQueue::get('video_queue');
@@ -145,7 +145,7 @@ function video_cron_queue_info() {
  * Process video transcoding queue
  */
 function video_queue_process($video) {
-  module_load_include('inc', 'video', 'includes/conversion');
+  module_load_include('inc', 'video', 'includes/Conversion');
   $video_conversion = new Conversion;
   $video_conversion->process($video);
 }

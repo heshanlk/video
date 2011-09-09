@@ -73,6 +73,7 @@ class Transcoder {
    */
   public function executeConvertion($video) {
     global $user;
+    $output = array();
     // load the presets
     $this->changeStatus($video->vid, VIDEO_RENDERING_ACTIVE);
     $video_preset = new Preset();
@@ -84,9 +85,10 @@ class Transcoder {
     }
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
-    dsm($transcoder);
     $transcoder->setInput((array) $video);
     foreach ($presets as $name => $preset) {
+      // override the widthXheight if enabled
+      $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
       // set transcoder options
       $transcoder->setOptions($preset['settings']);
       //set up output path
@@ -98,40 +100,50 @@ class Transcoder {
       $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
       $transcoder->setOutput($output_directory, $output_name);
       if ($output_file = $transcoder->execute()) {
-        $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
+        // check for errors before set the output file
+        if ($transcoder->checkErrors())
+          return FALSE;
         $output[] = $output_file;
       }
     }
-//    $output = $this->transcoder->convert_video($video);
     // add files to file_manged table and add reference to the file_usage table
-    if (is_array($output)) {
+    if (isset($output) && !empty($output) && is_array($output)) {
       $this->cleanConverted($video->vid);
       foreach ($output as $file) {
+        if (!isset($file->jobid))
+          $file->jobid = $video->vid;
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $user->uid;
         // if media module exists add type as an image
         if (module_exists('media'))
           $file->type = 'video';
         drupal_write_record('file_managed', $file);
-        $output_vid = array('vid' => $video->vid, 'original_fid' => $video->fid, 'output_fid' => $file->fid);
+        $output_vid = array('vid' => $video->vid, 'original_fid' => $video->fid, 'output_fid' => $file->fid, 'job_id' => $file->jobid);
         drupal_write_record('video_output', $output_vid);
+        // change the status if files are exists
+        if (file_exists(drupal_realpath($file->uri)))
+          $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
       }
+
+      // if successfully converted the video then update the status to publish
+      if (variable_get('video_publish_on_complete', TRUE)) {
+        // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
+        db_update('node')
+            ->fields(array(
+              'status' => NODE_PUBLISHED))
+            ->condition('nid', $video->nid, '=')
+            ->execute();
+        db_update('node_revision')
+            ->fields(array(
+              'status' => NODE_PUBLISHED))
+            ->condition('nid', $video->nid, '=')
+            ->execute();
+      }
+      return $output;
     }
-    // if successfully converted the video then update the status to publish
-    if ($output && variable_get('video_publish_on_complete', TRUE)) {
-      // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
-      db_update('node')
-          ->fields(array(
-            'status' => NODE_PUBLISHED))
-          ->condition('nid', $video->nid, '=')
-          ->execute();
-      db_update('node_revision')
-          ->fields(array(
-            'status' => NODE_PUBLISHED))
-          ->condition('nid', $video->nid, '=')
-          ->execute();
+    else {
+      return FALSE;
     }
-    return $output;
   }
 
   /**
@@ -172,7 +184,7 @@ class Transcoder {
     $form['video_convertor'] = array(
       '#type' => 'radios',
       '#title' => t('Video transcoder'),
-      '#default_value' => variable_get('video_convertor', 'video_ffmpeg'),
+      '#default_value' => variable_get('video_convertor', 'TranscoderAbstractionFactoryZencoder'),
       '#options' => $options['radios'],
       '#description' => t('Selecting a video transcoder will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', array('items' => $options['help'])))),
       '#prefix' => '<div id="transcoder-radios">',
@@ -212,13 +224,6 @@ class Transcoder {
 //      $form['help'][] = $focus->getHelp();
       $form['admin_settings'] = $form['admin_settings'] + $focus->adminSettings();
     }
-//    //we need to move our video/thumbnail fieldsets to the bottom of our form as they are used for each trancoder
-//    $autothumb = $form['admin_settings']['autothumb'];
-//    $autoconv = $form['admin_settings']['autoconv'];
-//    unset($form['admin_settings']['autothumb'], $form['admin_settings']['autoconv']);
-//    if(!$this->transcoder->is_wsod())
-//    $form['admin_settings']['autothumb'] = $autothumb;
-//    $form['admin_settings']['autoconv'] = $autoconv;
     return $form;
   }
 

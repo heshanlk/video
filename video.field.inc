@@ -202,13 +202,12 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
       if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1 || variable_get('video_convert_on_save', FALSE)) {
         // set to false when convert on save
         $job = FALSE;
-        switch ($video_conversion->process($item['fid'])) {
-          case FALSE:
-            drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
-            break;
-          case TRUE;
-            drupal_set_message(t('Successfully converted your video.'));
-            break;
+        if ($video_conversion->process($item['fid'])) {
+          drupal_set_message(t('Transcoding job submission was successful. Your video will convert and publish very soon.'));
+        }
+        else {
+          $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
+          drupal_set_message(t('Something went wrong with your video transcoding.  Please check your recent log entries for further debugging.'), 'error');
         }
       }
     }

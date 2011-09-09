@@ -164,6 +164,12 @@ function video_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'job_id' => array(
+        'description' => 'Referenced job id if any.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
     ),
     'primary key' => array('vid', 'original_fid', 'output_fid')
   );
@@ -250,4 +256,12 @@ function video_requirements($phase) {
   }
 
   return $requirements;
+}
+
+/**
+ * Implements hook_update_xxx
+ */
+function video_update_7201(&$sandbox) {
+  variable_set('video_convertor', 'TranscoderAbstractionFactoryZencoder');
+  return TRUE;
 }

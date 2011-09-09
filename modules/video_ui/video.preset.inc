@@ -78,11 +78,12 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#title' => t('Video quality'),
     '#description' => t('A target video quality. Affects bitrate and file size.'),
     '#options' => array(
-      '1 - Poor quality (smaller file)',
-      '2',
-      '3 (default)',
-      '4',
-      '5 - High quality (larger file)'
+      'none' => 'None',
+      1 => '1 - Poor quality (smaller file)',
+      2 => '2',
+      3 => '3 (default)',
+      4 => '4',
+      5 => '5 - High quality (larger file)'
     ),
     '#default_value' => (!empty($preset['settings']['video_quality'])) ? $preset['settings']['video_quality'] : 2
   );
@@ -91,11 +92,12 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#title' => t('Video speed'),
     '#description' => t('Speed of encoding. Affects compression.'),
     '#options' => array(
-      '1 - Slow (better compression)',
-      '2',
-      '3 (default)',
-      '4',
-      '5 - Fast (worse compression)'
+      'none' => 'None',
+      1 => '1 - Slow (better compression)',
+      2 => '2',
+      3 => '3 (default)',
+      4 => '4',
+      5 => '5 - Fast (worse compression)'
     ),
     '#default_value' => (!empty($preset['settings']['video_speed'])) ? $preset['settings']['video_speed'] : 2
   );
@@ -143,11 +145,12 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#title' => t('Audio quality'),
     '#description' => t('A target audio quality. Affects bitrate and file size.'),
     '#options' => array(
-      '1 - Poor quality (smaller file)',
-      '2',
-      '3 (default)',
-      '4',
-      '5 - High quality (larger file)'
+      'none' => 'None',
+      1 => '1 - Poor quality (smaller file)',
+      2 => '2',
+      3 => '3 (default)',
+      4 => '4',
+      5 => '5 - High quality (larger file)'
     ),
     '#default_value' => (!empty($preset['settings']['audio_quality'])) ? $preset['settings']['audio_quality'] : 2
   );
@@ -181,15 +184,9 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#description' => t('Force a specific output frame rate (in frames per second). For best quality, do not use this setting.'),
     '#default_value' => !empty($preset['settings']['frame_rate']) ? $preset['settings']['frame_rate'] : ''
   );
-  $form['settings']['adv_video']['frame_rate'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Frame rate'),
-    '#description' => t('Force a specific output frame rate (in frames per second). For best quality, do not use this setting.'),
-    '#default_value' => !empty($preset['settings']['frame_rate']) ? $preset['settings']['frame_rate'] : ''
-  );
   $form['settings']['adv_video']['keyframe_interval'] = array(
     '#type' => 'textfield',
-    '#title' => t('Frame rate'),
+    '#title' => t('Key frame interval'),
     '#description' => t('By default, a keyframe will be created at most every 250 frames. Specifying a different keyframe interval will allow you to create more or less keyframes in your video. A greater number of keyframes will increase the size of your output file, but will allow for more precise scrubbing in most players. Keyframe interval should be specified as a positive integer. For example, a value of 100 will create a keyframe every 100 frames.'),
     '#default_value' => !empty($preset['settings']['keyframe_interval']) ? $preset['settings']['keyframe_interval'] : ''
   );
@@ -771,11 +768,11 @@ function video_preset_name_exists($preset_name) {
   }
   else {
     return (bool) db_select('video_preset', 'p')
-        ->fields('p')
-        ->condition('p.name', $preset_name)
-        ->range(0, 1)
-        ->execute()
-        ->fetchField();
+            ->fields('p')
+            ->condition('p.name', $preset_name)
+            ->range(0, 1)
+            ->execute()
+            ->fetchField();
   }
 }
 

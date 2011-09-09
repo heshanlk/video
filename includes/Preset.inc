@@ -13,7 +13,7 @@ class Preset {
   public function __construct($preset = null) {
     $this->preset = $preset;
     if (!isset($preset))
-      $this->preset = variable_get('video_preset', array());
+      $this->preset = variable_get('video_preset', array('FLV'));
   }
 
   /**
@@ -48,7 +48,7 @@ class Preset {
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
       '#options' => $preset,
-      '#default_value' => variable_get('video_preset', 'FLV'),
+      '#default_value' => variable_get('video_preset', array('FLV')),
       '#description' => t('Please use the !manage_link link to manage
        Video Presets. Use the !create_link link to create
       a new Video Preset, or upload an existing Feature to your modules directory.', array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),

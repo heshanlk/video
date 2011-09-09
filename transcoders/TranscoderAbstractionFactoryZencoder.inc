@@ -2,41 +2,74 @@
 
 class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
 
-//  protected $settings = array();
+  protected $options = array();
 
   public function __construct() {
     parent::__construct();
     module_load_include('php', 'video', 'libraries/zencoder-php/Zencoder');
-    $this->settings['api_key'] = variable_get('video_zencoder_api_key', NULL);
+    $this->options['api_key'] = variable_get('video_zencoder_api_key', NULL);
   }
 
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
     parent::setInput($file, $input_frame_rate, $validate_decode_codecs);
-    $this->settings['input'] = file_create_url($this->settings['input']['uri']);
+    $this->options['input'] = file_create_url($this->settings['input']['uri']);
+    //http://heidisoft.drupal.video.s3.amazonaws.com/sites/demo.heidisoft.com/files/videos/converted/ecstasypromo.mp4
+    $this->options['input'] = 'http://heidisoft.drupal.video.s3.amazonaws.com/sites/demo.heidisoft.com/files/videos/converted/ecstasypromo.mp4';
   }
 
   public function setOptions($options = NULL) {
+    global $base_url;
     if (is_array($options)) {
       foreach ($options as $key => $value) {
         if (empty($value) || $value === 'none')
           continue;
         switch ($key) {
           case 'video_extension':
-            $this->settings['ouptut']['format'] = $value;
+            $this->options['output']['format'] = $value;
             break;
           case 'video_preset':
+          case 'default':
+            break;
+          case 'wxh':
+            $this->options['output']['size'] = $value;
+            break;
+          case 'video_quality':
+            $this->options['output']['quality'] = $value;
+            break;
+          case 'video_speed':
+            $this->options['output']['speed'] = $value;
+            break;
+          case 'video_upscale':
+            $this->options['output']['upscale'] = $value;
+            break;
+          case 'one_pass':
+            $this->options['output']['one_pass'] = ($value == 1 ) ? TRUE : FALSE;
             break;
           default :
-            $this->settings['ouptut'][$key] = $value;
+            $this->options['output'][$key] = $value;
         }
       }
+      // set notifications
+      $this->options['output']['notifications']['format'] = 'json';
+      $this->options['output']['notifications']['url'] = variable_get('video_zencoder_postback', $base_url . '/postback/jobs');
+      // thumbnails
+      $this->options['output']['thumbnails']['number'] = variable_get('video_thumbnail_count', 5);
+      $this->options['output']['thumbnails']['thumb_size'] = variable_get('video_thumbnail_size', '320x240');
+      $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
+      $final_path = (variable_get('video_zencoder_use_full_path', TRUE)) ? drupal_realpath($schema_thumb_path) : '/' . file_uri_target($schema_thumb_path);
+      $this->options['output']['thumbnails']['base_url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path;
+      $this->options['output']['thumbnails']['prefix'] = 'thumbnail-' . $this->settings['input']['fid'];
     }
   }
 
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
-    $this->settings['ouptut']['label'] = $output_name;
-    $this->settings['ouptut']['base_url'] = $output_directory;
-    $this->settings['ouptut']['filename'] = $output_name;
+    parent::setOutput($output_directory, $output_name, $overwrite_mode);
+    $this->options['output']['label'] = 'video-' . $this->settings['input']['fid'];
+    // show full path is not secure as its visible in file path
+    $final_path = (variable_get('video_zencoder_use_full_path', TRUE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
+    $this->options['output']['url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path . '/' . $this->settings['filename'];
+    $this->options['output']['base_url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path;
+    $this->options['output']['filename'] = $this->settings['filename'];
   }
 
   public function extractFrames() {
@@ -88,9 +121,36 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function execute() {
-    $settings = $this->settings;
-    dsm($settings, 'settings');
-    return FALSE;
+    $zencoder_job = new ZencoderJob(drupal_json_encode($this->options));
+    if ($zencoder_job->created) {
+      // Setup our converted video object
+      // for the outout uri we should change ftp://, sftp:// -> public:// or private://
+      $output_uri = $this->options['output']['base_url'] . '/' . $this->settings['filename'];
+      switch (file_uri_scheme($output_uri)) {
+        case 'fpt':
+        case 'sftp':
+          // thanks to D7 stream wrappers
+          $output_uri = file_uri_scheme($this->settings['input']['uri']) . '://' . file_uri_target($this->settings['base_url']) . '/' . $this->settings['filename'];
+          break;
+      }
+      $output = new stdClass();
+      $output->filename = $this->settings['filename'];
+      $output->uri = $output_uri;
+      $output->filemime = file_get_mimetype($output_uri);
+      $output->filesize = filesize(drupal_realpath($output_uri));
+      $output->timestamp = time();
+      $zencoder_output = $zencoder_job->outputs[$this->options['output']['label']]->id;
+      $output->jobid = $zencoder_output;
+      return $output;
+//      return $encoding_job;
+    }
+    else {
+      foreach ($zencoder_job->errors as $error) {
+        $this->errors['execute'][] = $error;
+        watchdog('transocoder', 'Zencoder reports some errors. !error', array('!error' => $error), WATCHDOG_ERROR);
+      }
+      return FALSE;
+    }
   }
 
   public function getName() {
@@ -107,7 +167,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
   public function adminSettings() {
     global $user;
-
+    global $base_url;
     $form = array();
     $form['video_zencoder_start'] = array(
       '#type' => 'markup',
@@ -163,19 +223,30 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#default_value' => variable_get('video_thumbnail_count', 5),
         '#size' => 5
       );
-      $form['zencoder_info']['video_thumbnail_count_size'] = array(
+      $form['zencoder_info']['video_thumbnail_size'] = array(
         '#type' => 'select',
         '#title' => t('Dimention of thumbnails'),
         '#default_value' => variable_get('video_thumbnail_size', '320x240'),
         '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
       );
-      global $base_url;
       $form['zencoder_info']['video_zencoder_postback'] = array(
         '#type' => 'textfield',
         '#title' => t('Postback URL for Zencoder'),
         '#description' => t('Important : Do not change this if you do not know
           what your doing. This postback URL will receive video data when they are completed transcoding.'),
         '#default_value' => variable_get('video_zencoder_postback', $base_url . '/postback/jobs'),
+      );
+      $form['zencoder_info']['video_zencoder_base_url'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Output file base'),
+        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory URL where we\'ll put the transcoded file, without a filename. If you do not supply a filename, we will generate a random filename plus an appropriate extension. !more. <br/>Eg: s3://my-output-bucket/, cf://username:api_key@container/, ftp://user:password@ftp.example.com', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
+        '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
+      );
+      $form['zencoder_info']['video_zencoder_use_full_path'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Use full path'),
+        '#default_value' => variable_get('video_zencoder_use_full_path', TRUE),
+        '#description' => t('If enabled the full dir path to the file will show up in the filepath of the outputfile.<br/><b>Disable</b> this to reduse the security fall, if your using S3:// and <b>must enable</b> this if your using ftp://, sftp://')
       );
     }
     $form['video_zencoder_end'] = array(

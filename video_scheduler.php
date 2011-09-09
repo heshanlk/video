@@ -129,6 +129,6 @@ ini_set('display_errors', 1);
 ob_end_flush();
 
 //include our conversion class (also contains our defines)
-module_load_include('inc', 'video', 'includes/conversion');
+module_load_include('inc', 'video', 'includes/Conversion');
 $video_conversion = new Conversion;
 $video_conversion->runQueue();

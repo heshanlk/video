@@ -12,7 +12,15 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
     parent::setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE);
-    $this->transcoder->setInputFile(drupal_realpath($this->settings['input']['uri']));
+    $result = $this->transcoder->setInputFile(drupal_realpath($this->settings['input']['uri']));
+    if ($result !== PHPVideoToolkit::RESULT_OK) {
+      //if there was an error then get it
+      $error_msg = $this->transcoder->getLastError();
+      watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+      $this->transcoder->reset();
+      $this->errors['input'] = $error_msg;
+      return FALSE;
+    }
   }
 
   public function setOptions($options = NULL) {
@@ -81,6 +89,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         $error_msg = $this->transcoder->getLastError();
         watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
         $this->transcoder->reset();
+        $this->errors['options'] = $error_msg;
         return FALSE;
       }
     }
@@ -88,7 +97,15 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
     parent::setOutput($output_directory, $output_name, $overwrite_mode);
-    $this->transcoder->setOutput(drupal_realpath($output_directory) . '/', $output_name);
+    $result = $this->transcoder->setOutput(drupal_realpath($output_directory) . '/', $output_name);
+    if ($result !== PHPVideoToolkit::RESULT_OK) {
+      //if there was an error then get it
+      $error_msg = $this->transcoder->getLastError();
+      watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+      $this->transcoder->reset();
+      $this->errors['output'] = $error_msg;
+      return FALSE;
+    }
   }
 
   public function extractFrames() {
@@ -105,7 +122,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $files = NULL;
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
       $seek = ($duration / $no_of_thumbnails) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
-      $filename = file_munge_filename("video-thumbnail-" . $this->settings['input']['fid'] . "-$i.jpg", '', TRUE);
+      $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . "_000$i.jpg", '', TRUE);
       $thumbnail_path = $schema_thumb_path . '/' . $filename;
       $thumbnail_real_path = drupal_realpath($thumbnail_path);
       //skip files already exists, this will save ffmpeg traffic
@@ -181,6 +198,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       $error_msg = $this->transcoder->getLastError();
       watchdog('transcoder', t('!message'), array('!message' => $error_msg), WATCHDOG_ERROR);
       $this->transcoder->reset();
+      $this->errors['execute'] = $error_msg;
       return FALSE;
     }
     $command_output = $this->transcoder->getLastOutput();
