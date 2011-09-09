@@ -346,8 +346,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $data = file_get_contents("php://input");
     watchdog('transcoder', t('Zencoder : Postback received from the Zencoder Transcoding servers.' . serialize($data)));
     $video = drupal_json_decode($data);
-    watchdog('transocder', $video['job']->state);
-    watchdog('transocder', $video->job->state);
+    watchdog('transocder', 'array is' . $video['job']->state);
+    watchdog('transocder', 'object is' . $video->job->state);
     $zc_job_state = trim($video['job']->state);
     $zc_output_state = trim($video['output']->state);
     if ($zc_output_state == 'finished' && $zc_job_state == 'finished')
