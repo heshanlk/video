@@ -198,7 +198,7 @@ function theme_video_flv($variables) {
       break;
     case 'flowplayer':
       // kjh: use a playlist to display the thumbnail if not auto playing
-      if (isset($video->autoplay) && isset($video->thumbnail->url)) {
+      if (isset($video->autoplay) && isset($video->thumbnail->url) && !empty($video->thumbnail->url)) {
         $options = array(
           'playlist' => array($video->thumbnail->url,
             array('url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
