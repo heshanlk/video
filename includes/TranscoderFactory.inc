@@ -250,9 +250,9 @@ abstract class TranscoderAbstractionFactory {
     $file = $this->settings['input'];
     $output = null;
     $output = db_query("SELECT vo.output_fid FROM {video_output} vo WHERE vo.original_fid = :fid", array(':fid' => $file['fid']))
-        ->fetch();
-    foreach ($output as $fid) {
-      $file = file_load($fid);
+        ->fetchAll();
+    foreach ($output as $output_fid) {
+      $file = file_load($output_fid->output_fid);
       $extension = end(explode('.', $file->filename));
       $video->{$extension} = $file;
     }

@@ -14,7 +14,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     parent::setInput($file, $input_frame_rate, $validate_decode_codecs);
     $this->options['input'] = file_create_url($this->settings['input']['uri']);
     //http://heidisoft.drupal.video.s3.amazonaws.com/sites/demo.heidisoft.com/files/videos/converted/ecstasypromo.mp4
-    $this->options['input'] = 'http://heidisoft.drupal.video.s3.amazonaws.com/sites/demo.heidisoft.com/files/videos/converted/ecstasypromo.mp4';
+    if (variable_get('video_zencoder_testing_mode', FALSE))
+      $this->options['input'] = variable_get('video_zencoder_test_file_path', 'http://example.com/video.mp4');
   }
 
   public function setOptions($options = NULL) {
@@ -70,10 +71,13 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $this->options['output']['url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path . '/' . $this->settings['filename'];
     $this->options['output']['base_url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path;
     $this->options['output']['filename'] = $this->settings['filename'];
+    // set all video to public, there is no way to handle private videos
+    $this->options['output']['public'] = 1;
   }
 
   public function extractFrames() {
     global $user;
+    $s3_get_object = FALSE;
     // Get the file system directory.
     $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
@@ -82,21 +86,24 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Total thumbs to generate
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     for ($i = 0; $i < $no_of_thumbnails; $i++) {
-      $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . 'png', '', TRUE);
-      $thumbfile = $schema_thumb_path . '/' . $filename;
+      $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
       //skip files already exists, this will save ffmpeg traffic
-      if (!file_exists(drupal_realpath($thumbfile))) {
+      if (!file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
         // Download generated thumbnails from S3 if amasons3 module exists.
-        if (module_exists('amazons3')) {
+        if (module_exists('amazons3') && file_uri_scheme(variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]')) == 's3') {
           libraries_load('awssdk');
-          $key = variable_get('media_amazon_key', '');
-          $secret_key = variable_get('media_amazon_key_secret', '');
-          $bucket = variable_get('media_amazon_s3_bucket', '');
+          $key = variable_get('aws_key', '');
+          $secret_key = variable_get('aws_secret_key', '');
+          $bucket = variable_get('amazons3_bucket');
           $s3 = new AmazonS3($key, $secret_key);
-          if ($s3->get_object_metadata($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename))
-            $s3->get_object($bucket, $video_thumb_path . '/' . $video['fid'] . '/' . $filename, array('fileDownload' => drupal_realpath($thumbfile)));
-          if (!file_exists(drupal_realpath($thumbfile))) {
-            $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
+          if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename)) {
+            $s3_get_object = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . '/' . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path . '/' . $filename)));
+            if (variable_get('video_zencoder_testing_mode', FALSE))
+            // change the job status
+              db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('fid', $this->settings['input']['fid'], '=')->execute();
+          }
+          if (!file_exists(drupal_realpath($schema_thumb_path . '/' . $filename)) && $s3_get_object) {
+            $error_param = array('%file' => $schema_thumb_path, '%out' => $s3_get_object);
             $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
             // Log the error message.
             watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
@@ -105,14 +112,14 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
       }
       // Create file object only file is exists
-      if (file_exists(drupal_realpath($thumbfile))) {
+      if (file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
         $file = new stdClass();
         $file->uid = $user->uid;
         $file->status = 0;
         $file->filename = trim($filename);
-        $file->uri = $thumbfile;
+        $file->uri = $schema_thumb_path . '/' . $filename;
         $file->filemime = file_get_mimetype($filename);
-        $file->filesize = filesize(drupal_realpath($thumbfile));
+        $file->filesize = filesize(drupal_realpath($schema_thumb_path . '/' . $filename));
         $file->timestamp = time();
         $files[] = $file;
       }
@@ -132,17 +139,20 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           // thanks to D7 stream wrappers
           $output_uri = file_uri_scheme($this->settings['input']['uri']) . '://' . file_uri_target($this->settings['base_url']) . '/' . $this->settings['filename'];
           break;
+        case 's3':
+          $final_path = (variable_get('video_zencoder_use_full_path', TRUE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
+          $output_uri = 's3:/' . $final_path . '/' . $this->settings['filename'];
+          break;
       }
       $output = new stdClass();
       $output->filename = $this->settings['filename'];
       $output->uri = $output_uri;
       $output->filemime = file_get_mimetype($output_uri);
-      $output->filesize = filesize(drupal_realpath($output_uri));
+      $output->filesize = filesize(drupal_realpath($this->settings['input']['uri']));
       $output->timestamp = time();
       $zencoder_output = $zencoder_job->outputs[$this->options['output']['label']]->id;
       $output->jobid = $zencoder_output;
       return $output;
-//      return $encoding_job;
     }
     else {
       foreach ($zencoder_job->errors as $error) {
@@ -239,7 +249,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $form['zencoder_info']['video_zencoder_base_url'] = array(
         '#type' => 'textfield',
         '#title' => t('Output file base'),
-        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory URL where we\'ll put the transcoded file, without a filename. If you do not supply a filename, we will generate a random filename plus an appropriate extension. !more. <br/>Eg: s3://my-output-bucket/, cf://username:api_key@container/, ftp://user:password@ftp.example.com', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
+        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory URL where we\'ll put the transcoded file, without a filename. If you do not supply a filename, we will generate a random filename plus an appropriate extension. !more. <br/>Eg: s3://my-output-bucket, cf://username:api_key@container/, ftp://user:password@ftp.example.com', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
         '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
       );
       $form['zencoder_info']['video_zencoder_use_full_path'] = array(
@@ -247,6 +257,27 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#title' => t('Use full path'),
         '#default_value' => variable_get('video_zencoder_use_full_path', TRUE),
         '#description' => t('If enabled the full dir path to the file will show up in the filepath of the outputfile.<br/><b>Disable</b> this to reduse the security fall, if your using S3:// and <b>must enable</b> this if your using ftp://, sftp://')
+      );
+      // testing
+      $form['zencoder_info']['testing'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Testing mode'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $form['zencoder_info']['testing']['video_zencoder_testing_mode'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Test mode'),
+        '#default_value' => variable_get('video_zencoder_testing_mode', FALSE),
+        '#description' => t('Enable test mode to test upload/playback locally(If you do not have any public IP to test)')
+      );
+      $form['zencoder_info']['testing']['video_zencoder_test_file_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Path to test video file'),
+        '#description' => t('Add a file path to a video file to download by Zencoder 
+          to trnascode, you have to mention this file for testing if your using your 
+          locabox and there is no any public ip where Zencoder can download video.'),
+        '#default_value' => variable_get('video_zencoder_test_file_path', 'http://example.com/video.mp4'),
       );
     }
     $form['video_zencoder_end'] = array(
@@ -325,36 +356,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if ($video->output->state == VIDEO_RENDERING_COMPLETE) {
       // change the job status
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('vid', $video_output->vid, '=')->execute();
-      // load the original file
-      $file = file_load($video_output->original_fid);
-      // update the thumbanils
-      // Setup our thmbnail path.
-      $schema_thumb_path = file_uri_scheme($file->uri) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file->fid;
-      file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
-      //    $i = rand(0, (variable_get('no_of_video_thumbnail_count', 5) - 1));
-      $filename = 'thumbnail-' . $file->fid . '_' . sprintf("%04d", 1) . '.png';
-      $thumbnail_path = $final_thumb_path . '/' . $filename;
-      // s3 download to local server
-      if (module_exists('amazons3') && file_uri_scheme(variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]')) == 's3') {
-        libraries_load('awssdk');
-        $key = variable_get('aws_key', '');
-        $secret_key = variable_get('aws_secret_key', '');
-        $bucket = file_uri_target(variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'));
-        $s3 = new AmazonS3($key, $secret_key);
-        if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename)) {
-          $response = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path)));
-          $default = $final_thumb_path . '/no-thumb.png';
-          @unlink(drupal_realpath($default));
-          if ($response->status == 200)
-            watchdog('zencoder', t('Successfully downloaded the thumbnails file and replaced the default image.'));
-          else
-            watchdog('zencoder', t('Download thumbanils files is failed.'), array(), WATCHDOG_ERROR);
-        }
-        watchdog('zencoder', t('No thumbanils found.', array('!id' => $video->job->id, '!states' => $zc_output_state)));
-      }
-    } else if ($video->output->state == VIDEO_RENDERING_FAILED) {
-      //    echo 'working failed';
-      $zc->changeStatus($vid, VIDEO_RENDERING_FAILED);
+    }
+    else if ($video->output->state == VIDEO_RENDERING_FAILED) {
+      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED,))->condition('vid', $video_output->vid, '=')->execute();
       watchdog('zencoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
     }
     else {
