@@ -344,8 +344,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   public function processPostback() {
     // get JSON post data
     $data = file_get_contents("php://input");
-    watchdog('zencoder', t('Postback received from the Zencoder Transcoding servers.' . serialize($data)));
+    watchdog('transcoder', t('Zencoder : Postback received from the Zencoder Transcoding servers.' . serialize($data)));
     $video = drupal_json_decode($data);
+    watchdog('transocder', $video['job']->state);
+    watchdog('transocder', $video->job->state);
     $zc_job_state = trim($video['job']->state);
     $zc_output_state = trim($video['output']->state);
     if ($zc_output_state == 'finished' && $zc_job_state == 'finished')
@@ -353,7 +355,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if ($zc_output_state == 'failed' || $zc_job_state == 'failed')
       $video['output']->state = VIDEO_RENDERING_FAILED;
     if ($zc_job_state == 'processing') {
-      watchdog('zencoder', t('Job !jobid is processing.', array('!jobid' => $video['job']->id)));
+      watchdog('transocder', t('Zencoder : Job !jobid is processing.', array('!jobid' => $video['job']->id)));
       return;
     }
     $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video['job']->id))->fetch();
@@ -363,7 +365,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
     else if ($video['output']->state == VIDEO_RENDERING_FAILED) {
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED,))->condition('vid', $video_output->vid, '=')->execute();
-      watchdog('zencoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
+      watchdog('transcoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
     }
     else {
       echo 'URL check was sucess!.';
