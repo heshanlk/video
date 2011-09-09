@@ -345,27 +345,25 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // get JSON post data
     $data = file_get_contents("php://input");
     watchdog('transcoder', t('Zencoder : Postback received from the Zencoder Transcoding servers.' . serialize($data)));
-    $video = drupal_json_decode($data);
-    dsm($video);
-    watchdog('transocder', 'serialize array' . serialize($video));
-    watchdog('transocder', 'array is' . $video['job']->state);
+    // we cannot use drupal_json_decode
+    $video = json_decode($data);
     watchdog('transocder', 'object is' . $video->job->state);
-    $zc_job_state = trim($video['job']->state);
-    $zc_output_state = trim($video['output']->state);
+    $zc_job_state = trim($video->job->state);
+    $zc_output_state = trim($video->output->state);
     if ($zc_output_state == 'finished' && $zc_job_state == 'finished')
-      $video['output']->state = VIDEO_RENDERING_COMPLETE;
+      $video->output->state = VIDEO_RENDERING_COMPLETE;
     if ($zc_output_state == 'failed' || $zc_job_state == 'failed')
-      $video['output']->state = VIDEO_RENDERING_FAILED;
+      $video->output->state = VIDEO_RENDERING_FAILED;
     if ($zc_job_state == 'processing') {
-      watchdog('transocder', t('Zencoder : Job !jobid is processing.', array('!jobid' => $video['job']->id)));
+      watchdog('transocder', t('Zencoder : Job !jobid is processing.', array('!jobid' => $video->job->id)));
       return;
     }
-    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video['output']->id))->fetch();
-    if ($video['output']->state == VIDEO_RENDERING_COMPLETE) {
+    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video->job->id))->fetch();
+    if ($video->output->state == VIDEO_RENDERING_COMPLETE) {
       // change the job status
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('vid', $video_output->vid, '=')->execute();
     }
-    else if ($video['output']->state == VIDEO_RENDERING_FAILED) {
+    else if ($video->output->state == VIDEO_RENDERING_FAILED) {
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED,))->condition('vid', $video_output->vid, '=')->execute();
       watchdog('transcoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
     }
