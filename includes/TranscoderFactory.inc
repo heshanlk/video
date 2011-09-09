@@ -156,10 +156,18 @@ abstract class TranscoderAbstractionFactory {
     return $file;
   }
 
+  /**
+   * Get errors
+   * @return type 
+   */
   public function getErrors() {
     return $this->errors;
   }
 
+  /**
+   * Check for erros if any
+   * @return type 
+   */
   public function checkErrors() {
     return!empty($this->errors) ? TRUE : FALSE;
   }
@@ -265,6 +273,14 @@ abstract class TranscoderAbstractionFactory {
       $videos[] = $row;
     }
     return $videos;
+  }
+
+  /**
+   * Process postback jobs
+   * @return type 
+   */
+  public function processPostback() {
+    return TRUE;
   }
 
 }

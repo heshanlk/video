@@ -82,7 +82,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Total thumbs to generate
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     for ($i = 0; $i < $no_of_thumbnails; $i++) {
-      $filename = file_munge_filename("video-thumbnail-" . $this->settings['input']['fid'] . "-$i.jpg", '', TRUE);
+      $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . 'png', '', TRUE);
       $thumbfile = $schema_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!file_exists(drupal_realpath($thumbfile))) {
@@ -303,6 +303,62 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         $errors .= $error;
       }
       return $errors;
+    }
+  }
+
+  public function processPostback() {
+    // get JSON post data
+    $data = file_get_contents("php://input");
+    watchdog('zencoder', t('Postback received from the Zencoder Transcoding servers.' . serialize($data)));
+    $video = drupal_json_decode($data);
+    $zc_job_state = trim($video->job->state);
+    $zc_output_state = trim($video->output->state);
+    if ($zc_output_state == 'finished' && $zc_job_state == 'finished')
+      $video->output->state = VIDEO_RENDERING_COMPLETE;
+    if ($zc_output_state == 'failed' || $zc_job_state == 'failed')
+      $video->output->state = VIDEO_RENDERING_FAILED;
+    if ($zc_job_state == 'processing') {
+      watchdog('zencoder', t('Job !jobid is processing.', array('!jobid' => $video->job->id)));
+      return;
+    }
+    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video->job->id))->fetch();
+    if ($video->output->state == VIDEO_RENDERING_COMPLETE) {
+      // change the job status
+      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('vid', $video_output->vid, '=')->execute();
+      // load the original file
+      $file = file_load($video_output->original_fid);
+      // update the thumbanils
+      // Setup our thmbnail path.
+      $schema_thumb_path = file_uri_scheme($file->uri) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file->fid;
+      file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
+      //    $i = rand(0, (variable_get('no_of_video_thumbnail_count', 5) - 1));
+      $filename = 'thumbnail-' . $file->fid . '_' . sprintf("%04d", 1) . '.png';
+      $thumbnail_path = $final_thumb_path . '/' . $filename;
+      // s3 download to local server
+      if (module_exists('amazons3') && file_uri_scheme(variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]')) == 's3') {
+        libraries_load('awssdk');
+        $key = variable_get('aws_key', '');
+        $secret_key = variable_get('aws_secret_key', '');
+        $bucket = file_uri_target(variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'));
+        $s3 = new AmazonS3($key, $secret_key);
+        if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename)) {
+          $response = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path)));
+          $default = $final_thumb_path . '/no-thumb.png';
+          @unlink(drupal_realpath($default));
+          if ($response->status == 200)
+            watchdog('zencoder', t('Successfully downloaded the thumbnails file and replaced the default image.'));
+          else
+            watchdog('zencoder', t('Download thumbanils files is failed.'), array(), WATCHDOG_ERROR);
+        }
+        watchdog('zencoder', t('No thumbanils found.', array('!id' => $video->job->id, '!states' => $zc_output_state)));
+      }
+    } else if ($video->output->state == VIDEO_RENDERING_FAILED) {
+      //    echo 'working failed';
+      $zc->changeStatus($vid, VIDEO_RENDERING_FAILED);
+      watchdog('zencoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
+    }
+    else {
+      echo 'URL check was sucess!.';
     }
   }
 
