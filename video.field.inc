@@ -206,6 +206,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
           drupal_set_message(t('Transcoding job submission was successful. Your video will convert and publish very soon.'));
         }
         else {
+          $video = $transcoder->loadJob();
           $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
           drupal_set_message(t('Something went wrong with your video transcoding.  Please check your recent log entries for further debugging.'), 'error');
         }
