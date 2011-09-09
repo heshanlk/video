@@ -358,7 +358,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       watchdog('transocder', t('Zencoder : Job !jobid is processing.', array('!jobid' => $video['job']->id)));
       return;
     }
-    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video['job']->id))->fetch();
+    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $video['output']->id))->fetch();
     if ($video['output']->state == VIDEO_RENDERING_COMPLETE) {
       // change the job status
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('vid', $video_output->vid, '=')->execute();
