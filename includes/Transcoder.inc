@@ -113,7 +113,7 @@ class Transcoder {
         if (!isset($file->jobid))
           $file->jobid = $video->vid;
         $file->status = FILE_STATUS_PERMANENT;
-        $file->uid = $user->uid;
+        $file->uid = $video->uid;
         // if media module exists add type as an image
         if (module_exists('media'))
           $file->type = 'video';

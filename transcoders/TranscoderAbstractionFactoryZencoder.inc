@@ -57,7 +57,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $this->options['output']['thumbnails']['number'] = variable_get('video_thumbnail_count', 5);
       $this->options['output']['thumbnails']['thumb_size'] = variable_get('video_thumbnail_size', '320x240');
       $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
-      $final_path = (variable_get('video_zencoder_use_full_path', TRUE)) ? drupal_realpath($schema_thumb_path) : '/' . file_uri_target($schema_thumb_path);
+      $final_path = (variable_get('video_zencoder_use_full_path', FALSE)) ? drupal_realpath($schema_thumb_path) : '/' . file_uri_target($schema_thumb_path);
       $this->options['output']['thumbnails']['base_url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path;
       $this->options['output']['thumbnails']['prefix'] = 'thumbnail-' . $this->settings['input']['fid'];
     }
@@ -67,7 +67,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     parent::setOutput($output_directory, $output_name, $overwrite_mode);
     $this->options['output']['label'] = 'video-' . $this->settings['input']['fid'];
     // show full path is not secure as its visible in file path
-    $final_path = (variable_get('video_zencoder_use_full_path', TRUE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
+    $final_path = (variable_get('video_zencoder_use_full_path', FALSE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
     $this->options['output']['url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path . '/' . $this->settings['filename'];
     $this->options['output']['base_url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path;
     $this->options['output']['filename'] = $this->settings['filename'];
@@ -140,7 +140,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           $output_uri = file_uri_scheme($this->settings['input']['uri']) . '://' . file_uri_target($this->settings['base_url']) . '/' . $this->settings['filename'];
           break;
         case 's3':
-          $final_path = (variable_get('video_zencoder_use_full_path', TRUE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
+          $final_path = (variable_get('video_zencoder_use_full_path', FALSE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
           $output_uri = 's3:/' . $final_path . '/' . $this->settings['filename'];
           break;
       }
@@ -249,14 +249,18 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $form['zencoder_info']['video_zencoder_base_url'] = array(
         '#type' => 'textfield',
         '#title' => t('Output file base'),
-        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory URL where we\'ll put the transcoded file, without a filename. If you do not supply a filename, we will generate a random filename plus an appropriate extension. !more. <br/>Eg: s3://my-output-bucket, cf://username:api_key@container/, ftp://user:password@ftp.example.com', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
+        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory 
+          URL where we\'ll put the transcoded file. If your using ftp://, sftp:// 
+          or similar then you have to <b>symlink sites/default/files folder to FTP base folder</b> before 
+          create videos. We will put your files relative to the sites/default/files folder. <br/>Eg: s3://my-output-bucket, cf://username:api_key@container/, 
+          ftp://user:password@ftp.example.com', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
         '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
       );
       $form['zencoder_info']['video_zencoder_use_full_path'] = array(
         '#type' => 'checkbox',
         '#title' => t('Use full path'),
-        '#default_value' => variable_get('video_zencoder_use_full_path', TRUE),
-        '#description' => t('If enabled the full dir path to the file will show up in the filepath of the outputfile.<br/><b>Disable</b> this to reduse the security fall, if your using S3:// and <b>must enable</b> this if your using ftp://, sftp://')
+        '#default_value' => variable_get('video_zencoder_use_full_path', FALSE),
+        '#description' => t('If enabled the full dir path to the file will show up in the filepath of the outputfile.<br/><b>Disable</b> this to reduse the security fall. We don\'t encourage to enble this.')
       );
       // testing
       $form['zencoder_info']['testing'] = array(
