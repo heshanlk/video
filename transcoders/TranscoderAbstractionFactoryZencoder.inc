@@ -134,7 +134,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       // for the outout uri we should change ftp://, sftp:// -> public:// or private://
       $output_uri = $this->options['output']['base_url'] . '/' . $this->settings['filename'];
       switch (file_uri_scheme($output_uri)) {
-        case 'fpt':
+        case 'ftp':
         case 'sftp':
           // thanks to D7 stream wrappers
           $output_uri = file_uri_scheme($this->settings['input']['uri']) . '://' . file_uri_target($this->settings['base_url']) . '/' . $this->settings['filename'];
@@ -253,10 +253,14 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           URL where we\'ll put the transcoded file. If your using ftp://, sftp:// 
           or similar then you have to <b>mount sites/default/files folder to FTP base folder</b> before 
           create videos.<br/> You can use <em>mount</em> command (mount --bind /source_dir /dest_dir_01):
-          <br/> Eg : <br/><code>mkdir /home/USERNAME/files</code><br/>
-          <code>mount --bind /var/www/html/DRUPAL/sites/default/files/ /home/USERNAME/files</code>
-          <br/><br/>Example URL patterens: s3://my-output-bucket, cf://username:api_key@container/, 
-          ftp://user:password@ftp.example.com', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
+          <br/> Eg : <br/><code>1. mkdir /home/USERNAME/videos</code><br/>
+          <code>2. mount --bind /var/www/html/DRUPAL/sites/default/files/videos/ /home/USERNAME/files/videos</code><br/>
+          <code>3. cd /home/USERNAME/videos</code><br/>
+          <code>4. ls -l</code><br/>
+          <code><b>It should display </b><br/>converted<br/>original<br/>thumbnails</code><br/>
+          <code>5. chown -R USERNAME:USERNAME videos/</code>
+          <br/><br/>Example URL patterens: <code>s3://my-output-bucket, cf://username:api_key@container/, 
+          ftp://user:password@ftp.example.com</code>', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
         '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
       );
       $form['zencoder_info']['video_zencoder_use_full_path'] = array(
