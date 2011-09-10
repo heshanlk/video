@@ -61,6 +61,12 @@ function theme_video_formatter_player($variables) {
   module_load_include('inc', 'video', '/includes/VideoHelper');
   $video_helper = new VideoHelper;
   $video = $video_helper->video_object($variables);
+  // override player dimentions
+  if (isset($variables['player_dimensions']) && !empty($variables['player_dimensions'])) {
+    $player_dimensions = explode('x', $variables['player_dimensions']);
+    $video->player_width = trim($player_dimensions[0]);
+    $video->player_height = trim($player_dimensions[1]);
+  }
   // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
   $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
