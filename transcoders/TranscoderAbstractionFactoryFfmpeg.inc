@@ -209,6 +209,10 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 //      $this->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
+    // get the video file informations
+    $file_info = $this->getFileInfo();
+    // video duration
+    $duration = $file_info['duration']['seconds'];
     // Setup our converted video object
     $output = new stdClass();
     $output->filename = $this->settings['filename'];
@@ -216,6 +220,8 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $output->filemime = file_get_mimetype($output_file);
     $output->filesize = filesize(drupal_realpath($output_file));
     $output->timestamp = time();
+    $output->jobid = NULL;
+    $output->duration = $duration;
     return $output;
   }
 
