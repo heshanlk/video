@@ -76,6 +76,9 @@ class Transcoder {
     $output = array();
     // load the presets
     $this->changeStatus($video->vid, VIDEO_RENDERING_ACTIVE);
+    // update the video conversion start time
+    db_update('video_queue')->fields(array('started' => time()))->condition('vid', $video->vid, '=')->execute();
+
     $video_preset = new Preset();
     $presets = $video_preset->properties();
     // if no presets enabled then write an error log
@@ -106,6 +109,8 @@ class Transcoder {
         $output[] = $output_file;
       }
     }
+    // update the video conversion completed time
+    db_update('video_queue')->fields(array('completed' => time()))->condition('vid', $video->vid, '=')->execute();
     // add files to file_manged table and add reference to the file_usage table
     if (isset($output) && !empty($output) && is_array($output)) {
       $this->cleanConverted($video->vid);
