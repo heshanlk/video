@@ -107,8 +107,8 @@ function theme_video_formatter_thumbnail($variables) {
     $image['title'] = $thumbnail['title'];
   }
 
-  if ($variables['video_style']) {
-    $image['style_name'] = $variables['video_style'];
+  if ($variables['image_style']) {
+    $image['style_name'] = $variables['image_style'];
     $output = theme('image_style', $image);
   }
   else {
