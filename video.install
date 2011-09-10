@@ -171,7 +171,7 @@ function video_schema() {
         'default' => NULL,
       ),
       'duration' => array(
-        'description' => 'Stores the video duration.',
+        'description' => 'Stores the video duration in Sec.',
         'type' => 'int',
         'default' => 0,
       ),
@@ -281,7 +281,7 @@ function video_update_7202(&$sandbox) {
     $new_field = array(
       'type' => 'int',
       'default' => 0,
-      'description' => 'Stores the video duration.',
+      'description' => 'Stores the video duration in Sec.',
     );
     db_add_field('video_output', 'duration', $new_field);
   }
