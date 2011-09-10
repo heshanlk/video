@@ -251,8 +251,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#title' => t('Output file base'),
         '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory 
           URL where we\'ll put the transcoded file. If your using ftp://, sftp:// 
-          or similar then you have to <b>symlink sites/default/files folder to FTP base folder</b> before 
-          create videos. We will put your files relative to the sites/default/files folder. <br/>Eg: s3://my-output-bucket, cf://username:api_key@container/, 
+          or similar then you have to <b>mount sites/default/files folder to FTP base folder</b> before 
+          create videos.<br/> You can use <em>mount</em> command (mount --bind /source_dir /dest_dir_01):
+          <br/> Eg : <br/><code>mkdir /home/USERNAME/files</code><br/>
+          <code>mount --bind /var/www/html/DRUPAL/sites/default/files/ /home/USERNAME/files</code>
+          <br/><br/>Example URL patterens: s3://my-output-bucket, cf://username:api_key@container/, 
           ftp://user:password@ftp.example.com', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
         '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
       );
