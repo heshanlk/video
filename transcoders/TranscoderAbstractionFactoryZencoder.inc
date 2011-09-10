@@ -144,14 +144,13 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           $output_uri = 's3:/' . $final_path . '/' . $this->settings['filename'];
           break;
       }
-      $zencoder_output = $zencoder_job->outputs[$this->options['output']['label']]->id;
       $output = new stdClass();
       $output->filename = $this->settings['filename'];
       $output->uri = $output_uri;
       $output->filemime = file_get_mimetype($output_uri);
       $output->filesize = filesize(drupal_realpath($this->settings['input']['uri']));
       $output->timestamp = time();
-      $output->jobid = $zencoder_output;
+      $output->jobid = $zencoder_job->id;
       $output->duration = 0;
       return $output;
     }
@@ -356,10 +355,24 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Catch notification
     $notification = ZencoderOutputNotification::catch_and_parse();
     // Check output/job state
-    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $notification->output->id))->fetch();
+    $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $notification->job->id))->fetch();
     if ($notification->output->state == "finished") {
       if ($notification->job->state == "finished") {
         // update file metadata ie. duration
+        $request = new ZencoderRequest(
+                'https://app.zencoder.com/api/jobs/' . $notification->job->id,
+                $this->options['api_key']
+        );
+
+        if ($request->successful) {
+          $duration = $request->successful['job']['output_media_files'][0]['duration_in_ms'] / 1000;
+          db_update('video_output')->fields(array('duration' => $duration))->condition('job_id', $notification->job->id, '=')->execute();
+        }
+        else {
+          foreach ($request->errors as $error) {
+            watchdog('transcoder', t('Zencoder reports errors !errors.', array('!errors' => $error)), NULL, WATCHDOG_ERROR);
+          }
+        }
         // change the job status
         db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('vid', $video_output->vid, '=')->execute();
         echo "Dubble w00t!";
