@@ -48,6 +48,11 @@ function video_schema() {
         'length' => '255',
         'default' => '',
       ),
+      'duration' => array(
+        'description' => 'Stores the video duration in Sec.',
+        'type' => 'int',
+        'default' => 0,
+      ),
       'started' => array(
         'description' => t('Start timestamp of transcodings'),
         'type' => 'int',
@@ -170,11 +175,6 @@ function video_schema() {
         'not null' => FALSE,
         'default' => NULL,
       ),
-      'duration' => array(
-        'description' => 'Stores the video duration in Sec.',
-        'type' => 'int',
-        'default' => 0,
-      ),
     ),
     'primary key' => array('vid', 'original_fid', 'output_fid')
   );
@@ -277,13 +277,13 @@ function video_update_7201(&$sandbox) {
 function video_update_7202(&$sandbox) {
   $ret = array();
   // Check because D6 installs may already have added this.
-  if (!db_field_exists('video_output', 'duration')) {
+  if (!db_field_exists('video_queue', 'duration')) {
     $new_field = array(
       'type' => 'int',
       'default' => 0,
       'description' => 'Stores the video duration in Sec.',
     );
-    db_add_field('video_output', 'duration', $new_field);
+    db_add_field('video_queue', 'duration', $new_field);
   }
 
   return $ret;
