@@ -259,9 +259,27 @@ function video_requirements($phase) {
 }
 
 /**
- * Implements hook_update_xxx
+ * Update the video convertor to Zencoder.
  */
 function video_update_7201(&$sandbox) {
   variable_set('video_convertor', 'TranscoderAbstractionFactoryZencoder');
   return TRUE;
+}
+
+/**
+ * Alter video_output table to add video duration.
+ */
+function video_update_7202(&$sandbox) {
+  $ret = array();
+  // Check because D6 installs may already have added this.
+  if (!db_field_exists('video_output', 'duration')) {
+    $new_field = array(
+      'type' => 'int',
+      'default' => 0,
+      'description' => 'Stores the video duration.',
+    );
+    db_add_field('video_output', 'duration', $new_field);
+  }
+
+  return $ret;
 }
