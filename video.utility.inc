@@ -247,7 +247,7 @@ function video_widget_element_settings(&$element, &$form_state) {
 function video_web_extensions($ext) {
   $extensions = array_filter(explode(' ', $ext));
   $web_extensions = array(
-    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
+    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', 'm4v', // quicktime
     'divx', 'mkv', //divx
     'rm', // realplayer
     'flv', 'f4v', //flash player
@@ -331,6 +331,7 @@ function video_video_extensions() {
     '3gp' => 'video_play_quicktime',
     '3g2' => 'video_play_quicktime',
     'mp4' => 'video_play_quicktime',
+    'm4v' => 'video_play_quicktime',
     'rm' => 'video_play_realmedia',
     'f4v' => 'video_play_flv',
     'flv' => 'video_play_flv',
