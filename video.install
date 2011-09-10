@@ -170,6 +170,11 @@ function video_schema() {
         'not null' => FALSE,
         'default' => NULL,
       ),
+      'duration' => array(
+        'description' => 'Stores the video duration.',
+        'type' => 'int',
+        'default' => 0,
+      ),
     ),
     'primary key' => array('vid', 'original_fid', 'output_fid')
   );
