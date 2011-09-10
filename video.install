@@ -272,7 +272,7 @@ function video_update_7201(&$sandbox) {
 }
 
 /**
- * Alter video_output table to add video duration.
+ * Alter video_queue table to add video duration.
  */
 function video_update_7202(&$sandbox) {
   $ret = array();

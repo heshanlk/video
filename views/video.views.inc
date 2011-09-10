@@ -2,78 +2,112 @@
 
 /**
  * @file
- * Provide views data for video.module.
+ * Provide views data and handlers for statistics.module
  */
-module_load_include('inc', 'content', '/includes/views/content.views');
+/**
+ * @defgroup views_statistics_module statistics.module handlers
+ *
+ * Includes the ability to create views of just the statistics table.
+ * @{
+ */
 
 /**
- * Implementation of hook_views_handlers().
- */
-function video_views_handlers() {
-  return array(
-    'info' => array(
-      'path' => drupal_get_path('module', 'video') . '/views',
-    ),
-    'handlers' => array(
-      // field handlers
-      'video_views_handler_field_data' => array(
-        'parent' => 'content_handler_field',
-      ),
-    ),
-  );
-}
-
-/**
- * Implementation of hook_views_data()
+ * Implements hook_views_data()
  */
 function video_views_data() {
-  $data = array();
-  $data['video']['table']['group'] = t('Video');
-  $widgets = array('videoftp_widget', 'uploadfield_widget');
-  foreach (field_info_fields () as $field) {
-    if ($field['module'] == 'filefield' && isset($field['widget']['type']) && in_array($field['widget']['type'], $widgets)) {
-      $views_data = content_views_field_views_data($field);
-      $table_alias = content_views_tablename($field);
-      $db_info = content_database_info($field);
+  // Basic table information.
+  // ----------------------------------------------------------------
+  // video_output table
 
-      $title = t('@label (!name) thumbnail', array('@label' => t($field['widget']['label']), '!name' => $field['field_name']));
-      $types = array();
-      foreach (content_types () as $type) {
-        if (isset($type['fields'][$field['field_name']])) {
-          // TODO : run check_plain here instead of on the imploded string below ?
-          $types[] = $type['name'];
-        }
-      }
+  $data['video_queue']['table']['group'] = t('Video');
 
-      $additional_fields = array();
-      foreach ($db_info['columns'] as $column => $attributes) {
-        // Select explicitly enabled field columns.
-        if (!empty($attributes['views'])) {
-          $db_columns[$column] = $attributes;
-        }
-        // Ensure all columns are retrieved.
-        $additional_fields[$attributes['column']] = $attributes['column'];
-      }
+  $data['video_queue']['table']['join'] = array(
+    // ...to the node table
+    'node' => array(
+      'left_field' => 'nid',
+      'field' => 'nid',
+    ),
+  );
 
-      $data[$table_alias][$field['field_name'] . '_thumbnail'] = array(
-        'group' => t('Video'),
-        'title' => $title,
-//        'help' =>  t($field_types[$field['type']]['label']) .' - '. t('Appears in: @types', array('@types' => implode(', ', $types))),
-        // #931616
-        'help' => t('Appears in: @types', array('@types' => implode(', ', $types))),
-      );
-      $data[$table_alias][$field['field_name'] . '_thumbnail']['field'] = array(
-        'title' => $title,
-        'field' => $db_info['columns']['data']['column'],
-        'table' => $db_info['table'],
-        'handler' => 'video_views_handler_field_data',
-        'click sortable' => FALSE,
-        'content_field_name' => $field['field_name'],
-        'additional fields' => $additional_fields,
-        'access callback' => 'content_access',
-        'access arguments' => array('view', $field),
-      );
-    }
-  }
+  // dimensions
+  $data['video_queue']['dimensions'] = array(
+    'title' => t('Dimensions'),
+    'help' => t('The widthXheight of the video.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
+  // status
+  $data['video_queue']['status'] = array(
+    'title' => t('Status'),
+    'help' => t('Video conversion status.'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
+  // duration
+  $data['video_queue']['duration'] = array(
+    'title' => t('Duration'),
+    'help' => t('Video playtime.'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
+  // started
+  $data['video_queue']['started'] = array(
+    'title' => t('Video conversion start'),
+    'help' => t('The time of conversion process has been started.'),
+    'field' => array(
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_date',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
+  // completed
+  $data['video_queue']['completed'] = array(
+    'title' => t('Video conversion end'),
+    'help' => t('The time of conversion process has been complete.'),
+    'field' => array(
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_date',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
   return $data;
 }

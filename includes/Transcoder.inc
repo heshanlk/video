@@ -122,10 +122,11 @@ class Transcoder {
           'vid' => $video->vid,
           'original_fid' => $video->fid,
           'output_fid' => $file->fid,
-          'job_id' => $file->jobid,
-          'duration' => $file->duration,
+          'job_id' => $file->jobid
         );
         drupal_write_record('video_output', $output_vid);
+        // add duration to the video_queue table
+        db_update('video_queue')->fields(array('duration' => $file->duration,))->condition('vid', $video->vid, '=')->execute();
         // change the status if files are exists
         if (file_exists(drupal_realpath($file->uri)))
           $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
