@@ -118,7 +118,13 @@ class Transcoder {
         if (module_exists('media'))
           $file->type = 'video';
         drupal_write_record('file_managed', $file);
-        $output_vid = array('vid' => $video->vid, 'original_fid' => $video->fid, 'output_fid' => $file->fid, 'job_id' => $file->jobid);
+        $output_vid = array(
+          'vid' => $video->vid,
+          'original_fid' => $video->fid,
+          'output_fid' => $file->fid,
+          'job_id' => $file->jobid,
+          'duration' => $file->duration,
+        );
         drupal_write_record('video_output', $output_vid);
         // change the status if files are exists
         if (file_exists(drupal_realpath($file->uri)))
