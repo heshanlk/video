@@ -85,7 +85,7 @@ function video_permission() {
 function video_theme() {
   $theme = array();
   $theme['video_formatter_player'] = array(
-    'variables' => array('item' => NULL, 'path' => NULL, 'image_style' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL, 'player_dimensions' => NULL),
+    'variables' => array('item' => NULL, 'entity' => NULL, 'field' => NULL, 'instance' => NULL, 'player_dimensions' => NULL),
     'file' => 'video.theme.inc',
   );
   $theme['video_formatter_thumbnail'] = array(
