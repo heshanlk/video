@@ -224,6 +224,7 @@ function theme_video_flv($variables) {
     case 'jwplayer':
       foreach ($video->files as $ext => $file) {
         $item = (array) $file;
+        $item +=array('image' => (array) $video->thumbnail);
       }
       $attributes = array();
       $attributes['width'] = $video->player_width;
