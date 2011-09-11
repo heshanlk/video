@@ -18,38 +18,33 @@ function video_rules_file_info() {
  * Implements hook_rules_event_info() on behalf of the video module.
  */
 function video_rules_event_info() {
-  $items = array(
-    'video_complete' => array(
-      'label' => t('After video convertion completed (Success)'),
-      'group' => t('Video'),
-      'variables' => rules_events_video_variables(t('created content')),
-      'access callback' => 'rules_video_integration_access',
+  $defaults = array(
+    'group' => t('Video'),
+    'module' => 'video',
+    'access callback' => 'rules_video_integration_access',
+  );
+  return array(
+    'video_success' => $defaults + array(
+  'label' => t('After video conversion success'),
+  'variables' => array(
+    'node' => array('type' => 'node', 'label' => t('video success')),
+  ),
     ),
-    'video_failed' => array(
-      'label' => t('After video convertion completed (Failed)'),
-      'group' => t('Video'),
-      'variables' => rules_events_video_variables(t('created content')),
-      'access callback' => 'rules_video_integration_access',
+    'video_failed' => $defaults + array(
+  'label' => t('After video conversion failed.'),
+  'variables' => array(
+    'node' => array('type' => 'node', 'label' => t('video failed')),
+  ),
     ),
   );
   return $items;
 }
 
 /**
- * Returns some parameter suitable for using it with a node
+ * Node integration access callback.
  */
-function rules_events_video_variables($node_label, $update = FALSE) {
-  $args = array(
-    'node' => array('type' => 'node', 'label' => $node_label),
-  );
-  if ($update) {
-    $args += array(
-      'node_unchanged' => array(
-        'type' => 'node',
-        'label' => t('unchanged content'),
-        'handler' => 'rules_events_entity_unchanged',
-      ),
-    );
+function rules_video_integration_access($type, $name) {
+  if ($type == 'event' || $type == 'condition') {
+    return entity_access('view', 'node');
   }
-  return $args;
 }

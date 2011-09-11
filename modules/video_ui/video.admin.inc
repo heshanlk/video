@@ -80,9 +80,10 @@ function video_general_admin_settings() {
   $form['video_publish_on_complete'] = array(
     '#type' => 'checkbox',
     '#title' => t('Publish when conversion complete'),
-    '#default_value' => variable_get('video_publish_on_complete', TRUE),
-    '#description' => t('Un-publish the node on submit and once conversion complete
-      turn node in to publish.')
+    '#default_value' => variable_get('video_publish_on_complete', FALSE),
+    '#description' => t('Now this feature is fully controlled by !rules module. Download 
+      the module and configure your rules to effect when the video conversions has been completed and failed.', array('!rules' => l('Rules', 'http://drupal.org/project/rules'))),
+    '#disabled' => TRUE
   );
   return system_settings_form($form);
 }

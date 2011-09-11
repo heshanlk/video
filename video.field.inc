@@ -208,20 +208,6 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
         }
       }
     }
-    // set node status to unpublish
-    if ($job && variable_get('video_publish_on_complete', TRUE)) {
-      // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
-      db_update('node')
-          ->fields(array(
-            'status' => NODE_NOT_PUBLISHED))
-          ->condition('nid', $nid, '=')
-          ->execute();
-      db_update('node_revision')
-          ->fields(array(
-            'status' => NODE_NOT_PUBLISHED))
-          ->condition('nid', $nid, '=')
-          ->execute();
-    }
   }
 }
 

@@ -71,7 +71,15 @@ class Conversion {
     // Make sure this video is pending or do nothing.
     if ($video->video_status != VIDEO_RENDERING_INQUEUE) {
       $transcoder = new Transcoder;
-      return $transcoder->executeConvertion($video);
+      if ($job = $transcoder->executeConvertion($video)) {
+        // rules integration
+        rules_invoke_event('video_success', node_load($video->nid));
+        return $job;
+      }
+      else {
+        // rules integration
+        rules_invoke_event('video_failed', node_load($video->nid));
+      }
     }
     else {
       $status = array(

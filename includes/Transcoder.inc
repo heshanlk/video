@@ -136,21 +136,6 @@ class Transcoder {
         if (file_exists(drupal_realpath($file->uri)))
           $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
       }
-
-      // if successfully converted the video then update the status to publish
-      if (variable_get('video_publish_on_complete', TRUE)) {
-        // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
-        db_update('node')
-            ->fields(array(
-              'status' => NODE_PUBLISHED))
-            ->condition('nid', $video->nid, '=')
-            ->execute();
-        db_update('node_revision')
-            ->fields(array(
-              'status' => NODE_PUBLISHED))
-            ->condition('nid', $video->nid, '=')
-            ->execute();
-      }
       return $output;
     }
     else {
