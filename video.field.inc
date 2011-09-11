@@ -480,16 +480,16 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
           'path' => file_create_url($item['uri']),
           'options' => array(),
         );
-        $element[$delta] = array(
-          '#theme' => $theme,
-          '#item' => $item,
-          '#image_style' => $settings['image_style'],
-          '#path' => isset($uri) ? $uri : '',
-          '#entity' => $entity,
-          '#field' => $field,
-          '#instance' => $instance
-        );
       }
+      $element[$delta] = array(
+        '#theme' => $theme,
+        '#item' => $item,
+        '#image_style' => $settings['image_style'],
+        '#path' => isset($uri) ? $uri : '',
+        '#entity' => $entity,
+        '#field' => $field,
+        '#instance' => $instance
+      );
     }
     if ($display['type'] == 'video_formatter_player') {
       $element[$delta] = array(
