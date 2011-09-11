@@ -110,7 +110,6 @@ function video_widget_element_settings(&$element, &$form_state) {
   $description = t('Set your video dimensions.  This will create your player with these dimensions.');
   //setup our default dimensions.
   $dimensions = $settings['default_dimensions'];
-  $player_dimensions = $settings['default_player_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
   if ($field['settings']['autoconversion'] && isset($element['preview']) &&
@@ -118,7 +117,7 @@ function video_widget_element_settings(&$element, &$form_state) {
     $file_object = file_load($file['fid']);
     $video_info = _video_dimensions_options($options, $file_object);
     $description = t('Set your video dimensions.  This will create your player
-      and transcode your video with these dimensions.  Your video size is !size,
+      and transcode your video with these dimensions.  Your video size is <b>!size</b>,
       if you choose a higher resolution, this could cause video distortion.
       You are shown dimensions that match your aspect ratio,
       if you choose dimensions that do not match your ratio, we will pad your
@@ -138,11 +137,6 @@ function video_widget_element_settings(&$element, &$form_state) {
     $dimensions = $file['dimensions'];
   }
 
-  // Override our player dimensions to the user selected.
-  if (isset($file['player_dimensions']) && !empty($file['player_dimensions'])) {
-    $player_dimensions = $file['player_dimensions'];
-  }
-
   // show only enabled the autoconversion
   if ($field['settings']['autoconversion']) {
     $element['dimensions'] = array(
@@ -153,20 +147,10 @@ function video_widget_element_settings(&$element, &$form_state) {
       '#options' => $options,
     );
   }
-  // get the player dimentions
-  $element['player_dimensions'] = array(
-    '#type' => 'select',
-    '#title' => t('Video player dimensions'),
-    '#default_value' => $player_dimensions,
-    '#description' => t('WxH of your video player.'),
-    '#options' => $options,
-  );
   // If users cannot change the default dimensions, lets change this to a value.
   if (!$default_dimensions) {
     $element['dimensions']['#type'] = 'value';
     $element['dimensions']['#value'] = $dimensions;
-    $element['player_dimensions']['#type'] = 'value';
-    $element['player_dimensions']['#value'] = $player_dimensions;
   }
 
   // only in preview mode and then create thumbnails
@@ -414,14 +398,6 @@ function video_default_instance_settings($widget) {
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
     '#description' => t('This settings can be overridden when node edit or preset settings. You can select most suitable values to output dimensions when node edit and selecting a wrong value may cause failure of the video conversion.'),
     '#weight' => 16,
-  );
-  $form['default_player_dimensions'] = array(
-    '#type' => 'select',
-    '#title' => t('Video player dimensions'),
-    '#default_value' => !empty($widget['default_player_dimensions']) ? $widget['default_player_dimensions'] : '',
-    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-    '#description' => t('This settings can be overridden when node edit or from video formatter settings(display settings). Those WIDTHxHEIGHT values are in px.'),
-    '#weight' => 15,
   );
   return $form;
 }

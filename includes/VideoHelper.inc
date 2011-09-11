@@ -20,23 +20,6 @@ class VideoHelper {
       $instance_settings = $variables['instance']['settings'];
       //setup our width x height
       $player_dimensions = explode("x", $variables['player_dimensions']);
-      // set the video dimentions
-      if (!isset($variables['item']['dimensions'])) {
-        $dimensions = explode("x", $instance_settings['default_dimensions']);
-        if (!isset($dimensions[0]) || !isset($dimensions[1])) {
-          drupal_set_message(t('Something is wrong with your dimensions.  Make sure you enter dimensions in the form of WxH.'), 'error');
-        }
-      }
-      else
-        $dimensions = explode("x", $variables['item']['dimensions']);
-
-      if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
-        $player_dimensions = explode("x", $instance_settings['default_player_dimensions']);
-        if (!isset($player_dimensions[0]) || !isset($player_dimensions[1])) {
-          drupal_set_message(t('Something is wrong with your player dimensions.  Make sure you enter the player dimensions in the form of WxH.'), 'error');
-        }
-      }
-
       // Build our video object for all types.
       $video = new stdClass();
       $video->fid = $variables['item']['fid'];
@@ -49,10 +32,6 @@ class VideoHelper {
       $video->files->{$extension}->extension = $extension;
       // set the player to play
       $video->player = $extension;
-      $video->width = trim($dimensions[0]);
-      $video->height = trim($dimensions[1]);
-      $video->player_width = trim($player_dimensions[0]);
-      $video->player_height = trim($player_dimensions[1]);
       // load thumbnail object
       $video->thumbnail = $this->thumbnail_object($variables);
       $video->formatter = $variables['instance']['display']['default']['type'];
@@ -94,12 +73,8 @@ class VideoHelper {
     $thumbnail = new stdClass();
     $thumbnail->filepath = '';
     $thumbnail->url = '';
-    //@todo future enhancements for our thumbnails
     $thumbnail->alt = $variables['entity']->title;
     $thumbnail->title = $variables['entity']->title;
-//    $thumbnail->description = '';
-    // Setup our thumbnail path.
-
     $use_default_img = isset($variables['item']['use_default_video_thumb']) ? TRUE : FALSE;
     if ($use_default_img && !empty($field_settings['default_video_thumbnail'])) {
       $default_thumbnail = file_load($field_settings['default_video_thumbnail']['fid']);
@@ -112,17 +87,13 @@ class VideoHelper {
       $thumbnail->filepath = $thumbnail_load->uri;
     }
     else {
-      //need some type of default if nothing is present
-//      drupal_set_message(t('No thumbnail has been configured for the video !title.', array('!title' => $variables['entity']->title)), 'error');
       return;
     }
-
     $thumbnail->url = file_create_url($thumbnail->filepath);
     // uri
     $thumbnail->uri = $thumbnail->filepath;
     //mime
     $thumbnail->filemime = file_get_mimetype($thumbnail->filepath);
-
     //swftools appends sites/default/files to the front of our path...
     //@todo Is this a setting?  Need to figure this out.
     $thumbnail->swfthumb = $thumbnail->filepath;

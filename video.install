@@ -200,12 +200,6 @@ function video_field_schema($field) {
         'not null' => FALSE,
         'unsigned' => TRUE,
       ),
-      'player_dimensions' => array(
-        'description' => "Video dimention for the video player.",
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => FALSE,
-      )
     ),
     'indexes' => array(
       'fid' => array('fid'),

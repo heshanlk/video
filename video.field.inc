@@ -25,7 +25,6 @@ function video_field_info() {
         'file_directory' => 'videos/original',
         'max_filesize' => '',
         'default_dimensions' => '640x360',
-        'default_player_dimensions' => '640x360'
       ),
       'default_widget' => 'video_upload',
       'default_formatter' => 'video',
@@ -108,10 +107,7 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
   if ($field['settings']['autoconversion'] == 1) {
     //load the converted video
   }
-//  dsm($items);
-//  $items['16'][] = array('fid' => '16');
   file_field_load($entity_type, $entities, $field, $instances, $langcode, $items, $age);
-//  dsm($items);
 }
 
 /**
