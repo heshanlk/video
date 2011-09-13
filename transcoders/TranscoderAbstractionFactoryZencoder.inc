@@ -187,17 +187,21 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if (!isset($zencoder_api) && empty($zencoder_api)) {
       $form['zencoder_user'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Zencoder User'),
+        '#title' => st('Zencoder User'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
-        '#description' => t('Add your email address, password and <em>save configurations</em> to creare your Zencoder account. It will help you to transcode and manage your videos using Zencode website. Once you save your configurations then this will automatically create an account on the Zencoder.com and password and all ther other relevent details will be emailled to you.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com')))
+        '#description' => st('Add your email address, password and <em>save configurations</em> 
+          to creare your Zencoder account. It will help you to transcode and manage your videos 
+          using Zencode website. Once you save your configurations then this will automatically 
+          create an account on the Zencoder.com and password and all ther other relevent details 
+          will be emailled to you.', array('!link' => l(st('Zencoder.com'), 'http://zencoder.com')))
       );
       $form['zencoder_user']['zencoder_username'] = array(
         '#type' => 'textfield',
-        '#title' => t('Your email address'),
+        '#title' => st('Your email address'),
         '#default_value' => variable_get('zencoder_username', 'me@localhost'),
         '#size' => 50,
-        '#description' => t('Make sure the email is accurate, since we will send all the password details to manage transcoding online and API key details to this.')
+        '#description' => st('Make sure the email is accurate, since we will send all the password details to manage transcoding online and API key details to this.')
       );
 //      $form['zencoder_user']['zencoder_password'] = array(
 //        '#type' => 'password',
@@ -208,7 +212,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 //      );
       $form['zencoder_user']['agree_terms_zencoder'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Agree Zencoder !link.', array('!link' => l(t('Terms and Conditions'), 'http://zencoder.com/terms', array('attributes' => array('target' => '_blank'))))),
+        '#title' => st('Agree Zencoder !link.', array('!link' => l(st('Terms and Conditions'), 'http://zencoder.com/terms', array('attributes' => array('target' => '_blank'))))),
         '#default_value' => variable_get('agree_terms_zencoder', TRUE),
       );
     }
