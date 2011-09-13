@@ -165,7 +165,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
   // Create entry for video conversion if auto converison is enabled
   if ($field['settings']['autoconversion'] == 1) {
     $job = FALSE;
-    $nid = $entity->vid;
+    $nid = $entity->nid;
     // conversion class
     module_load_include('inc', 'video', 'includes/Conversion');
     $video_conversion = new Conversion();
