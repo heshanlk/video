@@ -31,7 +31,7 @@ function video_filter_info() {
 
   // If the WYSIWYG module is enabled, add additional help.
   if (module_exists('wysiwyg')) {
-    $filters['ai_wysiwyg_filter']['description'] .= ' ' . t('This must be enabled for the WYSIWYG integration to work correctly with this text filter.');
+    $filters['video_filter']['description'] .= ' ' . t('This must be enabled for the WYSIWYG integration to work correctly with this text filter.');
   }
 
   return $filters;
