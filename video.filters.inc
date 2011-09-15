@@ -38,7 +38,7 @@ function video_filter_info() {
 }
 
 /**
- * advertisement_filter callbase from ai_wysiwyg_filter_info()
+ * advertisement_filter callbase from video_filter_info()
  */
 function video_filter($text) {
   $text = ' ' . $text . ' ';
