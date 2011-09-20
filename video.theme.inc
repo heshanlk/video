@@ -44,7 +44,6 @@ function theme_video_formatter_player($variables) {
   $instance_settings = $variables['instance']['settings'];
   // Only needs to be ran if they are converting videos
   if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
-    module_load_include('inc', 'video', '/includes/conversion');
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
     $transcoder->setInput($variables['item']);
