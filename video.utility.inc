@@ -61,6 +61,7 @@ function video_thumb_process(&$element, &$form_state) {
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
         '#default_value' => !empty($file['thumbnail']['fid']) && is_integer($file['thumbnail']['fid']) ? $file['thumbnail']['fid'] : NULL,
         '#upload_location' => $scheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file['fid'],
+        '#required' => TRUE
       );
     }
     // if no thumbnail creation
