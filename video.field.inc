@@ -131,16 +131,16 @@ function video_field_prepare_view($entity_type, $entities, $field, $instances, $
  */
 function video_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
   // change the theumbnails if default is checked
-  if (!empty($field['settings']['default_video_thumbnail']['fid'])) {
-    foreach ($items as $delta => $item) {
+  foreach ($items as $delta => $item) {
+    if (!empty($field['settings']['default_video_thumbnail']['fid'])) {
       if ($item['use_default_video_thumb'])
         $items[$delta]['thumbnail'] = $field['settings']['default_video_thumbnail']['fid'];
-      // delete cache if exists
-      $cid = 'video:video:' . md5($variables['item']['fid']);
-      $cache = cache_get($cid);
-      if (!empty($cache->data)) {
-        cache_clear_all($cid);
-      }
+    }
+    // delete cache if exists
+    $cid = 'video:video:' . md5($item['fid']);
+    $cache = cache_get($cid);
+    if (!empty($cache->data)) {
+      cache_clear_all($cid, 'cache');
     }
   }
   file_field_presave($entity_type, $entity, $field, $instance, $langcode, $items);
