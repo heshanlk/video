@@ -135,6 +135,12 @@ function video_field_presave($entity_type, $entity, $field, $instance, $langcode
     foreach ($items as $delta => $item) {
       if ($item['use_default_video_thumb'])
         $items[$delta]['thumbnail'] = $field['settings']['default_video_thumbnail']['fid'];
+      // delete cache if exists
+      $cid = 'video:video:' . md5($variables['item']['fid']);
+      $cache = cache_get($cid);
+      if (!empty($cache->data)) {
+        cache_clear_all($cid);
+      }
     }
   }
   file_field_presave($entity_type, $entity, $field, $instance, $langcode, $items);
