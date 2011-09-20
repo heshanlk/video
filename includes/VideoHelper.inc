@@ -49,14 +49,14 @@ class VideoHelper {
           $video->files = new stdClass();
           $video->files = $transcoder->loadOutput($video);
         }
-      }
-      // add player to the video object
-      if (!empty($video->files)) {
-        //get the preset and check for output file type to set as player
-        $video_preset = new Preset();
-        $presets = $video_preset->properties();
-        foreach ($presets as $preset) {
-          $video->player = $preset['settings']['video_extension'];
+        // add player to the video object
+        if (!empty($video->files)) {
+          //get the preset and check for output file type to set as player
+          $video_preset = new Preset();
+          $presets = $video_preset->properties();
+          foreach ($presets as $preset) {
+            $video->player = $preset['settings']['video_extension'];
+          }
         }
       }
       // set cache
