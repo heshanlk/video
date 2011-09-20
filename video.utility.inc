@@ -203,26 +203,27 @@ function video_widget_element_settings(&$element, &$form_state) {
       );
     }
   }
-
   // use of default thumbnail
   $default_thumb = isset($file['use_default_video_thumb']) ? $file['use_default_video_thumb'] : variable_get('video_use_default_thumb', FALSE);
-  if (user_access('use default thumb')) {
-    $element['use_default_video_thumb'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Use the default thumbnail for this video?'),
-      '#default_value' => $default_thumb,
-      '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
-      '#attributes' => array('class' => array('video-use-default-video-thumb')),
-    );
-    if ($default_thumb) {
-      $element['use_default_video_thumb']['#attributes']['checked'] = 'checked';
+  if (isset($field['settings']['default_video_thumbnail']['fid']) && !empty($field['settings']['default_video_thumbnail']['fid'])) {
+    if (user_access('use default thumb')) {
+      $element['use_default_video_thumb'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Use the default thumbnail for this video?'),
+        '#default_value' => $default_thumb,
+        '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
+        '#attributes' => array('class' => array('video-use-default-video-thumb')),
+      );
+      if ($default_thumb) {
+        $element['use_default_video_thumb']['#attributes']['checked'] = 'checked';
+      }
     }
-  }
-  else {
-    $element['use_default_video_thumb'] = array(
-      '#type' => 'value',
-      '#value' => $default_thumb,
-    );
+    else {
+      $element['use_default_video_thumb'] = array(
+        '#type' => 'value',
+        '#value' => $default_thumb,
+      );
+    }
   }
 }
 
