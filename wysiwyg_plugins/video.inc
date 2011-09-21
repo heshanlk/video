@@ -18,7 +18,7 @@ function video_video_plugin() {
     'css file' => 'video.css',
     'settings' => array(
       'dialog' => array(
-        'url' => base_path() . 'index.php?q=video/load/tinymce',
+        'url' => base_path() . 'index.php?q=video/wysiwyg',
         'width' => 300,
         'height' => 400,
       ),
