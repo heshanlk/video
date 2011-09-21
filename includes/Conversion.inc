@@ -73,12 +73,15 @@ class Conversion {
       $transcoder = new Transcoder;
       if ($job = $transcoder->executeConvertion($video)) {
         // rules integration
-        rules_invoke_event('video_success', node_load($video->nid));
+        if (module_exists('rules'))
+          rules_invoke_event('video_success', node_load($video->nid));
         return $job;
       }
       else {
         // rules integration
-        rules_invoke_event('video_failed', node_load($video->nid));
+        if (module_exists('rules'))
+          rules_invoke_event('video_failed', node_load($video->nid));
+        watchdog('transcoder', 'Video conversion has been failed!. Please check further logs for debugging.', array(), WATCHDOG_WARNING);
       }
     }
     else {
