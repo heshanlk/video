@@ -45,7 +45,6 @@
    * Replace images with [[content:video]] tags in content upon detaching editor.
    */
     detach: function(content, settings, instanceId) {
-      console.log('detach');
       var $content = $('<div>' + content + '</div>');
       $.each($('img.wysiwyg-video', $content), function (i, elem) {
         var tag = ('[content:video]');
