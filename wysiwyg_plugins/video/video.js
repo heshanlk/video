@@ -58,7 +58,7 @@
    * Helper function to return a HTML placeholder.
    */
     _getPlaceholder: function (settings) {
-      return '<img src="' + settings.path + '/images/spacer.gif" alt="Video" title="Video" class="wysiwyg-video drupal-content" height="348px" />';
+      return '<img src="' + settings.path + '/images/spacer.gif" alt="Video" title="Video" class="wysiwyg-video drupal-content" height="325px" />';
     }
   };
 

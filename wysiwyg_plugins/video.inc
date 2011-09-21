@@ -8,15 +8,21 @@
 /**
  * Implementation of hook_INCLUDE_plugin().
  */
-function ai_wysiwyg_video_plugin() {
+function video_video_plugin() {
   $plugins['video'] = array(
-    'title' => t('Embedded video'),
-    'vendor url' => 'support://www.heidisoft.com',
+    'title' => t('Video'),
+    'vendor url' => 'http://drupal.org/project/video',
     'icon file' => 'video.gif',
     'icon title' => t('Video'),
     'js file' => 'video.js',
     'css file' => 'video.css',
-    'settings' => array(),
+    'settings' => array(
+      'dialog' => array(
+        'url' => base_path() . 'index.php?q=video/load/tinymce',
+        'width' => 300,
+        'height' => 400,
+      ),
+    ),
   );
   return $plugins;
 }
