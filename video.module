@@ -63,9 +63,11 @@ function video_permission() {
     ),
     'use default thumb' => array(
       'title' => t('Use default thumbnail'),
+      'description' => t('Use default video thumbnail as video thumbnail of the video.'),
     ),
     're convert video' => array(
       'title' => t('Re queue video'),
+      'description' => t('Convert videos back again if failed or not.'),
     ),
     'administer video presets' => array(
       'title' => t('Administer video presets'),
