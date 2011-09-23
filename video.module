@@ -300,6 +300,7 @@ function video_page_alter(&$page) {
  * video browser menu callback
  */
 function video_file_browser() {
+  global $user;
   $output = array();
   // field get instances
   $fields = field_info_instances();
@@ -315,6 +316,7 @@ function video_file_browser() {
         ->fields('n', array('nid'))
         ->condition('status', 0, '>')
         ->condition('type', $content_type) // @todo place dynamic node types
+        ->condition('uid', $user->uid) // @todo add permissions and full access to admin #1
         ->execute()
         ->fetchAll();
     foreach ($result as $value) {
