@@ -45,7 +45,6 @@ function video_menu() {
     'page callback' => 'video_file_browser',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
-    'theme callback' => 'video_dialog_get_theme_name',
   );
   return $items;
 }
@@ -137,6 +136,7 @@ function video_theme() {
   $theme['video_dialog_page'] = array(
     'render element' => 'page',
     'template' => 'templates/video-dialog-page',
+    'file' => 'video.theme.inc',
   );
   return $theme;
 }
@@ -276,51 +276,6 @@ function _video_transcoder_postback_jobs() {
 }
 
 /**
- * GEt theme name for pop up window
- */
-function video_dialog_get_theme_name() {
-  return variable_get('admin_theme');
-}
-
-/**
- * video browser menu callback
- */
-function video_file_browser() {
-//  drupal_add_js(drupal_get_path('module', 'video') . '/js/video_wysiwyg.js');
-//  drupal_set_breadcrumb(array());
-//  drupal_set_title('123');
-  $form = array();
-  $form['title'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Subject'),
-    '#size' => 60,
-    '#maxlength' => 128,
-    '#required' => TRUE,
-  );
-  $form['copy'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Send me a copy.'),
-  );
-  $form['#attached']['js'] = array(
-    drupal_get_path('module', 'video') . '/js/video_wysiwyg.js' => array(
-      'type' => 'file',
-    ),
-  );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Cancel'),
-    '#attributes' => array('class' => array('cancel-button'))
-  );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Submit'),
-    '#attributes' => array('class' => array('submit-button'))
-  );
-//  $output['tabset']['plugins'] = $plugins;
-  return render($form);
-}
-
-/**
  * Implements hook_page_alter().
  *
  * This is used to use our alternate template when ?render=media-popup is passed
@@ -339,4 +294,45 @@ function video_page_alter(&$page) {
       }
     }
   }
+}
+
+/**
+ * video browser menu callback
+ */
+function video_file_browser() {
+  $output = array();
+  // field get instances
+  $fields = field_info_instances();
+  $node_field = array();
+  foreach ($fields['node'] as $content_type => $fields) {
+    foreach ($fields as $field_name => $field) {
+      if ($field['widget']['type'] == 'video_upload')
+        $node_field[$content_type][$field_name] = $field;
+    }
+  }
+  foreach ($node_field as $content_type => $field) {
+    $result = db_select('node', 'n')
+        ->fields('n', array('nid'))
+        ->condition('status', 0, '>')
+        ->condition('type', $content_type) // @todo place dynamic node types
+        ->execute()
+        ->fetchAll();
+    $node_views = '';
+    foreach ($result as $value) {
+      $node = node_load($value->nid);
+      $node_view = node_view($node);
+//      dsm($node_view);
+      foreach ($field as $field_name => $field_settings) {
+        $item = $node_view[$field_settings['field_name']];
+        $item[0]['#theme'] = 'video_formatter_thumbnail';
+        $item[0]['#image_style'] = 'thumbnail';
+        $item[0]['#path'] = '';
+        $node_views .= render($item[0]);
+      }
+    }
+    $output['items'] = array(
+      '#markup' => $node_views,
+    );
+  }
+  return render($node_views);
 }

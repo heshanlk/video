@@ -12,34 +12,27 @@
     /**
    * Execute the button.
    */
-    invoke: function(data, settings, instanceId) {
-      // popup
-      var options = new Object;
-      options.title = 'title is here';
-      options.width = 640;
-      options.height = 360;
-      tmt.jquery.modalframe.open(settings.golbal.url, options);
-      
-      
-      
-      if (data.format == 'html') {
-        // Prevent duplicating
-        if ($(data.node).is('img.wysiwyg-video')) {
-          return;
+    invoke: function(data, settings, instanceId) {   
+      Drupal.behaviors.video_wysiwyg.videoBrowser(function(video, data, settings, instanceId){
+        if (data.format == 'html') {
+          // Prevent duplicating
+          if ($(data.node).is('img.wysiwyg-video')) {
+            return;
+          }
+          var content = Drupal.wysiwyg.plugins['video']._getPlaceholder(settings);
         }
-        var content = this._getPlaceholder(settings);
-      }
-      else {
-        // Prevent duplicating.
-        // @todo data.content is the selection only; needs access to complete content.
-        if (data.content.match(/[content:video]/)) {
-          return;
+        else {
+          // Prevent duplicating.
+          // @todo data.content is the selection only; needs access to complete content.
+          if (data.content.match(/[content:video]/)) {
+            return;
+          }
+          var content = video;
         }
-        var content = '[content:video]';
-      }
-      if (typeof content != 'undefined') {
-        Drupal.wysiwyg.instances[instanceId].insert(content);
-      }
+        if (typeof content != 'undefined') {
+          Drupal.wysiwyg.instances[instanceId].insert(content);
+        }
+      }, data, settings, instanceId);
     },
 
     /**
