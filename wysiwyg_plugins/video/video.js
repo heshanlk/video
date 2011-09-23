@@ -13,6 +13,15 @@
    * Execute the button.
    */
     invoke: function(data, settings, instanceId) {
+      // popup
+      var options = new Object;
+      options.title = 'title is here';
+      options.width = 640;
+      options.height = 360;
+      tmt.jquery.modalframe.open(settings.golbal.url, options);
+      
+      
+      
       if (data.format == 'html') {
         // Prevent duplicating
         if ($(data.node).is('img.wysiwyg-video')) {

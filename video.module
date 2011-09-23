@@ -41,6 +41,12 @@ function video_menu() {
     'access arguments' => array('transocder postback'),
     'type' => MENU_CALLBACK,
   );
+  $items['video/browser'] = array(
+    'page callback' => 'video_file_browser',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'theme callback' => 'video_dialog_get_theme_name',
+  );
   return $items;
 }
 
@@ -126,6 +132,11 @@ function video_theme() {
   $theme['video_html5'] = array(
     'variables' => array('video' => NULL),
     'file' => 'video.theme.inc'
+  );
+  // Dialog page.
+  $theme['video_dialog_page'] = array(
+    'render element' => 'page',
+    'template' => 'templates/video-dialog-page',
   );
   return $theme;
 }
@@ -262,4 +273,70 @@ function _video_transcoder_postback_jobs() {
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct();
   return $transcoder->processPostback();
+}
+
+/**
+ * GEt theme name for pop up window
+ */
+function video_dialog_get_theme_name() {
+  return variable_get('admin_theme');
+}
+
+/**
+ * video browser menu callback
+ */
+function video_file_browser() {
+//  drupal_add_js(drupal_get_path('module', 'video') . '/js/video_wysiwyg.js');
+//  drupal_set_breadcrumb(array());
+//  drupal_set_title('123');
+  $form = array();
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+  $form['copy'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Send me a copy.'),
+  );
+  $form['#attached']['js'] = array(
+    drupal_get_path('module', 'video') . '/js/video_wysiwyg.js' => array(
+      'type' => 'file',
+    ),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#attributes' => array('class' => array('cancel-button'))
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#attributes' => array('class' => array('submit-button'))
+  );
+//  $output['tabset']['plugins'] = $plugins;
+  return render($form);
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * This is used to use our alternate template when ?render=media-popup is passed
+ * in the URL.
+ */
+function video_page_alter(&$page) {
+  if (isset($_GET['render']) && $_GET['render'] == 'video-popup') {
+    $page['#theme'] = 'video_dialog_page';
+    // temporary fix while awaiting fix for 914786
+    if (module_exists('admin_menu')) {
+      admin_menu_suppress();
+    }
+    foreach (element_children($page) as $key) {
+      if ($key != 'content') {
+        unset($page[$key]);
+      }
+    }
+  }
 }

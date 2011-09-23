@@ -258,3 +258,10 @@ function theme_video_html5($variables) {
       break;
   }
 }
+
+/**
+ * Add messages to the page.
+ */
+function template_preprocess_video_dialog_page(&$variables) {
+  $variables['messages'] = theme('status_messages');
+}
