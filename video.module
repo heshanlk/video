@@ -317,22 +317,30 @@ function video_file_browser() {
         ->condition('type', $content_type) // @todo place dynamic node types
         ->execute()
         ->fetchAll();
-    $node_views = '';
     foreach ($result as $value) {
       $node = node_load($value->nid);
       $node_view = node_view($node);
-//      dsm($node_view);
       foreach ($field as $field_name => $field_settings) {
         $item = $node_view[$field_settings['field_name']];
         $item[0]['#theme'] = 'video_formatter_thumbnail';
         $item[0]['#image_style'] = 'thumbnail';
         $item[0]['#path'] = '';
-        $node_views .= render($item[0]);
+        $form = array();
+        $form['video_browser']['image'] = array(
+          '#prefix' => '<div class="video-item"><a href="#" ref="' . $node->nid . '">',
+          '#markup' => '<div class="video-image">' . render($item[0]) . '</div>',
+        );
+        $form['video_browser']['title'] = array(
+          '#markup' => '<div class="video-title">' . $node->title . '</div>',
+        );
+        $form['video_browser']['nid'] = array(
+          '#type' => 'hidden',
+          '#value' => $node->nid,
+          '#suffix' => '</a></div>'
+        );
+        $output[] = $form;
       }
     }
-    $output['items'] = array(
-      '#markup' => $node_views,
-    );
   }
-  return render($node_views);
+  return render($output);
 }

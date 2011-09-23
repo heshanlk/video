@@ -39,6 +39,7 @@
    * Replace all [[content:video]] tags with images.
    */
     attach: function(content, settings, instanceId) {
+      alert(Drupal.settings.wysiwyg.plugins.drupal.video.golbal.selectedId + 'attach');
       content = content.replace(/\[content:video\]/g, this._getPlaceholder(settings));
       return content;
     },
@@ -47,6 +48,7 @@
    * Replace images with [[content:video]] tags in content upon detaching editor.
    */
     detach: function(content, settings, instanceId) {
+      alert(Drupal.settings.wysiwyg.plugins.drupal.video.golbal.selectedId + 'deattach');
       var $content = $('<div>' + content + '</div>');
       $.each($('img.wysiwyg-video', $content), function (i, elem) {
         var tag = ('[content:video]');
