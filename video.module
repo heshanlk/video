@@ -46,7 +46,7 @@ function video_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
-  $items['video/embed/%video'] = array(
+  $items['video/embed/%video/%/%'] = array(
     'page callback' => 'video_file_embed',
     'page arguments' => array(2),
     'access arguments' => array('access content'),
@@ -402,7 +402,7 @@ function video_file_embed($node) {
     '#entity' => $node,
     '#field' => $video_field,
     '#instance' => $video_field,
-    '#player_dimensions' => '100%x100%'
+    '#player_dimensions' => arg(3) . 'x' . arg(4)
   );
   return drupal_render($element);
 }

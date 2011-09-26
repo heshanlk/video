@@ -3,15 +3,15 @@
   Drupal.wysiwyg.plugins['video'] = {
 
     /**
-   * Return whether the passed node belongs to this plugin.
-   */
+     * Return whether the passed node belongs to this plugin.
+     */
     isNode: function(node) {
       return ($(node).is('img.wysiwyg-video'));
     },
 
     /**
-   * Execute the button.
-   */
+     * Execute the button.
+     */
     invoke: function(data, settings, instanceId) { 
       Drupal.behaviors.video_wysiwyg.videoBrowser(function(nid, data, settings, instanceId){
         if (data.format == 'html') {
@@ -19,7 +19,15 @@
           if ($(data.node).is('img.wysiwyg-video')) {
             return;
           }
-          var content = Drupal.wysiwyg.plugins['video']._getPlaceholder(settings, Drupal.settings.basePath +'video/embed/' +nid);
+          var width = 176;
+          var height = 144;
+          var dimensions = Drupal.settings.wysiwyg.plugins.drupal.video.golbal.dimensions;
+          if(dimensions){
+            var wxh = dimensions.split('x');
+            var width = parseInt(wxh[0]);
+            var height = parseInt(wxh[1]);
+          }
+          var content = Drupal.wysiwyg.plugins['video']._getPlaceholder(settings, Drupal.settings.basePath +'video/embed/' +nid+'/'+width+'/'+height, width, height);
         }
         else {
           // Prevent duplicating.
@@ -36,34 +44,25 @@
     },
 
     /**
-   * Replace all [[content:video]] tags with images.
-   */
+     * Replace all [[content:video]] tags with images.
+     */
     attach: function(content, settings, instanceId) {
       return content;
     },
 
     /**
-   * Replace images with [[content:video]] tags in content upon detaching editor.
-   */
+     * Replace images with [[content:video]] tags in content upon detaching editor.
+     */
     detach: function(content, settings, instanceId) {
       //      return $content.html();
       return content;
     },
 
     /**
-   * Helper function to return a HTML placeholder.
-   */
-    _getPlaceholder: function (settings, src) {
-      var dimensions = Drupal.settings.wysiwyg.plugins.drupal.video.golbal.dimensions;
-      if(!dimensions){
-        var width = 352;
-        var height = 178;
-      } else {
-        var wxh = dimensions.split('x');
-        var width = wxh[0];
-        var height = wxh[1];
-      }
-      return '<iframe width="'+width+'" height="'+height+'" src="'+src+'" frameborder="0" allowfullscreen></iframe>';
+     * Helper function to return a HTML placeholder.
+     */
+    _getPlaceholder: function (settings, src, width, height) {
+      return '<iframe width="'+(width+15)+'" height="'+(height+5)+'" src="'+src+'" frameborder="0" allowfullscreen></iframe>';
     }
   };
 
