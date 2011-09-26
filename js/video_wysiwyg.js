@@ -3,7 +3,8 @@
     attach: function (context, settings) {
       $('#video-browser-page div.video-item a').click(function (){
         var nid = $(this).attr('ref');
-        $(this).addClass('selected');
+        $('.video-item').css('background-color', 'white');
+        $(this).parent().css('background-color', 'antiquewhite');
         Drupal.settings.wysiwyg.plugins.drupal.video.golbal.selectedId = nid;
         return false;
       });
