@@ -29,6 +29,7 @@ class VideoHelper {
       $video->files->{$extension}->filepath = $variables['item']['uri'];
       $video->files->{$extension}->url = file_create_url($variables['item']['uri']);
       $video->files->{$extension}->uri = $variables['item']['uri'];
+      $video->files->{$extension}->filemime = $variables['item']['filemime'];
       $video->files->{$extension}->extension = $extension;
       // set the player to play
       $video->player = $extension;

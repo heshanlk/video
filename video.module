@@ -46,6 +46,12 @@ function video_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+  $items['video/embed/%video'] = array(
+    'page callback' => 'video_file_embed',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -294,6 +300,18 @@ function video_page_alter(&$page) {
       }
     }
   }
+  if (arg(1) == 'embed' && arg(0) == 'video') {
+    $page['#theme'] = 'video_dialog_page';
+    // temporary fix while awaiting fix for 914786
+    if (module_exists('admin_menu')) {
+      admin_menu_suppress();
+    }
+    foreach (element_children($page) as $key) {
+      if ($key != 'content') {
+        unset($page[$key]);
+      }
+    }
+  }
 }
 
 /**
@@ -345,4 +363,37 @@ function video_file_browser() {
     }
   }
   return render($output);
+}
+
+/**
+ * Video load menu callbacl
+ */
+function video_load($nid) {
+  $node = node_load($nid);
+  return $node;
+}
+
+/**
+ * Menu callback : video/embed
+ */
+function video_file_embed($node) {
+//  dsm($node);
+  $fields = field_info_instances('node', $node->type);
+  $node_field = array();
+  foreach ($fields as $field_type => $field) {
+    if ($field['widget']['type'] == 'video_upload') {
+      $video_field = $field;
+    }
+  }
+//  dsm($video_field);
+//  echo 'oki';
+  $element = array(
+    '#theme' => 'video_formatter_player',
+    '#item' => $node->{$video_field['field_name']}['und'][0],
+    '#entity' => $node,
+    '#field' => $video_field,
+    '#instance' => $video_field,
+    '#player_dimensions' => '100%x100%'
+  );
+  return drupal_render($element);
 }

@@ -37,7 +37,7 @@
         close: function(event, ui) {
           var nid = Drupal.settings.wysiwyg.plugins.drupal.video.golbal.selectedId;
           if(nid.length)
-            onSelect('[content:video:'+nid+']', data, settings, instanceId);
+            onSelect(nid, data, settings, instanceId);
         }
       });
     }

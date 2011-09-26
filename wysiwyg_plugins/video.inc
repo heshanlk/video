@@ -9,6 +9,7 @@
  * Implementation of hook_INCLUDE_plugin().
  */
 function video_video_plugin() {
+  drupal_add_library('system', 'ui.dialog');
   drupal_add_js(drupal_get_path('module', 'video') . '/js/video_wysiwyg.js');
   $plugins['video'] = array(
     'title' => t('Video'),
