@@ -204,7 +204,7 @@ function video_widget_element_settings(&$element, &$form_state) {
     }
   }
   // use of default thumbnail
-  $default_thumb = ($field['settings']['default_video_thumbnail']['fid'] == $file['thumbnail']) ? $field['settings']['default_video_thumbnail']['fid'] : variable_get('video_use_default_thumb', FALSE);
+  $default_thumb = (isset($file['thumbnail']) && $field['settings']['default_video_thumbnail']['fid'] == $file['thumbnail']) ? $field['settings']['default_video_thumbnail']['fid'] : variable_get('video_use_default_thumb', FALSE);
   if (isset($field['settings']['default_video_thumbnail']['fid']) && !empty($field['settings']['default_video_thumbnail']['fid'])) {
     if (user_access('use default thumb')) {
       $element['use_default_video_thumb'] = array(
