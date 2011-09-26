@@ -54,7 +54,16 @@
    * Helper function to return a HTML placeholder.
    */
     _getPlaceholder: function (settings, src) {
-      return '<iframe width="420" height="315" src="'+src+'" frameborder="0" allowfullscreen></iframe>';
+      var dimensions = Drupal.settings.wysiwyg.plugins.drupal.video.golbal.dimensions;
+      if(!dimensions){
+        var width = 352;
+        var height = 178;
+      } else {
+        var wxh = dimensions.split('x');
+        var width = wxh[0];
+        var height = wxh[1];
+      }
+      return '<iframe width="'+width+'" height="'+height+'" src="'+src+'" frameborder="0" allowfullscreen></iframe>';
     }
   };
 

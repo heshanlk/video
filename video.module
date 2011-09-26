@@ -320,6 +320,15 @@ function video_page_alter(&$page) {
 function video_file_browser() {
   global $user;
   $output = array();
+  // width and height of the player
+  $output['video']['wxh'] = array(
+    '#title' => t('Player Dimensions'),
+    '#type' => 'select',
+    '#default_value' => '352x288',
+    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimention from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
+    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
+    '#attributes' => array('class' => array('video-file-browser-dimensions'))
+  );
   // field get instances
   $fields = field_info_instances();
   $node_field = array();
@@ -358,7 +367,7 @@ function video_file_browser() {
           '#value' => $node->nid,
           '#suffix' => '</a></div>'
         );
-        $output[] = $form;
+        $output['video'][] = $form;
       }
     }
   }

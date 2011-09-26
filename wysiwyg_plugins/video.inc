@@ -21,7 +21,8 @@ function video_video_plugin() {
     'settings' => array(
       'golbal' => array(
         'url' => base_path() . 'video/browser?render=video-popup',
-        'selectedId' => NULL
+        'selectedId' => NULL,
+        'dimensions' => NULL
       )
     ),
   );

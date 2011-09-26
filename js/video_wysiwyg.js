@@ -7,6 +7,10 @@
         Drupal.settings.wysiwyg.plugins.drupal.video.golbal.selectedId = nid;
         return false;
       });
+      // dimensions
+      $('.video-file-browser-dimensions').change(function (){
+        Drupal.settings.wysiwyg.plugins.drupal.video.golbal.dimensions = $(this).val();
+      });
     },
     videoBrowser: function (onSelect, data, settings, instanceId){
       // popup dialog
@@ -16,7 +20,7 @@
         autoOpen: false,
         title: 'Video Browser',
         width: 640,
-        height: 360
+        height: 420
       });
       $dialog.dialog('open');
       // add button
