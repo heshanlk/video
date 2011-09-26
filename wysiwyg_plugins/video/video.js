@@ -39,12 +39,15 @@
    * Replace all [[content:video]] tags with images.
    */
     attach: function(content, settings, instanceId) {
+      return content;
     },
 
     /**
    * Replace images with [[content:video]] tags in content upon detaching editor.
    */
     detach: function(content, settings, instanceId) {
+      //      return $content.html();
+      return content;
     },
 
     /**
