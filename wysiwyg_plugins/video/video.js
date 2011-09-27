@@ -62,7 +62,7 @@
      * Helper function to return a HTML placeholder.
      */
     _getPlaceholder: function (settings, src, width, height) {
-      return '<iframe width="'+(width+15)+'" height="'+(height+5)+'" src="'+src+'" frameborder="0" allowfullscreen></iframe>';
+      return '<iframe width="'+(width+15)+'" height="'+(height+5)+'" src="'+src+'" frameborder="0" allowfullscreen scrolling="no"></iframe>';
     }
   };
 
