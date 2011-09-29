@@ -310,14 +310,20 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $cid = 'video:transcoder:ffmpeg';
     $cache = cache_get($cid);
     if (!empty($cache->data)) {
-      $info = $cache->data;
+      $ffmpeg = $cache->data;
     }
     else {
-      $info = $this->transcoder->getFFmpegInfo(FALSE);
-      cache_set($cid, $info);
+      $ffmpeg = $this->transcoder->getFFmpegInfo(FALSE);
+      cache_set($cid, $ffmpeg);
     }
-    if ($info['ffmpeg-found'] == TRUE) {
-      return $info['binary']['versions'];
+    if ($ffmpeg['ffmpeg-found'] == TRUE) {
+      if (is_array($ffmpeg['binary']['versions'])) {
+        $version = isset($ffmpeg['binary']['versions']['version']) ? $ffmpeg['binary']['versions']['version'] : 'svn:' . $ffmpeg['binary']['versions']['svn'];
+      }
+      else {
+        $version = $ffmpeg['binary']['versions'];
+      }
+      return $version;
     }
     else
       return FALSE;
@@ -399,7 +405,13 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       $toolkit = new PHPVideoToolkit($ffmpeg_path);
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
       if ($ffmpeg['ffmpeg-found'] == TRUE) {
-        drupal_set_message(t('FFmpeg version !version found on your system.', array('!version' => $ffmpeg['binary']['versions'])), 'status');
+        if (is_array($ffmpeg['binary']['versions'])) {
+          $version = isset($ffmpeg['binary']['versions']['version']) ? $ffmpeg['binary']['versions']['version'] : 'svn:' . $ffmpeg['binary']['versions']['svn'];
+        }
+        else {
+          $version = $ffmpeg['binary']['versions'];
+        }
+        drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
       }
       else {
         drupal_set_message(t('FFmpeg not found on your system. To convert 

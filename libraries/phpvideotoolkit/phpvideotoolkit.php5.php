@@ -49,6 +49,7 @@ if (!defined('PHPVIDEOTOOLKIT_MENCODER_BINARY')) {
 class PHPVideoToolkit {
 
   public $version = '0.1.9';
+
   /**
    * Error strings
    */
@@ -244,6 +245,7 @@ class PHPVideoToolkit {
    * @access public
    */
   public static $ffmpeg_info = false;
+
   /**
    * A public var that determines if the ffmpeg binary has been found. The default value
    * is null unless getFFmpegInfo is called whereby depending on the results it is set to
@@ -252,24 +254,28 @@ class PHPVideoToolkit {
    * @access public
    */
   public static $ffmpeg_found = null;
+
   /**
    * A protected var that contains the info of any file that is accessed by PHPVideoToolkit::getFileInfo();
    * @var array
    * @access protected
    */
   protected static $_file_info = array();
+
   /**
    * Determines what happens when an error occurs
    * @var boolean If true then the script will die, if not false is return by the error
    * @access public
    */
   public $on_error_die = false;
+
   /**
    * Holds the log file name
    * @var string
    * @access protected
    */
   protected $_log_file = null;
+
   /**
    * Determines if when outputting image frames if the outputted files should have the %d number
    * replaced with the frames timecode.
@@ -277,6 +283,7 @@ class PHPVideoToolkit {
    * @access public
    */
   public $image_output_timecode = true;
+
   /**
    * Holds the timecode separator for when using $image_output_timecode = true
    * Not all systems allow ':' in filenames.
@@ -284,12 +291,14 @@ class PHPVideoToolkit {
    * @access public
    */
   public $timecode_seperator_output = '-';
+
   /**
    * Holds the starting time code when outputting image frames.
    * @var string The timecode hh(n):mm:ss:ff
    * @access protected
    */
   protected $_image_output_timecode_start = '00:00:00.00';
+
   /**
    * The format in which the image %timecode placeholder string is outputted.
    * 	- %hh (hours) representative of hours
@@ -308,126 +317,147 @@ class PHPVideoToolkit {
    * @access public
    */
   protected $image_output_timecode_format = '%hh-%mm-%ss-%fn';
+
   /**
    * Holds the fps of image extracts
    * @var integer
    * @access protected
    */
   protected $_image_output_timecode_fps = 1;
+
   /**
    * Holds the current execute commands that will need to be combined
    * @var array
    * @access protected
    */
   protected $_commands = array();
+
   /**
    * Holds the commands executed
    * @var array
    * @access protected
    */
   protected $_processed = array();
+
   /**
    * Holds the file references to those that have been processed
    * @var array
    * @access protected
    */
   protected $_files = array();
+
   /**
    * Holds the errors encountered
    * @access protected
    * @var array
    */
   protected $_errors = array();
+
   /**
    * Holds the input file / input file sequence
    * @access protected
    * @var string
    */
   protected $_input_file = null;
+
   /**
    * Holds the output file / output file sequence
    * @access protected
    * @var string
    */
   protected $_output_address = null;
+
   /**
    * Holds the process file / process file sequence
    * @access protected
    * @var string
    */
   protected $_process_address = null;
+
   /**
    * Temporary filename prefix
    * @access protected
    * @var string
    */
   protected $_tmp_file_prefix = 'tmp_';
+
   /**
    * Holds the temporary directory name
    * @access protected
    * @var string
    */
   protected $_tmp_directory = null;
+
   /**
    * Holds the directory paths that need to be removed by the ___destruct function
    * @access protected
    * @var array
    */
   protected $_unlink_dirs = array();
+
   /**
    * Holds the file paths that need to be deleted by the ___destruct function
    * @access protected
    * @var array
    */
   protected $_unlink_files = array();
+
   /**
    * Holds the timer start micro-float.
    * @access protected
    * @var integer
    */
   protected $_timer_start = 0;
+
   /**
    * Holds the times taken to process each file.
    * @access protected
    * @var array
    */
   protected $_timers = array();
+
   /**
    * Holds the times taken to process each file.
    * @access protected
    * @var constant
    */
   protected $_overwrite_mode = null;
+
   /**
    * Holds a integer value that flags if the image extraction is just a single frame.
    * @access protected
    * @var integer
    */
   protected $_single_frame_extraction = null;
+
   /**
    * Holds the watermark file that is used to watermark any outputted images via GD.
    * @access protected
    * @var string
    */
   protected $_watermark_url = null;
+
   /**
    * Holds the watermark options used to watermark any outputted images via GD.
    * @access protected
    * @var array
    */
   protected $_watermark_options = null;
+
   /**
    * Holds the number of files processed per run.
    * @access protected
    * @var integer
    */
   protected $_process_file_count = 0;
+
   /**
    * Holds the times taken to process each file.
    * @access protected
    * @var array
    */
   protected $_post_processes = array();
+
   /**
    * Holds commands should be sent added to the exec before the input file, this is by no means a definitive list
    * of all the ffmpeg commands, as it only utilizes the ones in use by this class. Also only commands that have 
@@ -576,7 +606,9 @@ class PHPVideoToolkit {
 
     preg_match('/' . implode('(.*)', $pregs) . '(.*)/s', $buffer, $matches);
 
-    $configuration = trim($matches[$indexs['configuration']]);
+    $configuration = '';
+    if (isset($indexs['configuration']))
+      $configuration = trim($matches[$indexs['configuration']]);
 // 			grab the ffmpeg configuration flags
     preg_match_all('/--[a-zA-Z0-9\-]+/', $configuration, $config_flags);
     $data['binary']['configuration'] = $config_flags[0];

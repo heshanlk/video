@@ -290,7 +290,7 @@ function _video_aspect_ratio($video) {
   $height = $wxh['video']['dimensions']['height'];
   if (!$width || !$height) {
     //no width and height found just return.
-    watchdog('video_conversion', 'We could not determine the height and width of the video: ' . $video, array(), WATCHDOG_DEBUG);
+    watchdog('video_conversion', 'We could not determine the height and width of the video', array(), WATCHDOG_DEBUG);
 //    drupal_set_message(t('The system counld not determine the width and height of your video: !video.  If transcoding, the system could have problems.', array('!video' => $video)));
     return;
   }
