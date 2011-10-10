@@ -50,7 +50,7 @@ function video_schema() {
       ),
       'duration' => array(
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 32,
         'not null' => FALSE,
         'description' => 'Stores the video duration in Sec.',
       ),
@@ -293,7 +293,7 @@ function video_update_7203(&$sandbox) {
   if (!db_field_exists('video_queue', 'duration')) {
     db_change_field('video_queue', 'duration', 'duration', array(
       'type' => 'varchar',
-      'length' => 255,
+      'length' => 32,
       'not null' => FALSE,
       'description' => 'Stores the video duration in Sec.',
     ));
