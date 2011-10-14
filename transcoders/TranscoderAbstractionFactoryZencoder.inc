@@ -378,16 +378,16 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           }
         }
         // change the job status
-        db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('vid', $video_output->vid, '=')->execute();
+        db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE))->condition('vid', $video_output->vid, '=')->execute();
         echo "Dubble w00t!";
       }
     }
     elseif ($notification->output->state == "cancelled") {
-      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED,))->condition('vid', $video_output->vid, '=')->execute();
+      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('vid', $video_output->vid, '=')->execute();
       echo "Cancelled!\n";
     }
     else {
-      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED,))->condition('vid', $video_output->vid, '=')->execute();
+      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('vid', $video_output->vid, '=')->execute();
       watchdog('transcoder', t('Zencoder reports errors !errors.', array('!errors' => $notification->output->error_message)), NULL, WATCHDOG_ERROR);
       echo "Fail!\n";
     }
