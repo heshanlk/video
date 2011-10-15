@@ -400,10 +400,14 @@ function video_thumb_process(&$element) {
  */
 function video_convert_process(&$element) {
   $file = $element['#value'];
-  // Add default dimensions from our default_value if needed
-  if (!isset($file['data']['dimensions'])) {
-    $file['data']['dimensions'] = $element['data']['dimensions']['#value'];
+
+  // If the dimensions #value is empty, it is probably because the user
+  // clicked the Save button directly and did not choose dimensions.
+  // Take the default dimensions.
+  if (empty($file['data']['dimensions'])) {
+    $file['data']['dimensions'] = $element['data']['dimensions']['#default_value'];
   }
+
   $convert = false;
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
   if (is_array($file) && isset($file['fid']) && !empty($file['fid']) && !isset($file['data']['bypass_autoconversion'])) {

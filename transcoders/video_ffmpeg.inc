@@ -391,6 +391,11 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function create_job($video) {
+    if (empty($video['dimensions'])) {
+      watchdog('video', 'Tried to create ffmpeg job for video %video with empty dimensions value.', array('%video' => $video['fid']), WATCHDOG_ERROR);
+      return FALSE;
+    }
+    
     return db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
   }
 
