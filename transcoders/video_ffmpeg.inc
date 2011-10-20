@@ -82,9 +82,19 @@ class video_ffmpeg implements transcoder_interface {
         $options = $this->params['cmd_path'] . ' ' . t($this->params['thumb_command'], array('!videofile' => $videofile, '!seek' => $seek, '!thumbfile' => $thumbfile));
         // Generate the thumbnail from the video.
         $command_output = $this->run_command($options);
-        if (!file_exists($thumbfile)) {
+        
+        // don't consider zero-byte files a success
+        $exists = file_exists($thumbfile);
+        if (!$exists || filesize($thumbfile) == 0) {
           $error_param = array('%file' => $thumbfile, '%cmd' => $options, '%out' => $command_output);
-          $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
+          
+          if (!$exists) {
+            $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
+          }
+          else {
+            $error_msg = t("Error generating thumbnail for video: generated file %file is empty.<br />Command Executed:<br />%cmd<br />Command Output:<br />%out", $error_param);
+          }
+          
           // Log the error message.
           watchdog('video_transcoder', $error_msg, array(), WATCHDOG_ERROR);
           continue;
