@@ -231,11 +231,14 @@ function theme_video_html5($video, $node) {
       break;
     case 'videojs':
       $items = _video_object_to_array($video->files);
-      $items +=array('thumbnail' => (array) $video->thumbnail);
-      $attributes = array();
-      $attributes['width'] = $video->width;
-      $attributes['height'] = $video->height;
-      return theme('videojs', $items, 'video-' . $video->fid, $attributes);
+      $items['thumbnail'] = (array) $video->thumbnail;
+      
+      $attributes = array(
+        'width' => $video->player_width,
+        'height' => $video->player_height,
+      );
+      
+      return theme('videojs', $items, 'video-'. $video->fid, $attributes);
       break;
     default:
       return t('No HTML5 player has been setup. ' . l(t('Please select a player to play HTML5 videos.'), 'admin/settings/video/players'));
