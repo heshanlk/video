@@ -46,13 +46,17 @@ function uploadfield_widget_settings_save($widget) {
 
 /**
  * Element #value_callback function.
+ * 
+ * Copied from filefield_widget_value with one change to reset our data array
  */
 function uploadfield_widget_value($element, $edit = FALSE) {
-  //copied from filefield_widget_value with one change to reset our data array
   if (!$edit) {
+    // Creating so we load up our empty values.
     $file = field_file_load($element['#default_value']['fid']);
     $item = $element['#default_value'];
-  } else {
+  }
+  else {
+    // Reset our item array for our data.
     $item = array_merge($element['#default_value'], $edit);
     if (isset($element['#default_value']['data']) && isset($edit['data'])) {
       $item['data'] = array_merge($element['#default_value']['data'], $edit['data']);
@@ -75,11 +79,12 @@ function uploadfield_widget_value($element, $edit = FALSE) {
     }
 
     // Load file if the FID has changed so that it can be saved by CCK.
-    $file = field_file_load($item['fid']);
+    $file = isset($item['fid']) ? field_file_load($item['fid']) : NULL;
 
     // If the file entry doesn't exist, don't save anything.
     if (empty($file)) {
       $item = array();
+      $file = array();
     }
 
     // Checkboxes loose their value when empty.

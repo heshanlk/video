@@ -72,6 +72,8 @@ function videoftp_widget_settings_save($widget) {
 
 /**
  * The #value_callback for the videoftp_widget type element.
+ * 
+ * Copied from filefield_widget_value with one change to reset our data array
  */
 function videoftp_widget_value($element, $edit = FALSE) {
   if (!$edit) {
@@ -82,12 +84,15 @@ function videoftp_widget_value($element, $edit = FALSE) {
   else {
     // Reset our item array for our data.
     $item = array_merge($element['#default_value'], $edit);
+    if (isset($element['#default_value']['data']) && isset($edit['data'])) {
+      $item['data'] = array_merge($element['#default_value']['data'], $edit['data']);
+    }
     $field = content_fields($element['#field_name'], $element['#type_name']);
 
     // Uploads take priority over value of fid text field.
     if ($fid = videoftp_save_upload($element)) {
       $item['fid'] = $fid;
-      $item['data'] = array(); //reset our thumbnail
+      $item['data'] = array(); //reset our data array for thumbnails and values.
     }
     // Check for #videoftp_value_callback values.
     // Because FAPI does not allow multiple #value_callback values like it does
@@ -100,11 +105,12 @@ function videoftp_widget_value($element, $edit = FALSE) {
     }
 
     // Load file if the FID has changed so that it can be saved by CCK.
-    $file = field_file_load($item['fid']);
+    $file = isset($item['fid']) ? field_file_load($item['fid']) : NULL;
 
     // If the file entry doesn't exist, don't save anything.
     if (empty($file)) {
       $item = array();
+      $file = array();
     }
 
     // Checkboxes loose their value when empty.
@@ -114,7 +120,11 @@ function videoftp_widget_value($element, $edit = FALSE) {
     }
   }
   // Merge file and item data so it is available to all widgets.
+  if (isset($item['data']) && isset($file['data'])) {
+    $file['data'] = array_merge($item['data'], $file['data']);
+  }
   $item = array_merge($item, $file);
+
   return $item;
 }
 
