@@ -4,32 +4,65 @@
  * Theme file to handle HTML5 output.
  *
  * Variables passed.
- * $video is the video object.
- * $node is the node object.
- *
- * @TODO : Fallback to flash should be done nicely
- *
+ * $video is the video object (see video_helper->video_object())
+ * $node is the Drupal node object
  */
+
+$width = intval($video->player_width);
+$height = intval($video->player_height);
+$poster = check_plain($video->thumbnail->url);
+$autoplayattr = $video->autoplay ? ' autoplay="autoplay"' : '';
+$preload = 'none';
+if ($video->autobuffering) {
+  $preload = 'auto';
+}
+elseif (variable_get('video_metadata', FALSE)) {
+  $preload = 'metadata';
+}
+
+$codecs = array(
+	'video/mp4' => 'avc1.42E01E, mp4a.40.2',
+	'video/webm' => 'vp8, vorbis',
+	'video/ogg' => 'theora, vorbis',
+	'application/ogg' => 'theora, vorbis',
+	'video/ogv' => 'theora, vorbis',
+	'video/quicktime' => 'avc1.42E01E, mp4a.40.2',
+);
+
+$flashtype = null;
 ?>
-<!-- Using the Video for Everybody Embed Code http://camendesign.com/code/video_for_everybody -->
-<video width="<?php echo $video->player_width; ?>" autobuffer="<?php print $video->autobuffering; ?>" height="<?php echo $video->player_height; ?>" controls="0" preload="<?php print $video->autobuffering ? 'auto' : 'metadata'; ?>" poster="<?php echo $video->thumbnail->url; ?>">
-  <?php //dd($items); ?>
-  <?php static $videojs_sources; ?>
-  <?php $codecs = array('video/mp4' => 'avc1.42E01E, mp4a.40.2', 'video/webm' => 'vp8, vorbis', 'video/ogg' => 'theora, vorbis', 'application/ogg' => 'theora, vorbis', 'video/ogv' => 'theora, vorbis', 'video/quicktime' => 'avc1.42E01E, mp4a.40.2'); ?>
-  <?php foreach ($video->files as $filetype => $file): ?>
-  <?php $filepath = $file->url; ?>
-  <?php $mimetype = file_get_mimetype($file->filepath); ?>
-  <?php if (array_key_exists($mimetype, $codecs)): ?>
-  <?php $mimetype = ($mimetype == 'video/quicktime') ? 'video/mp4' : $mimetype; ?>
-  <?php if ($mimetype == 'video/mp4' || $mimetype == 'video/flv')
-        $flash = $filepath; ?>
-  <?php $videojs_sources .= "<source src=\"$filepath\" type='$mimetype; codecs=\"" . $codecs[$mimetype] . "\"' />"; ?>
-  <?php endif; ?>
-  <?php endforeach; ?>
-  <?php print $videojs_sources; ?>
-      <!-- Flash Fallback. Use any flash video player here. Make sure to keep the vjs-flash-fallback class. -->
-  <?php $video->player = 'flv'; ?>
-  <?php $video->files->flv->url = $flash; ?>
-  <?php $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', ''); ?>
-  <?php echo theme('video_flv', $video, $node); ?>
+<video width="<?php echo $width; ?>" height="<?php echo $height; ?>" preload="<?php echo $preload; ?>" controls="controls" poster="<?php echo $poster; ?>"<?php echo $autoplayattr; ?>>
+<?php
+foreach ($video->files as $filetype => $file) {
+  $filepath = check_plain($file->url);
+  $mimetype = file_get_mimetype($file->filepath);
+
+  if ($mimetype == 'video/quicktime') {
+    $mimetype = 'video/mp4';
+  }
+
+  if (!isset($codecs[$mimetype])) {
+    continue;
+  }
+  
+  // Find the right flash fallback, prefer flv over mp4
+  if ($filetype != 'flv' && ($mimetype == 'video/mp4' || $mimetype == 'video/flv')) {
+    $flashtype = $filetype;
+  }
+?>
+  <source src="<?php echo $filepath; ?>" type="<?php echo $mimetype; ?>; codecs=&quot;<?php echo $codecs[$mimetype]; ?>&quot;" />
+<?php
+}
+
+if ($flashtype != null) {
+  $video->player = 'flv';
+  $video->flash_player = variable_get('video_extension_'. $video->player .'_flash_player', '');
+
+  if ($flashtype != 'flv') {
+    $video->files->flv->url = $video->files->{$flashtype}->url;
+  }
+
+  echo theme('video_flv', $video, $node);
+}
+?>
 </video>
