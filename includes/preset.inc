@@ -12,47 +12,26 @@ class video_preset {
 
   public function __construct($preset = null) {
     $this->presets = $preset;
-    if (!isset($preset))
-      $this->presets = variable_get('vid_preset', '');
-//get our configured transcoder.
-//    if (!isset($preset))
-//      $preset = variable_get('vid_preset', 'flash_hq');
-//    echo print_r($preset);
-//    if (!module_load_include('inc', 'video', '/video_preset/' . $preset)) {
-//      $modules = module_list();
-//      foreach ($modules as $module) {
-//        $mobule_files = array();
-//        $module_path = drupal_get_path('module', $module) . '/video_preset';
-//        $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
-//        if (is_array($mobule_files)) {
-//          foreach ($mobule_files as $file) {
-//            if ($file->name == $preset)
-//              require_once $file->filename;
-//          }
-//        }
-////
-//      }
-//    }
-//    if (class_exists($preset)) {
-//      $this->preset = new $preset;
-//    } else {
-//      drupal_set_message(t('The preset is not configured properly.'), 'error');
-//    }
+    if (empty($presets)) {
+      $this->presets = variable_get('vid_preset', array('hq_flash'));
+    }
   }
 
   public function admin_settings() {
     $form = array();
     $options = $this->_preset();
+
     $form['vid_preset'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
       '#options' => $options['radios'],
-      '#default_value' => variable_get('vid_preset', array('status', 'promote')),
-      '#description' => t('!list', array('!list' => theme('item_list', $options['help']))),
+      '#default_value' => $this->presets,
+      '#description' => theme('item_list', $options['help']),
       '#prefix' => '<div id="preset-checkboxes">',
       '#suffix' => '</div>',
+      '#required' => TRUE,
     );
-//    $form = $form + $options['admin_settings'];
+
     return $form;
   }
 
