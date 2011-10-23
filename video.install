@@ -89,15 +89,17 @@ function video_install() {
  */
 function video_uninstall() {
   drupal_uninstall_schema('video');
-// Delete all variables which begin with the namespaced "video_*".
-  $video_vars = array();
-  $query = "SELECT name FROM {variable} WHERE name LIKE 'video_%'";
-  $video_vars = db_query($query);
-  while ($result = db_fetch_array($video_vars)) {
-    if (strpos($result['name'], 'video_') === 0) {
-      variable_del($result['name']);
-    }
+
+  // Delete all variables that begin with the namespaced "video_*"
+  $result = db_query('SELECT name FROM {variable} WHERE name LIKE "video_%%"');
+  while ($var = db_fetch_array($result)) {
+    variable_del($var['name']);
   }
+
+  variable_del('vid_filesystem');
+  variable_del('vid_convertor');
+  variable_del('vid_metadata');
+  variable_del('vid_preset');
 }
 
 /**
