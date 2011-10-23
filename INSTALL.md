@@ -30,32 +30,31 @@
 ## Installing the module
 
 1. Download the module and extract it to sites/all/modules
-
 2. Download and install optional modules, such as Flowplayer and VideoJS
-
 3. Enable the Video module and Video FTP and / or Video Upload
-
 4. Optionally, enable Amazon S3 on Video and / or Zencoder API on Video5
-
 5. Go to Administer › Site configuration › Video 
-
 6. Change the General settings to match your preferences
-
 7. Setup players for the video types you would like to use
-
 8. Select and configure your transcoder
-
 9. If you are going to use ffmpeg transcoding, select at least one preset
-
 10. Enable flvtool2 metadata generation if you have flvtool2 and are going to convert to flv
-
 11. Configure S3 storage if you intend to use it
-
 12. Configure cron. If you do not want to use cron to convert videos, see below for an alternative
 
 ## Tips for a proper ffmpeg installation
 
+When you intend to use ffmpeg to transcode videos, make sure your ffmpeg installation handles all 
+the file formats before installing the module. Linux distributions using precompiled binaries, 
+such as Ubuntu, usually do not provide the best compile options and it is advised to compile 
+ffmpeg yourself.
 
+The following guides will help you to get a good ffmpeg installation:
+
+- [Ubuntu](http://ubuntuforums.org/showthread.php?t=786095): ffmpeg compilation guide
+- [Ubuntu](http://ubuntuforums.org/showthread.php?t=1117283): guide to enhance your ffmpeg installation using precompiled packages
+- [Gentoo](http://www.gentoo-portage.com/media-video/ffmpeg): make sure to setup the right USE flags before installing
+- [Windows](http://www.videohelp.com/tools/ffmpeg): Windows packages
 
 ## Altenative for cron
 
