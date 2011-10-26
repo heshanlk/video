@@ -136,7 +136,13 @@ function video_field_presave($entity_type, $entity, $field, $instance, $langcode
       if ($item['use_default_video_thumb'])
         $items[$delta]['thumbnail'] = $field['settings']['default_video_thumbnail']['fid'];
     }
-    // delete cache if exists
+    // save thumbnail as permanent
+    if (!empty($items[$delta]['thumbnail'])) {
+      $file = file_load($items[$delta]['thumbnail']);
+      $file->status |= FILE_STATUS_PERMANENT;
+      $file = file_save($file);
+    }
+    // delete from cache if exists
     $cid = 'video:video:' . md5($item['fid']);
     $cache = cache_get($cid);
     if (!empty($cache->data)) {
@@ -495,19 +501,4 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
     }
   }
   return $element;
-}
-
-/**
- * Element specific validation for video thumbnail value.
- *
- */
-function video_thumbnail_validate($element, &$form_state) {
-  $fid = $element['#value'];
-  // Make the file permanent and store it in the form.
-  if (!empty($fid)) {
-    $file = file_load($fid);
-    $file->status |= FILE_STATUS_PERMANENT;
-    $file = file_save($file);
-//    $element['#value'] = (array) $file;
-  }
 }
