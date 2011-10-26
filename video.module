@@ -479,10 +479,15 @@ function video_file_delete($file) {
   $thumb_folder = file_directory_path() .'/'. $video_thumb_path .'/'. $file->fid .'/';
 
   // Recursively delete our folder and files.
-  rmdirr($thumb_folder);
+  if (is_dir($thumb_folder)) {
+    rmdirr($thumb_folder);
 
-  // Delete any entries in the files table that may refer to the above path.
-  db_query('DELETE FROM {files} WHERE filepath LIKE "%s%%"', $thumb_folder);
+    // Delete any entries in the files table that may refer to the above path.
+    // TODO: this is a slow query
+    db_query('DELETE FROM {files} WHERE filepath LIKE "%b%%"',
+      strtr(db_escape_string($thumb_folder), array('%' => '\%', '_' => '\_'))
+    );
+  }
 
   // Let other modules to know about the file delete
   video_module_invoke('delete', $file);
