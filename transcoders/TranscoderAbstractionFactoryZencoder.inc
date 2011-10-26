@@ -353,12 +353,15 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function processPostback() {
-    // get JSON post data
-    watchdog('transcoder', t('Zencoder : Postback received from the Zencoder Transcoding servers.'));
     // Catch notification
     $notification = ZencoderOutputNotification::catch_and_parse();
     // Check output/job state
     $video_output = db_query("SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id", array(':job_id' => $notification->job->id))->fetch();
+    if (!$video_output->vid)
+      return;
+    // get JSON post data
+    watchdog('transcoder', t('Zencoder : Postback received from the Zencoder Transcoding servers for vid: !vid.', array('!vid' => $video_output->vid)));
+
     if ($notification->output->state == "finished") {
       if ($notification->job->state == "finished") {
         // update file metadata ie. duration
@@ -399,7 +402,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         $secret_key = variable_get('aws_secret_key', '');
         $bucket = variable_get('amazons3_bucket');
         $s3 = new AmazonS3($key, $secret_key);
-        if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename)) {
+        if ($error = $s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename)) {
           $s3_get_object = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . '/' . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path . '/' . $filename)));
           $file = new stdClass();
           $file->uid = $node->uid;
@@ -411,7 +414,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           $file->timestamp = time();
           $file = file_save($file);
         }
-
         $node->{$field_name}['und'][0]['thumbnail'] = $file->fid;
         node_save($node);
       }
