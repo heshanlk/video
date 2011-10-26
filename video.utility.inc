@@ -38,7 +38,7 @@ function video_thumb_process(&$element, &$form_state) {
         $element['thumbnail'] = array(
           '#type' => 'radios',
           '#title' => t('Video thumbnails'),
-          '#element_validate' => array('video_thumbnail_validate'),
+//          '#element_validate' => array('video_thumbnail_validate'),
           '#options' => $thumbss,
           '#default_value' => !empty($file['thumbnail']) ? $file['thumbnail'] : $thumbs[$default_thumb]->fid,
           '#weight' => 10,
@@ -521,4 +521,19 @@ function _video_object_to_array($data) {
     return $result;
   }
   return $data;
+}
+
+/**
+ * Element specific validation for video thumbnail value.
+ *
+ */
+function video_thumbnail_validate($element, &$form_state) {
+  $fid = $element['#value'];
+  // Make the file permanent and store it in the form.
+  if (!empty($fid)) {
+    $file = file_load($fid);
+    $file->status |= FILE_STATUS_PERMANENT;
+    $file = file_save($file);
+//    $element['#value'] = (array) $file;
+  }
 }
