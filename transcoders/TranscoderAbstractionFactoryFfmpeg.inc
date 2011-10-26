@@ -24,6 +24,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function setOptions($options = NULL) {
+		// Reset the transcoder class keeping the input file info
+		$this->transcoder->reset(true);
+  	
     $video_info = $this->getFileInfo();
     foreach ($options as $key => $value) {
       if (empty($value) || $value === 'none')
@@ -88,7 +91,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         //if there was an error then get it
         $error_msg = $this->transcoder->getLastError();
         watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
-        $this->transcoder->reset();
+        $this->transcoder->reset(true);
         $this->errors['options'] = $error_msg;
         return FALSE;
       }
@@ -102,7 +105,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       //if there was an error then get it
       $error_msg = $this->transcoder->getLastError();
       watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
-      $this->transcoder->reset();
+      $this->transcoder->reset(true);
       $this->errors['output'] = $error_msg;
       return FALSE;
     }
@@ -152,7 +155,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
             //if there was an error then get it 
             $error_msg = t($this->transcoder->getLastError());
             watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-            $this->transcoder->reset();
+            $this->transcoder->reset(true);
             continue;
           }
           // @todo think about how to move execute() method to parent class
@@ -161,7 +164,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
             //if there was an error then get it
             $error_msg = t($this->transcoder->getLastError());
             watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
-            $this->transcoder->reset();
+            $this->transcoder->reset(true);
             continue;
           }
         }
@@ -197,7 +200,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       //if there was an error then get it 
       $error_msg = $this->transcoder->getLastError();
       watchdog('transcoder', t('!message'), array('!message' => $error_msg), WATCHDOG_ERROR);
-      $this->transcoder->reset();
+      $this->transcoder->reset(true);
       $this->errors['execute'] = $error_msg;
       return FALSE;
     }
