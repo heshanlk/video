@@ -173,9 +173,20 @@ class video_s3 extends video_filesystem {
       $header = array(t('Bucket Name'), t('Total Objects'), t('Actions'));
       $rows = array();
       foreach ($buckets as $bucket) {
-        $objects = count($s3->s3->getBucket($bucket));
-        $actions = l(t('Delete'), 'admin/settings/video/amazon_s3/bucket/' . $bucket . '/delete');
-        $rows[] = array($bucket, $objects, $actions);
+        if (!$this->isValidBucketName($bucket)) {
+          $rows[] = array($bucket, t('Unsupported bucket name'), '');
+        }
+        else {
+          $title = $bucket;
+          
+          if ($bucket == variable_get('amazon_s3_bucket', '')) {
+            $title = '<strong>'. $title .' ('. t('active bucket') .')</strong>';
+          }
+          
+          $objects = count($s3->s3->getBucket($bucket));
+          $actions = l(t('Delete'), 'admin/settings/video/amazon_s3/bucket/' . $bucket . '/delete');
+          $rows[] = array($title, $objects, $actions);
+        }
       }
       $form['amazon_info'] = array(
         '#type' => 'fieldset',
