@@ -249,9 +249,44 @@ class video_s3 extends video_filesystem {
             drupal_set_message(t('Successfully created the bucket %bucket.', array('%bucket' => $bucket)));
           } else {
             form_set_error('amazon_s3_bucket', t('Could not verify or create the bucket %bucket.', array('%bucket' => $bucket)));
+            $bucket = null;
           }
         }
+        
+        // Always check the access rights, in case the bucket was created
+        // outside of Drupal or before the Zencoder module was active.
+        if ($bucket != null) {
+          $this->setZencoderAccessPolicy($s3->s3, $bucket);
+        }
       }
+    }
+  }
+
+  /**
+   * Set access control policy to zencoder if module is enabled
+   * 
+   * @todo Add this to video_zencoder module
+   * @param string $bucket
+   */
+  private function setZencoderAccessPolicy(S3 $s3, $bucket) {
+    if (module_exists('video_zencoder')) {
+      $acp = $s3->getAccessControlPolicy($bucket);
+
+      // check if the acl is already present
+      foreach ($acp['acl'] as $acl) {
+        if ($acl['name'] == 'zencodertv') {
+          return;
+        }
+      }
+
+      $acp['acl'][] = array(
+        'type' => 'AmazonCustomerByEmail',
+        'email' => 'aws@zencoder.com',
+        'permission' => 'WRITE',
+      );
+
+      $s3->setAccessControlPolicy($bucket, '', $acp);
+      drupal_set_message(t('Successfully granted write access for bucket %bucket to Zencoder.', array('%bucket' => $bucket)));
     }
   }
 
