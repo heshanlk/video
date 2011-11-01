@@ -131,7 +131,7 @@ class Transcoder {
         );
         drupal_write_record('video_output', $output_vid);
         // add duration to the video_queue table
-        db_update('video_queue')->fields(array('duration' => $file->duration,))->condition('vid', $video->vid, '=')->execute();
+        db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('vid', $video->vid, '=')->execute();
         // change the status if files are exists
         if (file_exists(drupal_realpath($file->uri)))
           $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
