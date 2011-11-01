@@ -164,7 +164,7 @@ class video_s3 extends video_filesystem {
     //lets show our buckets in table format with a delete link.
     //@todo add permissions
     //were enabled, that means they have successfully connected and created a bucket.
-    if (variable_get('amazon_s3_access_key', false) && variable_get('vid_filesystem', 'drupal') == 'video_s3') {
+    if (variable_get('amazon_s3_access_key', false) && _video_s3_is_active_fs()) {
       module_load_include('inc', 'video_s3', '/includes/amazon_s3');
       $s3 = new video_amazon_s3;
       $s3->connect();

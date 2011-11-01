@@ -45,14 +45,15 @@ function video_s3_menu() {
  */
 
 function video_s3_cron() {
-  $filesystem = variable_get('vid_filesystem', 'drupal');
-  if ($filesystem == 'video_s3') {
-    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-    $s3 = new video_amazon_s3;
-    $s3->connect();
-    // Lets run our queue.
-    $s3->queue();
+  if (!_video_s3_is_active_fs()) {
+    return;
   }
+
+  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+  $s3 = new video_amazon_s3;
+  $s3->connect();
+  // Lets run our queue.
+  $s3->queue();
 }
 
 /**
@@ -88,6 +89,10 @@ function video_s3_video_update($form, &$form_state) {
  * @param <type> $form_state
  */
 function video_s3_video_insert(&$element, &$form_state) {
+  if (!_video_s3_is_active_fs()) {
+    return;
+  }
+
   $file = $element['#value'];
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
   if (is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
@@ -109,6 +114,10 @@ function video_s3_video_insert(&$element, &$form_state) {
  * @param <type> $form_state
  */
 function video_s3_video_load(&$video) {
+  if (!_video_s3_is_active_fs()) {
+    return;
+  }
+
   module_load_include('inc', 'video_s3', '/includes/amazon_s3');
   $s3 = new video_amazon_s3;
   if ($amazon = $s3->get($video->fid)) {
@@ -168,4 +177,8 @@ function video_s3_bucket_delete($bucket) {
     drupal_set_message(t('The bucket %bucket does not exist for deletion.', array('%bucket' => $bucket)), 'error');
   }
   drupal_goto('admin/settings/video/amazon_s3');
+}
+
+function _video_s3_is_active_fs() {
+  return variable_get('vid_filesystem', 'drupal') === 'video_s3';
 }
