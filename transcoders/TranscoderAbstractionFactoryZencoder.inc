@@ -371,7 +371,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         );
 
         if ($request->successful) {
-          $duration = $request->results['job']['output_media_files'][0]['duration_in_ms'] / 1000;
+          $duration = round($request->results['job']['output_media_files'][0]['duration_in_ms'] / 1000);
           db_update('video_queue')->fields(array('duration' => $duration))->condition('vid', $video_output->vid, '=')->execute();
         }
         else {
