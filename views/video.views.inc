@@ -66,7 +66,7 @@ function video_views_data() {
     'title' => t('Duration'),
     'help' => t('Video playtime.'),
     'field' => array(
-      'handler' => 'views_handler_field_numeric',
+      'handler' => 'video_handler_field_video_duration',
       'click sortable' => TRUE,
     ),
     'filter' => array(

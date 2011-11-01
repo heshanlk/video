@@ -14,3 +14,4 @@ files[] = includes/VideoHelper.inc
 files[] = includes/TranscoderFactory.inc
 files[] = transcoders/TranscoderAbstractionFactoryFfmpeg.inc
 files[] = transcoders/TranscoderAbstractionFactoryZencoder.inc
+files[] = views/video_handler_field_video_duration.inc

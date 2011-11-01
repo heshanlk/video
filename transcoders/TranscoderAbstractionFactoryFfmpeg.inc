@@ -24,9 +24,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function setOptions($options = NULL) {
-		// Reset the transcoder class keeping the input file info
-		$this->transcoder->reset(true);
-  	
+    // Reset the transcoder class keeping the input file info
+    $this->transcoder->reset(true);
+
     $video_info = $this->getFileInfo();
     foreach ($options as $key => $value) {
       if (empty($value) || $value === 'none')

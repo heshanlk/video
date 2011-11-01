@@ -219,6 +219,22 @@ function video_views_api() {
 }
 
 /**
+ * Implementation of hook_views_handlers().
+ */
+function video_views_handlers() {
+  return array(
+    'info' => array(
+      'path' => drupal_get_path('module', 'video') . '/views',
+    ),
+    'handlers' => array(
+      'video_handler_field_video_duration' => array(
+        'parent' => 'views_handler_field',
+      ),
+    ),
+  );
+}
+
+/**
  * Implements hook_file_download().
  *
  * Control the access to files underneath the styles directory.
