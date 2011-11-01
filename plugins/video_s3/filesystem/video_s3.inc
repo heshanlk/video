@@ -204,7 +204,7 @@ class video_s3 extends video_filesystem {
     } else {
       $bucket = $form_state['values']['amazon_s3_bucket'];
       // S3 buckets must contain only lower case alphanumeric characters, dots and dashes.
-      if (!preg_match("/^[a-z.-]+$/", $bucket)) {
+      if (!$this->isValidBucketName($bucket)) {
         form_set_error('amazon_s3_bucket', t('S3 buckets must contain only lower case alphanumeric characters, dots and dashes.'));
       } else {
         $access_key = $form_state['values']['amazon_s3_access_key'];
@@ -244,6 +244,7 @@ class video_s3 extends video_filesystem {
     }
   }
 
+  private function isValidBucketName($name) {
+    return preg_match('/^[a-z0-9.-]+$/', $name);
+  }
 }
-
-?>
