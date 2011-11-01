@@ -236,16 +236,6 @@ class video_s3 extends video_filesystem {
         if (!$buckets || !(in_array($bucket, $buckets))) {
           // Create a bucket with public read access
           if ($s3->s3->putBucket($bucket, S3::ACL_PUBLIC_READ)) {
-            // set access control policy to zencoder if module is enabled
-            // @TODO : Add this to video_zencoder module
-            if (module_exists('video_zencoder')) {
-              $acp['acl'][] = array(
-                'type' => 'AmazonCustomerByEmail',
-                'email' => 'aws@zencoder.com',
-                'permission' => 'WRITE'
-              );
-              $s3->s3->setAccessControlPolicy($bucket, '', $acp);
-            }
             drupal_set_message(t('Successfully created the bucket %bucket.', array('%bucket' => $bucket)));
           } else {
             form_set_error('amazon_s3_bucket', t('Could not verify or create the bucket %bucket.', array('%bucket' => $bucket)));
