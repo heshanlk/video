@@ -40,8 +40,7 @@ class video_s3 extends video_filesystem {
    * @see sites/all/modules/video/includes/filesystem_interface#get_help()
    */
   public function get_help() {
-    $help = t('Amazon Simple Storage Service (!s3) to store your video files. This free\'s up bandwidth from your site, providing a faster experience for your users. Simply enable this and enter your authentication details and your done! ', array('!s3' => l(t('Aamzon S3'), 'http://s3.amazonaws.com')));
-    return $help;
+    return t('Amazon Simple Storage Service (!s3) to store your video files. This free\'s up bandwidth from your site, providing a faster experience for your users. Simply enable this and enter your authentication details and your done! ', array('!s3' => l(t('Amazon S3'), 'http://aws.amazon.com/s3/')));
   }
 
   /**
@@ -58,18 +57,28 @@ class video_s3 extends video_filesystem {
 
   public function admin_settings() {
     $form = array();
+
     $form['amazon_s3_ssl'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable SSL?'),
       '#default_value' => variable_get('amazon_s3_ssl', FALSE),
       '#description' => t('If you would like to use ssl when transfering your files enable this option.'),
     );
+
     $form['amazon_s3_private'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable Private?'),
       '#default_value' => variable_get('amazon_s3_private', FALSE),
       '#description' => t('If you would like to use private transfering for your files enable this option.'),
     );
+
+    $form['amazon_s3_delete_local'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Delete Local file?'),
+      '#default_value' => variable_get('amazon_s3_delete_local', FALSE),
+      '#description' => t('Delete the local file from server on successful submit to the S3 server.'),
+    );
+
     $form['amazon_s3_lifetime'] = array(
       '#type' => 'textfield',
       '#title' => t('Private Url Lifetime'),
@@ -77,13 +86,13 @@ class video_s3 extends video_filesystem {
       '#size' => 5,
     );
 
-
     $form['amazon_s3_access_key'] = array(
       '#type' => 'textfield',
       '#title' => t('Access Key ID'),
       '#default_value' => variable_get('amazon_s3_access_key', ''),
       '#size' => 50,
     );
+
     $form['amazon_s3_secret_access_key'] = array(
       '#type' => 'password',
       '#title' => t('Secret Access Key'),
@@ -91,6 +100,7 @@ class video_s3 extends video_filesystem {
       '#description' => t('Once saved, you do not need to re-enter your secret key.  If you need to update your key, then fill this out to update it.'),
       '#size' => 50,
     );
+
     //@todo Maybe move this to the admin settings page instead of global?
     $form['amazon_s3_bucket'] = array(
       '#type' => 'textfield',
@@ -108,10 +118,12 @@ class video_s3 extends video_filesystem {
       '#default_value' => variable_get('amazon_s3_cf_domain', ''),
       '#size' => 50,
     );
+
     $form['headers_fset'] = array(
       '#type' => 'fieldset',
       '#title' => t('Headers'),
     );
+
     $form['headers_fset']['amazon_s3_expires_offset'] = array(
       '#type' => 'select',
       '#title' => t('Expires header'),
@@ -122,6 +134,7 @@ class video_s3 extends video_filesystem {
       '#default_value' => variable_get('amazon_s3_expires_offset', 604800),
       '#description' => t('Amazon S3 can be told to send an Expires header (<a href="http://developer.yahoo.com/performance/rules.html#expires">learn more</a>) with served files. This will induce most browsers to cache the file longer, reducing the frequency that it is re-downloaded from the server. This can save on bandwidth charges and provide a faster experience for visitors. However, files which will be frequently updated with the same filename should use a low Expires offset, or else visitors won\'t see &quot;fresh&quot; data. Also, Expires headers will be updated for currently-uploaded files on cron runs, so the interval set here should be greater than or equal to your server\'s cron run interval for best results.'),
     );
+
     $form['headers_fset']['amazon_s3_cache_control_max_age'] = array(
       '#type' => 'select',
       '#title' => t('max-age parameter of Cache-Control header'),
@@ -159,8 +172,6 @@ class video_s3 extends video_filesystem {
       }
     }
 
-
-
     //lets show our buckets in table format with a delete link.
     //@todo add permissions
     //were enabled, that means they have successfully connected and created a bucket.
@@ -197,12 +208,6 @@ class video_s3 extends video_filesystem {
       $form['amazon_info']['buckets'] = array(
         '#type' => 'markup',
         '#value' => theme('table', $header, $rows),
-      );
-      $form['amazon_s3_delete_local'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Delete Local file?'),
-        '#default_value' => variable_get('amazon_s3_delete_local', FALSE),
-        '#description' => t('Delete the local file from server on successful submit to the S3 server.'),
       );
     }
     return $form;
