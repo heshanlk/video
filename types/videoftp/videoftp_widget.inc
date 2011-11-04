@@ -161,10 +161,14 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
     '#field_name' => $element['#field_name'],
     '#delta' => $element['#delta'],
     '#type_name' => $element['#type_name'],
-    '#upload_validators' => $element['#upload_validators'],
     '#weight' => 100,
     '#post' => $element['#post'],
   );
+  
+  if (isset($element['#upload_validators'])) {
+    $element['videoftp_attach']['#upload_validators'] = $element['#upload_validators'];
+  }
+  
   $element['videoftp_remove'] = array(
   // With default CCK edit forms, $element['#parents'] is array($element['#field_name'], $element['#delta']).
   // However, if some module (for example, flexifield) places our widget deeper in the tree, we want to

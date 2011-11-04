@@ -39,7 +39,7 @@ function theme_videoftp_widget_item($element) {
  * select field by respecting the #field_suffix property.
  */
 function theme_videoftp_widget_file($element) {
-  $output .= '<div class="filefield-upload clear-block">';
+  $output = '<div class="filefield-upload clear-block">';
   if (isset($element['#field_prefix'])) {
     $output .= $element['#field_prefix'];
   }
