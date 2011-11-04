@@ -148,7 +148,7 @@ class video_zencoder_api {
       // thumbnails
       $thumbnails['number'] = $thumb_no;
       if (!empty($thumb_size))
-        $thumbnails['thumb_size'] = $thumb_size;
+        $thumbnails['size'] = $thumb_size;
       if (!empty($bucket))
         $thumbnails['base_url'] = 's3://' . $bucket . '/' . $final_thumb_path;
       if (!empty($file->fid))
