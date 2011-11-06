@@ -129,7 +129,39 @@ function video_players_admin_settings() {
       '#suffix' => '</div>',
     );
   }
+  
+  $form['extra'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Player Settings'),
+  );
+  
+  if (isset($flv_players['flowplayer'])) {
+    $form['extra']['video_flowplayer_extraplayerheight'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Flowplayer: add vertical space to accommodate the control bar'),
+      '#field_suffix' => 'pixels',
+      '#default_value' => variable_get('video_flowplayer_extraplayerheight', 24),
+      '#description' => t('The control bar in Flowplayer 3.2 and up uses an overlay on top of the video, so the player size is equal to the video size. For custom control bars or older Flowplayer versions you can use this field to add vertical space to the player height.'),
+      '#size' => 5,
+      '#maxlength' => 3,
+      '#element_validate' => array('_video_validate_number'),
+    );
+  }
+  
+  if (count($form['extra']) == 2) {
+    unset($form['extra']);
+  }
+  
   return system_settings_form($form);
+}
+
+function _video_validate_number($element, $form_state) {
+  $key = end($element['#parents']);
+  $val = $form_state['values'][$key];
+  
+  if (!empty($val) && (!preg_match('#^\d+$#', $val) || intval($val) < 0)) {
+    form_error($element, t('You must enter an integer value for field %field.', array('%field' => $element['#title'])));
+  }
 }
 
 /**

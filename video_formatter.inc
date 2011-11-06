@@ -190,6 +190,8 @@ function theme_video_flv($video, $node) {
     $themed_output = swf($video->files->{$video->player}->url, $options);
   }
   elseif ($video->flash_player == 'flowplayer') {
+    $extraspace = intval(variable_get('video_flowplayer_extraplayerheight', 24));
+
     // kjh: use a playlist to display the thumbnail if not auto playing
     if (!$video->autoplay && $video->thumbnail->url) {
       $options = array(
@@ -209,8 +211,7 @@ function theme_video_flv($video, $node) {
 
     $themed_output = theme(
         'flowplayer', $options, $video->formatter,
-        // adding 24px to height #973636
-        array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')
+        array('style' => 'width:' . $video->player_width . 'px; height:' . ($video->player_height + $extraspace) . 'px;')
     );
   }
   else {
