@@ -91,6 +91,7 @@ class video_s3 extends video_filesystem {
       '#title' => t('Access Key ID'),
       '#default_value' => variable_get('amazon_s3_access_key', ''),
       '#size' => 50,
+      '#element_validate' => array('_video_s3_fsadmin_validate'),
     );
 
     $form['amazon_s3_secret_access_key'] = array(
@@ -99,6 +100,7 @@ class video_s3 extends video_filesystem {
       '#default_value' => variable_get('amazon_s3_secret_access_key', ''),
       '#description' => t('Once saved, you do not need to re-enter your secret key.  If you need to update your key, then fill this out to update it.'),
       '#size' => 50,
+      '#element_validate' => array('_video_s3_fsadmin_validate_secret', '_video_s3_fsadmin_validate'),
     );
 
     //@todo Maybe move this to the admin settings page instead of global?
@@ -108,6 +110,7 @@ class video_s3 extends video_filesystem {
       '#description' => t('Enter the bucket you wish to store your videos in.  If the bucket doesn\'t exist the system will attempt to create it.'),
       '#default_value' => variable_get('amazon_s3_bucket', ''),
       '#size' => 50,
+      '#element_validate' => array('_video_s3_fsadmin_validate'),
     );
 
     // cloud front
@@ -217,43 +220,50 @@ class video_s3 extends video_filesystem {
     // Check for CURL
     if (!extension_loaded('curl') && !@dl(PHP_SHLIB_SUFFIX == 'so' ? 'curl.so' : 'php_curl.dll')) {
       form_set_error('amazon_s3', t('The CURL extension is not loaded.'));
-    } else {
-      $bucket = $form_state['values']['amazon_s3_bucket'];
-      // S3 buckets must contain only lower case alphanumeric characters, dots and dashes.
-      if (!$this->isValidBucketName($bucket)) {
-        form_set_error('amazon_s3_bucket', t('S3 buckets must contain only lower case alphanumeric characters, dots and dashes.'));
-      } else {
-        $access_key = $form_state['values']['amazon_s3_access_key'];
-        // check our secret key.
-        if (!empty($form_state['values']['amazon_s3_secret_access_key'])) {
-          $secret_key = $form_state['values']['amazon_s3_secret_access_key'];
-        } else {
-          // Add our secret key back in to persist its value.
-          $form_state['values']['amazon_s3_secret_access_key'] = variable_get('amazon_s3_secret_access_key', '');
-          $secret_key = variable_get('amazon_s3_secret_access_key', '');
-        }
-        $ssl = isset($form_state['values']['amazon_s3_ssl']) && $form_state['values']['amazon_s3_ssl'] ? TRUE : FALSE;
-        // Lets verify our credentials and verify our bucket exists, if not attempt to create it.
-        module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-        $s3 = new video_amazon_s3;
-        $s3->connect($access_key, $secret_key, $ssl);
-        $buckets = $s3->s3->listBuckets();
-        if (!$buckets || !(in_array($bucket, $buckets))) {
-          // Create a bucket with public read access
-          if ($s3->s3->putBucket($bucket, S3::ACL_PUBLIC_READ)) {
-            drupal_set_message(t('Successfully created the bucket %bucket.', array('%bucket' => $bucket)));
-          } else {
-            form_set_error('amazon_s3_bucket', t('Could not verify or create the bucket %bucket.', array('%bucket' => $bucket)));
-            $bucket = null;
-          }
-        }
-        
-        // Always check the access rights, in case the bucket was created
-        // outside of Drupal or before the Zencoder module was active.
-        if ($bucket != null) {
-          $this->setZencoderAccessPolicy($s3->s3, $bucket);
-        }
+      return;
+    }
+    
+    $bucket = $form_state['values']['amazon_s3_bucket'];
+    // S3 buckets must contain only lower case alphanumeric characters, dots and dashes.
+    if (!$this->isValidBucketName($bucket)) {
+      form_set_error('amazon_s3_bucket', t('S3 bucket names must contain only lower case alphanumeric characters, dots and dashes.'));
+    }
+
+    $ssl = isset($form_state['values']['amazon_s3_ssl']) && $form_state['values']['amazon_s3_ssl'];
+    $access_key = $form_state['values']['amazon_s3_access_key'];
+    $secret_key = $form_state['values']['amazon_s3_secret_access_key'];
+
+    if (empty($access_key) || empty($secret_key)) {
+      // There is no point in continuing if there is no access info
+      return;
+    }
+
+    // Lets verify our credentials and verify our bucket exists, if not attempt to create it.
+    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+    $s3 = new video_amazon_s3;
+    $s3->connect($access_key, $secret_key, $ssl);
+    $buckets = $s3->s3->listBuckets();
+
+    // If the return value is false, something went wrong.
+    if ($buckets === FALSE) {
+      return;
+    }
+
+    if (!in_array($bucket, $buckets)) {
+      // Create a bucket with public read access
+      if ($s3->s3->putBucket($bucket, S3::ACL_PUBLIC_READ)) {
+        drupal_set_message(t('Successfully created the bucket %bucket.', array('%bucket' => $bucket)));
       }
+      else {
+        form_set_error('amazon_s3_bucket', t('Could not verify or create the bucket %bucket.', array('%bucket' => $bucket)));
+        $bucket = null;
+      }
+    }
+
+    // Always check the access rights, in case the bucket was created
+    // outside of Drupal or before the Zencoder module was active.
+    if ($bucket != null) {
+      $this->setZencoderAccessPolicy($s3->s3, $bucket);
     }
   }
 
@@ -287,5 +297,43 @@ class video_s3 extends video_filesystem {
 
   private function isValidBucketName($name) {
     return preg_match('/^[a-z0-9.-]+$/', $name);
+  }
+}
+
+/**
+ * Replace the empty form value with the variable value.
+ * 
+ * Used for the access secret.
+ * 
+ * @param array $element
+ * @param array $form_state
+ */
+function _video_s3_fsadmin_validate_secret($element, &$form_state) {
+  $key = end($element['#parents']);
+  $val = $form_state['values'][$key];
+  $existing = variable_get($key, NULL);
+  
+  if ($val === '' && $existing !== NULL) {
+    $form_state['values'][$key] = $existing;
+  }
+}
+
+/**
+ * Handle required fields that are only required when
+ * video_s3 is the selected file system.
+ * 
+ * @param array $element
+ * @param array $form_state
+ */
+function _video_s3_fsadmin_validate($element, $form_state) {
+  if ($form_state['values']['vid_filesystem'] != 'video_s3') {
+    return;
+  }
+
+  $key = end($element['#parents']);
+  $val = $form_state['values'][$key];
+
+  if (empty($val)) {
+    form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
   }
 }
