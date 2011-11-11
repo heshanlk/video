@@ -462,11 +462,11 @@ function video_convert_process(&$element) {
  */
 function video_file_delete($file) {
   if (empty($file->fid)) {
-    $dump_file = 'video-debug-' . time() . '.log';
-    watchdog('video', 'hook_file_delete called with empty $file object (stack dumped to ' . $dump_file . ')', array(), WATCHDOG_ERROR);
-    file_put_contents($dump_file, serialize(debug_backtrace()));
+    watchdog('video', 'video_file_delete called with empty argument', array(), WATCHDOG_ERROR);
     return;
   }
+
+  // TODO: only execute this method if the file was uploaded by this module.
 
   // @TODO : check for enable trancoder
   // delete the transcoder job
