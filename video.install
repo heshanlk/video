@@ -109,10 +109,93 @@ function video_uninstall() {
  */
 function video_update_6405() {
   $ret = array();
-  $ret[] = update_sql("DROP TABLE IF EXISTS {video_rendering}");
-  $ret[] = update_sql("DROP TABLE IF EXISTS {video_files}");
-  $table = video_schema();
-  db_create_table($ret, 'video_files', $table['video_files']);
+
+  db_drop_table($ret, 'video_rendering}');
+  db_drop_table($ret, 'video_files}');
+
+  $table = array(
+    'description' => t('Store video transcoding queue'),
+    'fields' => array(
+  	  'vid' => array(
+        'description' => t('Video id'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => t('Original file id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'nid' => array(
+        'description' => t('Node id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+	  'filename' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filename of the video.'),
+      ),
+	  'filepath' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filepath of the video.'),
+      ),
+	  'filemime' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The filemime of the video.'),
+      ),
+      'filesize' => array(
+        'description' => t('Filesize of the video.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'dimensions' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => t('The dimensions of the video.'),
+      ),
+      'status' => array(
+        'description' => t('Status of the transcoding'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'started' => array(
+        'description' => t('Started transcodings'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => t('Transcoding completed'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'status' => array('status'),
+      'file' => array('fid'),
+    ),
+    'primary key' => array('vid'),
+  );
+
+  db_create_table($ret, 'video_files', $table);
+
   return $ret;
 }
 
