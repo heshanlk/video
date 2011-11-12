@@ -25,10 +25,8 @@ defined('VIDEO_RENDERING_FAILED') ||
 function video_zencoder_menu() {
   $items = array();
   $items['postback/jobs'] = array(
-//    'title' => 'Video',
-//    'description' => 'Configure different aspects of the video module and its plugins',
     'page callback' => '_video_zencoder_postback_jobs',
-    'access arguments' => array('zencoder postback'),
+    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
   return $items;
