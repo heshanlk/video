@@ -62,7 +62,7 @@ class video_helper {
     // Lets find out if we have pushed this file to the cdn if enabled.
     // @TODO : add correct filesystem load to this
     $filesystem = variable_get('vid_filesystem', 'drupal');
-    if ($filesystem != 'drupal' && !module_exists('video_zencoder')) {
+    if ($filesystem != 'drupal') {
       module_load_include('inc', 'video', '/includes/filesystem');
       $filesystem = new video_filesystem();
       $filesystem->load_file($video);

@@ -15,7 +15,6 @@ define('VIDEO_ZC_ACTIVE', 2);
 define('VIDEO_ZC_FAILED', 3);
 
 class video_zencoder_api {
-
   private $access_key;
   private $limit;
   private $bucket;
@@ -30,51 +29,25 @@ class video_zencoder_api {
    * create transcoding job on Zencoder.com
    */
   public function create($file) {
-    global $base_url;
-    // API Key
-    $api_key = variable_get('video_zencoder_api_key', '');
-    // File details
-    $filename = $file->filename;
-    // Get varialbes
-    $bucket = $this->bucket;
-    $thumb_no = variable_get('video_thumbs', 5);
-
-    $thumb_size = variable_get('video_thumbs_size', '160x120');
-    $thumb_base = $baseurl;
-    $thumb_prefix = $filename;
-    // dimentions
-//    watchdog('zencoder', 'Dimentions !d imentions', array('!dimentions' => $file->dimentions), WATCHDOG_INFO);
-    $dimentions = explode('x', $file->dimensions);
-//watchdog('zencoder', 'Dimentions width:!width and height:!height', array('!width' => $dimentions[0], '!height' => $dimentions[1]), WATCHDOG_INFO);
-    $notify_url = variable_get('zc_notify_url', '');
-    $notify_email = variable_get('zc_notify_email', '');
-
-    // Job details
-    $input_name = $bucket . '/' . $filename;
-//    watchdog('zencoder', $input_name);
-    // thumbnails
-    // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $file->fid;
+    // dimensions
+    $dimensions = explode('x', $file->dimensions);
 
     // Notifications
-//    if(!empty($notify_url))
-//    $notifications[] = array('format' => 'json', 'url' => 'http://123.231.58.90/drupal-6/postback/jobs');
-    $url = variable_get('video_zencoder_postback', $base_url . '/postback/jobs');
-//    $url = 'http://123.231.63.138/postback/jobs';
-    $notifications[] = array('format' => 'json', 'url' => $url);
+    $notifications = array(array(
+      'format' => 'json',
+      'url' => variable_get('video_zencoder_postback', url('postback/jobs', array('absolute' => TRUE))),
+    ));
 
-    //get the presets
-    $presets = $file->presets;
-    $public = (variable_get('amazon_s3_private', FALSE)) ? 0 : 1;
+    // S3 permissions
+    $public = !variable_get('amazon_s3_private', FALSE);
+
+    // Common output URL prefix
+    $output_url_prefix = 's3://'. $this->bucket .'/'. pathinfo($file->filepath, PATHINFO_DIRNAME) .'/converted/'. pathinfo($file->filepath, PATHINFO_FILENAME) .'.';
 
     // construct the output array with the presets
     $zc_outputs = array();
-    foreach ($presets as $name => $preset) {
+    foreach ($file->presets as $name => $preset) {
       $zc_output = array();
-      $lable = 'VIDEO_' . $name . '_' . $file->fid;
-      $width = $dimentions[0];
-      $height = $dimentions[1];
       $quality = $preset['quality'];
       $speed = $preset['speed'];
       $upscale = $preset['upscale'];
@@ -96,16 +69,12 @@ class video_zencoder_api {
       $start_clip = $preset['start_clip'];
       $clip_length = $preset['clip_length'];
 
-      if (!empty($lable))
-        $zc_output['label'] = $lable;
-      if (!empty($bucket))
-        $zc_output['url'] = 's3://' . $bucket . '/' . pathinfo($filename, PATHINFO_DIRNAME) . '/converted/' . pathinfo($filename, PATHINFO_FILENAME) . '.' . $preset['extension'];
-      if (!empty($public))
-        $zc_output['public'] = $public;
-      if (!empty($width))
-        $zc_output['width'] = $width;
-      if (!empty($height))
-        $zc_output['height'] = $height;
+      $zc_output['label'] = 'VIDEO_'. $name .'_'. $file->fid;
+      $zc_output['url'] = $output_url_prefix . $preset['extension'];
+      $zc_output['public'] = $public;
+      $zc_output['width'] = $dimensions[0];
+      $zc_output['height'] = $dimensions[1];
+
       if (!empty($quality))
         $zc_output['quality'] = $quality;
       if (!empty($speed))
@@ -145,110 +114,79 @@ class video_zencoder_api {
       if (!empty($clip_length))
         $zc_output['clip_length'] = $clip_length;
 
-      // thumbnails
-      $thumbnails['number'] = $thumb_no;
-      if (!empty($thumb_size))
-        $thumbnails['size'] = $thumb_size;
-      if (!empty($bucket))
-        $thumbnails['base_url'] = 's3://' . $bucket . '/' . $final_thumb_path;
-      if (!empty($file->fid))
-        $thumbnails['prefix'] = $file->fid;
-      $zc_output['thumbnails'] = $thumbnails;
-
       //notifications
-      if (!empty($notify_email))
-        $notifications[] = $notify_email;
       $zc_output['notifications'] = $notifications;
       $zc_outputs[] = $zc_output;
     }
 
+    // Add thumbnails
+    if (empty($zc_outputs)) $zc_outputs[0] = array();
+    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
+    $final_thumb_path = file_directory_path() .'/'. $video_thumb_path .'/'. $file->fid;
 
-    $encoding_job_json = array(
-//            'test' => 1,
-//            'download_connections' => -1,
-      'api_key' => $this->access_key,
-      'input' => 's3://' . $input_name,
-      'outputs' => $zc_outputs
+    $zc_outputs[0]['thumbnails'] = array(
+       'number' => intval(variable_get('video_thumbs', 5)),
+       'size' => variable_get('video_thumbs_size', '160x120'),
+       'base_url' => 's3://'. $this->bucket .'/'. $final_thumb_path,
+       'prefix' => $file->fid,
     );
 
-//    print_r(($encoding_job_json));
-//    exit;
-//    watchdog('zencoder', json_encode($encoding_job_json));
+    $encoding_job_json = array(
+      'api_key' => $this->access_key,
+      'input' => 's3://'. $this->bucket .'/'. $file->filepath,
+      'outputs' => $zc_outputs,
+    );
 
     $encoding_job = new ZencoderJob(json_encode($encoding_job_json));
+
     // Check if it worked
-    if ($encoding_job->created) {
-//      watchdog('zencoder', serialize($encoding_job));
-      return $encoding_job;
-    } else {
-      foreach ($encoding_job->errors as $error) {
-        //      echo $error."\n";
-        watchdog('zencoder', 'Zencoder reports some errors. !error', array('!error' => $error), WATCHDOG_ERROR);
-      }
-      return false;
+    if (!$encoding_job->created) {
+      watchdog('zencoder', 'Zencoder reports errors while converting %file:<br/>!errorlist', array('%file' => $file->filename, '!errorlist' => theme('item_list', $encoding_job->errors)), WATCHDOG_ERROR);
+      return FALSE;
     }
-  }
 
-  /*
-   * Updates the database after a successful transfer to amazon.
-   */
-
-  public function update($video) {
-    $result = db_query("UPDATE {video_zencoder} SET status=%d, completed=%d WHERE jobid=%d",
-            $video->output->state, time(), $video->job->id);
-    return $result;
-  }
-
-  /*
-   * Verifies the existence of a file id, returns the row or false if none found.
-   */
-
-  public function load_job($jobid) {
-    $sql = db_query("SELECT * FROM {video_zencoder} WHERE jobid=%d", $jobid);
-    $row = db_fetch_object($sql);
-    return $row;
+    return $encoding_job;
   }
 
   /**
    * Create Zencoder user account
    */
-  public function create_user($user) {
-
+  public function create_user($email) {
     $request = new ZencoderRequest(
-            'https://app.zencoder.com/api/account',
-            false, // API key isn't needed for new account creation
-            array(
-              "terms_of_service" => "1",
-              "email" => $user->email,
-              "affiliate_code" => "drupal-video"
-            )
+      'https://app.zencoder.com/api/account',
+      false, // API key isn't needed for new account creation
+      array(
+        'terms_of_service' => '1',
+        'email' => $email,
+        'affiliate_code' => 'drupal-video',
+      )
     );
 
     if ($request->successful) {
       $results = $request->results;
+      $results['email'] = $email;
       variable_set('video_zencoder_api_key', $results['api_key']);
-      $message = drupal_mail('video_zencoder', 'video_zencoder', $user->email, language_default(), $results);
+      $message = drupal_mail('video_zencoder', 'video_zencoder', $email, language_default(), $results);
       if (!$message['result']) {
         drupal_set_message(t('Unable to send e-mail!. Your Zencoder Details are as below.<br/> <b>API Key</b> : !api_key<br/> <b>Password</b> : !password<br/>', array('!api_key' => $results['api_key'], '!password' => $results['password'])), 'status');
-      } else {
-//        drupal_mail('video_zencoder', 'video_zencoder', 'heshanmw@gmail.com', language_default(), $results);
+      }
+      else {
         drupal_set_message(t('Your account has been created and is ready to start processing on Zencoder'));
       }
-//      return $request->results;
       return true;
-//      variable_set('video_zencoder_api_key', '');
-    } else {
+    }
+    else {
       $errors = '';
       foreach ($request->errors as $error) {
         if ($error == 'Email has already been taken') {
-          drupal_set_message(t('Your account already exists on Zencoder. So !login to here and enter API key below', array('!login' => l(t('login'), 'https://app.zencoder.com/session/new'))));
+          drupal_set_message(t('Your account already exists on Zencoder. So !login to here and enter API key below.', array('!login' => l(t('login'), 'https://app.zencoder.com/session/new'))));
           variable_set('video_zencoder_api_key', 'Please enter your API Key');
           return TRUE;
         }
         $errors .= $error;
       }
+      
       return $errors;
     }
   }
-
 }

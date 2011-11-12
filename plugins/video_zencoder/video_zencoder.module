@@ -7,9 +7,6 @@
  * - cleand up the _video_zencoder_postback_jobs() function
  * - Add to select random thumbnails to the download image.
  */
-/*
- * Implementation of hook_cron().
- */
 defined('VIDEO_RENDERING_PENDING') ||
     define('VIDEO_RENDERING_PENDING', 1);
 defined('VIDEO_RENDERING_ACTIVE') ||
@@ -37,78 +34,81 @@ function video_zencoder_menu() {
  *
  */
 function _video_zencoder_postback_jobs() {
-// get JSON post data
   $data = file_get_contents("php://input");
-  watchdog('zencoder', t('Postback received from the Zencoder Transcoding servers.' . serialize($data)));
-//    print_r($data);
-//  exit;
-// get the file object by zenocder job id
-  $video = json_decode($data);
-//  print_r($zc);
-//  $zc_job_id = $video->job->id;
-  $zc_job_state = trim($video->job->state);
-//  $zc_output_id = $video->output->id;
-  $zc_output_state = trim($video->output->state);
-//  $zc_output_url = $video->output->url;
-  if ($zc_output_state == 'finished' && $zc_job_state == 'finished')
-    $video->output->state = VIDEO_RENDERING_COMPLETE;
-  if ($zc_output_state == 'failed' || $zc_job_state == 'failed')
-    $video->output->state = VIDEO_RENDERING_FAILED;
-  if ($zc_job_state == 'processing') {
-    watchdog('zencoder', t('Job !jobid is processing.', array('!jobid' => $video->job->id)));
+  
+  if (empty($data)) {
+    watchdog('zencoder', 'Empty postback received from the Zencoder Transcoding servers.', array(), WATCHDOG_WARNING);
+    drupal_not_found();
     return;
   }
 
-// update the Zencoder Job
-  module_load_include('inc', 'video_zencoder', '/includes/zencoder');
-  $zc = new video_zencoder_api;
-// Lets run delete.
-  $videodb = $zc->load_job($video->job->id);
-//  print_r($video);
-//  echo $nid = $videodb->nid;
-//  echo $vid = $videodb->vid;
-//  echo $fid = $videodb->fid;
+  $result = json_decode($data);
 
-  if ($video->output->state == VIDEO_RENDERING_COMPLETE) {
-//    echo 'completed';
-    $nid = $videodb->nid;
-    $vid = $videodb->vid;
-    $fid = $videodb->fid;
-//    print_r($videodb);
-//    echo 'working completed';
-    if (!db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', VIDEO_RENDERING_COMPLETE, $vid))
-      watchdog('zencoder', t('Error updating zencoder status.', array()), NULL, WATCHDOG_ERROR);
+  watchdog('zencoder', 'Postback received from the Zencoder Transcoding servers.<br/><pre>@data</pre>', array('@data' => print_r($result, TRUE)), WATCHDOG_DEBUG);
 
-    if (!db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $nid))
-      watchdog('zencoder', t('Error pulishing node.', array()), NULL, WATCHDOG_ERROR);
+  $jobid = $result->job->id;
+  $zc_job_state = trim($result->job->state);
+  $zc_output_state = trim($result->output->state);
+  $state = 0;
 
-//    print_r($video);
-// update the thumbanils
-// this will update the default thumbnails, if user want to select another one then they wil need to edit the node
-// Setup our thmbnail path.
+  if ($zc_output_state == 'finished' && $zc_job_state == 'finished') {
+    $state = VIDEO_RENDERING_COMPLETE;
+  }
+  elseif ($zc_output_state == 'failed' || $zc_job_state == 'failed') {
+    $state = VIDEO_RENDERING_FAILED;
+  }
+  elseif ($zc_job_state == 'processing') {
+    // This state means that one output has finished, but more outputs have still to be generated.
+    return;
+  }
+
+  module_load_include('inc', 'video_zencoder', 'transcoders/video_zencoder');
+  $zc = new video_zencoder();
+  $videodb = db_fetch_object(db_query('SELECT * FROM {video_zencoder} WHERE jobid = %d', $jobid));
+
+  if ($videodb == NULL) {
+    watchdog('zencoder', 'Received postback from Zencoder for unknown job @jobid, ignoring.', array('@jobid' => $jobid), WATCHDOG_ERROR);
+    return;
+  }
+  if ($videodb->status == VIDEO_RENDERING_COMPLETE) {
+    watchdog('zencoder', 'Received postback from Zencoder for job @jobid, which was already finished, ignoring.', array('@jobid' => $jobid), WATCHDOG_WARNING);
+    return;
+  }
+  
+  if ($state == VIDEO_RENDERING_COMPLETE) {
+    $zc->change_status($videodb->vid, VIDEO_RENDERING_COMPLETE);
+    db_query('UPDATE {node} SET status=%d WHERE nid = %d', 1, $videodb->nid);
+
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $fid;
-//    $i = rand(0, (variable_get('no_of_video_thumbs', 5) - 1));
-    $filename = $fid . '_' . sprintf("%04d", 1) . '.png';
-    $thumbfile = $final_thumb_path . '/' . $filename;
+    $thumbfile = file_directory_path() .'/'. $video_thumb_path .'/'. $videodb->fid .'/'. $videodb->fid .'_0001.png';
 
     if (video_s3_get_object_info($thumbfile)) {
       $default = $final_thumb_path . '/no-thumb.png';
       file_delete($default);
-      if (video_s3_get_object($thumbfile, $default))
-        watchdog('zencoder', t('Successfully downloaded the thumbnails file and replaced the default image.'));
-      else
-        watchdog('zencoder', t('Download thumbanils files is failed.'), array(), WATCHDOG_ERROR);
+      if (video_s3_get_object($thumbfile, $default)) {
+        watchdog('zencoder', 'Successfully downloaded the thumbnails file and replaced the default image.', array(), WATCHDOG_DEBUG);
+      }
+      else {
+        watchdog('zencoder', 'Download thumbnails file @thumbnail-file failed.', array('@thumbnail-file' => $thumbfile), WATCHDOG_ERROR);
+      }
     }
-//      file_copy($default, $thumbfile, FILE_EXISTS_REPLACE);
-    watchdog('zencoder', t('Updated the Zencoder Job !id to states !states.', array('!id' => $video->job->id, '!states' => $zc_output_state)));
+
+    watchdog('zencoder', 'Updated the Zencoder job @id to state @state.', array('@id' => $jobid, '@state' => $zc_output_state), WATCHDOG_INFO);
   }
-  else if ($video->output->state == VIDEO_RENDERING_FAILED) {
-    echo 'working failed';
-    $this->change_status($vid, VIDEO_RENDERING_FAILED);
-    watchdog('zencoder', t('Zencoder job failed converting videos, please login to zencoder web and check the erros.', array()), NULL, WATCHDOG_ERROR);
-  } else {
-    echo 'working something else';
+  elseif ($state == VIDEO_RENDERING_FAILED) {
+    $zc->change_status($videodb->vid, VIDEO_RENDERING_FAILED);
+    
+    $errormsg = 'not given';
+    if (!empty($result->output->error_message)) {
+    $errormsg = $result->output->error_message;
+    }
+    $errorlink = '#';
+    if (!empty($result->output->error_link)) {
+      $errorlink = $result->output->error_link;
+    }
+    
+    watchdog('zencoder', 'Zencoder job @jobid failed to convert video.<br/>Error message: @errormessage<br/><a href="@error-link">More information about this error</a>',
+      array('@jobid' => $jobid, '@errormessage' => $errormsg, '@errorlink' => $errorlink), WATCHDOG_ERROR);
   }
 }
 
@@ -123,15 +123,16 @@ function video_zencoder_mail($key, &$message, $params) {
 
 function video_zencoder_mail_default($params) {
   return t(
-      'Welcome to Zencoder for Drupal
+'Welcome to Zencoder for Drupal
 -------------------------------
 
 Your account has been created and is ready to start processing.
 
 Your account details are as below.
 
-API Key : %api_key
-Password : %password
+E-mail address (login): @email
+API Key : @api_key
+Password : @password
 
 * Login URL: https://app.zencoder.com/login
 
@@ -144,6 +145,6 @@ You can get help at the following places:
 We\'d love to hear from you. Let us know how we can help. Thanks!
 
 Thanks,
--Zencoder for Drupal Team', array('%api_key' => $params['api_key'], '%password' => $params['password']));
+-Zencoder for Drupal Team', array('@api_key' => $params['api_key'], '@password' => $params['password']));
 }
 

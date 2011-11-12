@@ -11,8 +11,9 @@
  *
  */
 
-class video_zencoder implements transcoder_interface {
+module_load_include('inc', 'video', 'includes/transcoder');
 
+class video_zencoder implements transcoder_interface {
   private $name = 'Zencoder';
   private $value = 'video_zencoder';
 
@@ -39,7 +40,7 @@ class video_zencoder implements transcoder_interface {
     $number_of_thumbs = variable_get('video_thumbs', 5);
     for ($i = 0; $i < $number_of_thumbs; $i++) {
       // @TODO Remove hard coded file types
-      $filename = $video['fid'] . '_' . sprintf("%04d", $i) . '.png';
+      $filename = $video['fid'] .'_'. sprintf('%04d', $i) .'.png';
       $thumbfile = $final_thumb_path . '/' . $filename;
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {
@@ -53,10 +54,8 @@ class video_zencoder implements transcoder_interface {
         }
 //          $thumbfile = drupal_get_path('module', 'video') . '/images/no_thumb.gif';
         if (!file_exists($thumbfile)) {
-          $error_param = array('%file' => $thumbfile, '%out' => $s3_get_object);
-          $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
           // Log the error message.
-          watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
+          watchdog('zencoder', "Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br /><pre>@out</pre>", array('%file' => $thumbfile, '@out' => $s3_get_object), WATCHDOG_ERROR);
           continue;
         }
       }
@@ -81,66 +80,63 @@ class video_zencoder implements transcoder_interface {
 
   public function convert_video($video) {
     // load the S3 lib
-    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+    module_load_include('inc', 'video_s3', 'includes/amazon_s3');
+    $s3 = new video_amazon_s3();
+
     // get the active jobs and check for the status
     if ($video->video_status == VIDEO_RENDERING_ACTIVE) {
-      return;
+      return FALSE;
     }
+
     // We need to check if this file id exists in our S3 table to avoid file not found error.
-    $s3_video = db_query("SELECT * FROM {video_s3} WHERE fid=%d", $video->fid);
-    if ($s3_file = db_fetch_object($s3_video)) {
+    if ($s3_file = $s3->verify($video->fid)) {
       // This is a s3 file, lets verify it has been pushed and if so lets push to Zencoder queue.
       if ($s3_file->status == VIDEO_S3_COMPLETE) {
         $video_s3 = $s3_file;
       }
-    } else {
-      watchdog('zencoder', t('You must active the Video S3 module to work with Zencoder, file is not found in S3 tables', array()), array(), WATCHDOG_ERROR);
-//      return FALSE;
+    }
+    else {
+      watchdog('zencoder', 'You must activate the Video S3 module to work with Zencoder, file is not found in S3 table.', array(), WATCHDOG_ERROR);
+      return FALSE;
     }
 
     // If we have a video lets go ahead and send it.
-    if (is_object($video_s3)) {
-      // This will update our current video status to active.
-      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
-      // bucket name
-      $bucket = variable_get('amazon_s3_bucket', '');
-      $ssl = variable_get('amazon_s3_ssl', FALSE);
-
-      $filepath = $video_s3->filepath;
+    if ($video_s3 != NULL) {
+      //$this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
       $video_s3->dimensions = $video->dimensions;
-      $filename = str_replace(' ', '_', $video_s3->filename);
       $video_s3->presets = $video->presets;
+
       module_load_include('inc', 'video_zencoder', '/includes/zencoder');
       $zc = new video_zencoder_api;
+      
       if ($encoding_job = $zc->create($video_s3)) {
         // Update our table.
         $video->vid = $video->vid;
+        
         //job id
         $video->jobid = $encoding_job->id;
         $outputs = new stdClass();
-//        print_r($encoding_job->outputs);
         foreach ($encoding_job->outputs as $output) {
           $outputs->{$output->id}->id = $output->id;
           $outputs->{$output->id}->label = $output->label;
           $outputs->{$output->id}->url = $output->url;
           $outputs->{$output->id}->state = $output->state;
-          $outputs->{$output->id}->error_message = $output->error_message;
-          $outputs->{$output->id}->error_link = $output->error_link;
         }
         $video->data = serialize($outputs);
+        
         // write output values to the table
         if ($this->update($video)) {
-          watchdog('zencoder', t('Successfully created trancoding job on !jobid.', array('!jobid' => $video->jobid)), array(), WATCHDOG_INFO);
+          watchdog('zencoder', 'Successfully created Zencoder trancoding job @jobid for video @video.', array('@jobid' => $video->jobid, '@video' => $video_s3->filename), WATCHDOG_INFO);
         }
       } else {
-        watchdog('zencoder', 'Failed to queus our file to Zencoder.', array(), WATCHDOG_ERROR);
+        watchdog('zencoder', 'Failed to queue file %file to Zencoder.', array('%file' => $s3_file->filepath), WATCHDOG_ERROR);
         $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
-        return FALSE;
       }
     } else {
-      watchdog('zencoder', 'We did not find the file id: ' . $video->fid . ' or it is still queued for ffmpeg processing or S3 push.', array(), WATCHDOG_DEBUG);
-//      return FALSE;
+      watchdog('zencoder', 'We did not find the file id @fid or it is still queued for S3 push.', array('@fid' => $video->fid), WATCHDOG_DEBUG);
     }
+
+    return FALSE;
   }
 
   /**
@@ -164,8 +160,7 @@ class video_zencoder implements transcoder_interface {
    * @see sites/all/modules/video/includes/transcoder_interface#get_help()
    */
   public function get_help() {
-    $help = l(t('Zencoder'), 'http://zencoder.com/');
-    return $help;
+    return l(t('Zencoder'), 'http://zencoder.com/');
   }
 
   /**
@@ -175,8 +170,9 @@ class video_zencoder implements transcoder_interface {
   public function admin_settings() {
     global $user;
     // check amazon s3 module is exists or not
-    if (!module_exists('video_s3'))
+    if (!module_exists('video_s3')) {
       drupal_set_message(t('You must enable Video Amazon S3 Module to enable this module.'), 'error');
+    }
 
     $form = array();
     $form['video_zencoder_start'] = array(
@@ -190,14 +186,14 @@ class video_zencoder implements transcoder_interface {
         '#title' => t('Zencoder User'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
-        '#description' => t('Save configurations to creare your !link account to transcode and manage your videos using Zencode  API. Once you save your configurations then this will automatically create an account on the Zencoder.com and password and all ther other relevent details will be emailled to you.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com')))
+        '#description' => t('Save configurations to create your !link account to transcode and manage your videos using Zencoder API. Once you save your configuration this will automatically create an account on Zencoder.com and password and all ther other relevant details will be emailed to you.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com')))
       );
       $form['zencoder_user']['zencoder_username'] = array(
         '#type' => 'textfield',
         '#title' => t('Your email address'),
-        '#default_value' => variable_get('zencoder_username', 'me@localhost'),
+        '#default_value' => variable_get('zencoder_username', variable_get('site_mail', '')),
         '#size' => 50,
-        '#description' => t('Make sure the email is accurate, since we will send all the password details to manage transcoding online and API key details to this.')
+        '#description' => t('Make sure the email is accurate, since we will send all the password details to manage transcoding online and API key details to this.<br/>If you already have a Zencoder account, enter the e-mail address that is associated with your Zencoder account.')
       );
 
       $form['zencoder_user']['agree_terms_zencoder'] = array(
@@ -218,7 +214,7 @@ class video_zencoder implements transcoder_interface {
         '#type' => 'textfield',
         '#title' => t('Zencoder API Key'),
         '#default_value' => variable_get('video_zencoder_api_key', null),
-        '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add new account.')
+        '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add a new account.')
       );
       $form['zencoder_info']['video_thumbs'] = array(
         '#type' => 'textfield',
@@ -229,7 +225,7 @@ class video_zencoder implements transcoder_interface {
       );
       $form['zencoder_info']['video_thumbs_size'] = array(
         '#type' => 'textfield',
-        '#title' => t('Dimention of thumbnails'),
+        '#title' => t('Dimension of thumbnails'),
         '#description' => t('Size of thumbnails to extract from video.'),
         '#default_value' => variable_get('video_thumbs_size', '160x120'),
         '#size' => 10
@@ -238,9 +234,8 @@ class video_zencoder implements transcoder_interface {
       $form['zencoder_info']['video_zencoder_postback'] = array(
         '#type' => 'textfield',
         '#title' => t('Postback URL for Zencoder'),
-        '#description' => t('Important : Do not change this if you do not know
-          what your doing.<br/> This postback URL will receive video data when they are completed.'),
-        '#default_value' => variable_get('video_zencoder_postback', $base_url . '/postback/jobs'),
+        '#description' => t('Important: Do not change this if you do not know what your doing.<br/>This postback URL will receive video data when they are completed.'),
+        '#default_value' => variable_get('video_zencoder_postback', url('postback/jobs', array('absolute' => TRUE))),
       );
     }
     $form['video_zencoder_end'] = array(
@@ -256,9 +251,9 @@ class video_zencoder implements transcoder_interface {
    */
   public function admin_settings_validate($form, &$form_state) {
     $zencoder_api = isset($form_state['values']['video_zencoder_api_key']) ? $form_state['values']['video_zencoder_api_key'] : NULL;
-    if (isset($zencoder_api) && !empty($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder') {
+    if (!empty($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder') {
       if (variable_get('vid_filesystem', 'drupal') != 'video_s3') {
-        form_set_error('video_zencoder', t('You must enable the Amazon S3 as !link.', array('!link' => l(t('FileSystem'), 'admin/settings/video/filesystem'))));
+        form_set_error('video_zencoder', t('You must enable Amazon S3 at !link.', array('!link' => l(t('FileSystem'), 'admin/settings/video/filesystem'))));
       }
       return;
     }
@@ -267,7 +262,7 @@ class video_zencoder implements transcoder_interface {
     // check terms and condition
     if ($form_state['values']['agree_terms_zencoder'] == 0) {
       $errors = true;
-      form_set_error('agree_terms_zencoder', t('You must agree terms and conditions.', array()));
+      form_set_error('agree_terms_zencoder', t('You must agree to the terms and conditions.'));
     }
     // check for email exists
     // Validate the e-mail address:
@@ -278,16 +273,13 @@ class video_zencoder implements transcoder_interface {
 
     // get the API key from zencoder and save it to variable
     if (!$errors) {
-      $email = $form_state['values']['zencoder_username'];
       module_load_include('inc', 'video_zencoder', '/includes/zencoder');
       $zc = new video_zencoder_api;
-//    if(!($error = $zc->create_user($user)))
-//            form_set_error('zencoder_username', $error);
-      $user = new stdClass;
-      $user->email = $email;
-      $result = $zc->create_user($user);
-      if ($result !== true)
+
+      $result = $zc->create_user($form_state['values']['zencoder_username']);
+      if ($result !== true) {
         form_set_error('zencoder_username', $result);
+      }
     }
   }
 
@@ -296,7 +288,7 @@ class video_zencoder implements transcoder_interface {
    */
   public function get_dimensions($video) {
     // @TODO get object properties
-    return;
+    return NULL;
   }
 
   public function create_job($video) {
@@ -324,18 +316,16 @@ class video_zencoder implements transcoder_interface {
   }
 
   public function load_job($fid) {
-    $job = null;
-    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
-    $job = db_fetch_object($result);
-    if (!empty($job))
-      return $job;
-    else
+    $job = db_fetch_object(db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf INNER JOIN {files} f ON vf.fid = f.fid WHERE f.fid = %d', $fid));
+    if (empty($job)) {
       return FALSE;
+    }
+    return $job;
   }
 
   public function load_job_queue() {
     // load jobs with status as pending and active both
-    $total_videos = variable_get('video_instances', 5);
+    $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
             VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
@@ -352,20 +342,23 @@ class video_zencoder implements transcoder_interface {
    * @return <type>
    */
   public function load_completed_job(&$video) {
-    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
     $video_row = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE fid = %d', $video->fid));
     $data = unserialize($video_row->data);
+
     if (empty($data))
       return $video;
+
     foreach ($data as $value) {
-      $extension = pathinfo($value->url, PATHINFO_EXTENSION);
-      $video->files->{$extension}->filename = pathinfo($value->url, PATHINFO_FILENAME) . '.' . $extension;
-      $video->files->{$extension}->filepath = $value->url;
-      $video->files->{$extension}->url = (!variable_get('amazon_s3_private', FALSE)) ? $value->url : video_s3_get_authenticated_url($video->filename);
+      $path = parse_url($value->url, PHP_URL_PATH);
+      $extension = pathinfo($path, PATHINFO_EXTENSION);
+      $video->files->{$extension}->filename = pathinfo($path, PATHINFO_FILENAME) .'.'. $extension;
+      $video->files->{$extension}->filepath = substr($path, 1); // Remove the leading slash
+      $video->files->{$extension}->url = $value->url; // Authentication tokens are added by video_s3->load()
       $video->files->{$extension}->extension = $extension;
       $video->files->{$extension}->filemime = file_get_mimetype($value->url);
       $video->player = strtolower($extension);
     }
+
     return $video;
   }
 
@@ -376,7 +369,7 @@ class video_zencoder implements transcoder_interface {
    * @param (int) $status
    */
   public function change_status($vid, $status) {
-    $result = db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', $status, $vid);
+    db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', $status, $vid);
   }
 
   /*
@@ -384,9 +377,7 @@ class video_zencoder implements transcoder_interface {
    */
 
   private function update($video) {
-    $result = db_query("UPDATE {video_zencoder} SET jobid = %d, completed=%d, data='%s' WHERE vid=%d",
+    return db_query("UPDATE {video_zencoder} SET jobid = %d, completed=%d, data='%s' WHERE vid=%d",
             $video->jobid, time(), $video->data, $video->vid);
-    return $result;
   }
-
 }

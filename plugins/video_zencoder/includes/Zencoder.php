@@ -34,7 +34,7 @@ class ZencoderJob {
   function ZencoderJob($params, $options = array()) {
 
     // Build using params if not sending request
-    if($options["build"]) {
+    if(isset($options["build"])) {
       $this->update_attributes($params);
       return true;
     }
@@ -63,7 +63,7 @@ class ZencoderJob {
       // Create output file objects
       if($attr_name == "outputs" && is_array($attr_value)) {
         $this->create_outputs($attr_value);
-      } elseif (!function_exists($this->$attr_name)) {
+      } elseif (!method_exists($this, $attr_name)) {
         $this->$attr_name = $attr_value;
       }
     }

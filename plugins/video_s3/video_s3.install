@@ -91,6 +91,10 @@ function video_s3_schema() {
  */
 function video_s3_install() {
   drupal_install_schema('video_s3');
+  
+  // The video_s3 module cron hook must execute after the video module
+  // in order for ffmpeg converted files to be uploaded to S3 in the same cron run.
+  db_query("UPDATE {system} SET weight = 10 WHERE name = 'video_s3'");
 }
 
 /**
@@ -105,4 +109,12 @@ function video_s3_uninstall() {
       variable_del($var);
     }
   }
+}
+
+function video_s3_update_6000() {
+  $ret = array();
+  
+  $ret[] = update_sql("UPDATE {system} SET weight = 10 WHERE name = 'video_s3'");
+  
+  return $ret;
 }

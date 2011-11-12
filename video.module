@@ -281,6 +281,13 @@ function video_field_formatter_info() {
 
 function video_cron() {
   if (variable_get('video_cron', TRUE)) {
+    // This is a hack to execute S3 uploads before Zencoder
+    $filesystem = variable_get('vid_filesystem', 'drupal');
+    $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
+    if ($filesystem == 'video_s3' && $transcoder == 'video_zencoder') {
+      video_s3_cron();
+    }
+
     module_load_include('inc', 'video', '/includes/conversion');
     $video_conversion = new video_conversion;
     $video_conversion->run_queue();
@@ -404,7 +411,7 @@ function video_convert_process(&$element) {
   // If the dimensions #value is empty, it is probably because the user
   // clicked the Save button directly and did not choose dimensions.
   // Take the default dimensions.
-  if (empty($file['data']['dimensions'])) {
+  if (empty($file['data']['dimensions']) && isset($element['data']['dimensions'])) {
     $file['data']['dimensions'] = $element['data']['dimensions']['#default_value'];
   }
 
@@ -468,13 +475,18 @@ function video_file_delete($file) {
 
   // TODO: only execute this method if the file was uploaded by this module.
 
+  // Let other modules to know about the file delete
+  // before we delete the file, so the module has access to information in the database.
+  video_module_invoke('delete', $file);
+
   // @TODO : check for enable trancoder
   // delete the transcoder job
   module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;
   $transcoder->delete_job($file);
 
-  //now lets delete our video thumbnails and folder.
+  // TODO: Move this to the filesystem class
+  // Now lets delete our video thumbnails and folder.
   $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
   $thumb_folder = file_directory_path() .'/'. $video_thumb_path .'/'. $file->fid .'/';
 
@@ -488,9 +500,6 @@ function video_file_delete($file) {
       strtr(db_escape_string($thumb_folder), array('%' => '\%', '_' => '\_'))
     );
   }
-
-  // Let other modules to know about the file delete
-  video_module_invoke('delete', $file);
 }
 
 /**

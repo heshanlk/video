@@ -5,8 +5,7 @@
  * Class file used to store filesystem on the video.
  *
  */
-class drupal extends video_filesystem {
-
+class drupal implements filesystem_interface {
   protected $params = array();
   protected $name = 'Drupal File System';
   protected $value = 'drupal';
@@ -15,15 +14,7 @@ class drupal extends video_filesystem {
     
   }
 
-  public function save_file($video) {
-
-  }
-
-  public function prepare_file($video) {
-
-  }
-
-  public function load_file(&$video) {
+  public function load_file($video) {
     
   }
 
@@ -51,19 +42,12 @@ class drupal extends video_filesystem {
     return $this->value;
   }
 
-  public function run_command($options) {
-    return;
-  }
-
   public function admin_settings() {
     $form = array();
     return $form;
   }
 
-  public function admin_settings_validate($form, $form_state) {
+  public function admin_settings_validate($form, &$form_state) {
     return;
   }
-
 }
-
-?>

@@ -275,13 +275,15 @@ function videoftp_save_upload($element) {
   $upload_name = $element['#field_name'] .'_'. $element['#delta'];
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
-  $video = $element['#post'][$field['field_name']][$delta]['ftpselect'];
+  $element = $element['#post'][$field['field_name']][$delta];
   $ftp_path = file_directory_path().'/'.$field['widget']['ftp_path'];
 
-  if (empty($video) || !file_exists($ftp_path.'/'.$video)) {
+  if (empty($element['ftpselect']) || !file_exists($ftp_path .'/'. $element['ftpselect'])) {
     return 0;
   }
-  
+
+  $video = $element['ftpselect'];
+
   $dest = filefield_widget_file_path($field);
   if (!field_file_check_directory($dest, FILE_CREATE_DIRECTORY)) {
     watchdog('filefield', 'The upload directory %directory for the file field %field (content type %type) could not be created or is not accessible. A newly uploaded file could not be saved in this directory as a consequence, and the upload was canceled.', array('%directory' => $dest, '%field' => $element['#field_name'], '%type' => $element['#type_name']));

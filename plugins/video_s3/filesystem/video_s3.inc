@@ -1,11 +1,10 @@
 <?php
-
 /*
  * @file
  * Class file used to store filesystem on the video.
  *
  */
-class video_s3 extends video_filesystem {
+class video_s3 implements filesystem_interface {
 
   protected $params = array();
   protected $name = 'Amazon S3';
@@ -15,16 +14,24 @@ class video_s3 extends video_filesystem {
 
   }
 
-  public function save_file($video) {
+  public function load_file($video) {
+    $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
 
-  }
+    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
+    $s3 = new video_amazon_s3;
 
-  public function prepare_file($video) {
+    if ($amazon = $s3->get($video->fid)) {
+      foreach ($video->files as $key => &$file) {
+        $s3->connect();
+        $file->url = $s3->getVideoUrl($file->filepath);
 
-  }
-
-  public function load_file(&$video) {
-    video_s3_video_load(&$video);
+        // For old video's (pre-4.5), the filename property is actually a path
+        // and no ffmpeg converted files were saved to S3.
+        if (strpos('/', $amazon->filename) !== FALSE && $transcoder == 'video_ffmpeg') {
+          $file->url = $s3->getVideoUrl($amazon->filename);
+        }
+      }
+    }
   }
 
   /**
@@ -40,7 +47,7 @@ class video_s3 extends video_filesystem {
    * @see sites/all/modules/video/includes/filesystem_interface#get_help()
    */
   public function get_help() {
-    return t('Amazon Simple Storage Service (!s3) to store your video files. This free\'s up bandwidth from your site, providing a faster experience for your users. Simply enable this and enter your authentication details and your done! ', array('!s3' => l(t('Amazon S3'), 'http://aws.amazon.com/s3/')));
+    return t('Amazon Simple Storage Service (!s3) to store your video files. This free\'s up bandwidth from your site, providing a faster experience for your users. Simply enable this and enter your authentication details and your done!', array('!s3' => l(t('Amazon S3'), 'http://aws.amazon.com/s3/')));
   }
 
   /**
@@ -51,39 +58,36 @@ class video_s3 extends video_filesystem {
     return $this->value;
   }
 
-  public function run_command($options) {
-    return;
-  }
-
   public function admin_settings() {
     $form = array();
 
     $form['amazon_s3_ssl'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Enable SSL?'),
+      '#title' => t('Use HTTPS file links'),
       '#default_value' => variable_get('amazon_s3_ssl', FALSE),
-      '#description' => t('If you would like to use ssl when transfering your files enable this option.'),
-    );
-
-    $form['amazon_s3_private'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Enable Private?'),
-      '#default_value' => variable_get('amazon_s3_private', FALSE),
-      '#description' => t('If you would like to use private transfering for your files enable this option.'),
+      '#description' => t('If you would like to use SSL when transfering your files enable this option.'),
     );
 
     $form['amazon_s3_delete_local'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Delete Local file?'),
+      '#title' => t('Delete local file after uploading to S3'),
       '#default_value' => variable_get('amazon_s3_delete_local', FALSE),
       '#description' => t('Delete the local file from server on successful submit to the S3 server.'),
     );
 
+    $form['amazon_s3_private'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable private file storage'),
+      '#default_value' => variable_get('amazon_s3_private', FALSE),
+      '#description' => t('If you would like to use private file storage for your files enable this option. Videos are displayed using temporary URLs that expire after an amount of time that is configurable below.'),
+    );
+
     $form['amazon_s3_lifetime'] = array(
       '#type' => 'textfield',
-      '#title' => t('Private Url Lifetime'),
-      '#default_value' => variable_get('amazon_s3_lifetime', '1800'),
+      '#title' => t('Private URL lifetime'),
+      '#default_value' => variable_get('amazon_s3_lifetime', 1800),
       '#size' => 5,
+      '#description' => t('The number of seconds a URL to a private file is valid.'),
     );
 
     $form['amazon_s3_access_key'] = array(
@@ -121,6 +125,12 @@ class video_s3 extends video_filesystem {
       '#default_value' => variable_get('amazon_s3_cf_domain', ''),
       '#size' => 50,
     );
+
+    // Cloud Front and private files do not work together
+    if (variable_get('amazon_s3_private', FALSE)) {
+      $form['amazon_s3_cf_domain']['#description'] = t('Amazon CloudFront and S3 private file storage cannot be used together. Disable private files to enable this setting.');
+      $form['amazon_s3_cf_domain']['#disabled'] = TRUE;
+    }
 
     $form['headers_fset'] = array(
       '#type' => 'fieldset',
@@ -215,7 +225,7 @@ class video_s3 extends video_filesystem {
     return $form;
   }
 
-  public function admin_settings_validate(&$form, &$form_state) {
+  public function admin_settings_validate($form, &$form_state) {
     // Check for CURL
     if (!extension_loaded('curl') && !@dl(PHP_SHLIB_SUFFIX == 'so' ? 'curl.so' : 'php_curl.dll')) {
       form_set_error('amazon_s3', t('The CURL extension is not loaded.'));
@@ -261,36 +271,10 @@ class video_s3 extends video_filesystem {
 
     // Always check the access rights, in case the bucket was created
     // outside of Drupal or before the Zencoder module was active.
-    if ($bucket != null) {
-      $this->setZencoderAccessPolicy($s3->s3, $bucket);
-    }
-  }
-
-  /**
-   * Set access control policy to zencoder if module is enabled
-   * 
-   * @todo Add this to video_zencoder module
-   * @param string $bucket
-   */
-  private function setZencoderAccessPolicy(S3 $s3, $bucket) {
-    if (module_exists('video_zencoder')) {
-      $acp = $s3->getAccessControlPolicy($bucket);
-
-      // check if the acl is already present
-      foreach ($acp['acl'] as $acl) {
-        if ($acl['name'] == 'zencodertv') {
-          return;
-        }
+    if ($bucket != null && module_exists('video_zencoder')) {
+      if ($s3->setZencoderAccessPolicy($bucket)) {
+        drupal_set_message(t('Successfully granted write access for bucket %bucket to Zencoder.', array('%bucket' => $bucket)));
       }
-
-      $acp['acl'][] = array(
-        'type' => 'AmazonCustomerByEmail',
-        'email' => 'aws@zencoder.com',
-        'permission' => 'WRITE',
-      );
-
-      $s3->setAccessControlPolicy($bucket, '', $acp);
-      drupal_set_message(t('Successfully granted write access for bucket %bucket to Zencoder.', array('%bucket' => $bucket)));
     }
   }
 
