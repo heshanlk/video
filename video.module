@@ -242,6 +242,24 @@ function video_views_handlers() {
 function video_file_download($uri) {
   $path = file_uri_target($uri);
 
+  // Looks like we have a transcoded file
+	if(strpos($uri, '/converted/') !== FALSE){
+		// Get the original FID and URI using the video_output table
+		$video_fids = db_query('SELECT file_managed.fid output_fid, original_fid, file_original.uri original_uri FROM {file_managed} JOIN {video_output} ON file_managed.fid = video_output.output_fid JOIN {file_managed} file_original ON file_original.fid = video_output.original_fid WHERE file_managed.uri = :uri', array(':uri' => $uri))->fetchObject();
+
+		// Check permissions of original file to grant access to the converted file
+		$original_file_headers = module_invoke_all('file_download', $video_fids->original_uri);
+    if(in_array(-1, $original_file_headers)) {
+      return drupal_access_denied();
+    }
+    // Get the headers of the converted file and return them if they are valid
+    $file = file_load($video_fids->output_fid);
+    $headers = file_get_content_headers($file);
+    if(!in_array(-1, $headers)) {
+      return $headers;
+    }
+	}
+
   // Private file access for image style derivatives.
   if (strpos($path, 'styles/') === 0) {
     $args = explode('/', $path);
