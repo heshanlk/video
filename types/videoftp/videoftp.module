@@ -66,7 +66,7 @@ function videoftp_widget_info() {
  * Implementation of hook_elements().
  */
 function videoftp_elements() {
-  return array(
+  $elements = array(
     'videoftp_widget' => array(
       '#input' => TRUE,
       '#columns' => array('fid', 'list', 'data', 'filepath'),
@@ -74,6 +74,13 @@ function videoftp_elements() {
   	  '#value_callback' => 'videoftp_widget_value',
     ),
   );
+
+  // Support for the imagefield_extended module
+  if (module_exists('imagefield_extended')) {
+    $elements['videoftp_widget']['#process'][] = 'imagefield_extended_widget_process';
+  }
+
+  return $elements;
 }
 
 /**

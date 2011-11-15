@@ -58,6 +58,12 @@ function uploadfield_elements() {
   $elements['uploadfield_widget']['#element_validate'][] = 'uploadfield_widget_validate';
   // uploadfield needs a separate value callback to save its alt and title texts.
   $elements['uploadfield_widget']['#value_callback'] = 'uploadfield_widget_value';
+
+  // Support for the imagefield_extended module
+  if (module_exists('imagefield_extended')) {
+    $elements['uploadfield_widget']['#process'][] = 'imagefield_extended_widget_process';
+  }
+
   return $elements;
 }
 
