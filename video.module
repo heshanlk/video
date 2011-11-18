@@ -542,7 +542,11 @@ function video_widget_element_settings(&$element) {
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
   if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
     $video_info = _video_dimensions_options($options, $file['filepath']);
-    $description = t('Set your video dimensions.  This will create your player and transcode your video with these dimensions.  Your video size is !size, if you choose a higher resolution, this could cause video distortion.  You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] . 'x' . $video_info['height']));
+    $description = t('Set your video dimensions. This will create your player and transcode your video with these dimensions.');
+    if (!empty($video_info)) {
+      $description .= t('Your video size is !size, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] .'x'. $video_info['height']));
+    }
+
     //setup our default display of dimensions.
     //lets go through our options looking for a matching resolution
     foreach ($options as $key => $value) {
@@ -718,6 +722,11 @@ function video_upload_manual_thumb(&$element) {
 
 function _video_dimensions_options(&$options, $video) {
   $aspect_ratio = _video_aspect_ratio($video);
+
+  if (empty($aspect_ratio)) {
+    return $aspect_ratio;
+  }
+
   //loop through our options and find matching ratio's and also the exact width/height
   foreach ($options as $key => $value) {
     $wxh = explode('x', $value);
@@ -732,6 +741,7 @@ function _video_dimensions_options(&$options, $video) {
       }
     }
   }
+
   return $aspect_ratio;
 }
 
@@ -746,15 +756,14 @@ function _video_aspect_ratio($video) {
   module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;
   $wxh = $transcoder->get_dimensions($video);
+
+  if (empty($wxh)) {
+    // No width and height found. This may be because the transcoder does not support retrieving dimensions. 
+    return null;
+  }
+
   $width = $wxh['width'];
   $height = $wxh['height'];
-
-  if (!$width || !$height) {
-    //no width and height found just return.
-    watchdog('video_conversion', 'We could not determine the height and width of the video: ' . $video, array(), WATCHDOG_DEBUG);
-//    drupal_set_message(t('The system counld not determine the width and height of your video: !video.  If transcoding, the system could have problems.', array('!video' => $video)));
-    return;
-  }
 
   //now lets get aspect ratio and compare our options in the select dropdown then add an asterick if any to each option representing a matching aspect ratio.
   $ratio = number_format($width / $height, 4);
@@ -763,6 +772,7 @@ function _video_aspect_ratio($video) {
     'height' => $height,
     'ratio' => $ratio,
   );
+
   return $aspect_ratio;
 }
 
