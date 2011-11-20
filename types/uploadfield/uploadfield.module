@@ -8,13 +8,6 @@
 module_load_include('inc', 'uploadfield', 'uploadfield_widget');
 
 /**
- * Implementation of hook_perm().
- */
-function uploadfield_perm() {
-  return array('use default thumbnail', 'bypass conversion video');
-}
-
-/**
  * Implementation of hook_theme().
  */
 function uploadfield_theme() {
