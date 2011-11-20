@@ -598,13 +598,25 @@ function video_widget_element_settings(&$element) {
 
   // only in preview mode and then create thumbnails
   if ($field['widget']['autoconversion']) {
+    $bypass = isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE);
     if (user_access('bypass conversion video')) {
       $element['data']['bypass_autoconversion'] = array(
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
-        '#default_value' => isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
+        '#default_value' => $bypass,
         '#description' => t('This will bypass your auto conversion of videos.'),
         '#attributes' => array('class' => 'video-bypass-auto-conversion'),
+      );
+
+      if ($file['status'] == FILE_STATUS_TEMPORARY) {
+        // Checkbox #default_value does not work when the checkbox is inserted using AHAH
+        $element['data']['bypass_autoconversion']['#value'] = $bypass;
+      }
+    }
+    else {
+      $element['data']['bypass_autoconversion'] = array(
+        '#type' => 'value',
+        '#value' => $bypass,
       );
     }
 
@@ -618,8 +630,9 @@ function video_widget_element_settings(&$element) {
         '#attributes' => array('class' => 'video-convert-video-on-save'),
       );
 
-      if ($convert) {
-        $element['data']['convert_video_on_save']['#attributes']['checked'] = 'checked';
+      if ($file['status'] == FILE_STATUS_TEMPORARY) {
+        // Checkbox #default_value does not work when the checkbox is inserted using AHAH
+        $element['data']['convert_video_on_save']['#value'] = $convert;
       }
     } else {
       $element['data']['convert_video_on_save'] = array(
@@ -637,8 +650,10 @@ function video_widget_element_settings(&$element) {
         '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
         '#attributes' => array('class' => 'video-use-default-video-thumb'),
       );
-      if ($default_thumb) {
-        $element['data']['use_default_video_thumb']['#attributes']['checked'] = 'checked';
+
+      if ($file['status'] == FILE_STATUS_TEMPORARY) {
+        // Checkbox #default_value does not work when the checkbox is inserted using AHAH
+        $element['data']['use_default_video_thumb']['#value'] = $default_thumb;
       }
     } else {
       $element['data']['use_default_video_thumb'] = array(

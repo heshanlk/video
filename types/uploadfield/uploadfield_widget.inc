@@ -66,7 +66,7 @@ function uploadfield_widget_value($element, $edit = FALSE) {
     // Uploads take priority over value of fid text field.
     if ($fid = filefield_save_upload($element)) {
       $item['fid'] = $fid;
-      $item['data'] = array(); //reset our data array for thumbnails and values.
+      $item['data'] = $element['#default_value']['data'];
     }
     // Check for #filefield_value_callback values.
     // Because FAPI does not allow multiple #value_callback values like it does
