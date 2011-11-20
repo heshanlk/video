@@ -64,9 +64,9 @@ function video_general_admin_settings() {
   );
   $form['video_bypass_conversion'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Bypass Video Conversion'),
+    '#title' => t('Bypass auto conversion by default'),
     '#default_value' => variable_get('video_bypass_conversion', FALSE),
-    '#description' => t('Bypass video conversion when creating videos.')
+    '#description' => t('Bypass video conversion when creating videos. This setting can be overriden by users with the %perm permission.', array('%checkbox' => t('Bypass auto conversion'), '%perm' => t('bypass conversion video')))
   );
   $form['video_convert_on_save'] = array(
     '#type' => 'checkbox',

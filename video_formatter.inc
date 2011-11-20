@@ -16,7 +16,8 @@ function theme_video_formatter_video_plain($element) {
   if (!empty($field['list_field']) && !$element['#item']['list'])
     return '';
   // Only needs to be ran if they are converting videos
-  if (isset($field['widget']['autoconversion']) && $field['widget']['autoconversion'] && !$element['#item']['data']['bypass_autoconversion']) {
+
+  if (!empty($field['widget']['autoconversion']) && empty($element['#item']['data']['bypass_autoconversion'])) {
     module_load_include('inc', 'video', '/includes/conversion');
     $conversion = new video_conversion;
     $video = $conversion->load_job($element['#item']['fid']);
