@@ -83,7 +83,6 @@ class video_amazon_s3 {
 
   public function delete($fid) {
     // Lets get our file no matter the status and delete it.
-    var_dump($fid);
     if ($video = $this->verify($fid)) {
       if ($video->bucket) {
         // It has been pushed to amazon so lets remove it.
