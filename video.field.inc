@@ -207,7 +207,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
           $job = TRUE;
       }
       // if convert on save is checked
-      if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1 || variable_get('video_convert_on_save', FALSE)) {
+      if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1) {
         // set to false when convert on save
         $job = FALSE;
         if ($video_conversion->process($item['fid'])) {
