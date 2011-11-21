@@ -186,12 +186,11 @@ function video_widget_element_settings(&$element, &$form_state) {
       );
     }
     // check this to convert the video on save
-    $convert = isset($file['convert_video_on_save']) ? $file['convert_video_on_save'] : variable_get('video_convert_on_save', FALSE);
     if (user_access('convert on submission')) {
       $element['convert_video_on_save'] = array(
         '#type' => 'checkbox',
         '#title' => t('Convert video on save'),
-        '#default_value' => $convert,
+        '#default_value' => variable_get('video_convert_on_save', FALSE),
         '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
         '#attributes' => array('class' => array('video-convert-video-on-save')),
       );
