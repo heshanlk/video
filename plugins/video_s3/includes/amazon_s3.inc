@@ -103,6 +103,7 @@ class video_amazon_s3 {
           if ($row) {
             foreach (unserialize($row->data) as $subvideo) {
               $parts = parse_url($subvideo->url);
+              $this->s3->deleteObject($video->bucket, ltrim($parts['path'], '/'));
             }
           }
 
