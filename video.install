@@ -28,8 +28,14 @@ function video_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'nid' => array(
-        'description' => 'The {node}.nid being referenced in this field.',
+      'entity_type' => array(
+        'description' => 'The entity_type of the video.',
+        'type' => 'varchar',
+        'length' => 128,
+        'default' => 'node',
+      ),
+      'entity_id' => array(
+        'description' => 'The entity_id being referenced in this field.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -290,7 +296,7 @@ function video_update_7202(&$sandbox) {
 function video_update_7203(&$sandbox) {
   $ret = array();
   // Check because D6 installs may already have added this.
-  if (!db_field_exists('video_queue', 'duration')) {
+  if (db_field_exists('video_queue', 'duration')) {
     db_change_field('video_queue', 'duration', 'duration', array(
       'type' => 'varchar',
       'length' => 32,
@@ -299,5 +305,33 @@ function video_update_7203(&$sandbox) {
     ));
   }
 
+  return $ret;
+}
+
+/**
+ * Alter video_queue table to rename nid to entity_id and 
+ * added entity_type column.
+ */
+function video_update_7204(&$sandbox) {
+  $ret = array();
+  // Check because D6 installs may already have added this.
+  if (db_field_exists('video_queue', 'nid')) {
+    db_change_field('video_queue', 'nid', 'entity_id', array(
+      'description' => 'The entity_id being referenced in this field.',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+  }
+  if (!db_field_exists('video_queue', 'entity_type')) {
+    $new_field = array(
+      'description' => 'The entity_type of the video.',
+      'type' => 'varchar',
+      'length' => 128,
+      'default' => 'node',
+    );
+    db_add_field('video_queue', 'entity_type', $new_field);
+  }
   return $ret;
 }

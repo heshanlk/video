@@ -185,14 +185,14 @@ abstract class TranscoderAbstractionFactory {
   /**
    * Create new transcoder job on database.
    * @param type $video
-   * @param type $nid
+   * @param type $entity_id
    * @return type 
    */
-  public function createJob($video, $nid) {
+  public function createJob($video, $entity_id) {
     return db_insert('video_queue')
             ->fields(array(
               'fid' => $video['fid'],
-              'nid' => $nid,
+              'entity_id' => $entity_id,
               'status' => VIDEO_RENDERING_PENDING,
               'dimensions' => $video['dimensions'],
             ))
@@ -233,7 +233,7 @@ abstract class TranscoderAbstractionFactory {
   public function loadJob() {
     $file = $this->settings['input'];
     $job = null;
-    $job = db_query("SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.data, vf.status as video_status
+    $job = db_query("SELECT f.*, vf.vid, vf.entity_id, vf.entity_type, vf.dimensions, vf.data, vf.status as video_status
       FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $file['fid']))
         ->fetch();
     if (!empty($job))
@@ -266,7 +266,7 @@ abstract class TranscoderAbstractionFactory {
   public function loadJobQueue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status
+    $result = db_query_range('SELECT f.*, vf.vid, vf.entity_id, vf.dimensions, vf.status as video_status
       FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
       WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {

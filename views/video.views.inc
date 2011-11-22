@@ -25,7 +25,7 @@ function video_views_data() {
     // ...to the node table
     'node' => array(
       'left_field' => 'nid',
-      'field' => 'nid',
+      'field' => 'entity_id',
     ),
   );
 

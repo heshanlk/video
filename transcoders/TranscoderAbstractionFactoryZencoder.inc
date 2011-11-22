@@ -383,16 +383,17 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE))->condition('vid', $video_output->vid, '=')->execute();
         echo "Dubble w00t!";
         // Replace thumbnail
-        $video_queue = db_query("SELECT nid FROM {video_queue} WHERE vid = :vid", array(':vid' => $video_output->vid))->fetch();
-        $node = node_load($video_queue->nid);
+        $video_queue = db_query("SELECT entity_id, entity_type FROM {video_queue} WHERE vid = :vid", array(':vid' => $video_output->vid))->fetch();
+        $entity = entity_load($video_queue->entity_type, array($video_queue->entity_id));
         //get field name
         $field_name = NULL;
-        foreach (field_info_instances('node', $node->type) as $key => $field) {
+        $bundle = isset($entity->type) ? $entity->type : $entity->node_type;
+        foreach (field_info_instances($video_queue->entity_type, $bundle) as $key => $field) {
           if ($field['widget']['type'] == 'video_upload')
             $field_name = $key;
         }
         // download thumbnails
-        $schema_thumb_path = file_uri_scheme($node->{$field_name}['und'][0]['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $video_output->original_fid;
+        $schema_thumb_path = file_uri_scheme($entity->{$field_name}['und'][0]['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $video_output->original_fid;
         file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
         $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
         $thumbnail_id = rand(1, $no_of_thumbnails);
@@ -405,7 +406,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename) && !file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
           $s3_get_object = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . '/' . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path . '/' . $filename)));
           $file = new stdClass();
-          $file->uid = $node->uid;
+          $file->uid = $entity->uid;
           $file->status = 0;
           $file->filename = trim($filename);
           $file->uri = $schema_thumb_path . '/' . $filename;
@@ -413,8 +414,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           $file->filesize = filesize(drupal_realpath($schema_thumb_path . '/' . $filename));
           $file->timestamp = time();
           $file = file_save($file);
-          $node->{$field_name}['und'][0]['thumbnail'] = $file->fid;
-          node_save($node);
+          $entity->{$field_name}['und'][0]['thumbnail'] = $file->fid;
+          if ($video_queue->entity_type == 'node')
+            node_save($entity);
+          if ($video_queue->entity_type == 'comment')
+            comment_save($entity);
         }
       }
     }
