@@ -208,7 +208,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
       }
       // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
       if (!$video = $transcoder->loadJob()) {
-        if (!($transcoder->createJob($item, $entity_id)))
+        if (!($transcoder->createJob($item, $entity_id, $entity_type)))
           drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
         else
           $job = TRUE;

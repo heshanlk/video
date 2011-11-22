@@ -384,10 +384,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         echo "Dubble w00t!";
         // Replace thumbnail
         $video_queue = db_query("SELECT entity_id, entity_type FROM {video_queue} WHERE vid = :vid", array(':vid' => $video_output->vid))->fetch();
-        $entity = entity_load($video_queue->entity_type, array($video_queue->entity_id));
+        $entity = reset(entity_load($video_queue->entity_type, array($video_queue->entity_id)));
         //get field name
         $field_name = NULL;
-        $bundle = isset($entity->type) ? $entity->type : $entity->node_type;
+        $bundle = (isset($entity->type) && !empty($entity->type)) ? $entity->type : $entity->node_type;
         foreach (field_info_instances($video_queue->entity_type, $bundle) as $key => $field) {
           if ($field['widget']['type'] == 'video_upload')
             $field_name = $key;

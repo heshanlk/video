@@ -188,11 +188,12 @@ abstract class TranscoderAbstractionFactory {
    * @param type $entity_id
    * @return type 
    */
-  public function createJob($video, $entity_id) {
+  public function createJob($video, $entity_id, $entity_type = 'node') {
     return db_insert('video_queue')
             ->fields(array(
               'fid' => $video['fid'],
               'entity_id' => $entity_id,
+              'entity_type' => $entity_type,
               'status' => VIDEO_RENDERING_PENDING,
               'dimensions' => $video['dimensions'],
             ))
