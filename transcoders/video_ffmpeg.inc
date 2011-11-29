@@ -107,6 +107,7 @@ class video_ffmpeg implements transcoder_interface {
       $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
       $filename = "/video-thumb-for-" . $video['fid'] . "-$i.jpg";
       $thumbfile = $final_thumb_path . $filename;
+      
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {
         //setup the command to be passed to the transcoder.
@@ -119,15 +120,20 @@ class video_ffmpeg implements transcoder_interface {
         // don't consider zero-byte files a success
         $exists = file_exists($thumbfile);
         if (!$exists || filesize($thumbfile) == 0) {
+          $params = array('%file' => $thumbfile, '%video' => $video['filename']);
+          
           if ($exists) {
-            $error_msg = 'Error generating thumbnail for video %video: generated file %file is empty.';
+            $error_msg = 'Error generating thumbnail for video %video: generated file %file is empty. This problem may be caused by a broken video file. The video reports that its length is @duration seconds. If this is wrong, please recreate the video and try again.';
+            $params['@duration'] = $duration;
+            unlink($thumbfile);
           }
           else {
             $error_msg = 'Error generating thumbnail for video %video: generated file %file does not exist.';
           }
           
           // Log the error message and break. Other thumbnails probably will not be generated as well.
-          watchdog('video_ffmpeg', $error_msg, array('%file' => $thumbfile, '%video' => $videofile), WATCHDOG_ERROR);
+          watchdog('video_ffmpeg', $error_msg, $params, WATCHDOG_ERROR);
+          drupal_set_message(t($error_msg, $params));
           break;
         }
       }
