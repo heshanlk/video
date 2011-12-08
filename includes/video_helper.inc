@@ -35,6 +35,7 @@ class video_helper {
     $video->files->{$extension}->filename = pathinfo($element['#item']['filepath'], PATHINFO_FILENAME) . '.' . $extension;
     $video->files->{$extension}->filepath = $element['#item']['filepath'];
     $video->files->{$extension}->url = file_create_url($element['#item']['filepath']);
+    $video->files->{$extension}->filemime = $element['#item']['filemime'];
     $video->files->{$extension}->extension = $extension;
     $video->player = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
     $video->width = trim($dimensions[0]);
