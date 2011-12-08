@@ -80,7 +80,8 @@ function _video_zencoder_postback_jobs() {
     db_query('UPDATE {node} SET status=%d WHERE nid = %d', 1, $videodb->nid);
 
     $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $thumbfile = file_directory_path() .'/'. $video_thumb_path .'/'. $videodb->fid .'/'. $videodb->fid .'_0001.png';
+    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $videodb->fid;
+    $thumbfile = $final_thumb_path .'/'. $videodb->fid .'_0001.png';
 
     if (video_s3_get_object_info($thumbfile)) {
       $default = $final_thumb_path . '/no-thumb.png';
@@ -91,6 +92,9 @@ function _video_zencoder_postback_jobs() {
       else {
         watchdog('zencoder', 'Download thumbnails file @thumbnail-file failed.', array('@thumbnail-file' => $thumbfile), WATCHDOG_ERROR);
       }
+    }
+    else {
+      watchdog('zencoder', 'Could not find thumbnail file @thumbnail-file on Amazon S3, not replacing the default file.', array('@thumbnail-file' => $thumbfile), WATCHDOG_ERROR);
     }
 
     watchdog('zencoder', 'Updated the Zencoder job @id to state @state.', array('@id' => $jobid, '@state' => $zc_output_state), WATCHDOG_INFO);
