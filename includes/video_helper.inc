@@ -1,14 +1,11 @@
 <?php
-
 /*
  * @file
  * Class file used to create our video and thumbnail objects.
  * @todo : remove video_zencoder validation form the class
  *
  */
-
 class video_helper {
-
   public function video_object($element) {
     $field = content_fields($element['#field_name'], $element['#type_name']);
     //setup our width x height
@@ -27,17 +24,25 @@ class video_helper {
       }
     }
 
+    $extension = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
+    if (empty($extension)) {
+      drupal_set_message(
+        t('Could not determine the extension of filename @filename for node @node-title, element @element-title, item @item',
+          array('@filename' => $element['#item']['filename'], '@node-title' => $element['#node']->node_title, '@element-title' => $field['widget']['label'], '@item' => $element['#item']['#delta'])),
+        'error');
+      return NULL;
+    }
+
     // Build our video object for all types.
     $video = new stdClass();
     $video->fid = $element['#item']['fid'];
     $video->original = $element['#item'];
-    $extension = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
-    $video->files->{$extension}->filename = pathinfo($element['#item']['filepath'], PATHINFO_FILENAME) . '.' . $extension;
+    $video->files->{$extension}->filename = pathinfo($element['#item']['filepath'], PATHINFO_FILENAME) .'.'. $extension;
     $video->files->{$extension}->filepath = $element['#item']['filepath'];
     $video->files->{$extension}->url = file_create_url($element['#item']['filepath']);
     $video->files->{$extension}->filemime = $element['#item']['filemime'];
     $video->files->{$extension}->extension = $extension;
-    $video->player = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
+    $video->player = $extension;
     $video->width = trim($dimensions[0]);
     $video->height = trim($dimensions[1]);
     $video->player_width = trim($player_dimensions[0]);

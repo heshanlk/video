@@ -881,6 +881,11 @@ function video_get_player($element) {
   module_load_include('inc', 'video', '/includes/video_helper');
   $video_helper = new video_helper;
   $video = $video_helper->video_object($element);
+
+  if ($video == NULL) {
+    return '';
+  }
+
   // Lets spit out our theme based on the extension
   $defaults = video_video_extensions();
   $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
