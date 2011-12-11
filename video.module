@@ -780,23 +780,16 @@ function _video_aspect_ratio($video) {
   $transcoder = new video_transcoder;
   $wxh = $transcoder->get_dimensions($video);
 
-  if (empty($wxh)) {
+  if (empty($wxh) || empty($wxh['width']) || empty($wxh['height'])) {
     // No width and height found. This may be because the transcoder does not support retrieving dimensions. 
     return null;
   }
 
-  $width = $wxh['width'];
-  $height = $wxh['height'];
-
-  //now lets get aspect ratio and compare our options in the select dropdown then add an asterick if any to each option representing a matching aspect ratio.
-  $ratio = number_format($width / $height, 4);
-  $aspect_ratio = array(
-    'width' => $width,
-    'height' => $height,
-    'ratio' => $ratio,
+  return array(
+    'width' => $wxh['width'],
+    'height' => $wxh['height'],
+    'ratio' => number_format($wxh['width'] / $wxh['height'], 4),
   );
-
-  return $aspect_ratio;
 }
 
 /*
