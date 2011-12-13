@@ -19,58 +19,43 @@ class video_zencoder implements transcoder_interface {
 
   public function generate_thumbnails($video) {
     global $user;
-    // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video['fid'];
-
-    // Ensure the destination directory exists and is writable.
-    $directories = explode('/', $final_thumb_path);
-    // Get the file system directory.
-    $file_system = file_directory_path();
-    foreach ($directories as $directory) {
-      $full_path = isset($full_path) ? $full_path . '/' . $directory : $directory;
-      // Don't check directories outside the file system path.
-      if (strpos($full_path, $file_system) === 0) {
-        field_file_check_directory($full_path, FILE_CREATE_DIRECTORY);
-      }
-    }
-
+    
+    $job = $this->load_job($video['fid']);
+    $complete = $job && $job->video_status == VIDEO_RENDERING_COMPLETE;
+    
+    $final_thumb_path = video_thumb_path($video);
+    $number_of_thumbs = $complete ? variable_get('video_thumbs', 5) : 1;
+    
     $files = array();
-    // no thumbnails to generate
-    $number_of_thumbs = variable_get('video_thumbs', 5);
     for ($i = 0; $i < $number_of_thumbs; $i++) {
-      // @TODO Remove hard coded file types
       $filename = $video['fid'] .'_'. sprintf('%04d', $i) .'.png';
-      $thumbfile = $final_thumb_path . '/' . $filename;
-      //skip files already exists, this will save ffmpeg traffic
-      if (!is_file($thumbfile)) {
-        $default = drupal_get_path('module', 'video') . '/images/no-thumb.png';
-        // Download generated thumbnails from S3.
-        if (video_s3_get_object_info($thumbfile))
-          $s3_get_object = video_s3_get_object($thumbfile, $thumbfile);
-        else {
-          $thumbfile = $final_thumb_path . '/no-thumb.png';
+      $thumbfile = $final_thumb_path .'/'. $filename;
+      
+      if (!$complete) {
+        $default = drupal_get_path('module', 'video') .'/images/no-thumb.png';
+        $thumbfile = video_thumb_path(NULL, FALSE) .'/no-thumb.png';
+
+        // The default file is shared between videos
+        if (!is_file($thumbfile)) {
           file_copy($default, $thumbfile, FILE_EXISTS_REPLACE);
         }
-//          $thumbfile = drupal_get_path('module', 'video') . '/images/no_thumb.gif';
-        if (!file_exists($thumbfile)) {
-          // Log the error message.
-          watchdog('zencoder', "Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br /><pre>@out</pre>", array('%file' => $thumbfile, '@out' => $s3_get_object), WATCHDOG_ERROR);
-          continue;
-        }
       }
+      elseif (!is_file($thumbfile)) {
+        break;
+      }
+      
       // Begin building the file object.
-      // @TODO : use file_munge_filename()
       $file = new stdClass();
       $file->uid = $user->uid;
       $file->status = FILE_STATUS_TEMPORARY;
-      $file->filename = trim($filename);
+      $file->filename = $filename;
       $file->filepath = $thumbfile;
-      $file->filemime = file_get_mimetype($filename);
+      $file->filemime = 'image/png';
       $file->filesize = filesize($thumbfile);
       $file->timestamp = time();
       $files[] = $file;
     }
+    
     return $files;
   }
 

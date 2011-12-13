@@ -40,8 +40,7 @@ function theme_video_thumbnails($file, $alt = '', $title = '', $attributes = NUL
     $query_string = $query_character . $file['timestamp'];
   }
 
-  $url = file_create_url($file['filepath']) . $query_string;
-  $attributes['src'] = $url;
+  $attributes['src'] = file_create_url($file['filepath']) . $query_string;
   $attributes = drupal_attributes($attributes);
   return '<span></span><img '. $attributes .' />';
 }

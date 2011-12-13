@@ -32,6 +32,7 @@ function video_zencoder_menu() {
 /**
  * This will handle Zencoder postback once video conversion is completed
  *
+ * @TODO move to separate file
  */
 function _video_zencoder_postback_jobs() {
   $data = file_get_contents("php://input");
@@ -77,24 +78,46 @@ function _video_zencoder_postback_jobs() {
   
   if ($state == VIDEO_RENDERING_COMPLETE) {
     $zc->change_status($videodb->vid, VIDEO_RENDERING_COMPLETE);
-    db_query('UPDATE {node} SET status=%d WHERE nid = %d', 1, $videodb->nid);
+    db_query('UPDATE {node} SET status = %d WHERE nid = %d', 1, $videodb->nid);
 
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $videodb->fid;
-    $thumbfile = $final_thumb_path .'/'. $videodb->fid .'_0001.png';
+    // Fetch the thumbnails
+    $video_thumb_path = video_thumb_path($videodb);
+    $number_of_thumbs = variable_get('video_thumbs', 5);
+    $thumbsdownloaded = 0;
+    for ($i = 0; $i < $number_of_thumbs; $i++) {
+      $thumbfile = $video_thumb_path .'/'. $videodb->fid .'_'. sprintf('%04d', $i) .'.png';
 
-    if (video_s3_get_object_info($thumbfile)) {
-      $default = $final_thumb_path . '/no-thumb.png';
-      file_delete($default);
-      if (video_s3_get_object($thumbfile, $default)) {
-        watchdog('zencoder', 'Successfully downloaded the thumbnails file and replaced the default image.', array(), WATCHDOG_DEBUG);
-      }
-      else {
-        watchdog('zencoder', 'Download thumbnails file @thumbnail-file failed.', array('@thumbnail-file' => $thumbfile), WATCHDOG_ERROR);
+      if (video_s3_get_object_info($thumbfile)) {
+        if (video_s3_get_object($thumbfile, $thumbfile)) {
+          $thumbsdownloaded++;
+        }
+        else {
+          watchdog('zencoder', 'Could not download @thumbfile from Amazon S3 to the local file system.', array('@thumbfile' => $thumbfile), WATCHDOG_ERROR);
+        }
       }
     }
-    else {
-      watchdog('zencoder', 'Could not find thumbnail file @thumbnail-file on Amazon S3, not replacing the default file.', array('@thumbnail-file' => $thumbfile), WATCHDOG_ERROR);
+
+    if ($thumbsdownloaded > 0) {
+      // Update the thumbnail of the video in the node that uses this file
+      $node = node_load($videodb->nid);
+      $hasupdates = FALSE;
+      $fieldnames = array_keys(filefield_get_field_list($node->type));
+
+      // Loop through all file fields and check if the file is the file that was just converted
+      foreach ($fieldnames as $fieldname) {
+        if (!empty($node->$fieldname)) {
+          foreach ($node->$fieldname as &$element) {
+            if ($element != NULL && $element['fid'] == $videodb->fid) {
+              $element['data']['video_thumb'] = $video_thumb_path .'/'. $videodb->fid .'_0000.png';
+              $hasupdates = TRUE;
+            }
+          }
+        }
+      }
+
+      if ($hasupdates) {
+        node_save($node);
+      }
     }
 
     watchdog('zencoder', 'Updated the Zencoder job @id to state @state.', array('@id' => $jobid, '@state' => $zc_output_state), WATCHDOG_INFO);

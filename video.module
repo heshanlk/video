@@ -333,30 +333,29 @@ function video_thumb_process(&$element) {
   $gen_fail = FALSE;
 
   if (isset($element['preview']) && $file['fid'] != 0) {
-    $default_thumb = '';
     if (in_array($field['widget']['autothumbnail'], array('auto', 'auto_fallback'))) {
-
       module_load_include('inc', 'video', '/includes/transcoder');
-      $transcoder = new video_transcoder;
-      if ($thumbs = $transcoder->generate_thumbnails($file)) {
-        $rnd_img = rand(0, variable_get('video_thumbs', 5) - 1);
-        $default_thumb = $thumbs[$rnd_img]->filepath;
-
-        if (is_array($thumbs)) {
-          foreach ($thumbs as $fid => $img) {
-            // if file object contain url then use file name to identify object
-            $key = $img->filepath;
-            $thumbss[$key] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
-          }
+      $transcoder = new video_transcoder();
+      $thumbs = $transcoder->generate_thumbnails($file);
+      
+      if (!empty($thumbs)) {
+        $thumbss = array();
+        foreach ($thumbs as $fid => $img) {
+          $thumbss[$img->filepath] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
         }
-      }
-
-      if (!empty($thumbss)) {
+        
+        if (!empty($file['data']['video_thumb']) && isset($thumbss[$file['data']['video_thumb']])) {
+          $currentthumb = $file['data']['video_thumb'];
+        }
+        else {
+          $currentthumb = array_rand($thumbss);
+        }
+        
         $element['data']['video_thumb'] = array(
           '#type' => 'radios',
-          '#title' => t('Video Thumbnails'),
+          '#title' => t('Video Thumbnail'),
           '#options' => $thumbss,
-          '#default_value' => !empty($file['data']['video_thumb']) ? $file['data']['video_thumb'] : $default_thumb,
+          '#default_value' => $currentthumb,
           '#weight' => 10,
           '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
         );
@@ -384,15 +383,20 @@ function video_thumb_process(&$element) {
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (isset($file['data']['video_thumb']) && !empty($file['data']['video_thumb'])) {
+    if (!empty($file['data']['video_thumb'])) {
       $large_thumb = array('filepath' => $file['data']['video_thumb']);
-    } elseif (!empty($field['widget']['default_video_thumb'])) {
-      $large_thumb = $field['widget']['default_video_thumb'];
-    } else {
-      $large_thumb = array('filepath' => $default_thumb);
     }
-    // @todo Integrate the thumbnails with imagecache.
-    $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('video_thumbnails', $large_thumb, '', '', array('width' => '150'), FALSE) . '</div>';
+    elseif (!empty($field['widget']['default_video_thumb'])) {
+      $large_thumb = $field['widget']['default_video_thumb'];
+    }
+    elseif (!empty($currentthumb)) {
+      $large_thumb = array('filepath' => $currentthumb);
+    }
+    
+    if (!empty($large_thumb)) {
+      // @todo Integrate the thumbnails with imagecache.
+      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-'. $delta .'">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => 150), FALSE) .'</div>';
+    }
   }
 }
 
@@ -1068,4 +1072,32 @@ function rmdirr($dir) {
     }
   }
   @rmdir($dir);
+}
+
+function video_thumb_path($video = NULL, $checkexistence = TRUE) {
+  $dir = $basedir = file_directory_path() .'/'. variable_get('video_thumb_path', 'video_thumbs');
+
+  if (is_array($video)) {
+    $dir .= '/'. $video['fid'];
+  }
+  elseif (is_object($video)) {
+    $dir .= '/'. $video->fid;
+  }
+  elseif ($video > 0) {
+    $dir .= '/'. intval($video);
+  }
+  elseif ($video != NULL) {
+    return NULL;
+  }
+
+  if ($checkexistence) {
+    field_file_check_directory(file_directory_path(), FILE_CREATE_DIRECTORY);
+    field_file_check_directory($basedir, FILE_CREATE_DIRECTORY);
+    
+    if ($dir != $basedir) {
+      field_file_check_directory($dir, FILE_CREATE_DIRECTORY);
+    }
+  }
+
+  return $dir;
 }
