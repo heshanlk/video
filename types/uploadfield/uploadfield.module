@@ -48,7 +48,6 @@ function uploadfield_elements() {
   $filefield_elements = module_invoke('filefield', 'elements');
   $elements['uploadfield_widget'] = $filefield_elements['filefield_widget'];
   $elements['uploadfield_widget']['#process'][] = 'uploadfield_widget_process';
-  $elements['uploadfield_widget']['#element_validate'][] = 'uploadfield_widget_validate';
   // uploadfield needs a separate value callback to save its alt and title texts.
   $elements['uploadfield_widget']['#value_callback'] = 'uploadfield_widget_value';
 

@@ -10,38 +10,36 @@
  * Implementation of CCK's hook_widget_settings($op = 'form').
  */
 function videoftp_widget_settings_form($widget) {
-  $form = array();
-  $form['file_extensions'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Permitted upload file extensions.'),
-    '#default_value' => !empty($widget['file_extensions']) ? $widget['file_extensions'] : 'mp4 mpeg avi mpg wmv flv mov',
-    '#size' => 64,
-    '#description' => t('Extensions a user can attach to this field.  Separate extensions with a space and do not include the leading dot.  Leaving this blank will allow attachment of a file with any extension.'),
-    '#weight' => 1
-  );
-  $form['path_settings'] = array(
-    '#type' => 'fieldset',
-   	'#title' => t('Path settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#weight' => 2,
-  );
-  $form['path_settings']['file_path'] = array(
-    '#type' => 'textfield',
-    '#size' => 64,
-    '#title' => t('File path'),
-    '#default_value' => ltrim(ltrim($widget['file_path'], "videos"), "/"),
-    '#description' => t('Optional subdirectory within the "<em>files/videos/</em>" directory where files will be moved and stored. Do not include preceding or trailing slashes.'),
-    '#element_validate' => array('video_widget_settings_file_path_validate', '_filefield_widget_settings_file_path_validate'),
-  );  
+  // Prevent some notices
+  if (!isset($widget['max_filesize_per_file'])) {
+    $widget['max_filesize_per_file'] = '';
+  }
+  if (!isset($widget['max_filesize_per_node'])) {
+    $widget['max_filesize_per_node'] = '';
+  }
+
+  $form = module_invoke('filefield', 'widget_settings', 'form', $widget);
+
+  unset($form['progress_indicator']);
+
+  if ($form['file_extensions']['#default_value'] == 'txt') {
+    $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv flv mov';
+  }
+
+  //fix our path settings
+  $form['path_settings']['file_path']['#default_value'] = ltrim(ltrim($form['path_settings']['file_path']['#default_value'], "videos"), "/"); //wierd i had to break this into two ltrims...
+  $form['path_settings']['file_path']['#description'] = t('Optional subdirectory within the "<em>files/videos/</em>" directory where files will be stored. Do not include preceding or trailing slashes.');
+  array_unshift($form['path_settings']['file_path']['#element_validate'], 'video_widget_settings_file_path_validate');
+
   $form['path_settings']['ftp_path'] = array(
     '#type' => 'textfield',
-    '#title' => t('FTP Filepath'),
+    '#title' => t('FTP path'),
     '#default_value' => !empty($widget['ftp_path']) ? $widget['ftp_path'] : 'ftpvideos',
     '#description' => t('The subdirectory within the "<em>files/</em>" directory where you have upload the videos for attachment.  Once the video is attached it will be moved from this directory to the main files directory.'),
     '#required' => TRUE,
     '#weight' => 3,
   );
+
   //default settings
   $default = video_default_widget_settings($widget);
   $form = $form + $default;
@@ -67,7 +65,13 @@ function videoftp_widget_settings_validate($widget) {
  * Implementation of CCK's hook_widget_settings($op = 'save').
  */
 function videoftp_widget_settings_save($widget) {
-  return array('file_extensions', 'file_path', 'ftp_path', 'autothumbnail','autoconversion', 'default_dimensions', 'default_player_dimensions', 'default_video_thumb');
+  $filefield_settings = module_invoke('filefield', 'widget_settings', 'save', $widget);
+
+  if ($pos = array_search('progress_indicator', $filefield_settings)) {
+    unset($filefield_settings[$pos]);
+  }
+
+  return array_merge($filefield_settings, array('ftp_path', 'default_video_thumb', 'default_dimensions', 'default_player_dimensions', 'autoconversion', 'autothumbnail'));
 }
 
 /**
@@ -137,7 +141,6 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $element['#theme'] = 'videoftp_widget_item';
-  
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
     $element['preview']['#value'] = theme('videoftp_widget_preview', $element['#value']);
   }
@@ -164,7 +167,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
     '#weight' => 100,
     '#post' => $element['#post'],
   );
-  
+
   if (isset($element['#upload_validators'])) {
     $element['videoftp_attach']['#upload_validators'] = $element['#upload_validators'];
   }
@@ -211,12 +214,28 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   $element['videoftp_remove']['#access'] = !empty($item['fid']);
   
   $options = videoftp_options($field);
-  $element['ftpselect'] = array(
-    '#type' => 'select',
-    '#required' => isset($element['#required']) ? $element['#required'] : $field['required'],
-    '#options' => $options,
-    '#access' => empty($item['fid']),
-  );
+  
+  if (empty($options)) {
+    $element['ftpselect'] = array(
+      '#type' => 'item',
+      '#value' => t('No suitable files found.'),
+      '#access' => empty($item['fid']),
+    );
+    
+    // Hide the attach button.
+    $element['videoftp_attach']['#access'] = FALSE;
+  }
+  else {
+    array_unshift($options, t('Select Video'));
+    
+    $element['ftpselect'] = array(
+      '#type' => 'select',
+      '#required' => isset($element['#required']) ? $element['#required'] : $field['required'],
+      '#options' => $options,
+      '#access' => empty($item['fid']),
+      '#theme' => 'videoftp_widget_file',
+    );
+  }
 
   // Set the FID.
   $element['fid'] = array(
@@ -311,19 +330,44 @@ function videoftp_save_upload($element) {
 }
 
 function videoftp_options($field) {
-  $options = array();
-  $options[] = t('Select Video');
-  // Lets setup our ftp_path.
-  $ftp_path = file_directory_path().'/'.$field['widget']['ftp_path'];
-  // We are going to scan the directory and pull out the available video types by extension.
-  $extensions = explode(" ",$field['widget']['file_extensions']);
+  $ftp_path = file_directory_path() .'/'. $field['widget']['ftp_path'];
   $video_files = scandir($ftp_path);
-  foreach ($video_files as $file) {
-    $ext = pathinfo($file);
-    if (in_array($ext['extension'], $extensions)) {
-      //add the file to the options array for selection
-      $options["$file"] = $file;
-    }
+  
+  if (empty($video_files)) {
+    return array();
   }
+  
+  $max_filesize = NULL;
+  if (!empty($field['widget']['max_filesize_per_file'])) {
+    $max_filesize = parse_size($field['widget']['max_filesize_per_file']);
+  }
+  
+  $extensions = explode(' ', $field['widget']['file_extensions']);
+  
+  $options = array();
+  
+  foreach ($video_files as $file) {
+    if ($file == '.' || $file == '..') {
+      continue;
+    }
+    
+    if ($max_filesize != NULL) {
+      $fullpath = $ftp_path .'/'. $file;
+      $filesize = filesize($fullpath);
+      
+      if ($filesize > $max_filesize) {
+        continue;
+      }
+    }
+    
+    $ext = pathinfo($file);
+    if (!in_array($ext['extension'], $extensions)) {
+      continue;
+    }
+    
+    //add the file to the options array for selection
+    $options[$file] = $file;
+  }
+  
   return $options;
 }

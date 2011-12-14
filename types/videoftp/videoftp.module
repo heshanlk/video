@@ -66,11 +66,25 @@ function videoftp_widget_info() {
  * Implementation of hook_elements().
  */
 function videoftp_elements() {
+  $elements = array();
+  $filefield_elements = module_invoke('filefield', 'elements');
+  $elements['videoftp_widget'] = $filefield_elements['filefield_widget'];
+  $elements['videoftp_widget']['#columns'][] = 'filepath';
+  $elements['videoftp_widget']['#process'] = array('videoftp_widget_process');
+  $elements['videoftp_widget']['#value_callback'] = 'videoftp_widget_value';
+
+  // Support for the imagefield_extended module
+  if (module_exists('imagefield_extended')) {
+    $elements['uploadfield_widget']['#process'][] = 'imagefield_extended_widget_process';
+  }
+
+  return $elements;
+  
   $elements = array(
     'videoftp_widget' => array(
-      '#input' => TRUE,
-      '#columns' => array('fid', 'list', 'data', 'filepath'),
-      '#process' => array('videoftp_widget_process'),
+      '#input' => TRUE,//
+      '#columns' => array('fid', 'list', 'data', 'filepath'),//
+      '#process' => array('videoftp_widget_process'),//
   	  '#value_callback' => 'videoftp_widget_value',
     ),
   );
@@ -103,6 +117,10 @@ function videoftp_widget_settings($op, $widget) {
  * Implementation of hook_widget().
  */
 function videoftp_widget(&$form, &$form_state, $field, $items, $delta = NULL) {
+  if (empty($form['#validate']) || !in_array('filefield_node_form_validate', $form['#validate'])) {
+    $form['#validate'][] = 'filefield_node_form_validate';
+  }
+
   $item = array('fid' => 0, 'list' => $field['list_default']);
   $data = array('description' => '', 'video_thumb' => '', 'bypass_autoconversion' => variable_get('video_bypass_conversion', FALSE));
   
