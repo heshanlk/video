@@ -260,7 +260,7 @@ class video_ffmpeg implements transcoder_interface {
       watchdog('video_ffmpeg', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
       return TRUE;
     } else {
-      watchdog('video_ffmpeg', 'Cound not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
+      watchdog('video_ffmpeg', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
       $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
