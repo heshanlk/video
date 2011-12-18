@@ -80,38 +80,23 @@ class video_ffmpeg implements transcoder_interface {
 
   public function generate_thumbnails($video) {
     global $user;
-    // Setup our thmbnail path.
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() . '/' . $video_thumb_path . '/' . $video['fid'];
-
-    // Ensure the destination directory exists and is writable.
-    $directories = explode('/', $final_thumb_path);
-    // Get the file system directory.
-    $file_system = file_directory_path();
-    foreach ($directories as $directory) {
-      $full_path = isset($full_path) ? $full_path . '/' . $directory : $directory;
-      // Don't check directories outside the file system path.
-      if (strpos($full_path, $file_system) === 0) {
-        field_file_check_directory($full_path, FILE_CREATE_DIRECTORY);
-      }
-    }
-
-    // Total thumbs to generate
+    
+    $final_thumb_path = video_thumb_path($video);
     $total_thumbs = variable_get('video_thumbs', 5);
-    $videofile = escapeshellarg($video['filepath']);
-    //get the playtime from the current transcoder
-    $duration = $this->get_playtime($video['filepath']);
 
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
-      $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
-      $filename = "/video-thumb-for-" . $video['fid'] . "-$i.jpg";
+      $filename = '/video-thumb-for-' . $video['fid'] . '-'. $i .'.jpg';
       $thumbfile = $final_thumb_path . $filename;
       
       //skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbfile)) {
+        if (!isset($duration)) {
+          $duration = $this->get_playtime($video['filepath']);
+        }
+        $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
         //setup the command to be passed to the transcoder.
-        $command = $this->params['cmd_path'] .' '. strtr($this->params['thumb_command'], array('!videofile' => $videofile, '!seek' => $seek, '!thumbfile' => $thumbfile));
+        $command = $this->params['cmd_path'] .' '. strtr($this->params['thumb_command'], array('!videofile' => escapeshellarg($video['filepath']), '!seek' => $seek, '!thumbfile' => $thumbfile));
 
         // Generate the thumbnail from the video.
         $command_output = '';
@@ -133,18 +118,19 @@ class video_ffmpeg implements transcoder_interface {
           
           // Log the error message and break. Other thumbnails probably will not be generated as well.
           watchdog('video_ffmpeg', $error_msg, $params, WATCHDOG_ERROR);
-          drupal_set_message(t($error_msg, $params));
+          drupal_set_message(t($error_msg, $params), 'error');
           break;
         }
       }
+      
       // Begin building the file object.
       // @TODO : use file_munge_filename()
       $file = new stdClass();
       $file->uid = $user->uid;
       $file->status = FILE_STATUS_TEMPORARY;
-      $file->filename = trim($filename);
+      $file->filename = $filename;
       $file->filepath = $thumbfile;
-      $file->filemime = file_get_mimetype($filename);
+      $file->filemime = 'image/jpeg';
       $file->filesize = filesize($thumbfile);
       $file->timestamp = time();
       $files[] = $file;
@@ -291,8 +277,8 @@ class video_ffmpeg implements transcoder_interface {
     preg_match_all($pattern, $ffmpeg_output, $matches, PREG_PATTERN_ORDER);
     $playtime = $matches[1][0];
     // ffmpeg return length as 00:00:31.1 Let's get playtime from that
-    $hmsmm = explode(":", $playtime);
-    $tmp = explode(".", $hmsmm[2]);
+    $hmsmm = explode(':', $playtime);
+    $tmp = explode('.', $hmsmm[2]);
     $seconds = $tmp[0];
     $hours = $hmsmm[0];
     $minutes = $hmsmm[1];

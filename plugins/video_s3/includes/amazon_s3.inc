@@ -218,17 +218,18 @@ class video_amazon_s3 {
       }
 
       $file->bucket = $this->bucket;
+      $s3url = 'http://'. $file->bucket .'.s3.amazonaws.com/'. drupal_urlencode($file->filepath);
 
       // remove local file
       if (variable_get('amazon_s3_delete_local', FALSE)) {
-        unlink($file->filepath);
+        $this->replaceLocalFile($file->filepath, $s3url);
       }
 
       $this->watchdog(
         'Successfully uploaded %file to Amazon S3 location <a href="@s3-url">@s3-path</a> and permission %permission.',
         array(
           '%file' => $file->filename,
-          '@s3-url' => 'http://'. $file->bucket .'.s3.amazonaws.com/'. drupal_urlencode($file->filepath),
+          '@s3-url' => $s3url,
           '@s3-path' => $file->filepath,
           '%permission' => $perm
         ), WATCHDOG_INFO, $file);
@@ -326,5 +327,24 @@ class video_amazon_s3 {
     }
 
     watchdog('amazon_s3', $message, $variables, $severity, $link);
+  }
+  
+  /**
+   * Replace a file with a text file to reduce disk space usage.
+   * 
+   * @param string $filepath
+   * @param string $s3url
+   */
+  private function replaceLocalFile($filepath, $s3url) {
+    if (file_delete($filepath) !== FALSE) {
+      $fp = fopen($filepath, 'w+');
+      if (!$fp) {
+        return FALSE;
+      }
+      
+      fwrite($fp, 'Moved to '. $s3url);
+      fclose($fp);
+      chmod($filepath, 0644);
+    }
   }
 }

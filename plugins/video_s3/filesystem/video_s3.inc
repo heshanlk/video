@@ -72,7 +72,7 @@ class video_s3 implements filesystem_interface {
       '#type' => 'checkbox',
       '#title' => t('Delete local file after uploading to S3'),
       '#default_value' => variable_get('amazon_s3_delete_local', FALSE),
-      '#description' => t('Delete the local file from server on successful submit to the S3 server.'),
+      '#description' => t('Replaces the original file on the local file system with an empty file to reduce disk space usage. The file is not removed as Drupal and FileField expect a file to be present.'),
     );
 
     $form['amazon_s3_private'] = array(
