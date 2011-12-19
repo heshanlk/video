@@ -1,5 +1,4 @@
 <?php
-
 /*
  * @file
  * Class file used to store metadata on the video.
@@ -27,7 +26,7 @@ class html5_webm implements video_preset_interface {
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function get_help() {
-//    return t('<b>HTML5 WebM Video</b>', array());
+    return t('Creates files that natively play in Google Chrome using HTML5.', array());
   }
 
   /**
@@ -65,13 +64,10 @@ class html5_webm implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        '!cmd_path -pass 1 -passlogfile !videofile -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -an -f webm -y NUL',
-        '!cmd_path -y -pass 2 -passlogfile !videofile -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -acodec libvorbis -ac 2 -y !convertfile'
+        '!cmd_path -pass 1 -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -an -f webm -y NUL',
+        '!cmd_path -y -pass 2 -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -acodec libvorbis -ac 2 -y !convertfile'
       )
     );
     return $properties;
   }
-
 }
-
-?>

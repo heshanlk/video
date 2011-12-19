@@ -1,12 +1,10 @@
 <?php
-
 /*
  * @file
  * Class file used to store metadata on the video.
  *
  */
 class html5_mp4 implements video_preset_interface {
-
   protected $name = 'HTML5 MP4';
   protected $value = 'html5_mp4';
 
@@ -27,7 +25,7 @@ class html5_mp4 implements video_preset_interface {
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function get_help() {
-//    return t('<b>HTML5 MP4 Video</b>', array());
+    return t('Creates files that natively play in Internet Explorer 9+ and Google Chrome using HTML5 and in any other browser using Flash.', array());
   }
 
   /**
@@ -65,14 +63,12 @@ class html5_mp4 implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-//        'HandBrakeCLI --preset "iPhone & iPod Touch" --vb !videobitrate --width !width --two-pass --turbo --optimize --input !videofile --output !convertfile'
-        '!cmd_path -i !videofile -an -pass 1 -vcodec libx264 -vpre slow_firstpass -b 500k -threads 0 !convertfile',
-        '!cmd_path -y -i !videofile -acodec libfaac -ab 128k -pass 2 -vcodec libx264 -vpre slow -b 500k -threads 0 !convertfile'
+        '!cmd_path -y -i !videofile -pass 1 -vcodec libx264 -b 500k -threads 0 -vpre slow_firstpass -an !convertfile',
+        '!cmd_path -y -i !videofile -pass 2 -vcodec libx264 -b 500k -threads 0 -vpre slow -acodec libfaac -ab 128k !convertfile'
+        //'!cmd_path -strict experimental -y -i !videofile -pass 1 -vcodec libx264 -b 500k -threads 0 -vpre slow_firstpass -an !convertfile',
+        //'!cmd_path -strict experimental -y -i !videofile -pass 2 -vcodec libx264 -b 500k -threads 0 -vpre slow -acodec aac -ab 128k !convertfile'
       )
     );
     return $properties;
   }
-
 }
-
-?>

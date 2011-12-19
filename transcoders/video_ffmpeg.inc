@@ -1,41 +1,26 @@
 <?php
-
 /*
  * @file
  * Transcoder class file to handle ffmpeg settings and conversions.
- *
  */
-
 class video_ffmpeg implements transcoder_interface {
-
-  // Naming for our radio options.  Makes it easy to extend our transcoders.
-  private $name = 'Locally Installed Transcoders (FFMPEG/Handbreke/Mcoder)';
+  private $name = 'Locally Installed Transcoder (FFmpeg/Handbreke/Mcoder)';
   private $value = 'video_ffmpeg';
-  protected $params = array();
-  protected $audio_bitrate = 64;
-  protected $video_bitrate = 200;
-  protected $video_width = 640;
-  protected $video_height = 480;
-  protected $command = '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile';
-  protected $thumb_command = '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile';
-  protected $ffmpeg = '/usr/bin/ffmpeg';
+
   protected $nice;
-  protected $video_ext = 'flv';
-  protected $logcommands = false;
+  protected $thumbcmdoptions;
+  protected $enablefaststart;
+  protected $faststartcmd;
+  protected $cmdpath;
+  protected $logcommands;
 
   public function __construct() {
-    $this->params['audiobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_audio_bitrate', $this->audio_bitrate);
-    $this->params['videobitrate'] = variable_get('video_ffmpeg_helper_auto_cvr_video_bitrate', $this->video_bitrate);
-    //@todo: move this to the actual widget and save in video_files table.
-    $this->params['size'] = variable_get('video_ffmpeg_width', $this->video_width) . 'x' . variable_get('video_ffmpeg_height', $this->video_height);
-    $this->params['command'] = variable_get('video_ffmpeg_helper_auto_cvr_options', $this->command);
-    $this->params['cmd_path'] = variable_get('video_transcoder_path', $this->ffmpeg);
-    $this->params['thumb_command'] = variable_get('video_ffmpeg_thumbnailer_options', $this->thumb_command);
-    $this->nice = variable_get('video_ffmpeg_nice_enable', false) ? 'nice -n 19' : '';
-    $this->params['videoext'] = variable_get('video_ffmpeg_ext', $this->video_ext);
-    $this->params['enable_faststart'] = variable_get('video_ffmpeg_enable_faststart', 0);
-    $this->params['faststart_cmd'] = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
-    $this->logcommands = variable_get('video_ffmpeg_log_commands', true);
+    $this->nice = variable_get('video_ffmpeg_nice_enable', FALSE) ? 'nice -n 19 ' : '';
+    $this->thumbcmdoptions = variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
+    $this->enablefaststart = variable_get('video_ffmpeg_enable_faststart', FALSE);
+    $this->faststartcmd = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
+    $this->cmdpath = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
+    $this->logcommands = (bool)variable_get('video_ffmpeg_log_commands', TRUE);
   }
 
   /**
@@ -50,32 +35,31 @@ class video_ffmpeg implements transcoder_interface {
    * @param string $purpose Purpose of the command. This is logged.
    * @param bool $ignoreoutputfilenotfound Whether to the output file not found error. Useful for input file information.
    */
-  private function run_command($command, &$output, $purpose, $ignoreoutputfilenotfound = false) {
+  private function run_command($command, &$output, $purpose = NULL, $ignoreoutputfilenotfound = FALSE) {
     $output = '';
-    $command = $this->nice .' '. $command .' 2>&1';
-    
+    $command = $this->nice . $command .' 2>&1';
+
     if ($this->logcommands) {
-      watchdog('video_ffmpeg', 'Executing ffmpeg command for !purpose: <pre>@command</pre>', array('@command' => $command, '!purpose' => $purpose), WATCHDOG_DEBUG);
+      watchdog('video_ffmpeg', 'Executing ffmpeg command!purposetext: <pre>@command</pre>', array('@command' => $command, '!purposetext' => (!empty($purpose) ? ' for '. $purpose : '')), WATCHDOG_DEBUG);
     }
-    
+
     $return_var = 0;
-    
+
     ob_start();
     passthru($command, &$return_var);
     $output = ob_get_contents();
     ob_end_clean();
-    
+
     // Returnvar 1 means input file not found. This is normal for information calls.
     if ($return_var != 0 && ($return_var != 1 || !$ignoreoutputfilenotfound)) {
       watchdog('video_ffmpeg',
       	'Error executing ffmpeg command for !purpose:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
         array('@command' => $command, '@output' => trim($output), '!purpose' => $purpose),
         WATCHDOG_ERROR);
-      
-      return false;
+      return FALSE;
     }
-    
-    return true;
+
+    return TRUE;
   }
 
   public function generate_thumbnails($video) {
@@ -86,7 +70,7 @@ class video_ffmpeg implements transcoder_interface {
 
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
-      $filename = '/video-thumb-for-' . $video['fid'] . '-'. $i .'.jpg';
+      $filename = '/video-thumb-for-'. $video['fid'] .'-'. $i .'.jpg';
       $thumbfile = $final_thumb_path . $filename;
       
       //skip files already exists, this will save ffmpeg traffic
@@ -96,7 +80,7 @@ class video_ffmpeg implements transcoder_interface {
         }
         $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
         //setup the command to be passed to the transcoder.
-        $command = $this->params['cmd_path'] .' '. strtr($this->params['thumb_command'], array('!videofile' => escapeshellarg($video['filepath']), '!seek' => $seek, '!thumbfile' => $thumbfile));
+        $command = $this->cmdpath .' '. strtr($this->thumbcmdoptions, array('!videofile' => escapeshellarg($video['filepath']), '!seek' => $seek, '!thumbfile' => $thumbfile));
 
         // Generate the thumbnail from the video.
         $command_output = '';
@@ -147,116 +131,145 @@ class video_ffmpeg implements transcoder_interface {
     //we are going to transcode the video to the "converted" folder
     // @TODO This about getting the correct path from the filefield if they active it
     $files = file_create_path();
-    $original = $files . '/videos/original';
-    $converted = $files . '/videos/converted';
+    $originaldir = $files .'/videos/original';
+    $converteddir = $files .'/videos/converted';
 
-    if (!field_file_check_directory($original, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_ffmpeg', 'Video conversion failed. Could not create directory %dir for storing original videos.', array('%dir' => $original), WATCHDOG_ERROR);
+    if (!field_file_check_directory($originaldir, FILE_CREATE_DIRECTORY)) {
+      watchdog('video_ffmpeg', 'Video conversion failed. Could not create directory %dir for storing original videos.', array('%dir' => $originaldir), WATCHDOG_ERROR);
       return false;
     }
-    if (!field_file_check_directory($converted, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_ffmpeg', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converted), WATCHDOG_ERROR);
+    if (!field_file_check_directory($converteddir, FILE_CREATE_DIRECTORY)) {
+      watchdog('video_ffmpeg', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
       return false;
     }
 
-    $original = $original . '/' . $video->filename;
+    $original = $originaldir .'/'. $video->filename;
     //lets move our video and then convert it.
-    if (file_move($video, $original)) {
-      // Update our filepath since we moved it
-      $update = drupal_write_record('files', $video, 'fid');
-      // process presets
-      $presets = $video->presets;
-      $converted_files = array();
-      foreach ($presets as $presetname => $preset) {
-        // reset converted file path
-        $converted = $files . '/videos/converted';
-        
-        //update our filename after the move to maintain filename uniqueness.
-        $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . '.' . $preset['extension'], $converted);
-
-        //call our transcoder
-        $dimensions = $this->dimensions($video);
-        $dimention = explode('x', $dimensions);
-        if ($this->params['enable_faststart'] && in_array($preset['extension'], array('mov', 'mp4'))) {
-          $ffmpeg_output = file_directory_temp() . '/' . basename($converted);
-        } else {
-          $ffmpeg_output = $converted;
-        }
-        
-        $command_output = '';
-        
-        // Setup our default command to be run.
-        foreach ($preset['command'] as $command) {
-          $command = strtr($command, array(
-            '!cmd_path' => $this->params['cmd_path'],
-            '!videofile' => escapeshellarg($video->filepath),
-            '!audiobitrate' => $preset['audio_bitrate'],
-            '!width' => $dimention[0],
-            '!height' => $dimention[1],
-            '!videobitrate' => $preset['video_bitrate'],
-            '!convertfile' => escapeshellarg($ffmpeg_output),
-          ));
-          
-          // Process our video
-          if (!$this->run_command($command, $command_output, t('rendering preset %preset', array('%preset' => $presetname)))) {
-            $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
-            return FALSE;
-          }
-        }
-
-        if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
-          // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
-          // the command to be execute so we need to fudge the command to run qt-faststart.
-          $command_result = $this->run_command($this->params['faststart_cmd'] .' '. $ffmpeg_output .' '. $converted, $command_output);
-
-          // Delete the temporary output file.
-          file_delete($ffmpeg_output);
-          
-          if (!$command_result) {
-            $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
-            return FALSE;
-          }
-        }
-
-        //lets check to make sure our file exists, if not error out
-        if (!file_exists($converted) || !filesize($converted)) {
-          watchdog('video_ffmpeg', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $presetname), WATCHDOG_ERROR);
-          $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
-          return FALSE;
-        }
-
-        // Setup our converted video object
-        $video_info = pathinfo($converted);
-        //update our converted video
-        $video->converted = new stdClass();
-        $video->converted->vid = $video->vid;
-        $video->converted->filename = $video_info['basename'];
-        $video->converted->filepath = $converted;
-        $video->converted->filemime = file_get_mimetype($converted);
-        $video->converted->filesize = filesize($converted);
-        $video->converted->status = VIDEO_RENDERING_COMPLETE;
-        $video->converted->preset = $presetname;
-        $video->converted->completed = time();
-        $converted_files[] = $video->converted;
-      }
-
-      // Update our video_files table with the converted video information.
-      $result = db_query("UPDATE {video_files} SET status=%d, completed=%d, data='%s' WHERE vid=%d", $video->converted->status, $video->converted->completed, serialize($converted_files), $video->converted->vid);
-
-      watchdog('video_ffmpeg', 'Successfully converted %orig to %dest', array('%orig' => $video->filepath, '%dest' => $video->converted->filepath), WATCHDOG_INFO);
-      return TRUE;
-    } else {
+    if (!file_move($video, $original)) {
       watchdog('video_ffmpeg', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
       $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
+
+    // Update our filepath since we moved it
+    drupal_write_record('files', $video, 'fid');
+
+    // Get video information before doing a chdir
+    $dimensions = $this->dimensions($video);
+    $dimension = explode('x', $dimensions, 2);
+    $filepath = realpath($video->filepath);
+
+    // Make the directories absolute
+    $originaldir = realpath($originaldir);
+    $converteddir = realpath($converteddir);
+
+    // Create a temporary directory
+    $drupaldir = getcwd();
+    $drupaldirrp = realpath($drupaldir);
+    $tmpdir = tempnam(file_directory_temp(), 'ffmpeg-'. $video->fid);
+    unlink($tmpdir);
+    mkdir($tmpdir, 0777);
+    chdir($tmpdir);
+
+    $result = TRUE;
+    
+    // process presets
+    $presets = $video->presets;
+    $converted_files = array();
+    foreach ($presets as $presetname => $preset) {
+      //update our filename after the move to maintain filename uniqueness.
+      $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) .'.'. $preset['extension'], $converteddir);
+
+      //call our transcoder
+      $ffmpeg_output = $converted;
+      if ($this->enablefaststart && ($preset['extension'] == 'mp4' || $preset['extension'] == 'mov')) {
+        $ffmpeg_output = file_directory_temp() .'/'. basename($converted);
+      }
+
+      $command_output = '';
+
+      // Setup our default command to be run.
+      foreach ($preset['command'] as $command) {
+        $command = strtr($command, array(
+          '!cmd_path' => $this->cmdpath,
+          '!videofile' => escapeshellarg($filepath),
+          '!audiobitrate' => $preset['audio_bitrate'],
+          '!width' => intval($dimension[0]),
+          '!height' => intval($dimension[1]),
+          '!videobitrate' => $preset['video_bitrate'],
+          '!convertfile' => escapeshellarg($ffmpeg_output),
+        ));
+
+        // Process our video
+        if (!$this->run_command($command, $command_output, t('rendering preset %preset', array('%preset' => $presetname)))) {
+          $result = FALSE;
+          break 2;
+        }
+      }
+
+      if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
+        // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
+        // the command to be execute so we need to fudge the command to run qt-faststart.
+        $command_result = $this->run_command($this->faststartcmd .' '. $ffmpeg_output .' '. $converted, $command_output, t('running qt-faststart'));
+
+        // Delete the temporary output file.
+        file_delete($ffmpeg_output);
+      }
+
+      //lets check to make sure our file exists, if not error out
+      if (!file_exists($converted) || ($filesize = filesize($converted)) === 0) {
+        watchdog('video_ffmpeg', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $presetname), WATCHDOG_ERROR);
+        $result = FALSE;
+        break;
+      }
+
+      $converted = realpath($converted);
+
+      //Create result object
+      $converted_files[] = $file = new stdClass();
+      $file->vid = intval($video->vid);
+      $file->filename = basename($converted);
+      $file->filepath = substr($converted, strlen($drupaldirrp) + 1);
+      $file->filemime = file_get_mimetype($converted);
+      $file->filesize = $filesize;
+      $file->preset = $presetname;
+    }
+
+    chdir($drupaldir);
+    rmdirr($tmpdir);
+
+    // Update our video_files table with the converted video information.
+    if ($result) {
+      $result = db_query('UPDATE {video_files} SET status = %d, completed = %d, data = "%s" WHERE vid = %d', VIDEO_RENDERING_COMPLETE, time(), serialize($converted_files), $video->vid);
+
+      // Prepare the watchdog statement
+      $destinationfiles = array();
+      foreach ($converted_files as $file) {
+        $destinationfiles[] = $file->filepath;
+      }
+      watchdog('video_ffmpeg', 'Successfully converted %orig to !destination-files', array('%orig' => $video->filepath, '!destination-files' => implode(', ', $destinationfiles)), WATCHDOG_INFO);
+    }
+    else {
+      // Remove files that have been created
+      foreach ($converted_files as $file) {
+        file_delete($file->filepath);
+      }
+
+      // Try to move back the original file
+      file_move($video, $files .'/videos');
+      drupal_write_record('files', $video, 'fid');
+
+      $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+    }
+
+    return $result;
   }
 
   /**
    * Get some information from the video file
    */
   private function get_video_info($video) {
-    $command = $this->params['cmd_path'] .' -i '. escapeshellarg($video);
+    $command = $this->cmdpath .' -i '. escapeshellarg($video);
 
     // Execute the command
     $output = '';
@@ -341,7 +354,7 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'textfield',
       '#title' => t('Path to Video Transcoder'),
       '#description' => t('Absolute path to ffmpeg.'),
-      '#default_value' => variable_get('video_transcoder_path', '/usr/bin/ffmpeg'),
+      '#default_value' => $this->cmdpath,
     );
     $form['video_thumbs'] = array(
       '#type' => 'textfield',
@@ -384,7 +397,7 @@ class video_ffmpeg implements transcoder_interface {
       '#type' => 'textarea',
       '#title' => t('Video thumbnailer options'),
       '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ') . '<ol><li>' . t('!videofile (the video file to thumbnail)') . '<li>' . t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
-      '#default_value' => variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile'),
+      '#default_value' => $this->thumbcmdoptions,
     );
 
     // Video conversion settings.
@@ -397,17 +410,17 @@ class video_ffmpeg implements transcoder_interface {
     $form['autoconv']['video_ffmpeg_enable_faststart'] = array(
       '#type' => 'checkbox',
       '#title' => t('Process mov/mp4 videos with qt-faststart'),
-      '#default_value' => variable_get('video_ffmpeg_enable_faststart', 0),
+      '#default_value' => $this->enablefaststart,
     );
     $form['autoconv']['video_ffmpeg_faststart_cmd'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to qt-faststart'),
-      '#default_value' => variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart'),
+      '#default_value' => $this->faststartcmd,
     );
 
     $form['autoconv']['video_ffmpeg_pad_method'] = array(
       '#type' => 'radios',
-      '#title' => t('FFMPeg Padding method'),
+      '#title' => t('FFmpeg Padding method'),
       '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
       '#options' => array(
         0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
@@ -542,6 +555,7 @@ class video_ffmpeg implements transcoder_interface {
     $output_ratio = number_format($output_width / $output_height, 4);
 
     if ($output_ratio != $ratio && $width && $height) {
+      // TODO this probably doesn't work
       $options = array();
       // Figure out our black bar padding.
       if ($ratio < $output_width / $output_height) {
@@ -590,11 +604,9 @@ class video_ffmpeg implements transcoder_interface {
       //add our size to the beginning to make sure it hits our -s
       array_unshift($options, $end_width . 'x' . $end_height);
       return implode(' ', $options);
-    } else {
+    }
+    else {
       return $video->dimensions;
     }
   }
-
 }
-
-?>

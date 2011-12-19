@@ -1,13 +1,10 @@
 <?php
-
 /*
  * @file
  * Class file used to store video presets on the video.
  *
  */
-
 class video_preset {
-
   private $presets;
 
   public function __construct($preset = null) {
@@ -19,66 +16,69 @@ class video_preset {
 
   public function admin_settings() {
     $form = array();
-    $options = $this->_preset();
+    $presets = $this->getAllPresets();
+
+    $options = array();
+    $help = array();
+    foreach ($presets as $preset) {
+      $options[$preset->get_value()] = check_plain($preset->get_name());
+
+      $helptext = $preset->get_help();
+      if (!empty($helptext)) {
+        $help[] = check_plain($preset->get_name()) .': '. $helptext;
+      }
+    }
 
     $form['vid_preset'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
-      '#options' => $options['radios'],
+      '#options' => $options,
       '#default_value' => $this->presets,
-      '#description' => theme('item_list', $options['help']),
-      '#prefix' => '<div id="preset-checkboxes">',
-      '#suffix' => '</div>',
+      '#description' => theme('item_list', $help),
       '#required' => TRUE,
     );
 
     return $form;
   }
 
-  private function _preset($presets = null) {
-// @TDOO : Observer will match in this case
+  public function getAllPresets() {
+    $presets = array();
     $files = array();
-// Lets find our transcoder classes and build our radio options
-// We do this by scanning our transcoders folder
-    $form = array('radios' => array(), 'help' => array(), 'properties' => array());
-    $path = drupal_get_path('module', 'video') . '/video_preset';
-    $files = file_scan_directory($path, '^.*\.inc$');
-// check inside sub modules
-    $modules = module_list();
-    foreach ($modules as $module) {
-      $mobule_files = array();
-      $module_path = drupal_get_path('module', $module) . '/video_preset';
-      $mobule_files = file_scan_directory($module_path, '^.*\.inc$');
-      $files = array_merge($files, $mobule_files);
+
+    foreach (module_list() as $module) {
+      $module_files = file_scan_directory(drupal_get_path('module', $module) .'/video_preset', '^.*\.inc$');
+      $files = array_merge($files, $module_files);
     }
 
     foreach ($files as $file) {
-      if (!module_load_include('inc', 'video', '/video_preset/' . $file->name))
-        require_once $file->filename;
-      $focus = new $file->name;
-      $form['radios'][$focus->get_value()] = $focus->get_name();
-      $form['help'][] = $focus->get_help();
-//      $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings();
-      if (is_array($presets) && !empty($presets[$focus->get_value()]))
-        $form['properties'][$focus->get_value()] = $focus->get_properties();
-//      echo $focus->get_value();
+      require_once $file->filename;
+
+      $preset = new $file->name;
+      $presets[$preset->get_value()] = $preset;
     }
-    return $form;
+
+    ksort($presets);
+
+    return $presets;
   }
 
   public function properties() {
-    $presets = $this->presets;
-    $options = $this->_preset($presets);
-    return $options['properties'];
-  }
+    $presets = $this->getAllPresets();
+    $properties = array();
 
+    foreach ($this->presets as $presetvalue) {
+      if (isset($presets[$presetvalue])) {
+        $properties[$presetvalue] = $presets[$presetvalue]->get_properties();
+      }
+    }
+
+    return $properties;
+  }
 }
 
 interface video_preset_interface {
-
   public function get_name();
-
+  public function get_value();
   public function get_help();
-
   public function get_properties();
 }

@@ -1,13 +1,11 @@
 <?php
-
 /*
  * @file
  * Class file used to store metadata on the video.
  *
  */
 class html5_ogv implements video_preset_interface {
-
-  protected $name = 'HTML5 Theora(ogv) (ffmpeg2theora)';
+  protected $name = 'HTML5 Ogg Theora / Vorbis';
   protected $value = 'html5_ogv';
 
   public function __construct() {
@@ -27,7 +25,7 @@ class html5_ogv implements video_preset_interface {
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function get_help() {
-//    return t('<b>HTML5 Theora Video</b>', array());
+    return t('Creates files that natively play in Firefox using HTML5.', array());
   }
 
   /**
@@ -65,12 +63,9 @@ class html5_ogv implements video_preset_interface {
       'start_clip' => '',
       'clip_length' => '',
       'command' => array(
-        'ffmpeg2theora --videobitrate !videobitrate --max_size !widthx!height --output !convertfile !videofile'
+        'ffmpeg2theora --videobitrate 500 --max_size !widthx!height --output !convertfile !videofile'
       )
     );
     return $properties;
   }
-
 }
-
-?>
