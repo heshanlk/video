@@ -359,7 +359,6 @@ function video_default_widget_settings($widget) {
     '#default_value' => isset($widget['autothumbnail']) ? $widget['autothumbnail'] : 'no',
   );
 
-
   // @TODO: Move this to the actual upload/attach when creating a node to allow the user to upload their own thumbnail for each video.
   // Present a video image of the current default image.
   if (!empty($widget['default_video_thumb'])) {
@@ -368,6 +367,10 @@ function video_default_widget_settings($widget) {
       '#value' => theme('video_image', $widget['default_video_thumb'], '', '', array('width' => '150'), FALSE),
       '#prefix' => '<div class="video_thumbnail">',
       '#suffix' => '</div>'
+    );
+    $form['default']['delete_default_video_thumbnail'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Delete the default thumbnail'),
     );
   }
   $form['default']['default_video_thumb_upload'] = array(
@@ -397,28 +400,25 @@ function video_default_widget_settings_validate($element, &$form_state) {
     return;
   }
 
-  $validators = array(
-    'file_validate_is_image' => array(),
-  );
+  $oldthumb = $form_state['values']['default_video_thumb'];
 
   // We save the upload here because we can't know the correct path until the file is saved.
-  if (!$file = file_save_upload('default_video_thumb_upload', $validators, $destination)) {
-    // No upload to save we hope... or file_save_upload() reported an error on its own.
-    return;
-  }
+  $newthumb = file_save_upload('default_video_thumb_upload', array('file_validate_is_image' => array()), $destination);
 
-  // Remove old image (if any) & clean up database.
-  $old_default = $form_state['values']['default_video_thumb'];
-  if (!empty($old_default['fid'])) {
-    if (file_delete(file_create_path($old_default['filepath']))) {
-      db_query('DELETE FROM {files} WHERE fid=%d', $old_default['fid']);
+  // Delete the current file if there is a new one or the delete_default_video_thumbnail checkbox is checked
+  if (!empty($oldthumb['fid']) && ($newthumb || !empty($form_state['values']['delete_default_video_thumbnail']))) {
+    if (file_delete(file_create_path($oldthumb['filepath']))) {
+      db_query('DELETE FROM {files} WHERE fid=%d', $oldthumb['fid']);
     }
+    $form_state['values']['default_video_thumb'] = array();
   }
 
-  // Make the file permanent and store it in the form.
-  file_set_status($file, FILE_STATUS_PERMANENT);
-  $file->timestamp = time();
-  $form_state['values']['default_video_thumb'] = (array) $file;
+  if ($newthumb) {
+    // Make the file permanent and store it in the form.
+    file_set_status($newthumb, FILE_STATUS_PERMANENT);
+    $newthumb->timestamp = time();
+    $form_state['values']['default_video_thumb'] = (array) $newthumb;
+  }
 }
 
 function video_widget_settings_file_path_validate($element, &$form_state) {
