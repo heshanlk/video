@@ -1,5 +1,5 @@
 <?php
-
+module_load_include('inc', 'video', 'video_widget');
 
 /**
  * @file

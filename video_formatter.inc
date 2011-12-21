@@ -1,9 +1,9 @@
 <?php
-
 /**
  * @file
  * Video formatter hooks and callbacks.
  */
+
 /*
  * Default video cck formatter.  Makes sure the video being displayed exists, has been converted (if in que).
  * If not or the video is processed, then it will get the default player for the specific video type for output.
@@ -286,4 +286,34 @@ function theme_video_formatter_imagecache($element) {
   }
   //return $theme_function;
   return theme('video_formatter_' . $theme_function, $element, TRUE);
+}
+
+/**
+ * Get the object for the suitable player for the parameter resource
+ */
+function video_get_player($element) {
+  // Setup our node object to be passed along with the player.
+  $node = $element['#node'];
+  // Setup our video object
+  module_load_include('inc', 'video', '/includes/video_helper');
+  $video_helper = new video_helper;
+  $video = $video_helper->video_object($element);
+
+  if ($video == NULL) {
+    return '';
+  }
+
+  // Lets spit out our theme based on the extension
+  $defaults = video_video_extensions();
+  $theme_function = variable_get('video_extension_'. $video->player, $defaults[$video->player]);
+  // Lets do some special handling for our flv files to accomdate multiple players.
+  if ($theme_function == 'video_play_flv') {
+    return theme('video_flv', $video, $node);
+  }
+  elseif ($theme_function == 'video_play_html5') {
+    return theme('video_html5', $video, $node);
+  }
+  else {
+    return theme($theme_function, $video, $node);
+  }
 }

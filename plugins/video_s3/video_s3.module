@@ -68,11 +68,10 @@ function video_s3_video_delete($file) {
   $s3->delete($file->fid);
 }
 
-/*
+/**
  * Implementation of hook_video_update.
  * Submit handler to update our s3 table to include the node id.
  */
-
 function video_s3_video_update($form, &$form_state) {
   //lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {

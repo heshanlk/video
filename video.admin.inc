@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * @file
  * Provides the administration settings for the Video Drupal module.
@@ -221,4 +219,49 @@ function video_filesystem_admin_settings_validate($form, &$form_state) {
   module_load_include('inc', 'video', '/includes/filesystem');
   $filesystem = new video_filesystem($filesystem);
   $filesystem->admin_settings_validate($form, $form_state);
+}
+
+/**
+ * Return our supported video players.
+ */
+function video_video_players() {
+  return array(
+    'video_play_html5' => t('HTML5 Player'),
+    'video_play_divx' => t('Divx Player'),
+    'video_play_quicktime' => t('Quicktime'),
+    'video_play_realmedia' => t('Real Media Player'),
+    'video_play_flv' => t('FLV Flash Players'),
+    'video_play_flash' => t('SWF Flash Player'),
+    'video_play_dcr' => t('Director/Shockwave'),
+    'video_play_windowsmedia' => t('Windows Media Player'),
+    'video_play_theora' => t('Theora Player'),
+  );
+}
+
+/**
+ * Return our possible flash players.
+ */
+function video_video_flv_players() {
+  $options = array();
+  if (module_exists('swftools')) {
+    $options['swftools'] = t('SWF Tools');
+  }
+  if (module_exists('flowplayer')) {
+    $options['flowplayer'] = t('Flowplayer');
+  }
+  return $options;
+}
+
+/**
+ * Return our possible html5 players.
+ */
+function video_video_html5_players() {
+  $options = array();
+  if (module_exists('videojs')) {
+    $options['videojs'] = t('Video JS');
+  }
+  if (module_exists('video')) {
+    $options['video'] = t('Video (Default)');
+  }
+  return $options;
 }
