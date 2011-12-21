@@ -9,8 +9,8 @@
  * Implementation of hook_init().
  */
 function video_init() {
-  drupal_add_css(drupal_get_path('module', 'video') . '/css/video.css');
-  drupal_add_js(drupal_get_path('module', 'video') . '/js/video.js');
+  drupal_add_css(drupal_get_path('module', 'video') .'/css/video.css');
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/video.js');
 }
 
 /**
@@ -302,6 +302,8 @@ function video_cron() {
 function video_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
     $form['buttons']['submit']['#submit'][] = 'video_node_update_submit';
+    $form['#validate'][] = 'video_add_adminjs'; // Make sure the js is loaded even when the form is cached
+    video_add_adminjs();
   }
 }
 
@@ -464,4 +466,8 @@ function video_thumb_path($video = NULL, $checkexistence = TRUE) {
   }
 
   return $dir;
+}
+
+function video_add_adminjs() {
+  drupal_add_js(drupal_get_path('module', 'video') .'/js/video.admin.js');
 }

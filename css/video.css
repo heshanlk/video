@@ -1,5 +1,4 @@
-
-.filefield-element .filefield-file-info, .video_thumbnail {
+.filefield-element .filefield-file-info {
   min-width: 100px;
   min-height: 100px;
 }
@@ -17,89 +16,15 @@
   max-width: 40em;
 }
 
-.video_thumbnail {
-  min-width: 100px;
-  min-height: 100px;
+.video-thumbnails {
+  overflow: auto;
 }
 
-.uploadfield {
-
-}
-
-.uploadfield-nodelink {
-  
-}
-
-.uploadfield-video-thumb {
-  
-}
-
-.uploadfield-video-thumb img{
-  width : 250px;
-/*  min-width: 100px; */
-  min-height: 210px;
-
-}
-
-.uploadfield-video-thumb span{
-    /* This is the overlay image for use as a play button. */
-  background: url(../images/play.png) no-repeat;
-
-  /* This is the size of our button. DOES NOT WORK WITH DEFAULT THUMB SIZE! */
-  width: 50px;
-  height: 112px;
-  position : absolute;
-  margin : 65px 100px;
-}
-
-.uploadfield-video-thumb span:hover {
-  background-position: -50px 0px;
-}
-
-.video-width-text {
-  width:10px;
-}
-
-.video-thumb-selection{
-  
-}
-
-.video-thumb-selection .form-item {
-  
-}
-
-.video-thumbnails{
-/*  display : block;*/
-}
-.video-thumbnails .form-item{
+.video-thumbnails .form-item {
   float:left;
   margin-right:10px;
   max-width:30%;
   padding-right:10px;
-}
-
-.video-bypass-auto-conversion{
-
-}
-.video-default-thumbnail{
-  
-}
-
-.video-data{
-  
-}
-
-.video_image_teaser {
-  float: left;
-  padding: 0.5em;
-}
-
-br.video_image_clear {
-  clear: both;
-}
-
-.video_image_view {
-  /* inser here rules for node page image */
 }
 
 .video-ffmpeg-helper-inprogress {
@@ -108,13 +33,12 @@ br.video_image_clear {
 }
 
 /* override filefield entry */
-.widget-edit{
+.widget-edit {
   max-width:70%;
 }
 
 .widget-edit .form-item { white-space: normal !important; }
 
-.admin_flv_player_wrapper { display: none; }
 /*
  * VIDEO OJBECT FIXES CROSS BROWSER
  */

@@ -3,6 +3,7 @@
  * @file
  * Provides the administration settings for the Video Drupal module.
  */
+video_add_adminjs();
 
 /**
  * Video transcoder admin settings

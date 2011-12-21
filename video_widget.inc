@@ -166,8 +166,6 @@ function _video_dimensions_options(&$options, $video) {
   return $aspect_ratio;
 }
 
-
-
 /**
  * Video_widget_process for API handlers for any video types.
  * @param array $element
@@ -470,6 +468,8 @@ function video_thumb_process(&$element) {
       $thumbs = $transcoder->generate_thumbnails($file);
       
       if (!empty($thumbs)) {
+        drupal_add_js(drupal_get_path('module', 'video') .'/js/video.admin.js');
+        
         $thumbss = array();
         foreach ($thumbs as $fid => $img) {
           $thumbss[$img->filepath] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
