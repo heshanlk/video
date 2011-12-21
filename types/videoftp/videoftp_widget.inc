@@ -139,8 +139,10 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   $item = $element['#value'];
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
-  $field = content_fields($element['#field_name'], $element['#type_name']);
   $element['#theme'] = 'videoftp_widget_item';
+
+  $field = $form['#field_info'][$field_name];
+
   if (isset($element['preview']) && $element['#value']['fid'] != 0) {
     $element['preview']['#value'] = theme('videoftp_widget_preview', $element['#value']);
   }
@@ -253,7 +255,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   // placeholder.. will be serialized into the data column. this is a place for widgets
   // to put additional data.
   $element['data'] = array(
-    '#tree' => 'true',
+    '#tree' => TRUE,
     '#access' => !empty($item['fid']),
   );
 
@@ -261,7 +263,32 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   if($field['widget']['autothumbnail']) {
     video_thumb_process($element);
   }
+
+  if (!empty($field['description_field'])) {
+    $element['data']['description'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Description'),
+        '#value' => isset($item['data']['description']) ? $item['data']['description'] : '',
+        '#type' => variable_get('filefield_description_type', 'textfield'),
+        '#maxlength' => variable_get('filefield_description_length', 128),
+    );
+  }
   
+  if (!empty($field['list_field'])) {
+    $element['list'] = array(
+        '#type' => empty($item['fid']) ? 'hidden' : 'checkbox',
+        '#title' => t('List'),
+        '#value' => isset($item['list']) && !empty($item['fid']) ? $item['list'] : $field['list_default'],
+        '#attributes' => array('class' => 'filefield-list'),
+    );
+  }
+  else {
+    $element['list'] = array(
+        '#type' => 'hidden',
+        '#value' => '1',
+    );
+  }
+
   // Add our extra fields if in preview mode
   if(!empty($item['fid'])) {
     video_widget_element_settings($element);

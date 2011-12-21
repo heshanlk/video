@@ -43,18 +43,14 @@ function uploadfield_widget_info() {
  * Implementation of hook_elements().
  */
 function uploadfield_elements() {
-  $elements = array();
   // An uploadfield is really just a FileField with extra processing.
   $filefield_elements = module_invoke('filefield', 'elements');
+
+  $elements = array();
   $elements['uploadfield_widget'] = $filefield_elements['filefield_widget'];
   $elements['uploadfield_widget']['#process'][] = 'uploadfield_widget_process';
   // uploadfield needs a separate value callback to save its alt and title texts.
   $elements['uploadfield_widget']['#value_callback'] = 'uploadfield_widget_value';
-
-  // Support for the imagefield_extended module
-  if (module_exists('imagefield_extended')) {
-    $elements['uploadfield_widget']['#process'][] = 'imagefield_extended_widget_process';
-  }
 
   return $elements;
 }

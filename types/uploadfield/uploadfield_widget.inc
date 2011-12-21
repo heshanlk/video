@@ -116,11 +116,6 @@ function uploadfield_widget_process($element, $edit, &$form_state, $form) {
     $element['preview']['#value'] = theme('video_widget_preview', $element['#value']);
   }
 
-  // Title is not necessary for each individual field.
-  if ($field['multiple'] > 0) {
-    unset($element['#title']);
-  }
-
   // Create our thumbnails
   if ($field['widget']['autothumbnail']) {
     video_thumb_process($element);
