@@ -223,23 +223,6 @@ function video_filesystem_admin_settings_validate($form, &$form_state) {
 }
 
 /**
- * Return our supported video players.
- */
-function video_video_players() {
-  return array(
-    'video_play_html5' => t('HTML5 Player'),
-    'video_play_divx' => t('Divx Player'),
-    'video_play_quicktime' => t('Quicktime'),
-    'video_play_realmedia' => t('Real Media Player'),
-    'video_play_flv' => t('FLV Flash Players'),
-    'video_play_flash' => t('SWF Flash Player'),
-    'video_play_dcr' => t('Director/Shockwave'),
-    'video_play_windowsmedia' => t('Windows Media Player'),
-    'video_play_theora' => t('Theora Player'),
-  );
-}
-
-/**
  * Return our possible flash players.
  */
 function video_video_flv_players() {
