@@ -149,7 +149,7 @@ class video_zencoder implements transcoder_interface {
    * Interface Implementations
    * @see sites/all/modules/video/includes/transcoder_interface#admin_settings()
    */
-  public function admin_settings() {
+  public function admin_settings(&$form_state) {
     global $user;
     // check amazon s3 module is exists or not
     if (!module_exists('video_s3')) {
@@ -265,6 +265,226 @@ class video_zencoder implements transcoder_interface {
     }
   }
 
+  public function preset_settings(&$form_state, video_preset_interface $preset) {
+    $settings = $preset->getSettings();
+    
+    $form = array();
+    
+    $form['help'] = array(
+      '#type' => 'item',
+      '#title' => t('Note'),
+      '#value' => t('Take a look at the <a href="@zencoder-api">Zencoder API documentation</a> for more information about these configuration options.
+It is usually not necessary to change these settings as Zencoder has sensible defaults for each output format.', array('@zencoder-api' => 'https://app.zencoder.com/docs/api/encoding')),
+    );
+
+    $onetofive = array('' => '') + array_combine(range(1, 5), range(1, 5));
+    $truefalse = array('' => '', 'true' => t('Yes'), 'false' => t('No'));
+    $videocodecs = array('','h264', 'mpeg4', 'theora', 'vp6', 'vp8', 'wmv');
+    $audiocodecs = array('', 'aac', 'amr', 'mp3', 'vorbis', 'wma');
+    $audiochannels = array('', 1, 2);
+    
+    $form['quality'] = array(
+      '#type' => 'select',
+      '#title' => t('Video quality'),
+      '#default_value' => isset($settings['quality']) ? $settings['quality'] : '',
+      '#options' => $onetofive,
+    );
+    
+    $form['audio_quality'] = array(
+      '#type' => 'select',
+      '#title' => t('Audio quality'),
+      '#default_value' => isset($settings['audio_quality']) ? $settings['audio_quality'] : '',
+      '#options' => $onetofive,
+    );
+    
+    $form['speed'] = array(
+      '#type' => 'select',
+      '#title' => t('Transcoding speed'),
+      '#default_value' => isset($settings['speed']) ? $settings['speed'] : '',
+      '#options' => $onetofive,
+    );
+    
+    $form['upscale'] = array(
+      '#type' => 'select',
+      '#title' => t('Allow upscaling'),
+      '#default_value' => isset($settings['upscale']) ? $settings['upscale'] : '',
+      '#options' => $truefalse,
+    );
+    
+    $form['frame_rate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Frame rate'),
+      '#default_value' => isset($settings['frame_rate']) ? $settings['frame_rate'] : '',
+      '#maxlength' => 15,
+      '#size' => 15,
+    );
+    
+    $form['max_frame_rate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Maximum frame rate'),
+      '#default_value' => isset($settings['max_frame_rate']) ? $settings['max_frame_rate'] : '',
+      '#maxlength' => 15,
+      '#size' => 15,
+    );
+    
+    $form['video_codec'] = array(
+      '#type' => 'select',
+      '#title' => t('Video codec'),
+      '#default_value' => isset($settings['video_codec']) ? $settings['video_codec'] : '',
+      '#options' => array_combine($videocodecs, $videocodecs),
+    );
+    
+    $form['audio_codec'] = array(
+      '#type' => 'select',
+      '#title' => t('Audio codec'),
+      '#default_value' => isset($settings['audio_codec']) ? $settings['audio_codec'] : '',
+      '#options' => array_combine($audiocodecs, $audiocodecs),
+    );
+    
+    $form['video_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Video bit rate'),
+      '#default_value' => isset($settings['video_bitrate']) ? $settings['video_bitrate'] : '',
+      '#field_suffix' => t('kbps'),
+      '#maxlength' => 15,
+      '#size' => 15,
+    );
+    
+    $form['audio_bitrate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Audio bit rate'),
+      '#default_value' => isset($settings['audio_bitrate']) ? $settings['audio_bitrate'] : '',
+      '#field_suffix' => t('kbps'),
+      '#maxlength' => 15,
+      '#size' => 15,
+    );
+    
+    $form['audio_sample_rate'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Audio sample rate'),
+      '#default_value' => isset($settings['audio_sample_rate']) ? $settings['audio_sample_rate'] : '',
+      '#field_suffix' => t('Hz'),
+      '#maxlength' => 15,
+      '#size' => 15,
+    );
+    
+    $form['audio_channels'] = array(
+      '#type' => 'select',
+      '#title' => t('Number of audio channels'),
+      '#default_value' => isset($settings['audio_channels']) ? $settings['audio_channels'] : '',
+      '#options' => array_combine($audiochannels, $audiochannels),
+    );
+    
+    $as = '';
+    if (isset($settings['additional_settings']) && is_array($settings['additional_settings'])) {
+      $as = $this->settingsArrayToString($settings['additional_settings']);
+    }
+    
+    $form['additional_settings'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Additional settings'),
+      '#default_value' => $as,
+      '#rows' => 5,
+      '#description' => '<p>'. t('Enter any other <a href="@zencoder-api">Zencoder encoding settings</a> in this text area. Enter each setting on a separate line and separate the setting name (case sensitive) and the value with a colon. To create a nested structure, use two spaces. Malformed settings will be removed.', array('@zencoder-api' => 'https://app.zencoder.com/docs/api/encoding')) . '</p>' .
+      '<p>'. t('Example:') .'</p>'.
+      '<blockquote><pre>clip_length: 00:00:10.0
+watermark:
+  url: http://example.com/watermark.gif
+  y: 10
+  x: 10</pre></blockquote>',
+    );
+    
+    return $form;
+  }
+  
+  public function preset_settings_validate($form, &$form_state) {
+    $v =& $form_state['values'];
+    
+    foreach (array('frame_rate', 'max_frame_rate') as $k) {
+      if (!empty($v[$k]) && !preg_match('#^\d+(\.\d+)?$#', $v[$k])) {
+        form_error($form[$k], t('The value of the %setting setting must be a floating point number.', array('%setting' => $form[$k]['#title'])));
+      }
+    }
+    
+    foreach (array('video_bitrate', 'audio_bitrate', 'audio_sample_rate', 'audio_channels') as $k) {
+      if (!empty($v[$k])) {
+        if (!preg_match('#^\d+$#', $v[$k])) {
+          form_error($form[$k], t('The value of the %setting setting must be a positive integer.', array('%setting' => $form[$k]['#title'])));
+        }
+        else {
+          $v[$k] = intval($v[$k]);
+        }
+      }
+    }
+    
+    if (!empty($v['additional_settings'])) {
+      // Remove unnecessary new lines
+      $asstr = trim($v['additional_settings']);
+      $asstr = preg_replace('#[\r\n]+#', "\n", $asstr);
+
+      // Parse the lines into a structure
+      $lines = explode("\n", $asstr);
+      $as = array();
+      $stack = array();
+      array_unshift($stack, &$as);
+
+      foreach ($lines as $lineno => $line) {
+        $parts = explode(':', $line, 2);
+        if (count($parts) != 2) {
+          continue;
+        }
+        
+        $key = rtrim($parts[0]);
+        $value = trim($parts[1]);
+        
+        if ($value != '') {
+          // Check the spaces of the key
+          $level = strspn($key, ' ') / 2;
+          if ($level != abs($level)) {
+            continue;
+          }
+          
+          // Check if we should go one level lower
+          if ($level == count($stack) - 2) {
+            array_shift($stack);
+          }
+          
+          if ($level == count($stack) - 1) {
+            // Add a value to the current stack top
+            $stack[0][ltrim($key)] = $value;
+          }
+        }
+        else {
+          $stack[0][$key] = array();
+          array_unshift($stack, &$stack[0][$key]);
+        }
+        
+        $lines[$lineno] = $key .': '. $value;
+      }
+
+      $v['additional_settings'] = $as;
+    }
+  }
+
+  private function settingsArrayToString(array $settings, $level = 0) {
+    $output = '';
+    
+    foreach ($settings as $k => $v) {
+      $output .= str_repeat('  ', $level);
+      $output .= $k .':';
+      
+      if (is_array($v)) {
+        $output .= "\n";
+        $output .= $this->settingsArrayToString($v, $level + 1);
+      }
+      else {
+        $output .= ' '. $v ."\n";
+      }
+    }
+    
+    return $output;
+  }
+  
   /**
    * Return the dimensions of a video
    */

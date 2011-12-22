@@ -19,7 +19,7 @@ function video_widget_element_settings(&$element) {
   $dimensions = $field['widget']['default_dimensions'];
   $player_dimensions = $field['widget']['default_player_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
-  $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
+  $options = video_explode("\n", variable_get('video_dimensions', video_default_dimensions()));
   if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
     $video_info = _video_dimensions_options($options, $file['filepath']);
     $description = t('Set your video dimensions. This will create your player and transcode your video with these dimensions.');
@@ -317,14 +317,14 @@ function video_default_widget_settings($widget) {
     '#type' => 'select',
     '#title' => t('Default Video Resolution Dimensions'),
     '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
-    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
+    '#options' => video_explode("\n", variable_get('video_dimensions', video_default_dimensions())),
     '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that FFMPEG will use to transcode your video files.')
   );
   $form['plugins']['default_player_dimensions'] = array(
     '#type' => 'select',
     '#title' => t('Default Video Player Dimensions'),
     '#default_value' => !empty($widget['default_player_dimensions']) ? $widget['default_player_dimensions'] : '',
-    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
+    '#options' => video_explode("\n", variable_get('video_dimensions', video_default_dimensions())),
     '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.')
   );
   $form['plugins']['autoconversion'] = array(

@@ -1,47 +1,20 @@
 <?php
-/*
- * @file
- * Class file used to store video presets on the video.
- *
- */
 class video_preset {
   private $presets;
 
-  public function __construct($preset = null) {
-    $this->presets = $preset;
-    if (empty($presets)) {
-      $this->presets = variable_get('vid_preset', array('hq_flash'));
-    }
+  public function __construct() {
+    $this->presets = variable_get('vid_preset', array('hq_flash'));
   }
 
-  public function admin_settings() {
-    $form = array();
-    $presets = $this->getAllPresets();
-
-    $options = array();
-    $help = array();
-    foreach ($presets as $preset) {
-      $options[$preset->get_value()] = check_plain($preset->get_name());
-
-      $helptext = $preset->get_help();
-      if (!empty($helptext)) {
-        $help[] = check_plain($preset->get_name()) .': '. $helptext;
-      }
-    }
-
-    $form['vid_preset'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Video transcode presets'),
-      '#options' => $options,
-      '#default_value' => $this->presets,
-      '#description' => theme('item_list', $help),
-      '#required' => TRUE,
-    );
-
-    return $form;
+  public function getEnabledPresets() {
+    return $this->getPresets(TRUE);
   }
 
   public function getAllPresets() {
+    return $this->getPresets();
+  }
+
+  private function getPresets($enabled = FALSE) {
     $presets = array();
     $files = array();
 
@@ -54,25 +27,41 @@ class video_preset {
       require_once $file->filename;
 
       $preset = new $file->name;
-      $presets[$preset->get_value()] = $preset;
+      if (!$enabled || in_array($preset->get_value(), $this->presets, TRUE)) {
+        $presets[$preset->get_value()] = $preset;
+      }
     }
 
     ksort($presets);
 
     return $presets;
   }
+}
 
-  public function properties() {
-    $presets = $this->getAllPresets();
-    $properties = array();
-
-    foreach ($this->presets as $presetvalue) {
-      if (isset($presets[$presetvalue])) {
-        $properties[$presetvalue] = $presets[$presetvalue]->get_properties();
+abstract class video_preset_base implements video_preset_interface {
+  private $settings = NULL;
+  
+  public function getSettings() {
+    if ($this->settings == NULL) {
+      $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
+      $settings = db_result(db_query('SELECT data FROM {video_preset_settings} WHERE preset = "%s" AND transcoder = "%s"', $this->get_value(), $transcoder));
+      
+      if ($settings) {
+        $this->settings = unserialize($settings);
+      }
+      else {
+        $this->settings = array();
       }
     }
+    
+    return $this->settings;
+  }
 
-    return $properties;
+  public function setSettings(array $settings) {
+    $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
+    $this->settings = $settings;
+    
+    db_query('REPLACE INTO {video_preset_settings} SET data = "%s", preset = "%s", transcoder = "%s"', serialize($settings), $this->get_value(), $transcoder);
   }
 }
 
@@ -80,5 +69,7 @@ interface video_preset_interface {
   public function get_name();
   public function get_value();
   public function get_help();
-  public function get_properties();
+  public function getExtension();
+  public function getSettings();
+  public function setSettings(array $settings);
 }

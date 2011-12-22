@@ -12,13 +12,7 @@ $width = intval($video->player_width);
 $height = intval($video->player_height);
 $poster = check_plain($video->thumbnail->url);
 $autoplayattr = $video->autoplay ? ' autoplay="autoplay"' : '';
-$preload = 'none';
-if ($video->autobuffering) {
-  $preload = 'auto';
-}
-elseif (variable_get('video_metadata', FALSE)) {
-  $preload = 'metadata';
-}
+$preload = $video->autobuffering ? 'auto' : 'metadata';
 
 $codecs = array(
 	'video/mp4' => 'avc1.42E01E, mp4a.40.2',

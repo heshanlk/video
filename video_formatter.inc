@@ -21,6 +21,9 @@ function theme_video_formatter_video_plain($element) {
     module_load_include('inc', 'video', '/includes/conversion');
     $conversion = new video_conversion;
     $video = $conversion->load_job($element['#item']['fid']);
+    if (!$video) {
+      return '';
+    }
     if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
       return theme('video_inprogress');
     }

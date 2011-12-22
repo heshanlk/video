@@ -1,17 +1,8 @@
 <?php
-
 /*
  * @file
  * Class file used to wrap the transcoder functions.
- *
- * @todo need more commenting
- * - Add Metadata support
- * Add autoloading
- * # http://stackoverflow.com/questions/3343208/php-class-lazy-loading
- * # http://php.net/manual/en/language.oop5.autoload.php
- * 
  */
-
 class video_transcoder {
 
   private $transcoder;
@@ -61,23 +52,17 @@ class video_transcoder {
   }
 
   public function convert_video(&$video) {
-    module_load_include('inc', 'video', '/includes/preset');
+    module_load_include('inc', 'video', 'includes/preset');
     $video_preset = new video_preset();
-    $presets = $video_preset->properties();
-    $video->presets = $presets;
+    $video->presets = $video_preset->getEnabledPresets();
+    
     $output = $this->transcoder->convert_video($video);
+    
     // if successfully converted the video then update the status to publish
-    if ($output)
-    // Update our node id to published.  We do not do a node_load as it causes editing problems when saving.
+    if ($output) {
       db_query("UPDATE {node} SET status=%d WHERE nid=%d", 1, $video->nid);
+    }
 
-    // If they are using metadata.
-    // @TODO : add meta data support
-//    if (variable_get('video_metadata', FALSE)) {
-//      module_load_include('inc', 'video', '/includes/metadata');
-//      $metadata = new video_metadata;
-//      $metadata->process($converted);
-//    }
     return $output;
   }
 
@@ -99,6 +84,14 @@ class video_transcoder {
 
   public function admin_settings_validate($form, &$form_state) {
     return $this->transcoder->admin_settings_validate($form, $form_state);
+  }
+
+  public function preset_settings(&$form_state, video_preset_interface $preset) {
+    return $this->transcoder->preset_settings($form_state, $preset);
+  }
+
+  public function preset_settings_validate($form, &$form_state) {
+    return $this->transcoder->preset_settings_validate($form, $form_state);
   }
 
   private function _transcoders() {
@@ -124,7 +117,8 @@ class video_transcoder {
       $focus = new $file->name;
       $form['radios'][$focus->get_value()] = $focus->get_name();
       $form['help'][] = $focus->get_help();
-      $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings();
+      $form_state = array();
+      $form['admin_settings'] = $form['admin_settings'] + $focus->admin_settings($form_state);
     }
 //    //we need to move our video/thumbnail fieldsets to the bottom of our form as they are used for each trancoder
 //    $autothumb = $form['admin_settings']['autothumb'];
@@ -170,6 +164,14 @@ class video_transcoder {
     return $this->transcoder->load_completed_job($video);
   }
 
+  /**
+   * Returns the name of the currently active transcoder
+   * 
+   * @return string
+   */
+  public function get_name() {
+    return $this->transcoder->get_name();
+  }
 }
 
 interface transcoder_interface {
@@ -198,7 +200,11 @@ interface transcoder_interface {
 
   public function get_help();
 
-  public function admin_settings();
+  public function admin_settings(&$form_state);
 
   public function admin_settings_validate($form, &$form_state);
+
+  public function preset_settings(&$form_state, video_preset_interface $preset);
+
+  public function preset_settings_validate($form, &$form_state);
 }

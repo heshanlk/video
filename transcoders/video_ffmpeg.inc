@@ -7,18 +7,18 @@ class video_ffmpeg implements transcoder_interface {
   private $name = 'Locally Installed Transcoder (FFmpeg/Handbreke/Mcoder)';
   private $value = 'video_ffmpeg';
 
-  protected $nice;
+  protected $usenice;
   protected $thumbcmdoptions;
-  protected $enablefaststart;
   protected $faststartcmd;
+  protected $flvtoolcmd;
   protected $cmdpath;
   protected $logcommands;
 
   public function __construct() {
-    $this->nice = variable_get('video_ffmpeg_nice_enable', FALSE) ? 'nice -n 19 ' : '';
+    $this->usenice = PHP_OS == 'Linux' && variable_get('video_ffmpeg_nice_enable', FALSE);
     $this->thumbcmdoptions = variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
-    $this->enablefaststart = variable_get('video_ffmpeg_enable_faststart', FALSE);
     $this->faststartcmd = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
+    $this->flvtoolcmd = variable_get('video_flvtool2_path', '/usr/bin/flvtool2');
     $this->cmdpath = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
     $this->logcommands = (bool)variable_get('video_ffmpeg_log_commands', TRUE);
   }
@@ -37,11 +37,16 @@ class video_ffmpeg implements transcoder_interface {
    */
   private function run_command($command, &$output, $purpose = NULL, $ignoreoutputfilenotfound = FALSE) {
     $output = '';
-    $command = $this->nice . $command .' 2>&1';
+    $command = $command .' 2>&1';
+
+    if ($this->usenice) {
+      $command = 'nice -n 19 '. $command;
+    }
+
     $purposetext = !empty($purpose) ? (' '. t('for') .' '. $purpose) : '';
 
     if ($this->logcommands) {
-      watchdog('video_ffmpeg', 'Executing ffmpeg command!purposetext: <pre>@command</pre>', array('@command' => $command, '!purposetext' => $purposetext), WATCHDOG_DEBUG);
+      watchdog('video_ffmpeg', 'Executing command!purposetext: <pre>@command</pre>', array('@command' => $command, '!purposetext' => $purposetext), WATCHDOG_DEBUG);
     }
 
     $return_var = 0;
@@ -60,7 +65,7 @@ class video_ffmpeg implements transcoder_interface {
     // Returnvar 1 means input file not found. This is normal for information calls.
     if ($return_var != 0 && ($return_var != 1 || !$ignoreoutputfilenotfound)) {
       watchdog('video_ffmpeg',
-      	'Error executing ffmpeg command!purposetext:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
+      	'Error executing command!purposetext:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
         array('@command' => $command, '@output' => trim($output), '!purposetext' => $purposetext),
         WATCHDOG_ERROR);
       return FALSE;
@@ -181,63 +186,69 @@ class video_ffmpeg implements transcoder_interface {
     $result = TRUE;
     
     // process presets
-    $presets = $video->presets;
     $converted_files = array();
-    foreach ($presets as $presetname => $preset) {
+    foreach ($video->presets as $preset) {
+      // Preset settings
+      $extension = $preset->getExtension();
+      $settings = $preset->getSettings();
+      $presetname = $preset->get_name();
+      
       //update our filename after the move to maintain filename uniqueness.
-      $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) .'.'. $preset['extension'], $converteddir);
-
-      //call our transcoder
-      $ffmpeg_output = $converted;
-      if ($this->enablefaststart && ($preset['extension'] == 'mp4' || $preset['extension'] == 'mov')) {
-        $ffmpeg_output = file_directory_temp() .'/'. basename($converted);
-      }
+      $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) .'.'. $extension, $converteddir);
 
       $command_output = '';
-
       // Setup our default command to be run.
-      foreach ($preset['command'] as $command) {
+      foreach ($settings['commands'] as $cmdnr => $command) {
         $command = strtr($command, array(
           '!cmd_path' => $this->cmdpath,
           '!videofile' => escapeshellarg($filepath),
-          '!audiobitrate' => $preset['audio_bitrate'],
           '!width' => intval($dimension[0]),
           '!height' => intval($dimension[1]),
-          '!videobitrate' => $preset['video_bitrate'],
-          '!convertfile' => escapeshellarg($ffmpeg_output),
+          '!convertfile' => escapeshellarg($outputfile),
         ));
 
         // Process our video
-        if (!$this->run_command($command, $command_output, t('rendering preset %preset', array('%preset' => $presetname)))) {
+        if (!$this->run_command($command, $command_output, t('rendering preset %preset, command #@cmdnr', array('%preset' => $presetname, '@cmdnr' => $cmdnr + 1)))) {
           $result = FALSE;
           break 2;
         }
       }
 
-      if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
-        // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
-        // the command to be execute so we need to fudge the command to run qt-faststart.
-        $command_result = $this->run_command($this->faststartcmd .' '. $ffmpeg_output .' '. $converted, $command_output, t('running qt-faststart'));
+      // Run flvtool2, if required
+      if (!empty($settings['useflvtool2'])) {
+        $command = $this->flvtoolcmd .' -U '. escapeshellarg($outputfile);
+        $this->run_command($command, $command_output, t('running flvtool2'));
+      }
 
-        // Delete the temporary output file.
-        file_delete($ffmpeg_output);
+      // Run qt-faststart, if required
+      // qt-faststart needs a temporary file
+      if (!empty($settings['useflvtool2'])) {
+        $tmpfile = $outputfile.'-qt';
+        $command = $this->faststartcmd .' '. escapeshellarg($outputfile) .' '. escapeshellarg($tmpfile);
+        if ($this->run_command($command, $command_output, t('running qt-faststart'))) {
+          file_delete($outputfile);
+          rename($tmpfile, $outputfile);
+        }
+        else {
+          file_delete($tmpfile);
+        }
       }
 
       //lets check to make sure our file exists, if not error out
-      if (!file_exists($converted) || ($filesize = filesize($converted)) === 0) {
+      if (!file_exists($outputfile) || ($filesize = filesize($outputfile)) === 0) {
         watchdog('video_ffmpeg', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $presetname), WATCHDOG_ERROR);
         $result = FALSE;
         break;
       }
 
-      $converted = realpath($converted);
+      $outputfile = realpath($outputfile);
 
       //Create result object
       $converted_files[] = $file = new stdClass();
       $file->vid = intval($video->vid);
-      $file->filename = basename($converted);
-      $file->filepath = substr($converted, strlen($drupaldirrp) + 1);
-      $file->filemime = file_get_mimetype($converted);
+      $file->filename = basename($outputfile);
+      $file->filepath = substr($outputfile, strlen($drupaldirrp) + 1);
+      $file->filemime = file_get_mimetype($outputfile);
       $file->filesize = $filesize;
       $file->preset = $presetname;
     }
@@ -338,121 +349,9 @@ class video_ffmpeg implements transcoder_interface {
     return $this->value;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_help()
-   */
-  public function get_help() {
-    return l(t('FFMPEG Online Manual'), 'http://www.ffmpeg.org/');
-  }
-
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings()
-   */
-  public function admin_settings() {
-    $form = array();
-    $form['video_ffmpeg_start'] = array(
-      '#type' => 'markup',
-      '#value' => '<div id="video_ffmpeg">',
-    );
-
-    $form['video_transcoder_path'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Path to Video Transcoder'),
-      '#description' => t('Absolute path to ffmpeg.'),
-      '#default_value' => $this->cmdpath,
-    );
-    $form['video_thumbs'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Number of thumbnails'),
-      '#description' => t('Number of thumbnails to display from video.'),
-      '#default_value' => variable_get('video_thumbs', 5),
-    );
-    $form['video_ffmpeg_nice_enable'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Enable the use of nice when calling the ffmpeg command.'),
-      '#default_value' => variable_get('video_ffmpeg_nice_enable', TRUE),
-      '#description' => t('The nice command Invokes a command with an altered scheduling priority.  This option may not be available on windows machines, so disable it.')
-    );
-    $form['video_ffmpeg_log_commands'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Log all executed commands to the Drupal log.'),
-      '#default_value' => $this->logcommands,
-      '#description' => t('Enable this option when debugging ffmpeg encoding to log all commands to the <a href="@dblog-page">Drupal log</a>. This may help with debugging ffmpeg problems. When this option is disabled, only errors will be logged.', array('@dblog-page' => url('admin/reports/dblog')))
-    );
-    // Thumbnail Videos We need to put this stuff last.
-    $form['autothumb'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Video Thumbnails'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
-    $form['autothumb']['video_thumb_path'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Path to save thumbnails'),
-      '#description' => t('Path to save video thumbnails extracted from the videos.'),
-      '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
-    );
-    $form['autothumb']['advanced'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Advanced Settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE
-    );
-    $form['autothumb']['advanced']['video_ffmpeg_thumbnailer_options'] = array(
-      '#type' => 'textarea',
-      '#title' => t('Video thumbnailer options'),
-      '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ') . '<ol><li>' . t('!videofile (the video file to thumbnail)') . '<li>' . t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
-      '#default_value' => $this->thumbcmdoptions,
-    );
-
-    // Video conversion settings.
-    $form['autoconv'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Video Conversion'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE
-    );
-    $form['autoconv']['video_ffmpeg_enable_faststart'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Process mov/mp4 videos with qt-faststart'),
-      '#default_value' => $this->enablefaststart,
-    );
-    $form['autoconv']['video_ffmpeg_faststart_cmd'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Path to qt-faststart'),
-      '#default_value' => $this->faststartcmd,
-    );
-
-    $form['autoconv']['video_ffmpeg_pad_method'] = array(
-      '#type' => 'radios',
-      '#title' => t('FFmpeg Padding method'),
-      '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
-      '#options' => array(
-        0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
-        1 => t('Use -vf "pad:w:h:x:y:c" for padding'),
-      ),
-    );
-
-    $form['video_ffmpeg_end'] = array(
-      '#type' => 'markup',
-      '#value' => '</div>',
-    );
-    return $form;
-  }
-
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
-   */
-  public function admin_settings_validate($form, &$form_state) {
-    return;
-  }
-
   public function create_job($video) {
     if (empty($video['dimensions'])) {
-      watchdog('video_ffmpeg', 'Tried to create ffmpeg job for video %video with empty dimensions value.', array('%video' => $video['fid']), WATCHDOG_ERROR);
+      watchdog('video_ffmpeg', 'Tried to create job for video %video with empty dimensions value.', array('%video' => $video['fid']), WATCHDOG_ERROR);
       return FALSE;
     }
     
@@ -614,6 +513,228 @@ class video_ffmpeg implements transcoder_interface {
     }
     else {
       return $video->dimensions;
+    }
+  }
+
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#get_help()
+   */
+  public function get_help() {
+    return l(t('FFmpeg Online Manual'), 'http://www.ffmpeg.org/');
+  }
+
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings()
+   */
+  public function admin_settings(&$form_state) {
+    $form = array();
+    $form['video_ffmpeg_start'] = array(
+      '#type' => 'markup',
+      '#value' => '<div id="video_ffmpeg">',
+    );
+
+    $form['video_transcoder_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to transcoder executable'),
+      '#description' => t('Absolute path to your transcoder, such as FFmpeg. Do not include parameters.'),
+      '#default_value' => $this->cmdpath,
+    );
+    $form['video_thumbs'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of thumbnails'),
+      '#description' => t('Number of thumbnails to generate for videos.'),
+      '#default_value' => variable_get('video_thumbs', 5),
+    );
+    $form['video_ffmpeg_nice_enable'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable the use of nice when calling the command.'),
+      '#default_value' => $this->usenice,
+      '#description' => t('The nice command invokes a command with an altered scheduling priority.'),
+      '#access' => PHP_OS == 'Linux',
+    );
+    $form['video_ffmpeg_log_commands'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Log all executed commands to the Drupal log.'),
+      '#default_value' => $this->logcommands,
+      '#description' => t('Enable this option when debugging ffmpeg encoding to log all commands to the <a href="@dblog-page">Drupal log</a>. This may help with debugging ffmpeg problems. When this option is disabled, only errors will be logged.', array('@dblog-page' => url('admin/reports/dblog')))
+    );
+    // Thumbnail Videos We need to put this stuff last.
+    $form['autothumb'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Thumbnails'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['autothumb']['video_thumb_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to save thumbnails'),
+      '#description' => t('Path to save video thumbnails extracted from the videos.'),
+      '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
+    );
+    $form['autothumb']['video_ffmpeg_thumbnailer_options'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Video thumbnailer options'),
+      '#description' => t('Provide the options for the thumbnailer.  Available argument values are:') .
+        theme('item_list', array(
+          '<strong>!seek</strong>: '. t('the number of seconds into the video where the screenshot is taken'),
+          '<strong>!videofile</strong>: '. t('the video file to create thumbnails for'),
+          '<strong>!thumbfile</strong>: '. t('a newly created temporary file to overwrite with the thumbnail'),
+        )),
+      '#default_value' => $this->thumbcmdoptions,
+    );
+
+    // Video conversion settings.
+    $form['helpers'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Helper programs'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+    $form['helpers']['video_ffmpeg_faststart_cmd'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to qt-faststart'),
+      '#default_value' => $this->faststartcmd,
+      '#description' => t('When you enter the path to qt-faststart here, you can enable the qt-faststart tool for one or more presets.'),
+    );
+    $form['helpers']['video_flvtool2_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to flvtool2'),
+      '#default_value' => $this->flvtoolcmd,
+      '#description' => t('When you enter the path to flvtool2 here, you can enable the flvtool2 tool for one or more presets.'),
+    );
+
+    $form['advanced'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+    $form['advanced']['video_ffmpeg_pad_method'] = array(
+      '#type' => 'radios',
+      '#title' => t('FFmpeg Padding method'),
+      '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
+      '#options' => array(
+        0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
+        1 => t('Use -vf "pad:w:h:x:y:c" for padding'),
+      ),
+    );
+
+    $form['video_ffmpeg_end'] = array(
+      '#type' => 'markup',
+      '#value' => '</div>',
+    );
+    return $form;
+  }
+
+  /**
+   * Interface Implementations
+   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
+   */
+  public function admin_settings_validate($form, &$form_state) {
+    $v =& $form_state['values'];
+
+    if (!empty($v['video_transcoder_path'])) {
+      if (!is_file($v['video_transcoder_path'])) {
+        form_error($form['video_transcoder_path'], t('The file %file does not exist.', array('%file' => $v['video_transcoder_path'])));
+      }
+    }
+    elseif($v['vid_convertor'] == 'video_ffmpeg') {
+      form_error($form['video_transcoder_path'], t('!name field is required.', array('!name' => $form['video_transcoder_path']['#title'])));
+    }
+    
+    if (!empty($v['video_ffmpeg_faststart_cmd'])) {
+      if (!is_file($v['video_ffmpeg_faststart_cmd'])) {
+        form_error($form['helpers']['video_ffmpeg_faststart_cmd'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_faststart_cmd'])));
+      }
+    }
+
+    if (!empty($v['video_flvtool2_path'])) {
+      if (!is_file($v['video_flvtool2_path'])) {
+        form_error($form['helpers']['video_flvtool2_path'], t('The file %file does not exist.', array('%file' => $v['video_flvtool2_path'])));
+      }
+    }
+  }
+
+  public function preset_settings(&$form_state, video_preset_interface $preset) {
+    $form = array();
+    
+    $settings = $preset->getSettings();
+    
+    if (!isset($settings['commands'])) {
+      $settings['commands'] = array('');
+    }
+
+    // Add an empty entry box
+    $settings['commands'][] = '';
+
+    $form['commands'] = array(
+      '#tree' => TRUE,
+    );
+
+    foreach ($settings['commands'] as $k => $command) {
+      $form['commands'][$k] = array(
+        '#type' => 'textarea',
+        '#title' => t('Command @num', array('@num' => $k + 1)),
+        '#default_value' => $command,
+        '#rows' => 2,
+        '#required' => $k === 0,
+      );
+    }
+    
+    if (!empty($this->flvtoolcmd)) {
+      $form['useflvtool2'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Post-process the output with flvtool2'),
+        '#default_value' => !empty($settings['useflvtool2']),
+      );
+    }
+    
+    if (!empty($this->faststartcmd)) {
+      $form['useqtfaststart'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Post-process the output with qt-faststart'),
+        '#default_value' => !empty($settings['useqtfaststart']),
+      );
+    }
+    
+    $form['help'] = array(
+      '#type' => 'item',
+      '#title' => t('Notes'),
+      '#value' =>
+        '<p>'. t('The commands are executed in a temporary directory that is removed after the conversion has completed.') .'<br/>'.
+               t('Submit this form and revisit this page to add more commands.') .'</p>'.
+        '<p>'. t('You can use the following replacement variables in your commands:') .'</p>'.
+        theme('item_list', array(
+          '<strong>!cmd_path</strong>: '. t('the path to your executable (currently: %executable).', array('%executable' => $this->cmdpath)),
+          '<strong>!videofile</strong>: '. t('the escaped absolute path to the input video file.'),
+          '<strong>!convertfile</strong>: '. t('the escaped absolute path to the output video file.'),
+          '<strong>!width</strong>: '. t('the width of the output video file.'),
+          '<strong>!height</strong>: '. t('the height of the output video file.'),
+        )),
+    );
+    
+    return $form;
+  }
+
+  public function preset_settings_validate($form, &$form_state) {
+    if (!empty($form_state['values']['commands'])) {
+      foreach($form_state['values']['commands'] as $k => $v) {
+        if (empty($v)) {
+          unset($form_state['values']['commands'][$k]);
+        }
+      }
+
+      $form_state['values']['commands'] = array_values($form_state['values']['commands']);
+    }
+    
+    if (!empty($form['useflvtool2'])) {
+      $form['useflvtool2'] = TRUE;
+    }
+    
+    if (!empty($form['useqtfaststart'])) {
+      $form['useqtfaststart'] = TRUE;
     }
   }
 }

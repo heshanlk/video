@@ -32,10 +32,120 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
  * @return <type>
  */
 function video_preset_admin_settings() {
-  module_load_include('inc', 'video', '/includes/preset');
-  $preset = new video_preset();
-  $form = $preset->admin_settings();
+  module_load_include('inc', 'video', 'includes/preset');
+  $presetdata = new video_preset();
+  
+  $presets = $presetdata->getAllPresets();
+  $enabled = $presetdata->getEnabledPresets();
+  
+  $options = array();
+  $help = array();
+  foreach ($presets as $preset) {
+    $options[$preset->get_value()] = check_plain($preset->get_name()) .' ('. l(t('configure'), 'admin/settings/video/presets/'.rawurlencode($preset->get_value())) .')';
+  
+    $helptext = $preset->get_help();
+    if (!empty($helptext)) {
+      $help[] = check_plain($preset->get_name()) .': '. $helptext;
+    }
+  }
+  
+  $form['vid_preset'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Video transcode presets'),
+    '#options' => $options,
+    '#default_value' => array_keys($enabled),
+    '#description' => theme('item_list', $help),
+    '#required' => TRUE,
+  );
+  
   return system_settings_form($form);
+}
+
+function video_preset_admin_settings_validate($form, &$form_state) {
+  $presets =& $form_state['values']['vid_preset'];
+  $presets = array_diff($presets, array(0));
+  $presets = array_values($presets);
+}
+
+/**
+ * Form for transcoder specific preset settings
+ * 
+ * @param array $form_state
+ * @return array
+ */
+function video_preset_admin_configure(&$form_state, video_preset_interface $preset) {
+  module_load_include('inc', 'video', 'includes/transcoder');
+  $transcoder = new video_transcoder();
+  
+  $presetform = $transcoder->preset_settings($form_state, $preset);
+  
+  $form_state['preset'] = $preset;
+  $form_state['transcoder'] = $transcoder;
+  
+  // Save the settings keys that are saved to the database later
+  $form_state['keys'] = array();
+  foreach (element_children($presetform) as $child) {
+    $type = '';
+    if (isset($presetform[$child]['#type'])) {
+      $type = $presetform[$child]['#type'];
+    }
+
+    if ($type != 'item' && $type != 'value' && $type != 'markup') {
+      $form_state['keys'][] = $child;
+    }
+  }
+  
+  $form = array(
+    '#redirect' => 'admin/settings/video/presets',
+  );
+  
+  $form['preset'] = array(
+    '#type' => 'item',
+    '#title' => t('Preset'),
+    '#value' => check_plain($preset->get_name()) .' ('. t('extension:') .' '. $preset->getExtension() .')',
+  );
+  
+  $form['transcoder'] = array(
+    '#type' => 'item',
+    '#title' => t('Transcoder'),
+    '#value' => check_plain($transcoder->get_name()),
+  );
+  
+  if (!empty($form_state['keys'])) {
+    $form = array_merge($form, $presetform);
+    
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+        '#suffix' => l(t('Back'), $form['#redirect']),
+    );
+  }
+  else {
+    $form['notice'] = array(
+      '#type' => 'item',
+      '#value' => t('This transcoder does not have specific settings for this preset.'),
+      '#suffix' => l(t('Back'), $form['#redirect']),
+    );
+  }
+  
+  return $form;
+}
+
+function video_preset_admin_configure_validate($form, &$form_state) {
+  $form_state['transcoder']->preset_settings_validate($form, $form_state);
+}
+
+function video_preset_admin_configure_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  $settings = array();
+
+  foreach($form_state['keys'] as $key) {
+    if (isset($values[$key]) && $values[$key] !== '') {
+      $settings[$key] = $values[$key];
+    }
+  }
+
+  $form_state['preset']->setSettings($settings);
 }
 
 /**
@@ -73,6 +183,12 @@ function video_general_admin_settings() {
     '#title' => t('Override Auto Thumbnails with Default'),
     '#default_value' => variable_get('video_use_default_thumb', FALSE),
     '#description' => t('Override auto thumbnails with default thumbnail.')
+  );
+  $form['video_dimensions'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Available dimensions when uploading videos'),
+    '#description' => t('Enter one dimension per line. Each resolution must be in the form of <code>width</code>x<code>height</code>. Example dimensions: <code>1280x720</code>.'),
+    '#default_value' => variable_get('video_dimensions', video_default_dimensions()),
   );
   return system_settings_form($form);
 }
@@ -164,25 +280,6 @@ function _video_validate_number($element, $form_state) {
 }
 
 /**
- * Video Metadata admin settings
- * @return <type>
- */
-function video_metadata_admin_settings() {
-  module_load_include('inc', 'video', '/includes/metadata');
-  $metadata = new video_metadata;
-  $form = $metadata->admin_settings();
-  return system_settings_form($form);
-}
-
-function video_metadata_admin_settings_validate($form, &$form_state) {
-  // add vallidations by metadata interface
-  $metadata = $form_state['values']['vid_metadata'];
-  module_load_include('inc', 'video', '/includes/metadata');
-  $metadata = new video_metadata($metadata);
-  $metadata->admin_settings_validate($form, $form_state);
-}
-
-/**
  * Video cron admin settings
  * @return <type>
  */
@@ -215,7 +312,6 @@ function video_filesystem_admin_settings() {
 }
 
 function video_filesystem_admin_settings_validate($form, &$form_state) {
-  // add vallidations by metadata interface
   $filesystem = $form_state['values']['vid_filesystem'];
   module_load_include('inc', 'video', '/includes/filesystem');
   $filesystem = new video_filesystem($filesystem);

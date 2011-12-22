@@ -1,18 +1,18 @@
 <?php
-
 /**
  * @file
  * Provides installation functions for video.module.
  *
  * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
  *                              <heshanmw at gmail dot com>
- * @todo
  */
 
 /**
  * Implementation of hook_schema().
  */
 function video_schema() {
+  $schema = array();
+  
   $schema['video_files'] = array(
     'description' => t('Store video transcoding queue'),
     'fields' => array(
@@ -74,6 +74,34 @@ function video_schema() {
     ),
     'primary key' => array('vid'),
   );
+
+  $schema['video_preset_settings'] = array(
+    'description' => t('Stores preset settings per transcoder'),
+    'fields' => array(
+      'preset' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'default' => '',
+        'description' => t('The unique key of the preset'),
+        'not null' => TRUE,
+      ),
+      'transcoder' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'default' => '',
+        'description' => t('The unique key of the transcoder'),
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => t('The serialized settings'),
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('preset', 'transcoder'),
+  );
+
   return $schema;
 }
 
@@ -82,6 +110,13 @@ function video_schema() {
  */
 function video_install() {
   drupal_install_schema('video');
+  
+  // Add legacy 4.x presets
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'hq_flash', 'video_ffmpeg', 'a:3:{s:8:"commands";a:1:{i:0;s:84:"!cmd_path -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile";}s:11:"useflvtool2";i:1;s:14:"useqtfaststart";i:0;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_mp4', 'video_ffmpeg', 'a:3:{s:8:"commands";a:2:{i:0;s:128:"!cmd_path -strict experimental -y -i !videofile -pass 1 -vcodec libx264 -b 500k -threads 0 -vpre slow_firstpass -an !convertfile";i:1;s:135:"!cmd_path -strict experimental -y -i !videofile -pass 2 -vcodec libx264 -b 500k -threads 0 -vpre slow -acodec aac -ab 128k !convertfile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:1;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_ogv', 'video_ffmpeg', 'a:3:{s:8:"commands";a:1:{i:0;s:91:"ffmpeg2theora --videobitrate 500 --max_size !widthx!height --output !convertfile !videofile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:0;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_webm', 'video_ffmpeg', 'a:3:{s:8:"commands";a:2:{i:0;s:174:"!cmd_path -pass 1 -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -an -f webm -y NUL";i:1;s:198:"!cmd_path -y -pass 2 -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -acodec libvorbis -ac 2 -y !convertfile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:0;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'iphone_mov', 'video_ffmpeg', 'a:3:{s:8:"commands";a:1:{i:0;s:183:"!cmd_path -strict experimental -i !videofile -f mp4 -vcodec mpeg4 -maxrate 1000k -b 700k -qmin 3 -qmax 5 -bufsize 4096k -g 300 -acodec aac -ab 192k -s 320x240 -aspect 4:3 !convertfile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:1;}');
 }
 
 /**
@@ -98,7 +133,6 @@ function video_uninstall() {
 
   variable_del('vid_filesystem');
   variable_del('vid_convertor');
-  variable_del('vid_metadata');
   variable_del('vid_preset');
 }
 
@@ -252,5 +286,67 @@ function video_update_6407() {
       db_add_column($ret, 'video_files', 'data', 'text', array('null' => TRUE));
       break;
   }
+  return $ret;
+}
+
+/**
+ * Create the video_preset_settings table and populate with legacy preset settings.
+ */
+function video_update_6500() {
+  $table = array(
+    'description' => t('Stores preset settings per transcoder'),
+    'fields' => array(
+      'preset' => array(
+        'type' => 'varchar',
+        'length' => '30',
+        'default' => '',
+        'description' => t('The unique key of the preset'),
+        'not null' => FALSE,
+      ),
+      'transcoder' => array(
+        'type' => 'varchar',
+        'length' => '30',
+        'default' => '',
+        'description' => t('The unique key of the transcoder'),
+        'not null' => FALSE,
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => t('The serialized settings'),
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('preset', 'transcoder'),
+  );
+
+  $ret = array();
+  
+  db_create_table($ret, 'video_preset_settings', $table);
+  
+  // Add legacy 4.x presets
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'hq_flash', 'video_ffmpeg', 'a:3:{s:8:"commands";a:1:{i:0;s:84:"!cmd_path -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 !convertfile";}s:11:"useflvtool2";i:1;s:14:"useqtfaststart";i:0;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_mp4', 'video_ffmpeg', 'a:3:{s:8:"commands";a:2:{i:0;s:128:"!cmd_path -strict experimental -y -i !videofile -pass 1 -vcodec libx264 -b 500k -threads 0 -vpre slow_firstpass -an !convertfile";i:1;s:135:"!cmd_path -strict experimental -y -i !videofile -pass 2 -vcodec libx264 -b 500k -threads 0 -vpre slow -acodec aac -ab 128k !convertfile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:1;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_ogv', 'video_ffmpeg', 'a:3:{s:8:"commands";a:1:{i:0;s:91:"ffmpeg2theora --videobitrate 500 --max_size !widthx!height --output !convertfile !videofile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:0;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_webm', 'video_ffmpeg', 'a:3:{s:8:"commands";a:2:{i:0;s:174:"!cmd_path -pass 1 -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -an -f webm -y NUL";i:1;s:198:"!cmd_path -y -pass 2 -threads 16  -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -i !videofile -vcodec libvpx -b 204800 -s !widthx!height -aspect 4:3 -acodec libvorbis -ac 2 -y !convertfile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:0;}');
+  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'iphone_mov', 'video_ffmpeg', 'a:3:{s:8:"commands";a:1:{i:0;s:183:"!cmd_path -strict experimental -i !videofile -f mp4 -vcodec mpeg4 -maxrate 1000k -b 700k -qmin 3 -qmax 5 -bufsize 4096k -g 300 -acodec aac -ab 192k -s 320x240 -aspect 4:3 !convertfile";}s:11:"useflvtool2";i:0;s:14:"useqtfaststart";i:1;}');
+  
+  // Transform vid_preset variable to something that does not have a 0 as potential value
+  $presets = variable_get('vid_preset', array('hq_flash'));
+  $presets = array_diff($presets, array(0));
+  $presets = array_values($presets);
+  variable_set('vid_preset', $presets);
+  
+  // Rename metadata settings
+  variable_set('video_dimensions', variable_get('video_metadata_dimensions', video_default_dimensions()));
+  variable_set('video_flvtool2_path', variable_get('video_metadata_path', '/usr/bin/flvtool2'));
+  
+  // Remove old settings
+  variable_del('vid_metadata');
+  variable_del('video_metadata');
+  variable_del('video_metadata_dimensions');
+  variable_del('video_metadata_path');
+  variable_del('video_ffmpeg_enable_faststart');
+  
   return $ret;
 }

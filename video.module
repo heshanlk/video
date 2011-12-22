@@ -91,15 +91,14 @@ function video_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 3,
   );
-  $items['admin/settings/video/metadata'] = array(
-    'title' => 'Metadata',
-    'description' => 'Configure your metadata settings.',
+  $items['admin/settings/video/presets/%video_preset'] = array(
+    'title' => 'Configure preset',
+    'description' => 'Configure a preset for the current transcoder.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_metadata_admin_settings'),
+    'page arguments' => array('video_preset_admin_configure', 4),
     'access arguments' => array('administer site configuration'),
     'file' => 'video.admin.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 4,
+    'type' => MENU_CALLBACK,
   );
 
   $items['admin/settings/video/filesystem'] = array(
@@ -126,6 +125,14 @@ function video_menu() {
 
 
   return $items;
+}
+
+function video_preset_load($presetname) {
+  module_load_include('inc', 'video', 'includes/preset');
+  $video_preset = new video_preset();
+  $presets = $video_preset->getAllPresets();
+
+  return isset($presets[$presetname]) ? $presets[$presetname] : FALSE;
 }
 
 /**

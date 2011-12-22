@@ -38,9 +38,8 @@
 7. Setup players for the video types you would like to use
 8. Select and configure your transcoder
 9. If you are going to use ffmpeg transcoding, select at least one preset
-10. Enable flvtool2 metadata generation if you have flvtool2 and are going to convert to flv
-11. Configure S3 storage if you intend to use it
-12. Configure cron. If you do not want to use cron to convert videos, see below for an alternative
+10 Configure S3 storage if you intend to use it
+11. Configure cron. If you do not want to use cron to convert videos, see below for an alternative
 
 ## Installing the Zencoder library
 

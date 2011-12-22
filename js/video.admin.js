@@ -10,12 +10,6 @@ $(document).ready(function() {
   });
 
   // change metadata options
-  video_hide_all__metadata_options();
-  $("input[name='vid_metadata']").change(function() {
-    video_hide_all__metadata_options();
-  });
-
-  // change metadata options
   video_hide_all__filesystem_options();
   $("input[name='vid_filesystem']").change(function() {
     video_hide_all__filesystem_options();
@@ -64,16 +58,6 @@ function videoftp_thumbnail_change() {
     if($(this).is(':checked')) {
       var holder = $(this).attr('rel');
       $('.'+holder+' img').attr('src', Drupal.settings.basePath + path);
-    }
-  });
-}
-
-function video_hide_all__metadata_options() {
-  $("input[name='vid_metadata']").each(function() {
-    var id = $(this).val();
-    $('#'+id).hide();
-    if ($(this).is(':checked')) {
-      $('#' + id).show();
     }
   });
 }

@@ -63,77 +63,22 @@ class video_zencoder_api {
 
     // construct the output array with the presets
     $zc_outputs = array();
-    foreach ($file->presets as $name => $preset) {
-      $zc_output = array();
-      $quality = $preset['quality'];
-      $speed = $preset['speed'];
-      $upscale = $preset['upscale'];
-      $stretch = $preset['stretch'];
-      $frame_rate = $preset['frame_rate'];
-      $max_frame_rate = $preset['max_frame_rate'];
-      $keyframe_interval = $preset['keyframe_interval'];
-      $video_bitrate = $preset['video_bitrate'];
-      $bitrate_cap = $preset['bitrate_cap'];
-      $buffer_size = $preset['buffer_size'];
-      $h264_profile = $preset['h264_profile'];
-      $h264_level = $preset['h264_level'];
-      $skip_video = $preset['skip_video'];
-      $audio_codec = $preset['audio_codec'];
-      $audio_bitrate = $preset['audio_bitrate'];
-      $audio_channels = $preset['audio_channels'];
-      $audio_sample_rate = $preset['audio_sample_rate'];
-      $skip_audio = $preset['skip_audio'];
-      $start_clip = $preset['start_clip'];
-      $clip_length = $preset['clip_length'];
-
-      $zc_output['label'] = 'VIDEO_'. $name .'_'. $file->fid;
-      $zc_output['url'] = $output_url_prefix . $preset['extension'];
-      $zc_output['public'] = $public;
-      $zc_output['width'] = $dimensions[0];
-      $zc_output['height'] = $dimensions[1];
-
-      if (!empty($quality))
-        $zc_output['quality'] = $quality;
-      if (!empty($speed))
-        $zc_output['speed'] = $speed;
-      if (!empty($upscale))
-        $zc_output['upscale'] = $upscale;
-      if (!empty($frame_rate))
-        $zc_output['frame_rate'] = $frame_rate;
-      if (!empty($max_frame_rate))
-        $zc_output['max_frame_rate'] = $max_frame_rate;
-      if (!empty($keyframe_interval))
-        $zc_output['keyframe_interval'] = $keyframe_interval;
-      if (!empty($video_bitrate))
-        $zc_output['video_bitrate'] = $video_bitrate;
-      if (!empty($bitrate_cap))
-        $zc_output['bitrate_cap'] = $bitrate_cap;
-      if (!empty($buffer_size))
-        $zc_output['buffer_size'] = $buffer_size;
-      if (!empty($h264_profile))
-        $zc_output['h264_profile'] = $h264_profile;
-      if (!empty($h264_level))
-        $zc_output['h264_level'] = $h264_level;
-      if (!empty($skip_video))
-        $zc_output['skip_video'] = $skip_video;
-      if (!empty($audio_codec))
-        $zc_output['audio_codec'] = $audio_codec;
-      if (!empty($audio_bitrate))
-        $zc_output['audio_bitrate'] = $audio_bitrate;
-      if (!empty($audio_channels))
-        $zc_output['audio_channels'] = $audio_channels;
-      if (!empty($audio_sample_rate))
-        $zc_output['audio_sample_rate'] = $audio_sample_rate;
-      if (!empty($skip_audio))
-        $zc_output['skip_audio'] = $skip_audio;
-      if (!empty($start_clip))
-        $zc_output['start_clip'] = $start_clip;
-      if (!empty($clip_length))
-        $zc_output['clip_length'] = $clip_length;
-
-      //notifications
-      $zc_output['notifications'] = $notifications;
-      $zc_outputs[] = $zc_output;
+    foreach ($file->presets as $preset) {
+      $settings = $preset->getSettings();
+      
+      if (array_key_exists('additional_settings', $settings)) {
+        $settings = array_merge($settings, $settings['additional_settings']);
+        unset($settings['additional_settings']);
+      }
+      
+      $settings['label'] = 'VIDEO_'. $preset->get_value() .'_'. $file->fid;
+      $settings['url'] = $output_url_prefix . $preset->getExtension();
+      $settings['public'] = $public;
+      $settings['width'] = intval($dimensions[0]);
+      $settings['height'] = intval($dimensions[1]);
+      $settings['notifications'] = $notifications;
+      
+      $zc_outputs[] = $settings;
     }
 
     // Add thumbnails
