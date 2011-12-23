@@ -86,7 +86,12 @@ function video_general_admin_settings() {
  * Video player admin settings
  * @return <type>
  */
-function video_players_admin_settings() {
+function video_players_admin_settings($form_state) {
+  // Check for SWF Tools and Amazon S3 Private URLs
+  if (module_exists('video_s3') && module_exists('swftools') && variable_get('vid_filesystem', NULL) == 'video_s3' && variable_get('amazon_s3_private', FALSE)) {
+    drupal_set_message(t('Using the Flowplayer FLV player via SWF Tools does not work when the S3 %setting-name setting is turned on. Install and enable the <a href="@flowplayer-api-url">Flowplayer API</a> module to use Flowplayer.', array('%setting-name' => t('Enable private file storage'), '@flowplayer-api-url' => 'http://drupal.org/project/flowplayer')), 'warning');
+  }
+
   $form = array();
   $form['extensions'] = array(
     '#type' => 'fieldset',
