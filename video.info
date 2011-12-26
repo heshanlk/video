@@ -1,8 +1,7 @@
-
 name = Video
 description = Allows Creation of CCK Video Fields.
 package = "Video"
 dependencies[] = content
 dependencies[] = filefield
 core = 6.x
-version = 6.x-4.x-dev
+version = 6.x-5.x-dev
