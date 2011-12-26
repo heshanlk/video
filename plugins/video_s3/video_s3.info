@@ -2,5 +2,6 @@ name = Amazon S3 on Video
 description = Leverages the Video module and Amazon Simple Storage Service (Amazon S3) to serve and store your video's saving bandwidth.
 package = "Video"
 dependencies[] = video
+php = 5.2
 core = 6.x
 version = 6.x-5.x-dev

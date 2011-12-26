@@ -3,5 +3,6 @@ description = Allows Creation of CCK Video Fields.
 package = "Video"
 dependencies[] = content
 dependencies[] = filefield
+php = 5.2
 core = 6.x
 version = 6.x-5.x-dev
