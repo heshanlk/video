@@ -1,4 +1,4 @@
-# Installing Video Module 4 for Drupal 6
+# Installing Video Module 5 for Drupal 6
 
 ## Requirements
 

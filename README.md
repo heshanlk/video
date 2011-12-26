@@ -1,4 +1,4 @@
-# Video Module 4 for Drupal 6
+# Video Module 5 for Drupal 6
 
 ## Introduction
 
