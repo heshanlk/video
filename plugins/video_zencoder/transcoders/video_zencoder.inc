@@ -1,8 +1,7 @@
 <?php
-
 /*
  * @file
- * Transcoder class file to handle ffmpeg_wrapper settings and conversions.
+ * Transcoder class file to handle Zencoder settings and conversions.
  * @TODO
  * - Cancel transcode job when delete.
  * - Add number of cronjobs pertime  set to 5 now.
@@ -10,7 +9,6 @@
  * - Add a metadata extractor class to extract width and height
  *
  */
-
 module_load_include('inc', 'video', 'includes/transcoder');
 
 class video_zencoder implements transcoder_interface {
