@@ -22,6 +22,10 @@ function drush_video_scheduler() {
   $limit = (int) drush_get_option('limit', variable_get('video_ffmpeg_instances', 5));
   $GLOBALS['conf']['video_ffmpeg_instances'] = $limit;
 
+  // Initialize the theme so it does not initialize during the script,
+  // when the working directory may have been changed.
+  init_theme();
+
   // include our conversion class (also contains our defines)
   module_load_include('inc', 'video', 'includes/conversion');
   $video_conversion = new video_conversion;
