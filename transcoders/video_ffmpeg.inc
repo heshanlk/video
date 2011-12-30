@@ -704,6 +704,7 @@ class video_ffmpeg implements transcoder_interface {
       '#title' => t('Notes'),
       '#value' =>
         '<p>'. t('The commands are executed in a temporary directory that is removed after the conversion has completed.') .'<br/>'.
+               t('If you are using FFmpeg to transcode large videos, consider adding <code>-nostats</code> to your command line(s) to reduce memory usage while transcoding.') .'<br/>'.
                t('Submit this form and revisit this page to add more commands.') .'</p>'.
         '<p>'. t('You can use the following replacement variables in your commands:') .'</p>'.
         theme('item_list', array(
