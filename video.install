@@ -103,6 +103,28 @@ function video_uninstall() {
 }
 
 /**
+* Implementation of hook_requirements().
+*/
+function video_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+
+  $fs = variable_get('vid_filesystem', 'drupal');
+  $downloads = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
+
+  if ($downloads == FILE_DOWNLOADS_PRIVATE && $fs == 'drupal') {
+    $requirements['video_filesystem'] = array(
+      'title' => $t('Video module settings'),
+      'description' => $t('Storing videos in the Drupal file system is not supported when using <a href="@filesystem">private downloads</a>.', array('@filesystem' => url('admin/settings/file-system'))),
+      'value' => l($t('Change setting'), 'admin/settings/video/filesystem'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+
+  return $requirements;
+}
+
+/**
  * Update 6405
  * dropping video_rendering table and creating video_files
  * @return <type>
