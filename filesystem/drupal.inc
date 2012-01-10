@@ -1,13 +1,12 @@
 <?php
-
 /*
  * @file
- * Class file used to store filesystem on the video.
+ * Class file used to store videos on the local disk.
  *
  */
 class drupal implements filesystem_interface {
   protected $params = array();
-  protected $name = 'Drupal File System';
+  protected $name = 'Drupal file system';
   protected $value = 'drupal';
 
   public function __construct() {
@@ -31,7 +30,7 @@ class drupal implements filesystem_interface {
    * @see sites/all/modules/video/includes/filesystem_interface#get_help()
    */
   public function get_help() {
-    return t('Drupal filesystem', array());
+    return l(t('Drupal file system'), 'admin/settings/file-system');
   }
 
   /**

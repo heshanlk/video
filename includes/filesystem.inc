@@ -31,7 +31,7 @@ class video_filesystem {
     if (class_exists($filesystem)) {
       $this->filesystem = new $filesystem;
     } else {
-      drupal_set_message(t('The filesystem is not configured properly.'), 'error');
+      drupal_set_message(t('The file system is not configured properly.'), 'error');
     }
   }
 
@@ -51,7 +51,7 @@ class video_filesystem {
     $options = $this->_filesystem();
     $form['vid_filesystem'] = array(
       '#type' => 'radios',
-      '#title' => t('Video Filesystem'),
+      '#title' => t('Video file system'),
       '#default_value' => variable_get('vid_filesystem', 'drupal'),
       '#options' => $options['radios'],
       '#description' => t('!list', array('!list' => theme('item_list', $options['help']))),

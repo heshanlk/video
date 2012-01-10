@@ -1,7 +1,7 @@
 <?php
 /*
  * @file
- * Class file used to store filesystem on the video.
+ * Class file used to store videos in Amazon S3.
  *
  */
 class video_s3 implements filesystem_interface {

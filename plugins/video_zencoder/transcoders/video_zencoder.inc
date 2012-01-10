@@ -236,7 +236,7 @@ class video_zencoder implements transcoder_interface {
     $zencoder_api = isset($form_state['values']['video_zencoder_api_key']) ? $form_state['values']['video_zencoder_api_key'] : NULL;
     if (!empty($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder') {
       if (variable_get('vid_filesystem', 'drupal') != 'video_s3') {
-        form_set_error('video_zencoder', t('You must enable Amazon S3 at !link.', array('!link' => l(t('FileSystem'), 'admin/settings/video/filesystem'))));
+        form_set_error('video_zencoder', t('You must enable Amazon S3 at !link.', array('!link' => l(t('the File System tab'), 'admin/settings/video/filesystem'))));
       }
       return;
     }
