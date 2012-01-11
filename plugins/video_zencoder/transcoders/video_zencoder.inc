@@ -89,8 +89,8 @@ class video_zencoder implements transcoder_interface {
       $video_s3->dimensions = $video->dimensions;
       $video_s3->presets = $video->presets;
 
-      module_load_include('inc', 'video_zencoder', '/includes/zencoder');
-      $zc = new video_zencoder_api;
+      module_load_include('lib.inc', 'video_zencoder');
+      $zc = new video_zencoder_api();
       
       if ($encoding_job = $zc->create($video_s3)) {
         // Update our table.
@@ -256,8 +256,8 @@ class video_zencoder implements transcoder_interface {
 
     // get the API key from zencoder and save it to variable
     if (!$errors) {
-      module_load_include('inc', 'video_zencoder', '/includes/zencoder');
-      $zc = new video_zencoder_api;
+      module_load_include('lib.inc', 'video_zencoder');
+      $zc = new video_zencoder_api();
 
       $result = $zc->create_user($form_state['values']['zencoder_username']);
       if ($result !== true) {
