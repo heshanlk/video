@@ -175,7 +175,7 @@ class video_amazon_s3 {
     // sense to do this more often than the Expires offset.
     $expires_offset = variable_get('amazon_s3_expires_offset', 604800);
     if ($expires_offset !== 'none' && $expires_offset != 0 && variable_get('amazon_s3_expires_last_cron', 0) + $expires_offset < time()) {
-      $active = db_query('SELECT bucket, filename FROM {video_s3} WHERE status = %d', VIDEO_S3_COMPLETE);
+      $active = db_query('SELECT bucket, filename, filepath FROM {video_s3} WHERE status = %d', VIDEO_S3_COMPLETE);
       $headers = array('Expires' => gmdate('r', time() + $expires_offset));
       // Note that Cache-Control headers are always relative values (X seconds
       // in the future from the point they are sent), so we don't need to update
@@ -191,10 +191,16 @@ class video_amazon_s3 {
         $headers['Cache-Control'] = 'max-age=' . $cc;
       }
       while ($file = db_fetch_object($active)) {
-        $this->update_headers($file->bucket, $file->filename, $headers);
+        $filepath = $file->filepath;
+        // For old video's (pre-4.5), the filename property is actually the path we need
+        if (strpos('/', $file->filename) !== FALSE) {
+          $filepath = $file->filename;
+        }
+        $this->update_headers($file->bucket, $filepath, $headers);
       }
+      
+      variable_set('amazon_s3_expires_last_cron', time());
     }
-    variable_set('amazon_s3_expires_last_cron', time());
   }
 
   private function pushFile(stdClass $file) {
