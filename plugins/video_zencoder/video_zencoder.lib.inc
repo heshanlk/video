@@ -1,13 +1,9 @@
 <?php
-
 /*
  * @file
  * Class file to handle amazon s3 transfers.
  *
  */
-
-// Include our class file.
-require_once('Zencoder.php');
 
 define('VIDEO_ZC_PENDING', 0);
 define('VIDEO_ZC_WORKING', 1);
@@ -18,17 +14,38 @@ class video_zencoder_api {
   private $access_key;
   private $limit;
   private $bucket;
+  
+  /**
+   * @var Services_Zencoder
+   */
+  private $zencoder;
 
   public function __construct() {
-    $this->access_key = variable_get('video_zencoder_api_key', '');
+    // Create the Zencoder class
+    $libpath = libraries_get_path('zencoder');
+    $libfile = $libpath .'/Services/Zencoder.php';
+
+    if (!file_exists($libfile)) {
+      drupal_set_message(t('The Zencoder library has not been installed correctly. See the <a href="@drupal-status-page">Drupal status page</a> for more information.', array('@drupal-status-page' => url('admin/reports/status'))), 'error');
+      return;
+    }
+
+    $this->access_key = variable_get('video_zencoder_api_key', NULL);
     $this->limit = variable_get('amazon_s3_limit', 5);
     $this->bucket = variable_get('amazon_s3_bucket', '');
+
+    require_once $libfile;
+    $this->zencoder = new Services_Zencoder($this->access_key);
   }
 
   /**
    * create transcoding job on Zencoder.com
    */
   public function create($file) {
+    if ($this->zencoder == NULL) {
+      return FALSE;
+    }
+
     // dimensions
     $dimensions = explode('x', $file->dimensions);
 
@@ -125,10 +142,10 @@ class video_zencoder_api {
     $final_thumb_path = file_directory_path() .'/'. $video_thumb_path .'/'. $file->fid;
 
     $zc_outputs[0]['thumbnails'] = array(
-       'number' => intval(variable_get('video_thumbs', 5)),
-       'size' => variable_get('video_thumbs_size', '160x120'),
-       'base_url' => 's3://'. $this->bucket .'/'. $final_thumb_path,
-       'prefix' => $file->fid,
+      'number' => intval(variable_get('video_thumbs', 5)),
+      'size' => variable_get('video_thumbs_size', '160x120'),
+      'base_url' => 's3://'. $this->bucket .'/'. $final_thumb_path,
+      'prefix' => $file->fid,
     );
 
     $encoding_job_json = array(
@@ -137,47 +154,51 @@ class video_zencoder_api {
       'outputs' => $zc_outputs,
     );
 
-    $encoding_job = new ZencoderJob(json_encode($encoding_job_json));
-
-    // Check if it worked
-    if (!$encoding_job->created) {
-      watchdog('zencoder', 'Zencoder reports errors while converting %file:<br/>!errorlist', array('%file' => $file->filename, '!errorlist' => theme('item_list', $encoding_job->errors)), WATCHDOG_ERROR);
+    try {
+      return $this->zencoder->jobs->create($encoding_job_json);
+    }
+    catch (Services_Zencoder_Exception $e) {
+      watchdog('zencoder', 'Zencoder reports errors while converting %file:<br/>!errorlist', array('%file' => $file->filename, '!errorlist' => theme('item_list', $e->getErrors())), WATCHDOG_ERROR);
       return FALSE;
     }
-
-    return $encoding_job;
   }
 
   /**
    * Create Zencoder user account
    */
   public function create_user($email) {
-    $request = new ZencoderRequest(
-      'https://app.zencoder.com/api/account',
-      false, // API key isn't needed for new account creation
-      array(
+    if ($this->zencoder == NULL) {
+      return FALSE;
+    }
+
+    try {
+      // $result is Services_Zencoder_Account
+      $result = $this->zencoder->accounts->create(array(
         'terms_of_service' => '1',
         'email' => $email,
         'affiliate_code' => 'drupal-video',
-      )
-    );
-
-    if ($request->successful) {
-      $results = $request->results;
-      $results['email'] = $email;
-      variable_set('video_zencoder_api_key', $results['api_key']);
-      $message = drupal_mail('video_zencoder', 'video_zencoder', $email, language_default(), $results);
+      ));
+      
+      $params = array(
+        'email' => $email,
+        'api_key' => $result->api_key,
+        'password' => $result->password,
+      );
+      
+      variable_set('video_zencoder_api_key', $result->api_key);
+      $message = drupal_mail('video_zencoder', 'video_zencoder', $email, language_default(), $params);
       if (!$message['result']) {
         drupal_set_message(t('Unable to send e-mail!. Your Zencoder Details are as below.<br/> <b>API Key</b> : !api_key<br/> <b>Password</b> : !password<br/>', array('!api_key' => $results['api_key'], '!password' => $results['password'])), 'status');
       }
       else {
         drupal_set_message(t('Your account has been created and is ready to start processing on Zencoder'));
       }
-      return true;
+
+      return TRUE;
     }
-    else {
+    catch (Services_Zencoder_Exception $e) {
       $errors = '';
-      foreach ($request->errors as $error) {
+      foreach ($e->getErrors() as $error) {
         if ($error == 'Email has already been taken') {
           drupal_set_message(t('Your account already exists on Zencoder. So !login to here and enter API key below.', array('!login' => l(t('login'), 'https://app.zencoder.com/session/new'))));
           variable_set('video_zencoder_api_key', 'Please enter your API Key');
@@ -185,7 +206,7 @@ class video_zencoder_api {
         }
         $errors .= $error;
       }
-      
+
       return $errors;
     }
   }

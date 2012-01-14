@@ -92,6 +92,69 @@ function video_zencoder_uninstall() {
   // TODO : Delete our variables.
 }
 
+/**
+* Implementation of hook_requirements().
+*/
+function video_zencoder_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+  
+  if (!module_exists('libraries')) {
+    $requirements['video_zencoder_libraries'] = array(
+      'title' => $t('Video Zencoder requirements'),
+      'description' => $t('The <a href="@libraries-url">Libraries API</a> module is required to use the Video Zencoder module since version 4.8.', array('@libraries-url' => 'http://drupal.org/project/libraries')),
+      'value' => l($t('Download'), 'http://drupal.org/project/libraries'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+  else {
+    $path = libraries_get_path('zencoder');
+    $file = $path .'/Services/Zencoder.php';
+
+    if (!is_dir($path)) {
+      $requirements['video_zencoder_librarys'] = array(
+        'title' => $t('Video Zencoder library'),
+        'description' => $t('The <a href="@zencoder-library-url">Zencoder API library</a> must be installed to %libpath to use Zencoder to transcode videos.', array('@zencoder-library-url' => 'https://github.com/zencoder/zencoder-php', '%libpath' => $path)),
+        'value' => l($t('Download'), 'https://github.com/zencoder/zencoder-php'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    elseif (!is_file($file)) {
+      $requirements['video_zencoder_librariy'] = array(
+        'title' => $t('Video Zencoder library'),
+        'description' => $t('The directory %libpath is found, but the <a href="@zencoder-library-url">Zencoder API library</a> does not appear to be installed correctly, as the file %libfile is not found. Check if the library archive has been extracted correctly.', array('@zencoder-library-url' => 'https://github.com/zencoder/zencoder-php', '%libpath' => $path, '%libfile' => $file)),
+        'value' => l($t('Download'), 'https://github.com/zencoder/zencoder-php'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    else {
+      require_once $file;
+      
+      // Instantiate the Zencoder API to catch errors during initialization
+      try {
+        $temp = new Services_Zencoder();
+        
+        $version = str_replace('ZencoderPHP v', '', Services_Zencoder::USER_AGENT);
+        
+        $requirements['video_zencoder_library'] = array(
+          'title' => $t('Video Zencoder library'),
+          'value' => check_plain($version),
+          'severity' => REQUIREMENT_OK,
+        );
+      }
+      catch(Exception $e) {
+        $requirements['video_zencoder_library'] = array(
+          'title' => $t('Video Zencoder library'),
+          'value' => $e->getMessage(),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+    }
+  }
+
+  return $requirements;
+}
+
 // ALTER TABLE `video_zencoder` ADD `dimensions` VARCHAR( 255 ) NULL AFTER `filesize` ;
 /**
  * Update 6401

@@ -103,8 +103,8 @@ function video_menu() {
   );
 
   $items['admin/settings/video/filesystem'] = array(
-    'title' => 'Filesystem',
-    'description' => 'Configure your filesystem settings.',
+    'title' => 'File System',
+    'description' => 'Configure your file system settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_filesystem_admin_settings'),
     'access arguments' => array('administer site configuration'),
@@ -343,7 +343,7 @@ function video_file_delete($file) {
   $transcoder = new video_transcoder;
   $transcoder->delete_job($file);
 
-  // TODO: Move this to the filesystem class
+  // TODO: Move this to the file system class
   // Now lets delete our video thumbnails and folder.
   $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
   $thumb_folder = file_directory_path() .'/'. $video_thumb_path .'/'. $file->fid .'/';
@@ -487,4 +487,21 @@ function video_thumb_path($video = NULL, $checkexistence = TRUE) {
 
 function video_add_adminjs() {
   drupal_add_js(drupal_get_path('module', 'video') .'/js/video.admin.js');
+}
+
+/**
+* Reconnect to the database after a long transcode to prevent
+* "MySQL server has gone away" errors.
+*/
+function _video_db_reconnect() {
+  global $db_url, $db_type, $active_db;
+
+  if (is_array($db_url)) {
+    $connect_url = array_key_exists($active_name, $db_url) ? $db_url[$active_name] : $db_url['default'];
+  }
+  else {
+    $connect_url = $db_url;
+  }
+
+  $active_db = db_connect($connect_url);
 }

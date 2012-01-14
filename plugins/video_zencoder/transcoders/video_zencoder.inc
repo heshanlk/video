@@ -63,7 +63,7 @@ class video_zencoder implements transcoder_interface {
 
   public function convert_video($video) {
     // load the S3 lib
-    module_load_include('inc', 'video_s3', 'includes/amazon_s3');
+    module_load_include('lib.inc', 'video_s3');
     $s3 = new video_amazon_s3();
 
     // get the active jobs and check for the status
@@ -85,17 +85,17 @@ class video_zencoder implements transcoder_interface {
 
     // If we have a video lets go ahead and send it.
     if ($video_s3 != NULL) {
-      //$this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
       $video_s3->dimensions = $video->dimensions;
       $video_s3->presets = $video->presets;
 
-      module_load_include('inc', 'video_zencoder', '/includes/zencoder');
-      $zc = new video_zencoder_api;
-      
+      module_load_include('lib.inc', 'video_zencoder');
+      $zc = new video_zencoder_api();
+
       if ($encoding_job = $zc->create($video_s3)) {
         // Update our table.
         $video->vid = $video->vid;
-        
+
         //job id
         $video->jobid = $encoding_job->id;
         $outputs = new stdClass();
@@ -103,7 +103,6 @@ class video_zencoder implements transcoder_interface {
           $outputs->{$output->id}->id = $output->id;
           $outputs->{$output->id}->label = $output->label;
           $outputs->{$output->id}->url = $output->url;
-          $outputs->{$output->id}->state = $output->state;
         }
         $video->data = serialize($outputs);
         
@@ -162,8 +161,8 @@ class video_zencoder implements transcoder_interface {
       '#type' => 'markup',
       '#value' => '<div id="video_zencoder">',
     );
-    $zencoder_api = variable_get('video_zencoder_api_key', null);
-    if (!isset($zencoder_api) && empty($zencoder_api)) {
+    $zencoder_api = variable_get('video_zencoder_api_key', NULL);
+    if (empty($zencoder_api)) {
       $form['zencoder_user'] = array(
         '#type' => 'fieldset',
         '#title' => t('Zencoder User'),
@@ -236,7 +235,7 @@ class video_zencoder implements transcoder_interface {
     $zencoder_api = isset($form_state['values']['video_zencoder_api_key']) ? $form_state['values']['video_zencoder_api_key'] : NULL;
     if (!empty($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder') {
       if (variable_get('vid_filesystem', 'drupal') != 'video_s3') {
-        form_set_error('video_zencoder', t('You must enable Amazon S3 at !link.', array('!link' => l(t('FileSystem'), 'admin/settings/video/filesystem'))));
+        form_set_error('video_zencoder', t('You must enable Amazon S3 at !link.', array('!link' => l(t('the File System tab'), 'admin/settings/video/filesystem'))));
       }
       return;
     }
@@ -256,8 +255,8 @@ class video_zencoder implements transcoder_interface {
 
     // get the API key from zencoder and save it to variable
     if (!$errors) {
-      module_load_include('inc', 'video_zencoder', '/includes/zencoder');
-      $zc = new video_zencoder_api;
+      module_load_include('lib.inc', 'video_zencoder');
+      $zc = new video_zencoder_api();
 
       $result = $zc->create_user($form_state['values']['zencoder_username']);
       if ($result !== true) {

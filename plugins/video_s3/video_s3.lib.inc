@@ -6,25 +6,34 @@
  *
  */
 
-// Include our class file.
-if (!class_exists('S3'))
-  require_once('S3.php');
-
 define('VIDEO_S3_PENDING', 1);
 define('VIDEO_S3_ACTIVE', 5);
 define('VIDEO_S3_COMPLETE', 10);
 define('VIDEO_S3_FAILED', 20);
 
 class video_amazon_s3 {
-
   private $access_key;
   private $secret_key;
   private $ssl;
   private $limit;
   private $bucket;
+  private $libfile;
+  
+  /**
+   * @var AmazonS3
+   */
   public $s3;
 
   public function __construct() {
+    // Create the Zencoder class
+    $libpath = libraries_get_path('aws');
+    $this->libfile = $libpath .'/sdk.class.php';
+    
+    if (!file_exists($this->libfile)) {
+      drupal_set_message(t('The Amazon SDK for PHP has not been installed correctly. See the <a href="@drupal-status-page">Drupal status page</a> for more information.', array('@drupal-status-page' => url('admin/reports/status'))), 'error');
+      return;
+    }
+    
     $this->access_key = variable_get('amazon_s3_access_key', '');
     $this->secret_key = variable_get('amazon_s3_secret_access_key', '');
     $this->ssl = variable_get('amazon_s3_ssl', FALSE);
@@ -36,33 +45,42 @@ class video_amazon_s3 {
     $access_key = $access_key ? $access_key : $this->access_key;
     $secret_key = $secret_key ? $secret_key : $this->secret_key;
     $ssl = $ssl ? $ssl : $this->ssl;
+
     // Make our connection to Amazon.
-    $this->s3 = new S3($access_key, $secret_key, $ssl);
+    require_once $this->libfile;
+    
+    $credential = new stdClass();
+    $credential->key = $access_key;
+    $credential->secret = $secret_key;
+    $credential->token = NULL;
+    
+    CFCredentials::set(array($credential));
+    
+    $this->s3 = new AmazonS3();
+    $this->s3->use_ssl = $ssl;
   }
 
   /*
    * Verifies the existence of a file id, returns the row or false if none found.
    */
   public function verify($fid) {
-    $sql = db_query("SELECT * FROM {video_s3} WHERE fid=%d", $fid);
-    $row = db_fetch_object($sql);
-    return $row;
+    $sql = db_query('SELECT * FROM {video_s3} WHERE fid = %d', $fid);
+    return db_fetch_object($sql);
   }
 
   /*
    * Gets a video object from the database.
    */
   public function get($fid) {
-    $sql = db_query("SELECT * FROM {video_s3} WHERE fid=%d AND status=%d", $fid, VIDEO_S3_COMPLETE);
-    $row = db_fetch_object($sql);
-    return $row;
+    $sql = db_query('SELECT * FROM {video_s3} WHERE fid = %d AND status = %d', $fid, VIDEO_S3_COMPLETE);
+    return db_fetch_object($sql);
   }
 
   /*
    * Inserts file object into the database.
    */
   public function insert($fid) {
-    db_query("INSERT INTO {video_s3} (fid, status) VALUES (%d, %d)", $fid, VIDEO_S3_PENDING);
+    db_query('INSERT INTO {video_s3} (fid, status) VALUES (%d, %d)', $fid, VIDEO_S3_PENDING);
   }
 
   /*
@@ -86,13 +104,18 @@ class video_amazon_s3 {
     if ($video = $this->verify($fid)) {
       if ($video->bucket) {
         // It has been pushed to amazon so lets remove it.
-        $this->s3->deleteObject($video->bucket, $video->filepath);
+        $filepath = $video->filepath;
+        // For old video's (pre-4.5), the filename property is actually the path we need
+        if (strpos('/', $video->filename) !== FALSE) {
+          $filepath = $video->filename;
+        }
+        $this->s3->delete_object($video->bucket, $filepath);
 
         // Remove ffmpeg converted files
         $row = db_fetch_object(db_query('SELECT data FROM {video_files} WHERE data IS NOT NULL AND fid = %d', $fid));
         if ($row) {
           foreach (unserialize($row->data) as $subvideo) {
-            $this->s3->deleteObject($video->bucket, $subvideo->filepath);
+            $this->s3->delete_object($video->bucket, $subvideo->filepath);
           }
         }
 
@@ -103,18 +126,19 @@ class video_amazon_s3 {
           if ($row) {
             foreach (unserialize($row->data) as $subvideo) {
               $parts = parse_url($subvideo->url);
-              $this->s3->deleteObject($video->bucket, ltrim($parts['path'], '/'));
+              $this->s3->delete_object($video->bucket, ltrim($parts['path'], '/'));
             }
           }
 
           // Delete thumbnails added by Zencoder
-          $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-          $thumb_folder = file_directory_path() .'/'. $video_thumb_path .'/'. $fid .'/';
-          $thumbs = $this->s3->getBucket($video->bucket, $thumb_folder);
-          if (!empty($thumbs)) {
-            foreach ($thumbs as $thumb) {
-              $this->s3->deleteObject($video->bucket, $thumb['name']);
+          $thumb_folder = video_thumb_path($video, FALSE) .'/';
+          $thumbfilenames = $this->s3->get_object_list($video->bucket, array('prefix' => $thumb_folder));
+          if (!empty($thumbfilenames)) {
+            $objects = array();
+            foreach ($thumbfilenames as $thumb) {
+              $objects[] = array('key' => $thumb);
             }
+            $this->s3->delete_objects($video->bucket, array('objects' => $objects));
           }
         }
       }
@@ -175,7 +199,9 @@ class video_amazon_s3 {
     // sense to do this more often than the Expires offset.
     $expires_offset = variable_get('amazon_s3_expires_offset', 604800);
     if ($expires_offset !== 'none' && $expires_offset != 0 && variable_get('amazon_s3_expires_last_cron', 0) + $expires_offset < time()) {
-      $active = db_query('SELECT bucket, filename FROM {video_s3} WHERE status = %d', VIDEO_S3_COMPLETE);
+      $active = db_query('SELECT bucket, filename, filepath, filemime FROM {video_s3} WHERE status = %d', VIDEO_S3_COMPLETE);
+      $permission = variable_get('amazon_s3_private', FALSE) ? AmazonS3::ACL_PRIVATE : AmazonS3::ACL_PUBLIC;
+      
       $headers = array('Expires' => gmdate('r', time() + $expires_offset));
       // Note that Cache-Control headers are always relative values (X seconds
       // in the future from the point they are sent), so we don't need to update
@@ -191,15 +217,16 @@ class video_amazon_s3 {
         $headers['Cache-Control'] = 'max-age=' . $cc;
       }
       while ($file = db_fetch_object($active)) {
-        $this->update_headers($file->bucket, $file->filename, $headers);
+        $this->update_headers($file, $permission, $headers);
       }
+      
+      variable_set('amazon_s3_expires_last_cron', time());
     }
-    variable_set('amazon_s3_expires_last_cron', time());
   }
 
   private function pushFile(stdClass $file) {
     $expires_offset = variable_get('amazon_s3_expires_offset', 604800);
-    $perm = variable_get('amazon_s3_private', FALSE) ? S3::ACL_PRIVATE : S3::ACL_PUBLIC_READ;
+    $perm = variable_get('amazon_s3_private', FALSE) ? AmazonS3::ACL_PRIVATE : AmazonS3::ACL_PUBLIC;
     $cc = variable_get('amazon_s3_cache_control_max_age', 'none');
 
     $headers = array();
@@ -208,12 +235,19 @@ class video_amazon_s3 {
       $headers['Expires'] = gmdate('r', $expires_offset == 0 ? 0 : (time() + $expires_offset));
     }
     if ($cc !== 'none') {
-      $headers['Cache-Control'] = 'max-age=' . $cc;
+      $headers['Cache-Control'] = 'max-age='. $cc;
     }
     
-    if ($this->s3->putObject($this->s3->inputFile($file->filepath), $this->bucket, $file->filepath, $perm, array(), $headers)) {
+    $response = $this->s3->create_object($this->bucket, $file->filepath, array(
+      'fileUpload' => $file->filepath,
+      'acl' => $perm,
+      'contentType' => $file->filemime,
+      'headers' => $headers,
+    ));
+    
+    if ($response->isOK()) {
       // If private, set permissions for Zencoder to read
-      if ($perm == S3::ACL_PRIVATE) {
+      if ($perm == AmazonS3::ACL_PRIVATE) {
         $this->setZencoderAccessPolicy($this->bucket, $file->filepath);
       }
 
@@ -225,13 +259,16 @@ class video_amazon_s3 {
         $this->replaceLocalFile($file->filepath, $s3url);
       }
 
+      // Do a reconnect because the transfer may take a while
+      _video_db_reconnect();
+
       $this->watchdog(
         'Successfully uploaded %file to Amazon S3 location <a href="@s3-url">@s3-path</a> and permission %permission.',
         array(
           '%file' => $file->filename,
           '@s3-url' => $s3url,
           '@s3-path' => $file->filepath,
-          '%permission' => $perm
+          '%permission' => $perm,
         ), WATCHDOG_INFO, $file);
 
       return $file;
@@ -255,27 +292,48 @@ class video_amazon_s3 {
         drupal_urlencode($filepath); // Escape spaces
     }
   }
-  
-  public function get_object_info($object) {
-    return $this->s3->getObjectInfo($this->bucket, $object);
+
+  public function get_object_info($filepath) {
+    return $this->s3->get_object_headers($this->bucket, $filepath)->isOK();
   }
 
-  public function get_authenticated_url($objectUri) {
-    $lifetime = variable_get('amazon_s3_lifetime', 1800);
-    return $this->s3->getAuthenticatedURL($this->bucket, $objectUri, $lifetime, FALSE, $this->ssl);
+  public function get_authenticated_url($filepath) {
+    $lifetime = (int)variable_get('amazon_s3_lifetime', 1800);
+    $url = $this->s3->get_object_url($this->bucket, $filepath, time() + $lifetime);
+
+    if ($this->ssl) {
+      $url = 'https://'. substr($url, 7);
+    }
+
+    return $url;
   }
 
-  public function get_object($object, $saveTo = false) {
-    return $this->s3->getObject($this->bucket, $object, $saveTo);
+  public function get_object($filepath, $saveTo = false) {
+    return $this->s3->get_object($this->bucket, $filepath, array(
+      'fileDownload' => $saveTo,
+    ));
   }
 
-  public function update_headers($bucket, $object, $headers) {
+  private function update_headers($file, $permission, $headers) {
+    $filepath = $file->filepath;
+    // For old video's (pre-4.5), the filename property is actually the path we need
+    if (strpos('/', $file->filename) !== FALSE) {
+      $filepath = $file->filename;
+    }
+    
     // Reset the Content-Type header usually sent when the S3 library puts a
     // file - we'll lose it otherwise.
-    if (!isset($headers['Content-Type'])) {
-      $headers['Content-Type'] = $this->s3->__getMimeType($object);
-    }
-    return $this->s3->copyObject($bucket, $object, $bucket, $object, variable_get('amazon_s3_private', FALSE) == FALSE ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE, array(), $headers);
+    $headers['Content-Type'] = $file->filemime;
+    
+    $item = array(
+      'bucket' => $file->bucket,
+      'filename' => $filepath,
+    );
+    
+    return $this->s3->copy_object($item, $item, array(
+      'acl' => $permission,
+      'headers' => $headers,
+    ))->isOK();
   }
 
   /**
@@ -293,25 +351,39 @@ class video_amazon_s3 {
     }
 
     if ($perm == 'auto') {
-      $perm = $filepath == '' ? 'WRITE' : 'READ';
+      $perm = empty($filepath) ? AmazonS3::GRANT_WRITE : AmazonS3::GRANT_READ;
     }
 
-    $acp = $this->s3->getAccessControlPolicy($bucket, $filepath);
-  
+    if (empty($filepath)) {
+      $acp = $this->s3->get_bucket_acl($bucket);
+    }
+    else {
+      $acp = $this->s3->get_object_acl($bucket, $filepath);
+    }
+
+    // Store existing ACLs to preserve them when adding zencoder
+    $acl = array();
+    
     // check if the acl is already present
-    foreach ($acp['acl'] as $acl) {
-      if ($acl['name'] == 'zencodertv' && $acl['permission'] == $perm) {
+    foreach ($acp->body->AccessControlList->Grant as $grant) {
+      if ($grant->Grantee->DisplayName == 'zencodertv' && $grant->Permission == $perm) {
         return NULL;
       }
+      $acl[] = array(
+        'id' => isset($grant->Grantee->URI) ? (string)$grant->Grantee->URI : (string)$grant->Grantee->ID,
+        'permission' => (string)$grant->Permission,
+      );
     }
 
-    $acp['acl'][] = array(
-      'type' => 'AmazonCustomerByEmail',
-      'email' => 'aws@zencoder.com',
-      'permission' => $perm,
-    );
+    // Add the Zencoder credentials
+    $acl[] = array('id' => 'aws@zencoder.com', 'permission' => $perm);
 
-    return $this->s3->setAccessControlPolicy($bucket, $filepath, $acp);
+    if (empty($filepath)) {
+      return $this->s3->set_bucket_acl($bucket, $acl)->isOK();
+    }
+    else {
+      return $this->s3->set_object_acl($bucket, $filepath, $acl)->isOK();
+    }
   }
   
   private function watchdog($message, $variables = array(), $severity = WATCHDOG_NOTICE, $nid = NULL) {

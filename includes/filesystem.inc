@@ -31,7 +31,7 @@ class video_filesystem {
     if (class_exists($filesystem)) {
       $this->filesystem = new $filesystem;
     } else {
-      drupal_set_message(t('The filesystem is not configured properly.'), 'error');
+      drupal_set_message(t('The file system is not configured properly.'), 'error');
     }
   }
 
@@ -40,11 +40,18 @@ class video_filesystem {
   }
 
   public function admin_settings() {
+    $fs = variable_get('vid_filesystem', 'drupal');
+    $downloads = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
+
+    if ($downloads == FILE_DOWNLOADS_PRIVATE && empty($_POST['vid_filesystem'])) {
+      drupal_set_message(t('Storing videos in the Drupal file system is not supported when using <a href="@filesystem">private downloads</a>.', array('@filesystem' => url('admin/settings/file-system'))), $fs == 'drupal' ? 'error' : 'warn');
+    }
+
     $form = array();
     $options = $this->_filesystem();
     $form['vid_filesystem'] = array(
       '#type' => 'radios',
-      '#title' => t('Video Filesystem'),
+      '#title' => t('Video file system'),
       '#default_value' => variable_get('vid_filesystem', 'drupal'),
       '#options' => $options['radios'],
       '#description' => t('!list', array('!list' => theme('item_list', $options['help']))),

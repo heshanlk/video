@@ -111,6 +111,55 @@ function video_s3_uninstall() {
   }
 }
 
+/**
+* Implementation of hook_requirements().
+*/
+function video_s3_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+  
+  if (!module_exists('libraries')) {
+    $requirements['video_s3_libraries'] = array(
+      'title' => $t('Video Amazon S3 requirements'),
+      'description' => $t('The <a href="@libraries-url">Libraries API</a> module is required to use the Video Amazon S3 module since version 4.8.', array('@libraries-url' => 'http://drupal.org/project/libraries')),
+      'value' => l($t('Download'), 'http://drupal.org/project/libraries'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+  else {
+    $path = libraries_get_path('aws');
+    $file = $path .'/sdk.class.php';
+
+    if (!is_dir($path)) {
+      $requirements['video_s3_library'] = array(
+        'title' => $t('Video Amazon S3 library'),
+        'description' => $t('The <a href="@aws-library-url">Amazon Web Services SDK</a> must be installed to %libpath to use Amazon S3 to store videos.', array('@aws-library-url' => 'http://aws.amazon.com/sdkforphp/', '%libpath' => $path)),
+        'value' => l($t('Download'), 'http://aws.amazon.com/sdkforphp/'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    elseif (!is_file($file)) {
+      $requirements['video_s3_library'] = array(
+        'title' => $t('Video Amazon S3 library'),
+        'description' => $t('The directory %libpath is found, but the <a href="@aws-library-url">Amazon Web Services SDK</a> does not appear to be installed correctly, as the file %libfile is not found. Check if the library archive has been extracted correctly.', array('@aws-library-url' => 'http://aws.amazon.com/sdkforphp/', '%libpath' => $path, '%libfile' => $file)),
+        'value' => l($t('Download'), 'http://aws.amazon.com/sdkforphp/'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    else {
+      require_once $file;
+      
+      $requirements['video_s3_library'] = array(
+        'title' => $t('Video Amazon S3 library'),
+        'value' => check_plain(CFRUNTIME_VERSION),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+  }
+
+  return $requirements;
+}
+
 function video_s3_update_6000() {
   $ret = array();
   
