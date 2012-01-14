@@ -17,8 +17,8 @@ class video_s3 implements filesystem_interface {
   public function load_file($video) {
     $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
 
-    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-    $s3 = new video_amazon_s3;
+    module_load_include('lib.inc', 'video_s3');
+    $s3 = new video_amazon_s3();
 
     if ($amazon = $s3->get($video->fid)) {
       foreach ($video->files as $key => &$file) {
@@ -189,10 +189,11 @@ class video_s3 implements filesystem_interface {
     //@todo add permissions
     //were enabled, that means they have successfully connected and created a bucket.
     if (variable_get('amazon_s3_access_key', false) && _video_s3_is_active_fs()) {
-      module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-      $s3 = new video_amazon_s3;
+      module_load_include('lib.inc', 'video_s3');
+      $s3 = new video_amazon_s3();
       $s3->connect();
-      $buckets = $s3->s3->listBuckets();
+      $buckets = $s3->s3->get_bucket_list();
+
       // Setup our header.
       $header = array(t('Bucket Name'), t('Actions'));
       $rows = array();
@@ -248,19 +249,16 @@ class video_s3 implements filesystem_interface {
     }
 
     // Lets verify our credentials and verify our bucket exists, if not attempt to create it.
-    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-    $s3 = new video_amazon_s3;
+    module_load_include('lib.inc', 'video_s3');
+    $s3 = new video_amazon_s3();
     $s3->connect($access_key, $secret_key, $ssl);
-    $buckets = $s3->s3->listBuckets();
-
-    // If the return value is false, something went wrong.
-    if ($buckets === FALSE) {
-      return;
-    }
+    $buckets = $s3->s3->get_bucket_list();
 
     if (!in_array($bucket, $buckets)) {
       // Create a bucket with public read access
-      if ($s3->s3->putBucket($bucket, S3::ACL_PUBLIC_READ)) {
+      // TODO: region selection
+      $response = $s3->s3->create_bucket($bucket, AmazonS3::REGION_US_E1, AmazonS3::ACL_PUBLIC);
+      if ($response->isOK()) {
         drupal_set_message(t('Successfully created the bucket %bucket.', array('%bucket' => $bucket)));
       }
       else {

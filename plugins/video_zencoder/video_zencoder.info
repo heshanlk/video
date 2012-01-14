@@ -4,5 +4,6 @@ description = Zencoder is a webservice to transcode videos.
 package = "Video"
 dependencies[] = video
 dependencies[] = video_s3
+dependencies[] = libraries
 core = 6.x
 version = 6.x-4.x-dev

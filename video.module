@@ -488,3 +488,20 @@ function video_thumb_path($video = NULL, $checkexistence = TRUE) {
 function video_add_adminjs() {
   drupal_add_js(drupal_get_path('module', 'video') .'/js/video.admin.js');
 }
+
+/**
+* Reconnect to the database after a long transcode to prevent
+* "MySQL server has gone away" errors.
+*/
+function _video_db_reconnect() {
+  global $db_url, $db_type, $active_db;
+
+  if (is_array($db_url)) {
+    $connect_url = array_key_exists($active_name, $db_url) ? $db_url[$active_name] : $db_url['default'];
+  }
+  else {
+    $connect_url = $db_url;
+  }
+
+  $active_db = db_connect($connect_url);
+}

@@ -49,8 +49,8 @@ function video_s3_cron() {
     return;
   }
 
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
+  module_load_include('lib.inc', 'video_s3');
+  $s3 = new video_amazon_s3();
   $s3->connect();
   // Lets run our queue.
   $s3->queue();
@@ -61,8 +61,8 @@ function video_s3_cron() {
  * we can use hook_file_delete()
  */
 function video_s3_video_delete($file) {
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
+  module_load_include('lib.inc', 'video_s3');
+  $s3 = new video_amazon_s3();
   $s3->connect();
   // Lets run our queue.
   $s3->delete($file->fid);
@@ -95,8 +95,8 @@ function video_s3_video_insert(&$element, &$form_state) {
   $file = $element['#value'];
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
   if (is_array($file) && isset($file['fid']) && !empty($file['fid'])) {
-    module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-    $s3 = new video_amazon_s3;
+    module_load_include('lib.inc', 'video_s3');
+    $s3 = new video_amazon_s3();
     $s3->connect();
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
     if (!$video = $s3->verify($file['fid'])) {
@@ -108,8 +108,8 @@ function video_s3_video_insert(&$element, &$form_state) {
 }
 
 function video_s3_get_object_info($object) {
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
+  module_load_include('lib.inc', 'video_s3');
+  $s3 = new video_amazon_s3();
   $s3->connect();
   return $s3->get_object_info($object);
 }
@@ -119,15 +119,15 @@ function video_s3_get_object_info($object) {
  * @deprecated Use video_amazon_s3::get_authenticated_url($objectUri)
  */
 function video_s3_get_authenticated_url($objectUri) {
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
+  module_load_include('lib.inc', 'video_s3');
+  $s3 = new video_amazon_s3();
   $s3->connect();
   return $s3->get_authenticated_url($objectUri);
 }
 
 function video_s3_get_object($object, $save_to = false) {
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
+  module_load_include('lib.inc', 'video_s3');
+  $s3 = new video_amazon_s3();
   $s3->connect();
   return $s3->get_object($object, $save_to);
 }
@@ -137,8 +137,8 @@ function video_s3_get_object($object, $save_to = false) {
  */
 
 function video_s3_bucket_delete($bucket) {
-  module_load_include('inc', 'video_s3', '/includes/amazon_s3');
-  $s3 = new video_amazon_s3;
+  module_load_include('lib.inc', 'video_s3');
+  $s3 = new video_amazon_s3();
   $s3->connect();
   $buckets = $s3->s3->listBuckets();
   if (is_array($buckets) && in_array($bucket, $buckets)) {

@@ -38,23 +38,30 @@ class video_ffmpeg implements transcoder_interface {
   private function run_command($command, &$output, $purpose = NULL, $ignoreoutputfilenotfound = FALSE) {
     $output = '';
     $command = $this->nice . $command .' 2>&1';
+    $purposetext = !empty($purpose) ? (' '. t('for') .' '. $purpose) : '';
 
     if ($this->logcommands) {
-      watchdog('video_ffmpeg', 'Executing ffmpeg command!purposetext: <pre>@command</pre>', array('@command' => $command, '!purposetext' => (!empty($purpose) ? ' for '. $purpose : '')), WATCHDOG_DEBUG);
+      watchdog('video_ffmpeg', 'Executing ffmpeg command!purposetext: <pre>@command</pre>', array('@command' => $command, '!purposetext' => $purposetext), WATCHDOG_DEBUG);
     }
 
     $return_var = 0;
 
+    $start = time();
     ob_start();
     passthru($command, &$return_var);
-    $output = ob_get_contents();
-    ob_end_clean();
+    $output = ob_get_clean();
+    $duration = time() - $start;
+
+    // Reconnect if the command took more than 10 seconds
+    if ($duration > 10) {
+      _video_db_reconnect();
+    }
 
     // Returnvar 1 means input file not found. This is normal for information calls.
     if ($return_var != 0 && ($return_var != 1 || !$ignoreoutputfilenotfound)) {
       watchdog('video_ffmpeg',
-      	'Error executing ffmpeg command for !purpose:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
-        array('@command' => $command, '@output' => trim($output), '!purpose' => $purpose),
+      	'Error executing ffmpeg command!purposetext:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
+        array('@command' => $command, '@output' => trim($output), '!purposetext' => $purposetext),
         WATCHDOG_ERROR);
       return FALSE;
     }

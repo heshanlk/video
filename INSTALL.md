@@ -32,7 +32,7 @@
 1. Download the module and extract it to sites/all/modules
 2. Download and install optional modules, such as Flowplayer and VideoJS
 3. Enable the Video module and Video FTP and / or Video Upload
-4. Optionally, enable Amazon S3 on Video and / or Zencoder API on Video5
+4. Optionally, enable Amazon S3 on Video and / or Zencoder API on Video5. See below for installing additional libraries.
 5. Go to Administer › Site configuration › Video 
 6. Change the General settings to match your preferences
 7. Setup players for the video types you would like to use
@@ -41,6 +41,21 @@
 10. Enable flvtool2 metadata generation if you have flvtool2 and are going to convert to flv
 11. Configure S3 storage if you intend to use it
 12. Configure cron. If you do not want to use cron to convert videos, see below for an alternative
+
+## Installing the Zencoder library
+
+1. Go to https://github.com/zencoder/zencoder-php/tags
+2. Download the Zencoder API library to sites/all/libraries/zencoder
+3. Make sure the file sites/all/libraries/zencoder/Services/Zencoder.php exists
+4. The Documentation directory is not needed
+5. The version that is known to be compatible with the Zencoder module is 2.0.2 (2012-01-11)
+
+## Installing the Amazon S3 library
+
+1. Go to http://aws.amazon.com/sdkforphp/
+2. Download the AWS SDK for PHP to sites/all/libraries/aws
+3. Make sure the file sites/all/libraries/aws/sdk.class.php exists
+4. The version that is known to be compatible with the Amazon S3 module is 1.5.0.1 (2011-12-21)
 
 ## Tips for a proper ffmpeg installation
 
@@ -56,7 +71,7 @@ The following guides will help you to get a good ffmpeg installation:
 - [Gentoo](http://www.gentoo-portage.com/media-video/ffmpeg): make sure to setup the right USE flags before installing
 - [Windows](http://www.videohelp.com/tools/ffmpeg): Windows packages
 
-## Altenative for cron
+## Alternative for cron
 
 Instead of the Drupal cron system, you can execute the video_scheduler.php script regularly
 to process pending transcode jobs.
