@@ -1,9 +1,7 @@
 <?php
-
-/*
+/**
  * @file
- * Class file to handle video conversion using ffmpeg and webservices.
- *
+ * Class file to handle video conversion
  */
 defined('VIDEO_RENDERING_PENDING') ||
     define('VIDEO_RENDERING_PENDING', 1);
@@ -15,7 +13,6 @@ defined('VIDEO_RENDERING_FAILED') ||
     define('VIDEO_RENDERING_FAILED', 20);
 
 class video_conversion {
-
   protected $transcoder;
 
   public function __construct() {
@@ -48,7 +45,7 @@ class video_conversion {
   }
 
   /**
-   * Process the video through ffmpeg.
+   * Process the video
    *
    * @param $video
    *   This can either be the file object or the file id (fid)

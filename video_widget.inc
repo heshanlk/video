@@ -318,7 +318,7 @@ function video_default_widget_settings($widget) {
     '#title' => t('Default Video Resolution Dimensions'),
     '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
     '#options' => video_explode("\n", variable_get('video_dimensions', video_default_dimensions())),
-    '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that FFMPEG will use to transcode your video files.')
+    '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that will be uses to transcode your video files.')
   );
   $form['plugins']['default_player_dimensions'] = array(
     '#type' => 'select',
@@ -329,8 +329,8 @@ function video_default_widget_settings($widget) {
   );
   $form['plugins']['autoconversion'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Enable video conversion.'),
-    '#description' => t('Use ffmpeg(Default) to automatically convert videos to web compatible types eg. FLV, Please make sure to configure your transcoder settings.'),
+    '#title' => t('Enable video conversion'),
+    '#description' => t('Automatically convert videos to web compatible types such as FLV, Please make sure to configure your transcoder settings. If this option is not enabled, the input video will be used as it is uploaded.'),
     '#default_value' => $widget['autoconversion'],
   );
 
@@ -355,7 +355,7 @@ function video_default_widget_settings($widget) {
     '#type' => 'radios',
     '#title' => t('Thumbnail Generation'),
     '#options' => $thumb_options,
-    '#description' => t('To use ffmpeg(Default) to create thumbnails, Please make sure to configure your transcoder settings before using ffmpeg to create thumbnails.'),
+    '#description' => t('Create thumbnails using the selected transcoder. Please make sure to configure your transcoder settings before enabling this option.'),
     '#default_value' => isset($widget['autothumbnail']) ? $widget['autothumbnail'] : 'no',
   );
 
@@ -455,7 +455,6 @@ function video_web_extensions($ext) {
  * Utility function that will add a preview of thumbnails for you to select when uploading videos.
  */
 function video_thumb_process(&$element) {
-  // Developed for ffmpeg support
   $file = $element['#value'];
   $delta = $file['fid'];
   $field = content_fields($element['#field_name'], $element['#type_name']);

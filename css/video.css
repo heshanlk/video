@@ -27,9 +27,9 @@
   padding-right:10px;
 }
 
-.video-ffmpeg-helper-inprogress {
+.video-helper-inprogress {
   border: 1px solid red;
-  padding: .5em;
+  padding: 0.5em;
 }
 
 /* override filefield entry */

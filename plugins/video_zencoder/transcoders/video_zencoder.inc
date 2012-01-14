@@ -527,7 +527,7 @@ watermark:
 
   public function load_job_queue() {
     // load jobs with status as pending and active both
-    $total_videos = variable_get('video_ffmpeg_instances', 5);
+    $total_videos = variable_get('video_queue_batchsize', 5);
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
             VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);

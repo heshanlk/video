@@ -10,10 +10,10 @@ player.
 ## Features
 
 - Upload files using an upload field or from a directory
-- Convert using ffmpeg or Zencoder
+- Convert using FFmpeg or Zencoder
 - Store on the server or Amazon S3
 - Display using HTML5, VideoJS, Flowplayer or native players (QuickTime, WMV)
-- Automatic thumbnail generation using ffmpeg or Zencoder
+- Automatic thumbnail generation using FFmpeg or Zencoder
 - Automatic metadata insertion using flvtool2
 - Convert to WebM, Ogg Vorbis, MOV, H.264 and/or FLV.
 

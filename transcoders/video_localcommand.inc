@@ -1,11 +1,11 @@
 <?php
 /*
  * @file
- * Transcoder class file to handle ffmpeg settings and conversions.
+ * Transcoder class file to handle local command settings and conversions.
  */
-class video_ffmpeg implements transcoder_interface {
+class video_localcommand implements transcoder_interface {
   private $name = 'Locally Installed Transcoder (FFmpeg/Handbreke/Mcoder)';
-  private $value = 'video_ffmpeg';
+  private $value = 'video_localcommand';
 
   protected $usenice;
   protected $thumbcmdoptions;
@@ -15,12 +15,12 @@ class video_ffmpeg implements transcoder_interface {
   protected $logcommands;
 
   public function __construct() {
-    $this->usenice = PHP_OS == 'Linux' && variable_get('video_ffmpeg_nice_enable', FALSE);
-    $this->thumbcmdoptions = variable_get('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
-    $this->faststartcmd = variable_get('video_ffmpeg_faststart_cmd', '/usr/bin/qt-faststart');
+    $this->usenice = PHP_OS == 'Linux' && variable_get('video_localcommand_nice_enable', FALSE);
+    $this->thumbcmdoptions = variable_get('video_localcommand_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
+    $this->faststartcmd = variable_get('video_localcommand_qtfaststart_cmd', '/usr/bin/qt-faststart');
     $this->flvtoolcmd = variable_get('video_flvtool2_path', '/usr/bin/flvtool2');
     $this->cmdpath = variable_get('video_transcoder_path', '/usr/bin/ffmpeg');
-    $this->logcommands = (bool)variable_get('video_ffmpeg_log_commands', TRUE);
+    $this->logcommands = (bool)variable_get('video_localcommand_log_commands', TRUE);
   }
 
   /**
@@ -46,7 +46,7 @@ class video_ffmpeg implements transcoder_interface {
     $purposetext = !empty($purpose) ? (' '. t('for') .' '. $purpose) : '';
 
     if ($this->logcommands) {
-      watchdog('video_ffmpeg', 'Executing command!purposetext: <pre>@command</pre>', array('@command' => $command, '!purposetext' => $purposetext), WATCHDOG_DEBUG);
+      watchdog('video_command', 'Executing command!purposetext: <pre>@command</pre>', array('@command' => $command, '!purposetext' => (!empty($purpose) ? ' for '. $purpose : '')), WATCHDOG_DEBUG);
     }
 
     $return_var = 0;
@@ -64,7 +64,7 @@ class video_ffmpeg implements transcoder_interface {
 
     // Returnvar 1 means input file not found. This is normal for information calls.
     if ($return_var != 0 && ($return_var != 1 || !$ignoreoutputfilenotfound)) {
-      watchdog('video_ffmpeg',
+      watchdog('video_command',
       	'Error executing command!purposetext:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
         array('@command' => $command, '@output' => trim($output), '!purposetext' => $purposetext),
         WATCHDOG_ERROR);
@@ -85,15 +85,14 @@ class video_ffmpeg implements transcoder_interface {
       $filename = '/video-thumb-for-'. $video['fid'] .'-'. $i .'.jpg';
       $thumbfile = $final_thumb_path . $filename;
       
-      //skip files already exists, this will save ffmpeg traffic
+      //skip files already exists, this will save time
       if (!is_file($thumbfile)) {
         if (!isset($duration)) {
           $duration = $this->get_playtime($video['filepath']);
         }
-        $seek = ($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
+        $seek = floor($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
         //setup the command to be passed to the transcoder.
         $command = $this->cmdpath .' '. strtr($this->thumbcmdoptions, array('!videofile' => escapeshellarg($video['filepath']), '!seek' => $seek, '!thumbfile' => $thumbfile));
-
         // Generate the thumbnail from the video.
         $command_output = '';
         $this->run_command($command, $command_output, t('generating thumbnails'));
@@ -113,7 +112,7 @@ class video_ffmpeg implements transcoder_interface {
           }
           
           // Log the error message and break. Other thumbnails probably will not be generated as well.
-          watchdog('video_ffmpeg', $error_msg, $params, WATCHDOG_ERROR);
+          watchdog('video_command', $error_msg, $params, WATCHDOG_ERROR);
           drupal_set_message(t($error_msg, $params), 'error');
           break;
         }
@@ -147,18 +146,18 @@ class video_ffmpeg implements transcoder_interface {
     $converteddir = $files .'/videos/converted';
 
     if (!field_file_check_directory($originaldir, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_ffmpeg', 'Video conversion failed. Could not create directory %dir for storing original videos.', array('%dir' => $originaldir), WATCHDOG_ERROR);
+      watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing original videos.', array('%dir' => $originaldir), WATCHDOG_ERROR);
       return false;
     }
     if (!field_file_check_directory($converteddir, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_ffmpeg', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
+      watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
       return false;
     }
 
     $original = $originaldir .'/'. $video->filename;
     //lets move our video and then convert it.
     if (!file_move($video, $original)) {
-      watchdog('video_ffmpeg', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
+      watchdog('video_command', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
       $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
@@ -166,10 +165,22 @@ class video_ffmpeg implements transcoder_interface {
     // Update our filepath since we moved it
     drupal_write_record('files', $video, 'fid');
 
-    // Get video information before doing a chdir
-    $dimensions = $this->dimensions($video);
-    $dimension = explode('x', $dimensions, 2);
-    $filepath = realpath($video->filepath);
+    // Get the placeholders for the transcoding command
+    $fileinfo = _video_aspect_ratio($video->filepath);
+    $dimensionparameters = $this->getDimensionParameters($video, $fileinfo);
+    $parameters = array(
+      '!cmd_path' => $this->cmdpath,
+      '!videofile' => escapeshellarg(realpath($video->filepath)),
+      '!convertfile' => NULL,
+      '!width' => $dimensionparameters->width,
+      '!height' => $dimensionparameters->height,
+      '!paddingwidth' => $dimensionparameters->paddingwidth,
+      '!paddingheight' => $dimensionparameters->paddingheight,
+      '!paddingtop' => $dimensionparameters->paddingtop,
+      '!paddingbottom' => $dimensionparameters->paddingbottom,
+      '!paddingleft' => $dimensionparameters->paddingleft,
+      '!paddingright' => $dimensionparameters->paddingright,
+    );
 
     // Make the directories absolute
     $originaldir = realpath($originaldir);
@@ -178,7 +189,7 @@ class video_ffmpeg implements transcoder_interface {
     // Create a temporary directory
     $drupaldir = getcwd();
     $drupaldirrp = realpath($drupaldir);
-    $tmpdir = tempnam(file_directory_temp(), 'ffmpeg-'. $video->fid);
+    $tmpdir = tempnam(file_directory_temp(), 'drupal-video-'. $video->fid);
     unlink($tmpdir);
     mkdir($tmpdir, 0777);
     chdir($tmpdir);
@@ -195,17 +206,12 @@ class video_ffmpeg implements transcoder_interface {
       
       //update our filename after the move to maintain filename uniqueness.
       $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) .'.'. $extension, $converteddir);
+      $parameters['!convertfile'] = escapeshellarg($outputfile);
 
       $command_output = '';
       // Setup our default command to be run.
       foreach ($settings['commands'] as $cmdnr => $command) {
-        $command = strtr($command, array(
-          '!cmd_path' => $this->cmdpath,
-          '!videofile' => escapeshellarg($filepath),
-          '!width' => intval($dimension[0]),
-          '!height' => intval($dimension[1]),
-          '!convertfile' => escapeshellarg($outputfile),
-        ));
+        $command = strtr($command, $parameters);
 
         // Process our video
         if (!$this->run_command($command, $command_output, t('rendering preset %preset, command #@cmdnr', array('%preset' => $presetname, '@cmdnr' => $cmdnr + 1)))) {
@@ -222,10 +228,13 @@ class video_ffmpeg implements transcoder_interface {
 
       // Run qt-faststart, if required
       // qt-faststart needs a temporary file
-      if (!empty($settings['useflvtool2'])) {
-        $tmpfile = $outputfile.'-qt';
+      if (!empty($settings['useqtfaststart'])) {
+        $tmpfile = $outputfile .'-qt';
         $command = $this->faststartcmd .' '. escapeshellarg($outputfile) .' '. escapeshellarg($tmpfile);
-        if ($this->run_command($command, $command_output, t('running qt-faststart'))) {
+        
+        // qt-faststart does not return an error code when it doesn't generate an output file,
+        // so also check if the output file has been generated.
+        if ($this->run_command($command, $command_output, t('running qt-faststart')) && file_exists($tmpfile)) {
           file_delete($outputfile);
           rename($tmpfile, $outputfile);
         }
@@ -236,7 +245,7 @@ class video_ffmpeg implements transcoder_interface {
 
       //lets check to make sure our file exists, if not error out
       if (!file_exists($outputfile) || ($filesize = filesize($outputfile)) === 0) {
-        watchdog('video_ffmpeg', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $presetname), WATCHDOG_ERROR);
+        watchdog('video_command', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $presetname), WATCHDOG_ERROR);
         $result = FALSE;
         break;
       }
@@ -265,7 +274,7 @@ class video_ffmpeg implements transcoder_interface {
       foreach ($converted_files as $file) {
         $destinationfiles[] = $file->filepath;
       }
-      watchdog('video_ffmpeg', 'Successfully converted %orig to !destination-files', array('%orig' => $video->filepath, '!destination-files' => implode(', ', $destinationfiles)), WATCHDOG_INFO);
+      watchdog('video_command', 'Successfully converted %orig to !destination-files', array('%orig' => $video->filepath, '!destination-files' => implode(', ', $destinationfiles)), WATCHDOG_INFO);
     }
     else {
       // Remove files that have been created
@@ -302,18 +311,22 @@ class video_ffmpeg implements transcoder_interface {
    * Return the playtime seconds of a video
    */
   public function get_playtime($video) {
-    $ffmpeg_output = $this->get_video_info($video);
-    // Get playtime
-    $pattern = '/Duration: ([0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9])/';
-    preg_match_all($pattern, $ffmpeg_output, $matches, PREG_PATTERN_ORDER);
-    $playtime = $matches[1][0];
-    // ffmpeg return length as 00:00:31.1 Let's get playtime from that
-    $hmsmm = explode(':', $playtime);
-    $tmp = explode('.', $hmsmm[2]);
-    $seconds = $tmp[0];
-    $hours = $hmsmm[0];
-    $minutes = $hmsmm[1];
-    return $seconds + ($hours * 3600) + ($minutes * 60);
+    $output = $this->get_video_info($video);
+    
+    $match = array();
+    if (preg_match('/Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9])/', $output, $match)) {
+      $hours = $match[1];
+      $minutes = $match[2];
+      $seconds = $match[3];
+      
+      if($match[4] >= 5) { // fractional seconds
+        $seconds++;
+      }
+      
+      return $seconds + ($hours * 3600) + ($minutes * 60);
+    }
+    
+    return NULL;
   }
 
   /*
@@ -321,15 +334,15 @@ class video_ffmpeg implements transcoder_interface {
    */
 
   public function get_dimensions($video) {
-    $ffmpeg_output = $this->get_video_info($video);
+    $output = $this->get_video_info($video);
     $res = array('width' => 0, 'height' => 0);
-    // Get dimensions
-    $regex = ereg('[0-9]?[0-9][0-9][0-9]x[0-9][0-9][0-9][0-9]?', $ffmpeg_output, $regs);
-    if (isset($regs[0])) {
-      $dimensions = explode("x", $regs[0]);
-      $res['width'] = $dimensions[0] ? $dimensions[0] : NULL;
-      $res['height'] = $dimensions[1] ? $dimensions[1] : NULL;
+    $match = array();
+
+    if (preg_match('#(\d{2,4})x(\d{2,4})#', $output, $match)) {
+      $res['width'] = intval($match[1]);
+      $res['height'] = intval($match[2]);
     }
+
     return $res;
   }
 
@@ -351,7 +364,7 @@ class video_ffmpeg implements transcoder_interface {
 
   public function create_job($video) {
     if (empty($video['dimensions'])) {
-      watchdog('video_ffmpeg', 'Tried to create job for video %video with empty dimensions value.', array('%video' => $video['fid']), WATCHDOG_ERROR);
+      watchdog('video_command', 'Tried to create job for video %video with empty dimensions value.', array('%video' => $video['fid']), WATCHDOG_ERROR);
       return FALSE;
     }
     
@@ -395,7 +408,7 @@ class video_ffmpeg implements transcoder_interface {
   }
 
   public function load_job_queue() {
-    $total_videos = variable_get('video_ffmpeg_instances', 5);
+    $total_videos = variable_get('video_queue_batchsize', 5);
     $videos = array();
     $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp', VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
 
@@ -447,73 +460,51 @@ class video_ffmpeg implements transcoder_interface {
    * a better way to check the end WxH.  Maybe compare the final resolution to our defaults?  I don't think
    * that just checking to make sure the final number is even is accurate enough.
    */
-
-  public function dimensions($video) {
-    //lets setup our dimensions.  Make sure our aspect ratio matches the dimensions to be used, if not lets add black bars.
-    $aspect_ratio = _video_aspect_ratio($video->filepath);
-    $ratio = $aspect_ratio['ratio'];
-    $width = $aspect_ratio ['width'];
-    $height = $aspect_ratio['height'];
-
-    $wxh = explode('x', $video->dimensions);
-    $output_width = $wxh[0];
-    $output_height = $wxh[1];
-    $output_ratio = number_format($output_width / $output_height, 4);
-
-    if ($output_ratio != $ratio && $width && $height) {
-      // TODO this probably doesn't work
-      $options = array();
-      // Figure out our black bar padding.
-      if ($ratio < $output_width / $output_height) {
-        $end_width = $output_height * $ratio;
-        $end_height = $output_height;
-      } else {
-        $end_height = $output_width / $ratio;
-        $end_width = $output_width;
+  public function getDimensionParameters(stdClass $video, array $fileinfo) {
+    $wxh = explode('x', $video->dimensions, 2);
+    $outputwidth = intval($wxh[0]);
+    $outputheight = intval($wxh[1]);
+    $outputratio = number_format($outputwidth / $outputheight, 4);
+    
+    $options = new stdClass();
+    $options->paddingleft = 0;
+    $options->paddingright = 0;
+    $options->paddingtop = 0;
+    $options->paddingbottom = 0;
+    $options->paddingwidth = $outputwidth;
+    $options->paddingheight = $outputheight;
+    $options->width = $outputwidth;
+    $options->height = $outputheight;
+    
+    $fileratio = $fileinfo['ratio'];
+    $filewidth = $fileinfo['width'];
+    $fileheight = $fileinfo['height'];
+    
+    // If the input ratio is not equal to the output ratio
+    if ($outputratio != $fileratio && $filewidth && $fileheight) {
+      if ($fileratio < $outputratio) {
+        // The input file is narrower than the output file
+        // Change the output width proportionally
+        $options->width = intval(round($filewidth * $outputheight / $fileheight));
+        
+        // Determine left and right padding
+        $padding = $outputwidth - $options->width;
+        $options->paddingleft = intval(floor($padding / 2));
+        $options->paddingright = intval(ceil($padding / 2));
       }
-
-      // We need to get back to an even resolution and maybe compare with our defaults?
-      // @TODO Make this more exact on actual video dimensions instead of making sure the wxh are even numbers
-
-      if ($end_width == $output_width) {
-        // We need to pad the top/bottom of the video
-        $padding = round($output_height - $end_height);
-        $pad1 = $pad2 = floor($padding / 2);
-        if ($pad1 % 2 !== 0) {
-          $pad1++;
-          $pad2--;
-        }
-        if (variable_get('video_ffmpeg_pad_method', 0)) {
-          $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':0:' . $pad1 . '"';
-        } else {
-          $options[] = '-padtop ' . $pad1;
-          $options[] = '-padbottom ' . $pad2;
-        }
-      } else {
-        // We are padding the left/right of the video.
-        $padding = round($output_width - $end_width);
-        $pad1 = $pad2 = floor($padding / 2);  //@todo does padding need to be an even number?
-        if ($pad1 % 2 !== 0) {
-          $pad1++;
-          $pad2--;
-        }
-        if (variable_get('video_ffmpeg_pad_method', 0)) {
-          $options[] = '-vf "pad=' . round($output_width) . ':' . round($output_height) . ':' . $pad1 . ':0"';
-        } else {
-          $options[] = '-padleft ' . $pad1;
-          $options[] = '-padright ' . $pad2;
-        }
+      else {
+        // The input file is wider than the output file
+        // Change the output height proportionally
+        $options->height = intval(round($fileheight * $outputwidth / $filewidth));
+        
+        // Determine top and bottom padding
+        $padding = $outputheight - $options->height;
+        $options->paddingtop = intval(floor($padding / 2));
+        $options->paddingbottom = intval(ceil($padding / 2));
       }
-
-      $end_width = round($end_width) % 2 !== 0 ? round($end_width) + 1 : round($end_width);
-      $end_height = round($end_height) % 2 !== 0 ? round($end_height) + 1 : round($end_height);
-      //add our size to the beginning to make sure it hits our -s
-      array_unshift($options, $end_width . 'x' . $end_height);
-      return implode(' ', $options);
     }
-    else {
-      return $video->dimensions;
-    }
+    
+    return $options;
   }
 
   /**
@@ -530,9 +521,9 @@ class video_ffmpeg implements transcoder_interface {
    */
   public function admin_settings(&$form_state) {
     $form = array();
-    $form['video_ffmpeg_start'] = array(
+    $form['video_localcommand_start'] = array(
       '#type' => 'markup',
-      '#value' => '<div id="video_ffmpeg">',
+      '#value' => '<div id="video_localcommand">',
     );
 
     $form['video_transcoder_path'] = array(
@@ -547,18 +538,18 @@ class video_ffmpeg implements transcoder_interface {
       '#description' => t('Number of thumbnails to generate for videos.'),
       '#default_value' => variable_get('video_thumbs', 5),
     );
-    $form['video_ffmpeg_nice_enable'] = array(
+    $form['video_localcommand_nice_enable'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable the use of nice when calling the command.'),
       '#default_value' => $this->usenice,
       '#description' => t('The nice command invokes a command with an altered scheduling priority.'),
       '#access' => PHP_OS == 'Linux',
     );
-    $form['video_ffmpeg_log_commands'] = array(
+    $form['video_localcommand_log_commands'] = array(
       '#type' => 'checkbox',
       '#title' => t('Log all executed commands to the Drupal log.'),
       '#default_value' => $this->logcommands,
-      '#description' => t('Enable this option when debugging ffmpeg encoding to log all commands to the <a href="@dblog-page">Drupal log</a>. This may help with debugging ffmpeg problems. When this option is disabled, only errors will be logged.', array('@dblog-page' => url('admin/reports/dblog')))
+      '#description' => t('Enable this option when debugging local transcoding to log all commands to the <a href="@dblog-page">Drupal log</a>. This may help with debugging problems. When this option is disabled, only errors will be logged.', array('@dblog-page' => url('admin/reports/dblog')))
     );
     // Thumbnail Videos We need to put this stuff last.
     $form['autothumb'] = array(
@@ -573,7 +564,7 @@ class video_ffmpeg implements transcoder_interface {
       '#description' => t('Path to save video thumbnails extracted from the videos.'),
       '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
     );
-    $form['autothumb']['video_ffmpeg_thumbnailer_options'] = array(
+    $form['autothumb']['video_localcommand_thumbnailer_options'] = array(
       '#type' => 'textarea',
       '#title' => t('Video thumbnailer options'),
       '#description' => t('Provide the options for the thumbnailer.  Available argument values are:') .
@@ -592,7 +583,7 @@ class video_ffmpeg implements transcoder_interface {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE
     );
-    $form['helpers']['video_ffmpeg_faststart_cmd'] = array(
+    $form['helpers']['video_localcommand_qtfaststart_cmd'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to qt-faststart'),
       '#default_value' => $this->faststartcmd,
@@ -605,23 +596,7 @@ class video_ffmpeg implements transcoder_interface {
       '#description' => t('When you enter the path to flvtool2 here, you can enable the flvtool2 tool for one or more presets.'),
     );
 
-    $form['advanced'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Advanced settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE
-    );
-    $form['advanced']['video_ffmpeg_pad_method'] = array(
-      '#type' => 'radios',
-      '#title' => t('FFmpeg Padding method'),
-      '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
-      '#options' => array(
-        0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
-        1 => t('Use -vf "pad:w:h:x:y:c" for padding'),
-      ),
-    );
-
-    $form['video_ffmpeg_end'] = array(
+    $form['video_localcommand_end'] = array(
       '#type' => 'markup',
       '#value' => '</div>',
     );
@@ -640,13 +615,13 @@ class video_ffmpeg implements transcoder_interface {
         form_error($form['video_transcoder_path'], t('The file %file does not exist.', array('%file' => $v['video_transcoder_path'])));
       }
     }
-    elseif($v['vid_convertor'] == 'video_ffmpeg') {
+    elseif($v['vid_convertor'] == 'video_localcommand') {
       form_error($form['video_transcoder_path'], t('!name field is required.', array('!name' => $form['video_transcoder_path']['#title'])));
     }
     
-    if (!empty($v['video_ffmpeg_faststart_cmd'])) {
-      if (!is_file($v['video_ffmpeg_faststart_cmd'])) {
-        form_error($form['helpers']['video_ffmpeg_faststart_cmd'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_faststart_cmd'])));
+    if (!empty($v['video_localcommand_qtfaststart_cmd'])) {
+      if (!is_file($v['video_localcommand_qtfaststart_cmd'])) {
+        form_error($form['helpers']['video_localcommand_qtfaststart_cmd'], t('The file %file does not exist.', array('%file' => $v['video_localcommand_qtfaststart_cmd'])));
       }
     }
 
@@ -711,8 +686,14 @@ class video_ffmpeg implements transcoder_interface {
           '<strong>!cmd_path</strong>: '. t('the path to your executable (currently: %executable).', array('%executable' => $this->cmdpath)),
           '<strong>!videofile</strong>: '. t('the escaped absolute path to the input video file.'),
           '<strong>!convertfile</strong>: '. t('the escaped absolute path to the output video file.'),
-          '<strong>!width</strong>: '. t('the width of the output video file.'),
-          '<strong>!height</strong>: '. t('the height of the output video file.'),
+          '<strong>!width</strong>: '. t('the width of the output video file, excluding padding, for use with -s.'),
+          '<strong>!height</strong>: '. t('the height of the output video file, excluding padding, for use with -s.'),
+          '<strong>!paddingwidth</strong>: '. t('the width of the output video file, including padding, for use as first parameter of -vf pad.'),
+          '<strong>!paddingheight</strong>: '. t('the height of the output video file, including padding, for use as second parameter of -vf pad.'),
+          '<strong>!paddingtop</strong>: '. t('the padding added to the top of the output video file, for use with -padtop or as third parameter of -vf pad.'),
+          '<strong>!paddingbottom</strong>: '. t('the padding added to the bottom of the output video file, for use with -padbottom.'),
+          '<strong>!paddingleft</strong>: '. t('the padding added to the left of the output video file, for use with -padleft or as fourth parameter of -vf pad.'),
+          '<strong>!paddingright</strong>: '. t('the padding added to the right of the output video file, for use with -padright.'),
         )),
     );
     

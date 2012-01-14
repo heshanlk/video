@@ -291,11 +291,11 @@ function video_cron_admin_settings() {
     '#default_value' => variable_get('video_cron', TRUE),
     '#description' => t('If you would like to use Drupals built in cron hook, check this box.  Please be warned that transcoding videos is very resource intensive.  If you use poor mans cron, I highly discourage this option.  I also suggest you setup your cron to call this function through CLI instead of WGET.'),
   );
-  $form['video_ffmpeg_instances'] = array(
+  $form['video_queue_batchsize'] = array(
     '#type' => 'textfield',
     '#title' => t('Total videos to convert during each cron process.'),
-    '#default_value' => variable_get('video_ffmpeg_instances', 5),
-    '#description' => t('How many videos do you want to process on each cron run?  Either through hook_cron or the video_scheduler.php.'),
+    '#default_value' => variable_get('video_queue_batchsize', 5),
+    '#description' => t('How many videos do you want to process on each cron run? Either through Drupal cron, Drush or the video_scheduler.php.'),
   );
   return system_settings_form($form);
 }

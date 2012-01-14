@@ -1,0 +1,98 @@
+<?php
+class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Local command transcoder'),
+      'description' => t('Tests for the local command video transcoder.'),
+      'group' => t('Video'),
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp('content', 'filefield', 'video');
+  }
+
+  function testShouldReturnOutputDimensionsWhenInputAndOutputAspectRatioEqual() {
+    module_load_include('inc', 'video', 'includes/transcoder');
+    module_load_include('inc', 'video', 'transcoders/video_localcommand');
+    $transcoder = new video_localcommand();
+    
+    $video = new stdClass();
+    $video->dimensions = '160x90';
+    
+    $fileinfo = array(
+      'width' => 1600,
+      'height' => 900,
+      'ratio' => '1.7778',
+    );
+    
+    $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
+
+    $this->assertIdentical($options->width, 160, 'width');
+    $this->assertIdentical($options->height, 90, 'height');
+    $this->assertIdentical($options->paddingwidth, 160, 'paddingwidth');
+    $this->assertIdentical($options->paddingheight, 90, 'paddingheight');
+    $this->assertIdentical($options->paddingtop, 0, 'paddingtop');
+    $this->assertIdentical($options->paddingbottom, 0, 'paddingbottom');
+    $this->assertIdentical($options->paddingleft, 0, 'paddingleft');
+    $this->assertIdentical($options->paddingright, 0, 'paddingright');
+  }
+
+  function testShouldReturnTopAndBottomPaddingWhenInputWiderThanOutput() {
+    module_load_include('inc', 'video', 'includes/transcoder');
+    module_load_include('inc', 'video', 'transcoders/video_localcommand');
+    $transcoder = new video_localcommand();
+    
+    $video = new stdClass();
+    $video->dimensions = '400x300';
+    
+    $fileinfo = array(
+      'width' => 1600,
+      'height' => 900,
+      'ratio' => '1.7778',
+    );
+    
+    $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
+
+    $this->assertIdentical($options->width, 400, 'width');
+    $this->assertIdentical($options->height, 225, 'height');
+    $this->assertIdentical($options->paddingwidth, 400, 'paddingwidth');
+    $this->assertIdentical($options->paddingheight, 300, 'paddingheight');
+    $this->assertIdentical($options->paddingtop, 37, 'paddingtop');
+    $this->assertIdentical($options->paddingbottom, 38, 'paddingbottom');
+    $this->assertIdentical($options->paddingleft, 0, 'paddingleft');
+    $this->assertIdentical($options->paddingright, 0, 'paddingright');
+  }
+
+  function testShouldReturnLeftAndRightPaddingWhenInputNarrowerThanOutput() {
+    module_load_include('inc', 'video', 'includes/transcoder');
+    module_load_include('inc', 'video', 'transcoders/video_localcommand');
+    $transcoder = new video_localcommand();
+    
+    $video = new stdClass();
+    $video->dimensions = '400x400';
+    
+    $fileinfo = array(
+      'width' => 400,
+      'height' => 800,
+      'ratio' => '0.5000',
+    );
+    
+    $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
+
+    $this->assertIdentical($options->width, 200, 'width');
+    $this->assertIdentical($options->height, 400, 'height');
+    $this->assertIdentical($options->paddingwidth, 400, 'paddingwidth');
+    $this->assertIdentical($options->paddingheight, 400, 'paddingheight');
+    $this->assertIdentical($options->paddingtop, 0, 'paddingtop');
+    $this->assertIdentical($options->paddingbottom, 0, 'paddingbottom');
+    $this->assertIdentical($options->paddingleft, 100, 'paddingleft');
+    $this->assertIdentical($options->paddingright, 100, 'paddingright');
+  }
+}

@@ -289,7 +289,7 @@ function video_cron() {
   if (variable_get('video_cron', TRUE)) {
     // This is a hack to execute S3 uploads before Zencoder
     $filesystem = variable_get('vid_filesystem', 'drupal');
-    $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
+    $transcoder = variable_get('vid_convertor', 'video_localcommand');
     if ($filesystem == 'video_s3' && $transcoder == 'video_zencoder') {
       video_s3_cron();
     }

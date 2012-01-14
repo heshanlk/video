@@ -111,7 +111,7 @@ class video_amazon_s3 {
         }
         $this->s3->delete_object($video->bucket, $filepath);
 
-        // Remove ffmpeg converted files
+        // Remove locally converted files
         $row = db_fetch_object(db_query('SELECT data FROM {video_files} WHERE data IS NOT NULL AND fid = %d', $fid));
         if ($row) {
           foreach (unserialize($row->data) as $subvideo) {
@@ -157,10 +157,10 @@ class video_amazon_s3 {
       module_load_include('inc', 'video', '/includes/conversion');
       
       // We need to check if this file id exists in our transcoding table.
-      // Skip unfinished ffmpeg jobs
+      // Skip unfinished local jobs
       $result = db_query('SELECT f.*, vf.data FROM {files} f LEFT JOIN {video_files} vf USING(fid) WHERE f.fid = %d AND (vf.status IS NULL OR vf.status = %d)', $row->fid, VIDEO_RENDERING_COMPLETE);
       if (!($video = db_fetch_object($result))) {
-        $this->watchdog('Could not find the file id %fid or it is still queued for ffmpeg processing.', array('%fid' => $row->fid), WATCHDOG_DEBUG, $row);
+        $this->watchdog('Could not find the file id %fid or it is still queued for local processing.', array('%fid' => $row->fid), WATCHDOG_DEBUG, $row);
         continue;
       }
 
@@ -169,7 +169,7 @@ class video_amazon_s3 {
 
       $success = true;
 
-      // Add all ffmpeg converted variants
+      // Add all locally converted variants
       if (!empty($video->data)) {
         foreach (unserialize($video->data) as $file) {
           if (!$this->pushFile($file)) {
@@ -217,7 +217,7 @@ class video_amazon_s3 {
         $headers['Cache-Control'] = 'max-age=' . $cc;
       }
       while ($file = db_fetch_object($active)) {
-        $this->update_headers($file, $permission, $headers);
+        $this->update_headers($file->bucket, $file->filename, $headers);
       }
       
       variable_set('amazon_s3_expires_last_cron', time());

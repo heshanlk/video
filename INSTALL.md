@@ -20,12 +20,12 @@
 
 ### Required software
 
-- [ffmpeg](http://ffmpeg.org/), unless the Zencoder submodule is used, see instructions below
+- [FFmpeg](http://ffmpeg.org/), unless the Zencoder submodule is used, see instructions below
 
 ### Recommended software
 
 - [flvtool2](http://www.inlet-media.de/flvtool2/)
-- qt-faststart, provided by ffmpeg
+- qt-faststart, provided by FFmpeg
 
 ## Installing the module
 
@@ -37,7 +37,7 @@
 6. Change the General settings to match your preferences
 7. Setup players for the video types you would like to use
 8. Select and configure your transcoder
-9. If you are going to use ffmpeg transcoding, select at least one preset
+9. If you are going to use FFmpeg transcoding, select at least one preset
 10 Configure S3 storage if you intend to use it
 11. Configure cron. If you do not want to use cron to convert videos, see below for an alternative
 
@@ -56,17 +56,17 @@
 3. Make sure the file sites/all/libraries/aws/sdk.class.php exists
 4. The version that is known to be compatible with the Amazon S3 module is 1.5.0.1 (2011-12-21)
 
-## Tips for a proper ffmpeg installation
+## Tips for a proper FFmpeg installation
 
-When you intend to use ffmpeg to transcode videos, make sure your ffmpeg installation handles all 
+When you intend to use FFmpeg to transcode videos, make sure your FFmpeg installation handles all 
 the file formats before installing the module. Linux distributions using precompiled binaries, 
 such as Ubuntu, usually do not provide the best compile options and it is advised to compile 
-ffmpeg yourself.
+FFmpeg yourself.
 
-The following guides will help you to get a good ffmpeg installation:
+The following guides will help you to get a good FFmpeg installation:
 
-- [Ubuntu](http://ubuntuforums.org/showthread.php?t=786095): ffmpeg compilation guide
-- [Ubuntu](http://ubuntuforums.org/showthread.php?t=1117283): guide to enhance your ffmpeg installation using precompiled packages
+- [Ubuntu](http://ubuntuforums.org/showthread.php?t=786095): FFmpeg compilation guide
+- [Ubuntu](http://ubuntuforums.org/showthread.php?t=1117283): guide to enhance your FFmpeg installation using precompiled packages
 - [Gentoo](http://www.gentoo-portage.com/media-video/ffmpeg): make sure to setup the right USE flags before installing
 - [Windows](http://www.videohelp.com/tools/ffmpeg): Windows packages
 
@@ -93,10 +93,10 @@ This will execute the script every 20 minutes. Make sure the script does not run
 Troubleshooting
 ---------------
 
-Configuring and installing ffmpeg in a web server environment might be pretty
-difficult. In order to help you troubleshoot the transcoding process the ffmpeg
+Configuring and installing FFmpeg in a web server environment might be pretty
+difficult. In order to help you troubleshoot the transcoding process the FFmpeg
 helper puts debugging informations on the drupal logs. I strongly suggest to
 have a look at them if you are experiencing problems with transcoding.
 
-All ffmpeg commands are added to the Drupal log. You might try to rerun them on a 
+All FFmpeg commands are added to the Drupal log. You might try to rerun them on a 
 command shell in order understand what went wrong.
