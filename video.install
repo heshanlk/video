@@ -132,8 +132,8 @@ function video_requirements($phase) {
 function video_update_6405() {
   $ret = array();
 
-  db_drop_table($ret, 'video_rendering}');
-  db_drop_table($ret, 'video_files}');
+  if (db_table_exists('video_rendering')) db_drop_table($ret, 'video_rendering');
+  if (db_table_exists('video_files')) db_drop_table($ret, 'video_files');
 
   $table = array(
     'description' => t('Store video transcoding queue'),
