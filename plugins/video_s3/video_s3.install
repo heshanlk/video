@@ -127,7 +127,7 @@ function video_s3_requirements($phase) {
     );
   }
   else {
-    $path = libraries_get_path('aws');
+    $path = libraries_get_path('awssdk');
     $file = $path .'/sdk.class.php';
 
     if (!is_dir($path)) {
