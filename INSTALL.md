@@ -54,8 +54,8 @@
 ## Installing the Amazon S3 library
 
 1. Go to http://aws.amazon.com/sdkforphp/
-2. Download the AWS SDK for PHP to sites/all/libraries/aws
-3. Make sure the file sites/all/libraries/aws/sdk.class.php exists
+2. Download the AWS SDK for PHP to sites/all/libraries/awssdk
+3. Make sure the file sites/all/libraries/awssdk/sdk.class.php exists
 4. The version that is known to be compatible with the Amazon S3 module is 1.5.0.1 (2011-12-21)
 
 ## Tips for a proper FFmpeg installation

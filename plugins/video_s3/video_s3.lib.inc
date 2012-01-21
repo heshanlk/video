@@ -24,7 +24,7 @@ class video_amazon_s3 {
 
   public function __construct() {
     // Create the Zencoder class
-    $libpath = libraries_get_path('aws');
+    $libpath = libraries_get_path('awssdk');
     $this->libfile = $libpath .'/sdk.class.php';
     
     if (!file_exists($this->libfile)) {
