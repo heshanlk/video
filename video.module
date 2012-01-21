@@ -500,50 +500,6 @@ function _video_db_increase_timeout() {
   }
 }
 
-/**
-* Reconnect to the database after a long transcode or upload to prevent
-* "MySQL server has gone away" errors.
-*/
-function _video_db_reconnect() {
-  global $db_url, $db_type, $active_db, $active_name;
-
-  $connect = FALSE;
-
-  switch ($db_type) {
-    case 'mysqli':
-      //if (!mysqli_ping($active_db)) {
-        mysqli_close($active_db);
-        $connect = TRUE;
-      //}
-      break;
-    
-    case 'mysql':
-      if (!mysql_ping($active_db)) {
-        mysql_close($active_db);
-        $connect = TRUE;
-      }
-      break;
-    
-    case 'pgsql':
-      if (!pg_ping($active_db)) {
-        pg_close($active_db);
-        $connect = TRUE;
-      }
-      break;
-  }
-  
-  if ($connect) {
-    if (is_array($db_url)) {
-      $connect_url = array_key_exists($active_name, $db_url) ? $db_url[$active_name] : $db_url['default'];
-    }
-    else {
-      $connect_url = $db_url;
-    }
-
-    $active_db = db_connect($connect_url);
-  }
-}
-
 function video_ctools_plugin_directory($module, $plugin) {
   if ($module != 'video') {
     return;
