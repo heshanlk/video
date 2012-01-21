@@ -217,58 +217,95 @@ function video_widget_process(&$element, &$form_state) {
  * @param array $element Form element to get the video file from.
  */
 function video_convert_process(&$element) {
-  $file = $element['#value'];
+  $value = $element['#value'];
 
   // If the dimensions #value is empty, it is probably because the user
   // clicked the Save button directly and did not choose dimensions.
   // Take the default dimensions.
-  if (empty($file['data']['dimensions']) && isset($element['data']['dimensions'])) {
-    $file['data']['dimensions'] = $element['data']['dimensions']['#default_value'];
+  $dimensions = NULL;
+  if (!empty($value['data']['dimensions'])) {
+    $dimensions = $value['data']['dimensions'];
+  }
+  elseif (!empty($element['data']['dimensions'])) {
+    $dimensions = $element['data']['dimensions'];
   }
 
-  if (!empty($file['fid']) && empty($file['data']['bypass_autoconversion'])) {
-    $convert = false;
-    $fid = $file['fid'];
+  if (!empty($value['fid']) && empty($value['data']['bypass_autoconversion'])) {
+    $convert = FALSE;
+    $fid = intval($value['fid']);
+    
     //setup our conversion class and check for the fid existence.
-    module_load_include('inc', 'video', '/includes/conversion');
-    $video_conversion = new video_conversion;
+    $transcoder = video_get_transcoder();
 
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-    if (!$video = $video_conversion->load_job($fid)) {
+    if (!($video = $transcoder->load_job($fid))) {
+      // Get a proper video object
+      $file = db_fetch_object(db_query('SELECT f.* FROM {files} f WHERE f.fid = %d', $fid));
+
+      // Move the file to the original folder
+      $filedir = dirname($file->filepath);
+      $originaldir = $filedir .'/original';
+
+      if (!field_file_check_directory($originaldir, FILE_CREATE_DIRECTORY)) {
+        watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing original videos.', array('%dir' => $originaldir), WATCHDOG_ERROR);
+        return;
+      }
+
+      // Lets move our video and then convert it.
+      if (!file_move($file, $originaldir .'/'. $file->filename)) {
+        watchdog('video_command', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
+        return;
+      }
+
+      // Update our filepath since we moved it
+      drupal_write_record('files', $file, 'fid');
+
       // Video has not been added to the queue yet so lets add it.
-      $video = array('fid' => $fid, 'dimensions' => $file['data']['dimensions']);
-      if (!($video_conversion->create_job($video)))
+      $file->dimensions = $dimensions;
+      if (!($transcoder->create_job($file))) {
         drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
-      $convert = true;
+      }
+
+      $convert = TRUE;
       //lets queue our node status to unpublished.
-      $element['#unpublish'] = true;
-    } elseif ($video->video_status != VIDEO_RENDERING_COMPLETE) {
+      $element['#unpublish'] = TRUE;
+      $video = $transcoder->load_job($fid);
+    }
+    elseif ($video->status != VIDEO_RENDERING_COMPLETE) {
       //lets queue our node status to unpublished.
-      $element['#unpublish'] = true;
+      $element['#unpublish'] = TRUE;
     }
 
     // Our video should be in the database pending, lets see if we need to convert it now.
     // Check if we are going from unselected to selected or if this is a new video and we have checked the checkbox
-    $convert_video_on_save = false;
+    $convert_video_on_save = FALSE;
     $element_data_convert_on_save = '';
-    $file_date_convet_on_save = '';
+    $file_date_convert_on_save = '';
     $convert_on_save = variable_get('video_convert_on_save', FALSE);
-    if (isset($element['data']['convert_video_on_save']['#value']))
+    if (isset($element['data']['convert_video_on_save']['#value'])) {
       $element_data_convert_on_save = $element['data']['convert_video_on_save']['#value'];
-    if (isset($file['data']['convert_video_on_save']))
-      $file_date_convet_on_save = $file['data']['convert_video_on_save'];
-    $convert_video_on_save = $element_data_convert_on_save || $file_date_convet_on_save;
+    }
+    
+    if (isset($value['data']['convert_video_on_save'])) {
+      $file_date_convert_on_save = $value['data']['convert_video_on_save'];
+    }
+    
+    $convert_video_on_save = $element_data_convert_on_save || $file_date_convert_on_save;
+    
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])
         && $convert_video_on_save) || ($convert && $convert_video_on_save) || $convert_on_save) {
-      $return = $video_conversion->process($fid);
+      
+      $return = video_process_video($video);
       if ($return === FALSE) {
-        drupal_set_message(t('Something went wrong with your video conversion.  Please check your recent log entries for further debugging.'), 'error');
-      } elseif ($return === TRUE) {
+        drupal_set_message(t('Something went wrong with your video conversion. Please check your recent log entries for further debugging.'), 'error');
+      }
+      elseif ($return === TRUE) {
         //we are always unpublished until we are converted.
         unset($element['#unpublish']);
         drupal_set_message(t('Successfully converted your video.'));
       }
-    } elseif ($convert) {
+    }
+    elseif ($convert) {
       drupal_set_message(t('Video submission queued for processing. Please wait: our servers are preparing your video for display.'));
     }
   }
@@ -393,8 +430,7 @@ function video_default_widget_settings($widget) {
  */
 function video_default_widget_settings_validate($element, &$form_state) {
   // Verify the destination exists
-  $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-  $destination = file_directory_path() . '/' . $video_thumb_path;
+  $destination = video_thumb_path();
   if (!field_file_check_directory($destination, FILE_CREATE_DIRECTORY)) {
     form_set_error('default_video_thumb', t('The default image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => dirname($destination))));
     return;
@@ -456,21 +492,24 @@ function video_web_extensions($ext) {
  */
 function video_thumb_process(&$element) {
   $file = $element['#value'];
-  $delta = $file['fid'];
+  $fid = intval($file['fid']);
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $gen_fail = FALSE;
 
-  if (isset($element['preview']) && $file['fid'] != 0) {
+  if (isset($element['preview']) && $fid != 0) {
     if (in_array($field['widget']['autothumbnail'], array('auto', 'auto_fallback'))) {
-      module_load_include('inc', 'video', '/includes/transcoder');
-      $transcoder = new video_transcoder();
-      $thumbs = $transcoder->generate_thumbnails($file);
+      $transcoder = video_get_transcoder();
+      $video = new stdClass();
+      $video->fid = $fid;
+      $video->filepath = $file['filepath'];
+      $video->filename = $file['filepath'];
+      $thumbs = $transcoder->generate_thumbnails($video);
       
       if (!empty($thumbs)) {
         drupal_add_js(drupal_get_path('module', 'video') .'/js/video.admin.js');
         
         $thumbss = array();
-        foreach ($thumbs as $fid => $img) {
+        foreach ($thumbs as $img) {
           $thumbss[$img->filepath] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
         }
         
@@ -487,9 +526,10 @@ function video_thumb_process(&$element) {
           '#options' => $thumbss,
           '#default_value' => $currentthumb,
           '#weight' => 10,
-          '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-' . $delta),
+          '#attributes' => array('class' => 'video-thumbnails', 'onchange' => 'videoftp_thumbnail_change()', 'rel' => 'video_large_thumbnail-'. $fid),
         );
-      } else {
+      }
+      else {
         $gen_fail = TRUE;
       }
     }
@@ -525,7 +565,7 @@ function video_thumb_process(&$element) {
     
     if (!empty($large_thumb)) {
       // @todo Integrate the thumbnails with imagecache.
-      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-'. $delta .'">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => 150), FALSE) .'</div>';
+      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-'. $fid .'">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => 150), FALSE) .'</div>';
     }
   }
 }

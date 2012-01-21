@@ -130,7 +130,4 @@ ini_set('display_errors', 1);
 // turn off the output buffering that drupal is doing by default.
 ob_end_flush();
 
-//include our conversion class (also contains our defines)
-module_load_include('inc', 'video', 'includes/conversion');
-$video_conversion = new video_conversion;
-$video_conversion->run_queue();
+video_run_queue();

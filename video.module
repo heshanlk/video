@@ -5,6 +5,11 @@
  *
  */
 
+define('VIDEO_RENDERING_PENDING', 1);
+define('VIDEO_RENDERING_ACTIVE', 5);
+define('VIDEO_RENDERING_COMPLETE', 10);
+define('VIDEO_RENDERING_FAILED', 20);
+
 /**
  * Implementation of hook_init().
  */
@@ -287,24 +292,16 @@ function video_field_formatter_info() {
  */
 function video_cron() {
   if (variable_get('video_cron', TRUE)) {
-    // This is a hack to execute S3 uploads before Zencoder
-    $filesystem = variable_get('vid_filesystem', 'drupal');
-    $transcoder = variable_get('vid_convertor', 'video_localcommand');
-    if ($filesystem == 'video_s3' && $transcoder == 'video_zencoder') {
-      video_s3_cron();
-    }
-
-    module_load_include('inc', 'video', '/includes/conversion');
-    $video_conversion = new video_conversion;
-    $video_conversion->run_queue();
+    video_run_queue();
   }
 }
 
 /**
  * Implementation of hook_form_alter()
- * @param string $form
- * @param <type> $form_state
- * @param <type> $form_id 
+ * 
+ * @param array $form
+ * @param array $form_state
+ * @param string $form_id 
  */
 function video_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
@@ -317,12 +314,14 @@ function video_form_alter(&$form, &$form_state, $form_id) {
 function video_node_update_submit($form, &$form_state) {
   //lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
+    $transcoder = video_get_transcoder();
+    
     foreach ($form_state['values']['video_id'] as $fid) {
-      // @TODO : check for enable trancoder
-      module_load_include('inc', 'video', '/includes/transcoder');
-      $transcoder = new video_transcoder;
-      $video = array('nid' => $form_state['nid'], 'fid' => $fid);
+      $video = new stdClass();
+      $video->fid = intval($fid);
+      $video->nid = intval($form_state['nid']);
       $transcoder->update_job($video);
+      
       // Lets other module to know to update
       video_module_invoke('update', $form, $form_state);
     }
@@ -333,37 +332,24 @@ function video_node_update_submit($form, &$form_state) {
  * Implementation of hook_file_delete().
  */
 function video_file_delete($file) {
-  if (empty($file->fid)) {
+  $fid = intval($file->fid);
+  
+  if ($fid <= 0) {
     watchdog('video', 'video_file_delete called with empty argument', array(), WATCHDOG_ERROR);
     return;
   }
-
-  // TODO: only execute this method if the file was uploaded by this module.
 
   // Let other modules to know about the file delete
   // before we delete the file, so the module has access to information in the database.
   video_module_invoke('delete', $file);
 
-  // @TODO : check for enable trancoder
-  // delete the transcoder job
-  module_load_include('inc', 'video', '/includes/transcoder');
-  $transcoder = new video_transcoder;
-  $transcoder->delete_job($file);
-
-  // TODO: Move this to the file system class
-  // Now lets delete our video thumbnails and folder.
-  $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-  $thumb_folder = file_directory_path() .'/'. $video_thumb_path .'/'. $file->fid .'/';
-
-  // Recursively delete our folder and files.
-  if (is_dir($thumb_folder)) {
-    rmdirr($thumb_folder);
-
-    // Delete any entries in the files table that may refer to the above path.
-    // TODO: this is a slow query
-    db_query('DELETE FROM {files} WHERE filepath LIKE "%b%%"',
-      strtr(db_escape_string($thumb_folder), array('%' => '\%', '_' => '\_'))
-    );
+  // Delete the transcoder job and video
+  $transcoder = video_get_transcoder();
+  $video = $transcoder->load_job($fid);
+  $filesystem = video_get_filesystem();
+  if ($video) {
+    $transcoder->delete_job($video);
+    $filesystem->delete_video($video);
   }
 }
 
@@ -384,8 +370,7 @@ function video_views_api() {
  */
 function _video_aspect_ratio($video) {
   //lets get our video dimensions from the file
-  module_load_include('inc', 'video', '/includes/transcoder');
-  $transcoder = new video_transcoder;
+  $transcoder = video_get_transcoder();
   $wxh = $transcoder->get_dimensions($video);
 
   if (empty($wxh) || empty($wxh['width']) || empty($wxh['height'])) {
@@ -497,18 +482,235 @@ function video_add_adminjs() {
 }
 
 /**
-* Reconnect to the database after a long transcode to prevent
+ * Increase the database timeout in preparation for long time
+ * operations, such as S3 uploads and local transcoding.
+ * 
+ * Reconnecting to the database after this operation is not possible
+ * due to the way db_set_active stores the connection identifiers.
+ * 
+ * At this moment, only mysqli and mysql are handled. The timeout is
+ * set to 1 day
+ */
+function _video_db_increase_timeout() {
+  global $db_type;
+  
+  if ($db_type === 'mysqli' || $db_type === 'mysql') {
+    $timeout = 24 * 60 * 60; // one day
+    db_query('SET SESSION wait_timeout = %d', $timeout);
+  }
+}
+
+/**
+* Reconnect to the database after a long transcode or upload to prevent
 * "MySQL server has gone away" errors.
 */
 function _video_db_reconnect() {
-  global $db_url, $db_type, $active_db;
+  global $db_url, $db_type, $active_db, $active_name;
 
-  if (is_array($db_url)) {
-    $connect_url = array_key_exists($active_name, $db_url) ? $db_url[$active_name] : $db_url['default'];
+  $connect = FALSE;
+
+  switch ($db_type) {
+    case 'mysqli':
+      //if (!mysqli_ping($active_db)) {
+        mysqli_close($active_db);
+        $connect = TRUE;
+      //}
+      break;
+    
+    case 'mysql':
+      if (!mysql_ping($active_db)) {
+        mysql_close($active_db);
+        $connect = TRUE;
+      }
+      break;
+    
+    case 'pgsql':
+      if (!pg_ping($active_db)) {
+        pg_close($active_db);
+        $connect = TRUE;
+      }
+      break;
   }
-  else {
-    $connect_url = $db_url;
+  
+  if ($connect) {
+    if (is_array($db_url)) {
+      $connect_url = array_key_exists($active_name, $db_url) ? $db_url[$active_name] : $db_url['default'];
+    }
+    else {
+      $connect_url = $db_url;
+    }
+
+    $active_db = db_connect($connect_url);
+  }
+}
+
+function video_ctools_plugin_directory($module, $plugin) {
+  if ($module != 'video') {
+    return;
   }
 
-  $active_db = db_connect($connect_url);
+  elseif ($plugin == 'filesystem') {
+    return 'filesystem';
+  }
+  elseif ($plugin == 'transcoder') {
+    return 'transcoders';
+  }
+}
+
+/**
+ * @return array of video_preset
+ */
+function video_get_presets($all = FALSE) {
+  module_load_include('inc', 'video', 'includes/preset');
+  
+  $p = new video_preset_api();
+  if ($all) {
+    return $p->getAllPresets();
+  }
+  return $p->getEnabledPresets();
+}
+
+/**
+ * @return array of filesystem plugins
+ */
+function video_get_filesystem_plugins() {
+  ctools_include('plugins');
+  module_load_include('lib.inc', 'video');
+
+  return ctools_get_plugins('video', 'filesystem');
+}
+
+/**
+ * @return video_filesystem The current filesystem
+ */
+function video_get_filesystem($name = NULL) {
+  if ($name === NULL) {
+    $name = variable_get('vid_filesystem', 'drupal');
+  }
+
+  ctools_include('plugins');
+  module_load_include('lib.inc', 'video');
+  $plugin = ctools_get_plugins('video', 'filesystem', $name);
+
+  if ($plugin && $plugin['valid']) {
+    require_once $plugin['path'] .'/'. $plugin['file'];
+    return new $plugin['class'];
+  }
+
+  return NULL;
+}
+
+/**
+ * @return array of transcoder plugins
+ */
+function video_get_transcoder_plugins() {
+  ctools_include('plugins');
+  module_load_include('lib.inc', 'video');
+
+  return ctools_get_plugins('video', 'transcoder');
+}
+
+/**
+ * @param string $name Plugin name (eg. video_localcommand)
+ * @return video_transcoder The current transcoder
+ */
+function video_get_transcoder($name = NULL) {
+  if ($name === NULL) {
+    $name = variable_get('vid_convertor', 'video_localcommand');
+  }
+
+  ctools_include('plugins');
+  module_load_include('lib.inc', 'video');
+  $plugin = ctools_get_plugins('video', 'transcoder', $name);
+
+  if ($plugin && $plugin['valid']) {
+    require_once $plugin['path'] .'/'. $plugin['file'];
+    return new $plugin['class'];
+  }
+
+  return NULL;
+}
+
+/**
+ * Implementation of hook_ctools_plugin_type().
+ */
+function video_ctools_plugin_filesystem() {
+  return array(
+    'cache' => FALSE,
+    'use hooks' => FALSE,
+    'process' => '_video_process_plugin',
+  );
+}
+
+/**
+ * Implementation of hook_ctools_plugin_type().
+ */
+function video_ctools_plugin_transcoder() {
+  return array(
+    'cache' => FALSE,
+    'use hooks' => FALSE,
+    'process' => '_video_process_plugin',
+  );
+}
+
+function video_run_queue($num = NULL) {
+  if ($num === NULL || $num <= 0) {
+    $num = intval(variable_get('video_queue_batchsize', 5));
+  }
+
+  $donesomething = FALSE;
+  
+  $transcoder = video_get_transcoder();
+  $filesystem = video_get_filesystem();
+  $presets = video_get_presets();
+
+  $videos = $transcoder->load_job_queue($num);
+  foreach ($videos as $video) {
+    if (_video_process_video($video, $transcoder, $filesystem, $presets)) {
+      $donesomething = TRUE;
+    }
+  }
+
+  // Clear cache once completed the conversion to update the file paths
+  if ($donesomething) {
+    cache_clear_all('*', 'cache_content', TRUE);
+  }
+}
+
+function video_process_video(stdClass $video) {
+  $transcoder = video_get_transcoder();
+  $filesystem = video_get_filesystem();
+  $presets = video_get_presets();
+
+  return _video_process_video($video, $transcoder, $filesystem, $presets);
+}
+
+function _video_process_video(stdClass $video, video_transcoder $transcoder, video_filesystem $filesystem, array $presets) {
+  // Make sure this video is pending or do nothing.
+  if ($video->status != VIDEO_RENDERING_PENDING) {
+    return NULL;
+  }
+  
+  $video->presets = $presets;
+
+  if (!$filesystem->onpreconvert($video)) return FALSE;
+  if (!$transcoder->convert_video($video)) return FALSE;
+  if (!$filesystem->onpostconvert($video)) return FALSE;
+
+  db_query('UPDATE {node} SET status=%d WHERE nid = %d', 1, $video->nid);
+  return TRUE;
+}
+
+function _video_process_plugin(&$plugin, $info) {
+  if (!isset($plugin['class'])) {
+    $plugin['class'] = $plugin['name'];
+  }
+
+  if (!class_exists($plugin['class']) && is_file($plugin['path'] .'/'. $plugin['file'])) {
+    require_once $plugin['path'] .'/'. $plugin['file'];
+  }
+
+  $interfacename = 'video_'. $info['type'];
+
+  $plugin['valid'] = class_exists($plugin['class']) && in_array($interfacename, class_implements($plugin['class']));
 }

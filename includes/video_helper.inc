@@ -57,23 +57,13 @@ class video_helper {
         && !$element['#item']['data']['bypass_autoconversion']) {
       // discard all existing file data
       $video->files = new stdClass();
-      module_load_include('inc', 'video', '/includes/conversion');
-      $conversion = new video_conversion;
-      $conversion->load_completed_job($video);
-    }
-//    echo '<pre>';
-//    print_r($video);
-//    die();
-    // Let othere module to load the video files by referance
-    // Lets find out if we have pushed this file to the cdn if enabled.
-    // @TODO : add correct filesystem load to this
-    $filesystem = variable_get('vid_filesystem', 'drupal');
-    if ($filesystem != 'drupal') {
-      module_load_include('inc', 'video', '/includes/filesystem');
-      $filesystem = new video_filesystem();
-      $filesystem->load_file($video);
+      
+      $transcoder = video_get_transcoder();
+      $transcoder->load_completed_job($video);
     }
 
+    $filesystem = video_get_filesystem();
+    $filesystem->load_file($video);
 
     // Moved to last to recheck incase we changed our extension above.
     $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');

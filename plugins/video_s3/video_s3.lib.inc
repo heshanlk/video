@@ -1,5 +1,4 @@
 <?php
-
 /*
  * @file
  * Class file to handle amazon s3 transfers.
@@ -15,7 +14,6 @@ class video_amazon_s3 {
   private $access_key;
   private $secret_key;
   private $ssl;
-  private $limit;
   private $bucket;
   private $libfile;
   
@@ -37,7 +35,6 @@ class video_amazon_s3 {
     $this->access_key = variable_get('amazon_s3_access_key', '');
     $this->secret_key = variable_get('amazon_s3_secret_access_key', '');
     $this->ssl = variable_get('amazon_s3_ssl', FALSE);
-    $this->limit = variable_get('amazon_s3_limit', 5);
     $this->bucket = variable_get('amazon_s3_bucket', '');
   }
 
@@ -64,167 +61,17 @@ class video_amazon_s3 {
    * Verifies the existence of a file id, returns the row or false if none found.
    */
   public function verify($fid) {
-    $sql = db_query('SELECT * FROM {video_s3} WHERE fid = %d', $fid);
-    return db_fetch_object($sql);
+    return db_fetch_object(db_query('SELECT * FROM {video_s3} WHERE fid = %d', $fid));
   }
 
   /*
    * Gets a video object from the database.
    */
   public function get($fid) {
-    $sql = db_query('SELECT * FROM {video_s3} WHERE fid = %d AND status = %d', $fid, VIDEO_S3_COMPLETE);
-    return db_fetch_object($sql);
+    return db_fetch_object(db_query('SELECT * FROM {video_s3} WHERE fid = %d AND status = %d', $fid, VIDEO_S3_COMPLETE));
   }
 
-  /*
-   * Inserts file object into the database.
-   */
-  public function insert($fid) {
-    db_query('INSERT INTO {video_s3} (fid, status) VALUES (%d, %d)', $fid, VIDEO_S3_PENDING);
-  }
-
-  /*
-   * Updates the database after a successful transfer to amazon.
-   */
-  public function update($video) {
-    return db_query("UPDATE {video_s3} SET bucket='%s', filename='%s', filepath='%s', filemime='%s', filesize='%s', status=%d, completed=%d WHERE vid=%d",
-            $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_S3_COMPLETE, time(), $video->vid);
-  }
-
-  public function working($vid) {
-    db_query("UPDATE {video_s3} SET status=%d WHERE vid=%d", VIDEO_S3_ACTIVE, $vid);
-  }
-
-  public function failed($vid) {
-    db_query("UPDATE {video_s3} SET status=%d WHERE vid=%d", VIDEO_S3_FAILED, $vid);
-  }
-
-  public function delete($fid) {
-    // Lets get our file no matter the status and delete it.
-    if ($video = $this->verify($fid)) {
-      if ($video->bucket) {
-        // It has been pushed to amazon so lets remove it.
-        $filepath = $video->filepath;
-        // For old video's (pre-4.5), the filename property is actually the path we need
-        if (strpos('/', $video->filename) !== FALSE) {
-          $filepath = $video->filename;
-        }
-        $this->s3->delete_object($video->bucket, $filepath);
-
-        // Remove locally converted files
-        $row = db_fetch_object(db_query('SELECT data FROM {video_files} WHERE data IS NOT NULL AND fid = %d', $fid));
-        if ($row) {
-          foreach (unserialize($row->data) as $subvideo) {
-            $this->s3->delete_object($video->bucket, $subvideo->filepath);
-          }
-        }
-
-        // TODO: move this to video_zencoder
-        if (module_exists('video_zencoder')) {
-          // Delete converted files added by Zencoder
-          $row = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE data IS NOT NULL AND fid = %d', $fid));
-          if ($row) {
-            foreach (unserialize($row->data) as $subvideo) {
-              $parts = parse_url($subvideo->url);
-              $this->s3->delete_object($video->bucket, ltrim($parts['path'], '/'));
-            }
-          }
-
-          // Delete thumbnails added by Zencoder
-          $thumb_folder = video_thumb_path($video, FALSE) .'/';
-          $thumbfilenames = $this->s3->get_object_list($video->bucket, array('prefix' => $thumb_folder));
-          if (!empty($thumbfilenames)) {
-            $objects = array();
-            foreach ($thumbfilenames as $thumb) {
-              $objects[] = array('key' => $thumb);
-            }
-            $this->s3->delete_objects($video->bucket, array('objects' => $objects));
-          }
-        }
-      }
-
-      // Lets delete our record from the database.
-      db_query('DELETE FROM {video_s3} WHERE vid = %d', $video->vid);
-    }
-  }
-
-  /*
-   * Selects the pending queue to be transfered to amazon.
-   */
-  public function queue() {
-    $sql = db_query("SELECT vid, fid FROM {video_s3} WHERE status = %d LIMIT %d", VIDEO_S3_PENDING, $this->limit);
-    while ($row = db_fetch_object($sql)) {
-      module_load_include('inc', 'video', '/includes/conversion');
-      
-      // We need to check if this file id exists in our transcoding table.
-      // Skip unfinished local jobs
-      $result = db_query('SELECT f.*, vf.data FROM {files} f LEFT JOIN {video_files} vf USING(fid) WHERE f.fid = %d AND (vf.status IS NULL OR vf.status = %d)', $row->fid, VIDEO_RENDERING_COMPLETE);
-      if (!($video = db_fetch_object($result))) {
-        $this->watchdog('Could not find the file id %fid or it is still queued for local processing.', array('%fid' => $row->fid), WATCHDOG_DEBUG, $row);
-        continue;
-      }
-
-      // Update our status to working.
-      $this->working($row->vid);
-
-      $success = true;
-
-      // Add all locally converted variants
-      if (!empty($video->data)) {
-        foreach (unserialize($video->data) as $file) {
-          if (!$this->pushFile($file)) {
-            $success = false;
-          }
-        }
-      }
-
-      if ($success) {
-        // Upload the original
-        if ($video = $this->pushFile($video)) {
-          $video->vid = $row->vid;
-          $this->update($video);
-        }
-        else {
-          $success = false;
-        }
-      }
-
-      if (!$success) {
-        $this->failed($row->vid);
-      }
-    }
-    
-    // Update Expires headers on currently-uploaded files.
-    // First, make sure this is a good time to do this. It doesn't make much
-    // sense to do this more often than the Expires offset.
-    $expires_offset = variable_get('amazon_s3_expires_offset', 604800);
-    if ($expires_offset !== 'none' && $expires_offset != 0 && variable_get('amazon_s3_expires_last_cron', 0) + $expires_offset < time()) {
-      $active = db_query('SELECT bucket, filename, filepath, filemime FROM {video_s3} WHERE status = %d', VIDEO_S3_COMPLETE);
-      $permission = variable_get('amazon_s3_private', FALSE) ? AmazonS3::ACL_PRIVATE : AmazonS3::ACL_PUBLIC;
-      
-      $headers = array('Expires' => gmdate('r', time() + $expires_offset));
-      // Note that Cache-Control headers are always relative values (X seconds
-      // in the future from the point they are sent), so we don't need to update
-      // them regularly like we do with Expires headers. However, if we don't
-      // send one, the one that is set (if any) will be deleted. (Also, if the
-      // human has changed this setting on the administration page, we want to
-      // update video info accordingly.)
-      // @todo: Logic problems: This only updates when expires headers update…
-      // Might want to find a way so that these update immediately when the
-      // admin settings form is submitted.
-      $cc = variable_get('amazon_s3_cache_control_max_age', 'none');
-      if ($cc !== 'none') {
-        $headers['Cache-Control'] = 'max-age=' . $cc;
-      }
-      while ($file = db_fetch_object($active)) {
-        $this->update_headers($file->bucket, $file->filename, $headers);
-      }
-      
-      variable_set('amazon_s3_expires_last_cron', time());
-    }
-  }
-
-  private function pushFile(stdClass $file) {
+  public function pushFile(stdClass $file, $keeplocal = FALSE) {
     $expires_offset = variable_get('amazon_s3_expires_offset', 604800);
     $perm = variable_get('amazon_s3_private', FALSE) ? AmazonS3::ACL_PRIVATE : AmazonS3::ACL_PUBLIC;
     $cc = variable_get('amazon_s3_cache_control_max_age', 'none');
@@ -237,14 +84,17 @@ class video_amazon_s3 {
     if ($cc !== 'none') {
       $headers['Cache-Control'] = 'max-age='. $cc;
     }
-    
+
+    // Increase the database timeout to prevent database errors after a long upload
+    _video_db_increase_timeout();
+
     $response = $this->s3->create_object($this->bucket, $file->filepath, array(
       'fileUpload' => $file->filepath,
       'acl' => $perm,
       'contentType' => $file->filemime,
       'headers' => $headers,
     ));
-    
+
     if ($response->isOK()) {
       // If private, set permissions for Zencoder to read
       if ($perm == AmazonS3::ACL_PRIVATE) {
@@ -252,21 +102,16 @@ class video_amazon_s3 {
       }
 
       $file->bucket = $this->bucket;
-      $s3url = 'http://'. $file->bucket .'.s3.amazonaws.com/'. drupal_urlencode($file->filepath);
 
-      // remove local file
-      if (variable_get('amazon_s3_delete_local', FALSE)) {
-        $this->replaceLocalFile($file->filepath, $s3url);
+      if (!$keeplocal) {
+        file_delete($file->filepath);
       }
-
-      // Do a reconnect because the transfer may take a while
-      _video_db_reconnect();
 
       $this->watchdog(
         'Successfully uploaded %file to Amazon S3 location <a href="@s3-url">@s3-path</a> and permission %permission.',
         array(
           '%file' => $file->filename,
-          '@s3-url' => $s3url,
+          '@s3-url' => 'http://'. $file->bucket .'.s3.amazonaws.com/'. drupal_urlencode($file->filepath),
           '@s3-path' => $file->filepath,
           '%permission' => $perm,
         ), WATCHDOG_INFO, $file);
@@ -312,6 +157,46 @@ class video_amazon_s3 {
     return $this->s3->get_object($this->bucket, $filepath, array(
       'fileDownload' => $saveTo,
     ));
+  }
+
+  /**
+   * Update Expires headers on currently-uploaded files.
+   */
+  public function updateAllExpiresHeaders() {
+    // First, make sure this is a good time to do this. It doesn't make much
+    // sense to do this more often than the Expires offset.
+    $expires_offset = variable_get('amazon_s3_expires_offset', 604800);
+    if ($expires_offset === 'none' || $expires_offset === 0) {
+      return;
+    }
+
+    if (variable_get('amazon_s3_expires_last_cron', 0) + $expires_offset > time()) {
+      return;
+    }
+
+    $active = db_query('SELECT bucket, filename, filepath, filemime FROM {video_s3} WHERE status = %d', VIDEO_S3_COMPLETE);
+    $permission = variable_get('amazon_s3_private', FALSE) ? AmazonS3::ACL_PRIVATE : AmazonS3::ACL_PUBLIC;
+
+    $headers = array('Expires' => gmdate('r', time() + $expires_offset));
+    // Note that Cache-Control headers are always relative values (X seconds
+    // in the future from the point they are sent), so we don't need to update
+    // them regularly like we do with Expires headers. However, if we don't
+    // send one, the one that is set (if any) will be deleted. (Also, if the
+    // human has changed this setting on the administration page, we want to
+    // update video info accordingly.)
+    // @todo: Logic problems: This only updates when expires headers update…
+    // Might want to find a way so that these update immediately when the
+    // admin settings form is submitted.
+    $cc = variable_get('amazon_s3_cache_control_max_age', 'none');
+    if ($cc !== 'none') {
+      $headers['Cache-Control'] = 'max-age='. $cc;
+    }
+
+    while ($file = db_fetch_object($active)) {
+      $this->update_headers($file, $permission, $headers);
+    }
+
+    variable_set('amazon_s3_expires_last_cron', time());
   }
 
   private function update_headers($file, $permission, $headers) {
@@ -407,7 +292,7 @@ class video_amazon_s3 {
    * @param string $filepath
    * @param string $s3url
    */
-  private function replaceLocalFile($filepath, $s3url) {
+  public function replaceLocalFile($filepath, $s3url) {
     if (file_delete($filepath) !== FALSE) {
       $fp = fopen($filepath, 'w+');
       if (!$fp) {

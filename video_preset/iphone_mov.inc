@@ -1,5 +1,5 @@
 <?php
-class iphone_mov extends video_preset_base implements video_preset_interface {
+class iphone_mov extends video_preset_base implements video_preset {
   protected $name = 'iPhone MOV';
   protected $value = 'iphone_mov';
 

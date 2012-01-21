@@ -6,6 +6,8 @@
 
 - [CCK](http://drupal.org/project/cck)
 - [Filefield](http://drupal.org/project/filefield)
+- [Chaos Tools](http://drupal.org/project/ctools)
+- [Libraries API](http://drupal.org/project/libraries), for Zencoder or S3
 
 ### Recommended Drupal modules
 
@@ -20,7 +22,7 @@
 
 ### Required software
 
-- [FFmpeg](http://ffmpeg.org/), unless the Zencoder submodule is used, see instructions below
+- [FFmpeg](http://ffmpeg.org/) or another local transcoder, unless the Zencoder submodule is used, see instructions below
 
 ### Recommended software
 

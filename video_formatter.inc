@@ -18,16 +18,15 @@ function theme_video_formatter_video_plain($element) {
   // Only needs to be ran if they are converting videos
 
   if (!empty($field['widget']['autoconversion']) && empty($element['#item']['data']['bypass_autoconversion'])) {
-    module_load_include('inc', 'video', '/includes/conversion');
-    $conversion = new video_conversion;
-    $video = $conversion->load_job($element['#item']['fid']);
+    $transcoder = video_get_transcoder();
+    $video = $transcoder->load_job($element['#item']['fid']);
     if (!$video) {
       return '';
     }
-    if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
+    if ($video->status == VIDEO_RENDERING_ACTIVE || $video->status == VIDEO_RENDERING_PENDING) {
       return theme('video_inprogress');
     }
-    else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+    else if ($video->status == VIDEO_RENDERING_FAILED) {
       return theme('video_encoding_failed');
     }
   }

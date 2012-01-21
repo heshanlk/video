@@ -1,5 +1,5 @@
 <?php
-class html5_ogv extends video_preset_base implements video_preset_interface {
+class html5_ogv extends video_preset_base implements video_preset {
   protected $name = 'HTML5 Ogg Theora / Vorbis';
   protected $value = 'html5_ogv';
 

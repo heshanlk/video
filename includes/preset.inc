@@ -1,5 +1,5 @@
 <?php
-class video_preset {
+class video_preset_api {
   private $presets;
 
   public function __construct() {
@@ -36,40 +36,4 @@ class video_preset {
 
     return $presets;
   }
-}
-
-abstract class video_preset_base implements video_preset_interface {
-  private $settings = NULL;
-  
-  public function getSettings() {
-    if ($this->settings == NULL) {
-      $transcoder = variable_get('vid_convertor', 'video_localcommand');
-      $settings = db_result(db_query('SELECT data FROM {video_preset_settings} WHERE preset = "%s" AND transcoder = "%s"', $this->get_value(), $transcoder));
-      
-      if ($settings) {
-        $this->settings = unserialize($settings);
-      }
-      else {
-        $this->settings = array();
-      }
-    }
-    
-    return $this->settings;
-  }
-
-  public function setSettings(array $settings) {
-    $transcoder = variable_get('vid_convertor', 'video_localcommand');
-    $this->settings = $settings;
-    
-    db_query('REPLACE INTO {video_preset_settings} SET data = "%s", preset = "%s", transcoder = "%s"', serialize($settings), $this->get_value(), $transcoder);
-  }
-}
-
-interface video_preset_interface {
-  public function get_name();
-  public function get_value();
-  public function get_help();
-  public function getExtension();
-  public function getSettings();
-  public function setSettings(array $settings);
 }

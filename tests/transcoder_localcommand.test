@@ -19,7 +19,7 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
   }
 
   function testShouldReturnOutputDimensionsWhenInputAndOutputAspectRatioEqual() {
-    module_load_include('inc', 'video', 'includes/transcoder');
+    module_load_include('lib.inc', 'video');
     module_load_include('inc', 'video', 'transcoders/video_localcommand');
     $transcoder = new video_localcommand();
     
@@ -45,7 +45,7 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
   }
 
   function testShouldReturnTopAndBottomPaddingWhenInputWiderThanOutput() {
-    module_load_include('inc', 'video', 'includes/transcoder');
+    module_load_include('lib.inc', 'video');
     module_load_include('inc', 'video', 'transcoders/video_localcommand');
     $transcoder = new video_localcommand();
     
@@ -71,7 +71,7 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
   }
 
   function testShouldReturnLeftAndRightPaddingWhenInputNarrowerThanOutput() {
-    module_load_include('inc', 'video', 'includes/transcoder');
+    module_load_include('lib.inc', 'video');
     module_load_include('inc', 'video', 'transcoders/video_localcommand');
     $transcoder = new video_localcommand();
     

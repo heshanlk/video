@@ -1,9 +1,12 @@
 <?php
+// Register this file as a CTools plugin
+$plugin = array();
+
 /*
  * @file
  * Transcoder class file to handle local command settings and conversions.
  */
-class video_localcommand implements transcoder_interface {
+class video_localcommand implements video_transcoder {
   private $name = 'Locally Installed Transcoder (FFmpeg/Handbreke/Mcoder)';
   private $value = 'video_localcommand';
 
@@ -51,16 +54,9 @@ class video_localcommand implements transcoder_interface {
 
     $return_var = 0;
 
-    $start = time();
     ob_start();
     passthru($command, &$return_var);
     $output = ob_get_clean();
-    $duration = time() - $start;
-
-    // Reconnect if the command took more than 10 seconds
-    if ($duration > 10) {
-      _video_db_reconnect();
-    }
 
     // Returnvar 1 means input file not found. This is normal for information calls.
     if ($return_var != 0 && ($return_var != 1 || !$ignoreoutputfilenotfound)) {
@@ -74,7 +70,7 @@ class video_localcommand implements transcoder_interface {
     return TRUE;
   }
 
-  public function generate_thumbnails($video) {
+  public function generate_thumbnails(stdClass $video) {
     global $user;
     
     $final_thumb_path = video_thumb_path($video);
@@ -82,17 +78,17 @@ class video_localcommand implements transcoder_interface {
 
     $files = NULL;
     for ($i = 1; $i <= $total_thumbs; $i++) {
-      $filename = '/video-thumb-for-'. $video['fid'] .'-'. $i .'.jpg';
+      $filename = '/video-thumb-for-'. $video->fid .'-'. $i .'.jpg';
       $thumbfile = $final_thumb_path . $filename;
       
       //skip files already exists, this will save time
       if (!is_file($thumbfile)) {
         if (!isset($duration)) {
-          $duration = $this->get_playtime($video['filepath']);
+          $duration = $this->get_playtime($video->filepath);
         }
         $seek = floor($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
         //setup the command to be passed to the transcoder.
-        $command = $this->cmdpath .' '. strtr($this->thumbcmdoptions, array('!videofile' => escapeshellarg($video['filepath']), '!seek' => $seek, '!thumbfile' => $thumbfile));
+        $command = $this->cmdpath .' '. strtr($this->thumbcmdoptions, array('!videofile' => escapeshellarg($video->filepath), '!seek' => $seek, '!thumbfile' => $thumbfile));
         // Generate the thumbnail from the video.
         $command_output = '';
         $this->run_command($command, $command_output, t('generating thumbnails'));
@@ -100,7 +96,7 @@ class video_localcommand implements transcoder_interface {
         // don't consider zero-byte files a success
         $exists = file_exists($thumbfile);
         if (!$exists || filesize($thumbfile) == 0) {
-          $params = array('%file' => $thumbfile, '%video' => $video['filename']);
+          $params = array('%file' => $thumbfile, '%video' => $video->filename);
           
           if ($exists) {
             $error_msg = 'Error generating thumbnail for video %video: generated file %file is empty. This problem may be caused by a broken video file. The video reports that its length is @duration seconds. If this is wrong, please recreate the video and try again.';
@@ -133,37 +129,21 @@ class video_localcommand implements transcoder_interface {
     return $files;
   }
 
-  public function convert_video($video) {
+  public function convert_video(stdClass $video) {
     // This will update our current video status to active.
-    $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
+    $this->change_status($video, VIDEO_RENDERING_ACTIVE);
 
-    // Get the converted file object
-    //we are going to move our video to an "original" folder
-    //we are going to transcode the video to the "converted" folder
-    // @TODO This about getting the correct path from the filefield if they active it
-    $files = file_create_path();
-    $originaldir = $files .'/videos/original';
-    $converteddir = $files .'/videos/converted';
+    $converteddir = dirname($video->filepath) .'/../converted';
 
-    if (!field_file_check_directory($originaldir, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing original videos.', array('%dir' => $originaldir), WATCHDOG_ERROR);
-      return false;
-    }
     if (!field_file_check_directory($converteddir, FILE_CREATE_DIRECTORY)) {
       watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
-      return false;
-    }
-
-    $original = $originaldir .'/'. $video->filename;
-    //lets move our video and then convert it.
-    if (!file_move($video, $original)) {
-      watchdog('video_command', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
-      $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
-
-    // Update our filepath since we moved it
-    drupal_write_record('files', $video, 'fid');
+    
+    // Increase the database timeout to prevent database errors after a long upload
+    _video_db_increase_timeout();
+    
+    $converteddir = realpath($converteddir);
 
     // Get the placeholders for the transcoding command
     $fileinfo = _video_aspect_ratio($video->filepath);
@@ -182,11 +162,7 @@ class video_localcommand implements transcoder_interface {
       '!paddingright' => $dimensionparameters->paddingright,
     );
 
-    // Make the directories absolute
-    $originaldir = realpath($originaldir);
-    $converteddir = realpath($converteddir);
-
-    // Create a temporary directory
+    // Create a temporary directory and move to it
     $drupaldir = getcwd();
     $drupaldirrp = realpath($drupaldir);
     $tmpdir = tempnam(file_directory_temp(), 'drupal-video-'. $video->fid);
@@ -267,7 +243,10 @@ class video_localcommand implements transcoder_interface {
 
     // Update our video_files table with the converted video information.
     if ($result) {
-      $result = db_query('UPDATE {video_files} SET status = %d, completed = %d, data = "%s" WHERE vid = %d', VIDEO_RENDERING_COMPLETE, time(), serialize($converted_files), $video->vid);
+      $video->status = VIDEO_RENDERING_COMPLETE;
+      $video->completed = time();
+      $video->data = $converted_files;
+      $result = db_query('UPDATE {video_files} SET status = %d, completed = %d, data = "%s" WHERE vid = %d', $video->status, $video->completed, serialize($video->data), $video->vid);
 
       // Prepare the watchdog statement
       $destinationfiles = array();
@@ -282,11 +261,7 @@ class video_localcommand implements transcoder_interface {
         file_delete($file->filepath);
       }
 
-      // Try to move back the original file
-      file_move($video, $files .'/videos');
-      drupal_write_record('files', $video, 'fid');
-
-      $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+      $this->change_status($video, VIDEO_RENDERING_FAILED);
     }
 
     return $result;
@@ -346,75 +321,51 @@ class video_localcommand implements transcoder_interface {
     return $res;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_name()
-   */
   public function get_name() {
     return $this->name;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_value()
-   */
   public function get_value() {
     return $this->value;
   }
 
-  public function create_job($video) {
-    if (empty($video['dimensions'])) {
-      watchdog('video_command', 'Tried to create job for video %video with empty dimensions value.', array('%video' => $video['fid']), WATCHDOG_ERROR);
-      return FALSE;
+  public function create_job(stdClass $video) {
+    $video->status = VIDEO_RENDERING_PENDING;
+    return db_query('INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, "%s")', $video->fid, VIDEO_RENDERING_PENDING, $video->dimensions);
+  }
+
+  public function update_job(stdClass $video) {
+    if (!$this->load_job($video->fid)) {
+      return;
     }
     
-    return db_query("INSERT INTO {video_files} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
+    // Lets update our table to include the nid
+    db_query('UPDATE {video_files} SET nid = %d WHERE fid=%d', $video->nid, $video->fid);
   }
 
-  public function update_job($video) {
-    if (!$this->load_job($video['fid']))
-      return;
-    //lets update our table to include the nid
-    db_query("UPDATE {video_files} SET nid=%d WHERE fid=%d", $video['nid'], $video['fid']);
-  }
-
-  public function delete_job($video) {
-    if (!$this->load_job($video->fid))
-      return;
-    //lets get all our videos and unlink them
-    $sql = db_query("SELECT data FROM {video_files} WHERE fid=%d", $video->fid);
-    //we loop here as future development will include multiple video types (HTML 5)
-    while ($row = db_fetch_object($sql)) {
-      $data = unserialize($row->data);
-      if (empty($data))
-        continue;
-      foreach ($data as $file) {
-        if (file_exists($file->filepath))
-          unlink($file->filepath);
-      }
-    }
-    //now delete our rows.
+  public function delete_job(stdClass $video) {
     db_query('DELETE FROM {video_files} WHERE fid = %d', $video->fid);
   }
 
   public function load_job($fid) {
-    $job = null;
-    $result = db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid);
-    $job = db_fetch_object($result);
-    if (!empty($job))
+    $job = db_fetch_object(db_query('SELECT f.fid, f.filename, f.filepath, f.filesize, f.filemime, vf.vid, vf.nid, vf.dimensions, vf.status, vf.data FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = %d', $fid));
+    if (!empty($job)) {
+      $job->data = unserialize($job->data);
       return $job;
-    else
-      return FALSE;
+    }
+
+    return FALSE;
   }
 
-  public function load_job_queue() {
-    $total_videos = variable_get('video_queue_batchsize', 5);
+  public function load_job_queue($num) {
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp', VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
 
+    $result = db_query_range('SELECT f.fid, f.filename, f.filepath, f.filemime, f.filesize, vf.vid, vf.nid, vf.dimensions, vf.status, vf.data FROM {video_files} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp', VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $num);
     while ($row = db_fetch_object($result)) {
+      $row->data = unserialize($row->data);
       $videos[] = $row;
     }
+
     return $videos;
   }
 
@@ -423,14 +374,11 @@ class video_localcommand implements transcoder_interface {
    * @param <type> $video
    * @return <type>
    */
-  public function load_completed_job(&$video) {
-    $result = db_fetch_object(db_query('SELECT * FROM {video_files} WHERE fid = %d', $video->fid));
-    $data = unserialize($result->data);
-    if (empty($data))
-      return $video;
-    foreach ($data as $value) {
+  public function load_completed_job(stdClass $video) {
+    $result = db_fetch_object(db_query('SELECT data FROM {video_files} WHERE fid = %d', $video->fid));
+    foreach (unserialize($result->data) as $value) {
       $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
-      $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) . '.' . $extension;
+      $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) .'.'. $extension;
       $video->files->{$extension}->filepath = $value->filepath;
       $video->files->{$extension}->url = file_create_url($value->filepath);
       $video->files->{$extension}->extension = $extension;
@@ -446,8 +394,9 @@ class video_localcommand implements transcoder_interface {
    * @param (int) $vid
    * @param (int) $status
    */
-  public function change_status($vid, $status) {
-    $result = db_query('UPDATE {video_files} SET status = %d WHERE vid = %d ', $status, $vid);
+  public function change_status(stdClass $video, $status) {
+    $video->status = $status;
+    db_query('UPDATE {video_files} SET status = %d WHERE vid = %d', $status, $video->vid);
   }
 
   /*
@@ -507,18 +456,10 @@ class video_localcommand implements transcoder_interface {
     return $options;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_help()
-   */
   public function get_help() {
     return l(t('FFmpeg Online Manual'), 'http://www.ffmpeg.org/');
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings()
-   */
   public function admin_settings(&$form_state) {
     $form = array();
     $form['video_localcommand_start'] = array(
@@ -603,10 +544,6 @@ class video_localcommand implements transcoder_interface {
     return $form;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
-   */
   public function admin_settings_validate($form, &$form_state) {
     $v =& $form_state['values'];
 
@@ -632,7 +569,7 @@ class video_localcommand implements transcoder_interface {
     }
   }
 
-  public function preset_settings(&$form_state, video_preset_interface $preset) {
+  public function preset_settings(&$form_state, video_preset $preset) {
     $form = array();
     
     $settings = $preset->getSettings();

@@ -1,5 +1,5 @@
 <?php
-class html5_webm extends video_preset_base implements video_preset_interface {
+class html5_webm extends video_preset_base implements video_preset {
   protected $name = 'HTML5 WebM';
   protected $value = 'html5_webm';
 

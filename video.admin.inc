@@ -6,151 +6,8 @@
 video_add_adminjs();
 
 /**
- * Video transcoder admin settings
- * @return <type>
- */
-function video_transcoder_admin_settings() {
-  module_load_include('inc', 'video', '/includes/transcoder');
-  $transcoder = new video_transcoder;
-  $form = $transcoder->admin_settings();
-  return system_settings_form($form);
-}
-
-/**
- * Form API callback to validate the upload settings form.
- */
-function video_transcoder_admin_settings_validate($form, &$form_state) {
-  // add validations by transcoder interface
-  $transcoder = $form_state['values']['vid_convertor'];
-  module_load_include('inc', 'video', '/includes/transcoder');
-  $transcoder = new video_transcoder($transcoder);
-  $transcoder->admin_settings_validate($form, $form_state);
-}
-
-/**
- * Video transcoder admin settings
- * @return <type>
- */
-function video_preset_admin_settings() {
-  module_load_include('inc', 'video', 'includes/preset');
-  $presetdata = new video_preset();
-  
-  $presets = $presetdata->getAllPresets();
-  $enabled = $presetdata->getEnabledPresets();
-  
-  $options = array();
-  $help = array();
-  foreach ($presets as $preset) {
-    $options[$preset->get_value()] = check_plain($preset->get_name()) .' ('. l(t('configure'), 'admin/settings/video/presets/'.rawurlencode($preset->get_value())) .')';
-  
-    $helptext = $preset->get_help();
-    if (!empty($helptext)) {
-      $help[] = check_plain($preset->get_name()) .': '. $helptext;
-    }
-  }
-  
-  $form['vid_preset'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Video transcode presets'),
-    '#options' => $options,
-    '#default_value' => array_keys($enabled),
-    '#description' => theme('item_list', $help),
-    '#required' => TRUE,
-  );
-  
-  return system_settings_form($form);
-}
-
-function video_preset_admin_settings_validate($form, &$form_state) {
-  $presets =& $form_state['values']['vid_preset'];
-  $presets = array_diff($presets, array(0));
-  $presets = array_values($presets);
-}
-
-/**
- * Form for transcoder specific preset settings
- * 
- * @param array $form_state
- * @return array
- */
-function video_preset_admin_configure(&$form_state, video_preset_interface $preset) {
-  module_load_include('inc', 'video', 'includes/transcoder');
-  $transcoder = new video_transcoder();
-  
-  $presetform = $transcoder->preset_settings($form_state, $preset);
-  
-  $form_state['preset'] = $preset;
-  $form_state['transcoder'] = $transcoder;
-  
-  // Save the settings keys that are saved to the database later
-  $form_state['keys'] = array();
-  foreach (element_children($presetform) as $child) {
-    $type = '';
-    if (isset($presetform[$child]['#type'])) {
-      $type = $presetform[$child]['#type'];
-    }
-
-    if ($type != 'item' && $type != 'value' && $type != 'markup') {
-      $form_state['keys'][] = $child;
-    }
-  }
-  
-  $form = array(
-    '#redirect' => 'admin/settings/video/presets',
-  );
-  
-  $form['preset'] = array(
-    '#type' => 'item',
-    '#title' => t('Preset'),
-    '#value' => check_plain($preset->get_name()) .' ('. t('extension:') .' '. $preset->getExtension() .')',
-  );
-  
-  $form['transcoder'] = array(
-    '#type' => 'item',
-    '#title' => t('Transcoder'),
-    '#value' => check_plain($transcoder->get_name()),
-  );
-  
-  if (!empty($form_state['keys'])) {
-    $form = array_merge($form, $presetform);
-    
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Submit'),
-        '#suffix' => l(t('Back'), $form['#redirect']),
-    );
-  }
-  else {
-    $form['notice'] = array(
-      '#type' => 'item',
-      '#value' => t('This transcoder does not have specific settings for this preset.'),
-      '#suffix' => l(t('Back'), $form['#redirect']),
-    );
-  }
-  
-  return $form;
-}
-
-function video_preset_admin_configure_validate($form, &$form_state) {
-  $form_state['transcoder']->preset_settings_validate($form, $form_state);
-}
-
-function video_preset_admin_configure_submit($form, &$form_state) {
-  $values = $form_state['values'];
-  $settings = array();
-
-  foreach($form_state['keys'] as $key) {
-    if (isset($values[$key]) && $values[$key] !== '') {
-      $settings[$key] = $values[$key];
-    }
-  }
-
-  $form_state['preset']->setSettings($settings);
-}
-
-/**
  * Video general admin settings
- * @return <type>
+ * @return array
  */
 function video_general_admin_settings() {
   $form = array();
@@ -270,13 +127,224 @@ function video_players_admin_settings($form_state) {
   return system_settings_form($form);
 }
 
-function _video_validate_number($element, $form_state) {
-  $key = end($element['#parents']);
-  $val = $form_state['values'][$key];
-  
-  if (!empty($val) && (!preg_match('#^\d+$#', $val) || intval($val) < 0)) {
-    form_error($element, t('You must enter an integer value for field %field.', array('%field' => $element['#title'])));
+/**
+ * Video transcoder admin settings
+ * @return array
+ */
+function video_transcoder_admin_settings($form_state) {
+  $form = array();
+
+  $transcoderplugins = video_get_transcoder_plugins();
+
+  ksort($transcoderplugins);
+
+  $transcoders = array();
+  $help = array();
+
+  foreach ($transcoderplugins as $transcoderplugin) {
+    $transcoder = video_get_transcoder($transcoderplugin['name']);
+    
+    $transcoders[$transcoderplugin['name']] = $transcoder->get_name();
+    $help[] = $transcoder->get_help();
+    $form = array_merge($form, $transcoder->admin_settings($form_state));
   }
+
+  $form['vid_convertor'] = array(
+    '#type' => 'radios',
+    '#title' => t('Video transcoder'),
+    '#default_value' => variable_get('vid_convertor', 'video_localcommand'),
+    '#options' => $transcoders,
+    '#description' => t('Selecting a video transcoder will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', $help))),
+    '#prefix' => '<div id="transcoder-radios">',
+    '#suffix' => '</div>',
+    '#weight' => -1,
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Form API callback to validate the upload settings form.
+ */
+function video_transcoder_admin_settings_validate($form, &$form_state) {
+  $transcoder = video_get_transcoder($form_state['values']['vid_convertor']);
+  $transcoder->admin_settings_validate($form, $form_state);
+}
+
+/**
+ * Video transcoder admin settings
+ * @return <type>
+ */
+function video_preset_admin_settings() {
+  module_load_include('inc', 'video', 'includes/preset');
+  $presetdata = new video_preset();
+  
+  $presets = $presetdata->getAllPresets();
+  $enabled = $presetdata->getEnabledPresets();
+  
+  $options = array();
+  $help = array();
+  foreach ($presets as $preset) {
+    $options[$preset->get_value()] = check_plain($preset->get_name()) .' ('. l(t('configure'), 'admin/settings/video/presets/'.rawurlencode($preset->get_value())) .')';
+  
+    $helptext = $preset->get_help();
+    if (!empty($helptext)) {
+      $help[] = check_plain($preset->get_name()) .': '. $helptext;
+    }
+  }
+  
+  $form['vid_preset'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Video transcode presets'),
+    '#options' => $options,
+    '#default_value' => array_keys($enabled),
+    '#description' => theme('item_list', $help),
+    '#required' => TRUE,
+  );
+  
+  return system_settings_form($form);
+}
+
+function video_preset_admin_settings_validate($form, &$form_state) {
+  $presets =& $form_state['values']['vid_preset'];
+  $presets = array_diff($presets, array(0));
+  $presets = array_values($presets);
+}
+
+/**
+ * Form for transcoder specific preset settings
+ * 
+ * @param array $form_state
+ * @return array
+ */
+function video_preset_admin_configure(&$form_state, video_preset $preset) {
+  $transcoder = video_get_transcoder();
+  $presetform = $transcoder->preset_settings($form_state, $preset);
+  
+  $form_state['preset'] = $preset;
+  $form_state['transcoder'] = $transcoder;
+  
+  // Save the settings keys that are saved to the database later
+  $form_state['keys'] = array();
+  foreach (element_children($presetform) as $child) {
+    $type = '';
+    if (isset($presetform[$child]['#type'])) {
+      $type = $presetform[$child]['#type'];
+    }
+
+    if ($type != 'item' && $type != 'value' && $type != 'markup') {
+      $form_state['keys'][] = $child;
+    }
+  }
+  
+  $form = array(
+    '#redirect' => 'admin/settings/video/presets',
+  );
+  
+  $form['preset'] = array(
+    '#type' => 'item',
+    '#title' => t('Preset'),
+    '#value' => check_plain($preset->get_name()) .' ('. t('extension:') .' '. $preset->getExtension() .')',
+  );
+  
+  $form['transcoder'] = array(
+    '#type' => 'item',
+    '#title' => t('Transcoder'),
+    '#value' => check_plain($transcoder->get_name()),
+  );
+  
+  if (!empty($form_state['keys'])) {
+    $form = array_merge($form, $presetform);
+    
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+        '#suffix' => l(t('Back'), $form['#redirect']),
+    );
+  }
+  else {
+    $form['notice'] = array(
+      '#type' => 'item',
+      '#value' => t('This transcoder does not have specific settings for this preset.'),
+      '#suffix' => l(t('Back'), $form['#redirect']),
+    );
+  }
+  
+  return $form;
+}
+
+function video_preset_admin_configure_validate($form, &$form_state) {
+  $form_state['transcoder']->preset_settings_validate($form, $form_state);
+}
+
+function video_preset_admin_configure_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  $settings = array();
+
+  foreach($form_state['keys'] as $key) {
+    if (isset($values[$key]) && $values[$key] !== '') {
+      $settings[$key] = $values[$key];
+    }
+  }
+
+  $form_state['preset']->setSettings($settings);
+}
+
+/**
+ * File system admin settings
+ * @return array
+ */
+function video_filesystem_admin_settings($form_state) {
+  $fs = variable_get('vid_filesystem', 'drupal');
+  $downloads = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
+  
+  if ($downloads == FILE_DOWNLOADS_PRIVATE && empty($_POST['vid_filesystem'])) {
+    drupal_set_message(t('Storing videos in the Drupal file system is not supported when using <a href="@filesystem">private downloads</a>.', array('@filesystem' => url('admin/settings/file-system'))), $fs == 'drupal' ? 'error' : 'warn');
+  }
+
+  $form = array();
+
+  $filesystemplugins = video_get_filesystem_plugins();
+
+  ksort($filesystemplugins);
+
+  $filesystems = array();
+  $help = array();
+
+  foreach ($filesystemplugins as $filesystemplugin) {
+    $filesystem = video_get_filesystem($filesystemplugin['name']);
+    
+    $filesystems[$filesystemplugin['name']] = $filesystem->get_name();
+    $help[] = $filesystem->get_help();
+
+    $form['video_'. $filesystemplugin['name'] .'_start'] = array(
+      '#type' => 'markup',
+      '#value' => '<div id="'. $filesystemplugin['name'] .'">',
+    );
+    $form = array_merge($form, $filesystem->admin_settings($form_state));
+    $form['video_'. $filesystemplugin['name'] .'_end'] = array(
+      '#type' => 'markup',
+      '#value' => '</div>',
+    );
+  }
+
+  $form['vid_filesystem'] = array(
+    '#type' => 'radios',
+    '#title' => t('Video file system'),
+    '#default_value' => variable_get('vid_filesystem', 'drupal'),
+    '#options' => $filesystems,
+    '#description' => theme('item_list', $help),
+    '#prefix' => '<div id="filesystem-radios">',
+    '#suffix' => '</div>',
+    '#weight' => -1,
+  );
+
+  return system_settings_form($form);
+}
+
+function video_filesystem_admin_settings_validate($form, &$form_state) {
+  $filesystem = video_get_filesystem($form_state['values']['vid_filesystem']);
+  $filesystem->admin_settings_validate($form, $form_state);
 }
 
 /**
@@ -301,24 +369,6 @@ function video_cron_admin_settings() {
 }
 
 /**
- * File system admin settings
- * @return <type>
- */
-function video_filesystem_admin_settings() {
-  module_load_include('inc', 'video', '/includes/filesystem');
-  $filesystem = new video_filesystem;
-  $form = $filesystem->admin_settings();
-  return system_settings_form($form);
-}
-
-function video_filesystem_admin_settings_validate($form, &$form_state) {
-  $filesystem = $form_state['values']['vid_filesystem'];
-  module_load_include('inc', 'video', '/includes/filesystem');
-  $filesystem = new video_filesystem($filesystem);
-  $filesystem->admin_settings_validate($form, $form_state);
-}
-
-/**
  * Return our possible flash players.
  */
 function video_video_flv_players() {
@@ -336,12 +386,22 @@ function video_video_flv_players() {
  * Return our possible html5 players.
  */
 function video_video_html5_players() {
-  $options = array();
+  $options = array(
+    'video' => t('Video (default)'),
+  );
+
   if (module_exists('videojs')) {
     $options['videojs'] = t('Video JS');
   }
-  if (module_exists('video')) {
-    $options['video'] = t('Video (Default)');
-  }
+
   return $options;
+}
+
+function _video_validate_number($element, $form_state) {
+  $key = end($element['#parents']);
+  $val = $form_state['values'][$key];
+  
+  if (!empty($val) && (!preg_match('#^\d+$#', $val) || intval($val) < 0)) {
+    form_error($element, t('You must enter an integer value for field %field.', array('%field' => $element['#title'])));
+  }
 }

@@ -1,5 +1,5 @@
 <?php
-class hq_flash extends video_preset_base implements video_preset_interface {
+class hq_flash extends video_preset_base implements video_preset {
 
   protected $name = 'Flash';
   protected $value = 'hq_flash';

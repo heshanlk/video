@@ -12,8 +12,6 @@ define('VIDEO_ZC_FAILED', 3);
 
 class video_zencoder_api {
   private $access_key;
-  private $limit;
-  private $bucket;
   
   /**
    * @var Services_Zencoder
@@ -31,8 +29,6 @@ class video_zencoder_api {
     }
 
     $this->access_key = variable_get('video_zencoder_api_key', NULL);
-    $this->limit = variable_get('amazon_s3_limit', 5);
-    $this->bucket = variable_get('amazon_s3_bucket', '');
 
     require_once $libfile;
     $this->zencoder = new Services_Zencoder($this->access_key);
@@ -41,13 +37,13 @@ class video_zencoder_api {
   /**
    * create transcoding job on Zencoder.com
    */
-  public function create($file) {
+  public function create(stdClass $video) {
     if ($this->zencoder == NULL) {
       return FALSE;
     }
 
     // dimensions
-    $dimensions = explode('x', $file->dimensions);
+    $dimensions = explode('x', $video->dimensions);
 
     // Notifications
     $notifications = array(array(
@@ -59,11 +55,11 @@ class video_zencoder_api {
     $public = !variable_get('amazon_s3_private', FALSE);
 
     // Common output URL prefix
-    $output_url_prefix = 's3://'. $this->bucket .'/'. pathinfo($file->filepath, PATHINFO_DIRNAME) .'/converted/'. pathinfo($file->filepath, PATHINFO_FILENAME) .'.';
+    $output_url_prefix = 's3://'. $video->bucket .'/'. dirname(dirname($video->filepath)) .'/converted/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.';
 
     // construct the output array with the presets
     $zc_outputs = array();
-    foreach ($file->presets as $preset) {
+    foreach ($video->presets as $preset) {
       $settings = $preset->getSettings();
       
       if (array_key_exists('additional_settings', $settings)) {
@@ -71,7 +67,7 @@ class video_zencoder_api {
         unset($settings['additional_settings']);
       }
       
-      $settings['label'] = 'VIDEO_'. $preset->get_value() .'_'. $file->fid;
+      $settings['label'] = 'VIDEO_'. $preset->get_value() .'_'. $video->fid;
       $settings['url'] = $output_url_prefix . $preset->getExtension();
       $settings['public'] = $public;
       $settings['width'] = intval($dimensions[0]);
@@ -83,24 +79,20 @@ class video_zencoder_api {
 
     // Add thumbnails
     if (empty($zc_outputs)) $zc_outputs[0] = array();
-    $video_thumb_path = variable_get('video_thumb_path', 'video_thumbs');
-    $final_thumb_path = file_directory_path() .'/'. $video_thumb_path .'/'. $file->fid;
 
     $zc_outputs[0]['thumbnails'] = array(
       'number' => intval(variable_get('video_thumbs', 5)),
       'size' => variable_get('video_thumbs_size', '160x120'),
-      'base_url' => 's3://'. $this->bucket .'/'. $final_thumb_path,
-      'prefix' => $file->fid,
-    );
-
-    $encoding_job_json = array(
-      'api_key' => $this->access_key,
-      'input' => 's3://'. $this->bucket .'/'. $file->filepath,
-      'outputs' => $zc_outputs,
+      'base_url' => 's3://'. $video->bucket .'/'. video_thumb_path($video, TRUE),
+      'prefix' => $video->fid,
     );
 
     try {
-      return $this->zencoder->jobs->create($encoding_job_json);
+      return $this->zencoder->jobs->create(array(
+        'api_key' => $this->access_key,
+        'input' => 's3://'. $video->bucket .'/'. $video->filepath,
+        'outputs' => $zc_outputs,
+      ));
     }
     catch (Services_Zencoder_Exception $e) {
       watchdog('zencoder', 'Zencoder reports errors while converting %file:<br/>!errorlist', array('%file' => $file->filename, '!errorlist' => theme('item_list', $e->getErrors())), WATCHDOG_ERROR);
@@ -108,6 +100,17 @@ class video_zencoder_api {
     }
   }
 
+  public function cancel_job(stdClass $video) {
+    try {
+      $this->zencoder->jobs->cancel($video->jobid);
+      return TRUE;
+    }
+    catch (Services_Zencoder_Exception $e) {
+      watchdog('zencoder', 'Error while cancelling job @jobid for video %filepath: !errorlist, @errormsg', array('@jobid' => $video->jobid, '%filepath' => $video->filepath, '@errormsg' => $e->getMessage(), '!errorlist' => theme('item_list', $e->getErrors())), WATCHDOG_ERROR);
+      return FALSE;
+    }
+  }
+  
   /**
    * Create Zencoder user account
    */

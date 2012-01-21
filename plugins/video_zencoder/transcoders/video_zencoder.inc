@@ -1,4 +1,7 @@
 <?php
+// Register this file as a CTools plugin
+$plugin = array();
+
 /*
  * @file
  * Transcoder class file to handle Zencoder settings and conversions.
@@ -9,24 +12,24 @@
  * - Add a metadata extractor class to extract width and height
  *
  */
-module_load_include('inc', 'video', 'includes/transcoder');
+module_load_include('lib.inc', 'video');
 
-class video_zencoder implements transcoder_interface {
+class video_zencoder implements video_transcoder {
   private $name = 'Zencoder';
   private $value = 'video_zencoder';
 
-  public function generate_thumbnails($video) {
+  public function generate_thumbnails(stdClass $video) {
     global $user;
     
-    $job = $this->load_job($video['fid']);
-    $complete = $job && $job->video_status == VIDEO_RENDERING_COMPLETE;
+    $job = $this->load_job($video->fid);
+    $complete = $job && $job->status == VIDEO_RENDERING_COMPLETE;
     
     $final_thumb_path = video_thumb_path($video);
     $number_of_thumbs = $complete ? variable_get('video_thumbs', 5) : 1;
     
     $files = array();
     for ($i = 0; $i < $number_of_thumbs; $i++) {
-      $filename = $video['fid'] .'_'. sprintf('%04d', $i) .'.png';
+      $filename = $video->fid .'_'. sprintf('%04d', $i) .'.png';
       $thumbfile = $final_thumb_path .'/'. $filename;
       
       if (!$complete) {
@@ -61,94 +64,54 @@ class video_zencoder implements transcoder_interface {
     return variable_get('video_zencoder_ext', 'flv');
   }
 
-  public function convert_video($video) {
-    // load the S3 lib
-    module_load_include('lib.inc', 'video_s3');
-    $s3 = new video_amazon_s3();
-
+  public function convert_video(stdClass $video) {
     // get the active jobs and check for the status
-    if ($video->video_status == VIDEO_RENDERING_ACTIVE) {
+    if ($video->status == VIDEO_RENDERING_ACTIVE) {
       return FALSE;
     }
 
-    // We need to check if this file id exists in our S3 table to avoid file not found error.
-    if ($s3_file = $s3->verify($video->fid)) {
-      // This is a s3 file, lets verify it has been pushed and if so lets push to Zencoder queue.
-      if ($s3_file->status == VIDEO_S3_COMPLETE) {
-        $video_s3 = $s3_file;
-      }
-    }
-    else {
-      watchdog('zencoder', 'You must activate the Video S3 module to work with Zencoder, file is not found in S3 table.', array(), WATCHDOG_ERROR);
+    if (empty($video->bucket)) {
+      watchdog('zencoder', 'You must activate the Video S3 module to work with Zencoder, file @fid does not appear to be uploaded to an Amazon S3 bucket.', array('@fid' => $video->fid), WATCHDOG_ERROR);
       return FALSE;
     }
 
-    // If we have a video lets go ahead and send it.
-    if ($video_s3 != NULL) {
-      $this->change_status($video->vid, VIDEO_RENDERING_ACTIVE);
-      $video_s3->dimensions = $video->dimensions;
-      $video_s3->presets = $video->presets;
+    $this->change_status($video, VIDEO_RENDERING_ACTIVE);
 
-      module_load_include('lib.inc', 'video_zencoder');
-      $zc = new video_zencoder_api();
+    module_load_include('lib.inc', 'video_zencoder');
+    $zc = new video_zencoder_api();
 
-      if ($encoding_job = $zc->create($video_s3)) {
-        // Update our table.
-        $video->vid = $video->vid;
-
-        //job id
-        $video->jobid = $encoding_job->id;
-        $outputs = new stdClass();
-        foreach ($encoding_job->outputs as $output) {
-          $outputs->{$output->id}->id = $output->id;
-          $outputs->{$output->id}->label = $output->label;
-          $outputs->{$output->id}->url = $output->url;
-        }
-        $video->data = serialize($outputs);
-        
-        // write output values to the table
-        if ($this->update($video)) {
-          watchdog('zencoder', 'Successfully created Zencoder trancoding job @jobid for video @video.', array('@jobid' => $video->jobid, '@video' => $video_s3->filename), WATCHDOG_INFO);
-        }
-      } else {
-        watchdog('zencoder', 'Failed to queue file %file to Zencoder.', array('%file' => $s3_file->filepath), WATCHDOG_ERROR);
-        $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
+    if ($encoding_job = $zc->create($video)) {
+      $video->jobid = $encoding_job->id;
+      $video->data = new stdClass();
+      
+      foreach ($encoding_job->outputs as $output) {
+        $video->data->{$output->id}->id = $output->id;
+        $video->data->{$output->id}->label = $output->label;
+        $video->data->{$output->id}->url = $output->url;
       }
-    } else {
-      watchdog('zencoder', 'We did not find the file id @fid or it is still queued for S3 push.', array('@fid' => $video->fid), WATCHDOG_DEBUG);
+
+      db_query('UPDATE {video_zencoder} SET jobid = %d, completed=%d, data="%s" WHERE vid=%d', $video->jobid, time(), serialize($video->data), $video->vid);
+      watchdog('zencoder', 'Successfully created Zencoder trancoding job @jobid for video @video.', array('@jobid' => $video->jobid, '@video' => $video->filename), WATCHDOG_INFO);
+      return TRUE;
     }
 
+    watchdog('zencoder', 'Failed to queue file %file to Zencoder.', array('%file' => $s3_file->filepath), WATCHDOG_ERROR);
+    $this->change_status($video, VIDEO_RENDERING_FAILED);
     return FALSE;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_name()
-   */
   public function get_name() {
     return $this->name;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_value()
-   */
   public function get_value() {
     return $this->value;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#get_help()
-   */
   public function get_help() {
     return l(t('Zencoder'), 'http://zencoder.com/');
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings()
-   */
   public function admin_settings(&$form_state) {
     global $user;
     // check amazon s3 module is exists or not
@@ -227,10 +190,6 @@ class video_zencoder implements transcoder_interface {
     return $form;
   }
 
-  /**
-   * Interface Implementations
-   * @see sites/all/modules/video/includes/transcoder_interface#admin_settings_validate()
-   */
   public function admin_settings_validate($form, &$form_state) {
     $zencoder_api = isset($form_state['values']['video_zencoder_api_key']) ? $form_state['values']['video_zencoder_api_key'] : NULL;
     if (!empty($zencoder_api) || $form_state['values']['vid_convertor'] != 'video_zencoder') {
@@ -265,7 +224,7 @@ class video_zencoder implements transcoder_interface {
     }
   }
 
-  public function preset_settings(&$form_state, video_preset_interface $preset) {
+  public function preset_settings(&$form_state, video_preset $preset) {
     $settings = $preset->getSettings();
     
     $form = array();
@@ -493,48 +452,50 @@ watermark:
     return NULL;
   }
 
-  public function create_job($video) {
-    return db_query("INSERT INTO {video_zencoder} (fid, status, dimensions) VALUES (%d, %d, '%s')", $video['fid'], VIDEO_RENDERING_PENDING, $video['dimensions']);
+  public function create_job(stdClass $video) {
+    $video->status = VIDEO_RENDERING_PENDING;
+    return db_query('INSERT INTO {video_zencoder} (fid, status, dimensions) VALUES (%d, %d, "%s")', $video->fid, VIDEO_RENDERING_PENDING, $video->dimensions);
   }
 
-  public function update_job($video) {
-    if (!$this->load_job($video['fid']))
+  public function update_job(stdClass $video) {
+    if (!$this->load_job($video->fid)) {
       return;
-    //lets update our table to include the nid
-    db_query("UPDATE {video_zencoder} SET nid=%d WHERE fid=%d", $video['nid'], $video['fid']);
-  }
-
-  public function delete_job($video) {
-    if (!$this->load_job($video->fid))
-      return;
-    //lets get all our videos and unlink them
-    $sql = db_query("SELECT vid FROM {video_zencoder} WHERE fid=%d", $video->fid);
-    //we loop here as future development will include multiple video types (HTML 5)
-    while ($row = db_fetch_object($sql)) {
-      // @TODO : cancel the job to transcode
     }
-    //now delete our rows.
+    
+    // Lets update our table to include the nid
+    db_query('UPDATE {video_zencoder} SET nid = %d WHERE fid=%d', $video->nid, $video->fid);
+  }
+
+  public function delete_job(stdClass $video) {
+    // Cancel the job
+    if ($video->status == VIDEO_RENDERING_ACTIVE && !empty($video->jobid)) {
+      module_load_include('lib.inc', 'video_zencoder');
+      $zc = new video_zencoder_api();
+      $zc->cancel_job($video);
+    }
+    
     db_query('DELETE FROM {video_zencoder} WHERE fid = %d', $video->fid);
   }
 
   public function load_job($fid) {
-    $job = db_fetch_object(db_query('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf INNER JOIN {files} f ON vf.fid = f.fid WHERE f.fid = %d', $fid));
-    if (empty($job)) {
-      return FALSE;
+    $job = db_fetch_object(db_query('SELECT f.fid, f.filename, f.filepath, f.filemime, f.filesize, zc.vid, zc.nid, zc.dimensions, zc.status, zc.data, zc.jobid FROM {video_zencoder} zc INNER JOIN {files} f ON zc.fid = f.fid WHERE f.fid = %d', $fid));
+    if (!empty($job)) {
+      $job->data = unserialize($job->data);
+      return $job;
     }
-    return $job;
+
+    return FALSE;
   }
 
-  public function load_job_queue() {
-    // load jobs with status as pending and active both
-    $total_videos = variable_get('video_queue_batchsize', 5);
+  public function load_job_queue($num) {
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.nid, vf.dimensions, vf.status as video_status FROM {video_zencoder} vf LEFT JOIN {files} f ON vf.fid = f.fid WHERE vf.status = %d AND f.status = %d ORDER BY f.timestamp',
-            VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $total_videos);
 
+    $result = db_query_range('SELECT f.fid, f.filename, f.filepath, f.filemime, f.filesize, zc.vid, zc.nid, zc.dimensions, zc.status, zc.data, zc.jobid FROM {video_zencoder} zc LEFT JOIN {files} f ON zc.fid = f.fid WHERE zc.status = %d AND f.status = %d ORDER BY f.timestamp', VIDEO_RENDERING_PENDING, FILE_STATUS_PERMANENT, 0, $num);
     while ($row = db_fetch_object($result)) {
+      $row->data = unserialize($row->data);
       $videos[] = $row;
     }
+
     return $videos;
   }
 
@@ -543,14 +504,9 @@ watermark:
    * @param <type> $video
    * @return <type>
    */
-  public function load_completed_job(&$video) {
-    $video_row = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE fid = %d', $video->fid));
-    $data = unserialize($video_row->data);
-
-    if (empty($data))
-      return $video;
-
-    foreach ($data as $value) {
+  public function load_completed_job(stdClass $video) {
+    $result = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE fid = %d', $video->fid));
+    foreach (unserialize($result->data) as $value) {
       $path = parse_url($value->url, PHP_URL_PATH);
       $extension = pathinfo($path, PATHINFO_EXTENSION);
       $video->files->{$extension}->filename = pathinfo($path, PATHINFO_FILENAME) .'.'. $extension;
@@ -560,26 +516,17 @@ watermark:
       $video->files->{$extension}->filemime = file_get_mimetype($value->url);
       $video->player = strtolower($extension);
     }
-
     return $video;
   }
 
   /**
    * Change the status of the file.
    *
-   * @param (int) $vid
-   * @param (int) $status
+   * @param stdCLass $video
+   * @param int $status
    */
-  public function change_status($vid, $status) {
-    db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', $status, $vid);
-  }
-
-  /*
-   * Updates the database after a successful transfer to amazon.
-   */
-
-  private function update($video) {
-    return db_query("UPDATE {video_zencoder} SET jobid = %d, completed=%d, data='%s' WHERE vid=%d",
-            $video->jobid, time(), $video->data, $video->vid);
+  public function change_status(stdClass $video, $status) {
+    $video->status = $status;
+    db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', $status, $video->vid);
   }
 }
