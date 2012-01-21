@@ -46,16 +46,9 @@ class video_ffmpeg implements transcoder_interface {
 
     $return_var = 0;
 
-    $start = time();
     ob_start();
     passthru($command, &$return_var);
     $output = ob_get_clean();
-    $duration = time() - $start;
-
-    // Reconnect if the command took more than 10 seconds
-    if ($duration > 10) {
-      _video_db_reconnect();
-    }
 
     // Returnvar 1 means input file not found. This is normal for information calls.
     if ($return_var != 0 && ($return_var != 1 || !$ignoreoutputfilenotfound)) {
@@ -160,6 +153,9 @@ class video_ffmpeg implements transcoder_interface {
 
     // Update our filepath since we moved it
     drupal_write_record('files', $video, 'fid');
+
+    // Increase the database timeout to prevent database errors after a long upload
+    _video_db_increase_timeout();
 
     // Get video information before doing a chdir
     $dimensions = $this->dimensions($video);

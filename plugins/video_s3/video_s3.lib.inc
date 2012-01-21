@@ -237,7 +237,10 @@ class video_amazon_s3 {
     if ($cc !== 'none') {
       $headers['Cache-Control'] = 'max-age='. $cc;
     }
-    
+
+    // Increase the database timeout to prevent database errors after a long upload
+    _video_db_increase_timeout();
+
     $response = $this->s3->create_object($this->bucket, $file->filepath, array(
       'fileUpload' => $file->filepath,
       'acl' => $perm,
@@ -258,9 +261,6 @@ class video_amazon_s3 {
       if (variable_get('amazon_s3_delete_local', FALSE)) {
         $this->replaceLocalFile($file->filepath, $s3url);
       }
-
-      // Do a reconnect because the transfer may take a while
-      _video_db_reconnect();
 
       $this->watchdog(
         'Successfully uploaded %file to Amazon S3 location <a href="@s3-url">@s3-path</a> and permission %permission.',

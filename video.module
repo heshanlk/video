@@ -490,18 +490,20 @@ function video_add_adminjs() {
 }
 
 /**
-* Reconnect to the database after a long transcode to prevent
-* "MySQL server has gone away" errors.
-*/
-function _video_db_reconnect() {
-  global $db_url, $db_type, $active_db;
-
-  if (is_array($db_url)) {
-    $connect_url = array_key_exists($active_name, $db_url) ? $db_url[$active_name] : $db_url['default'];
+ * Increase the database timeout in preparation for long time
+ * operations, such as S3 uploads and local transcoding.
+ * 
+ * Reconnecting to the database after this operation is not possible
+ * due to the way db_set_active stores the connection identifiers.
+ * 
+ * At this moment, only mysqli and mysql are handled. The timeout is
+ * set to 1 day
+ */
+function _video_db_increase_timeout() {
+  global $db_type;
+  
+  if ($db_type === 'mysqli' || $db_type === 'mysql') {
+    $timeout = 24 * 60 * 60; // one day
+    db_query('SET SESSION wait_timeout = %d', $timeout);
   }
-  else {
-    $connect_url = $db_url;
-  }
-
-  $active_db = db_connect($connect_url);
 }
