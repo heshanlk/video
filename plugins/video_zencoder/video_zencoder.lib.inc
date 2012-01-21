@@ -55,7 +55,7 @@ class video_zencoder_api {
     $public = !variable_get('amazon_s3_private', FALSE);
 
     // Common output URL prefix
-    $output_url_prefix = 's3://'. $video->bucket .'/'. dirname(dirname($video->filepath)) .'/converted/'. pathinfo($video->filepath, PATHINFO_FILENAME) .'.';
+    $output_url_prefix = 's3://'. $video->bucket .'/'. dirname(dirname($video->filepath)) .'/converted/'. pathinfo($video->filepath, PATHINFO_FILENAME);
 
     // construct the output array with the presets
     $zc_outputs = array();
@@ -67,8 +67,8 @@ class video_zencoder_api {
         unset($settings['additional_settings']);
       }
       
-      $settings['label'] = 'VIDEO_'. $preset->get_value() .'_'. $video->fid;
-      $settings['url'] = $output_url_prefix . $preset->getExtension();
+      $settings['label'] = 'VIDEO_'. $video->fid .'_'. $preset->id;
+      $settings['url'] = $output_url_prefix . $preset->filenamesuffix .'.'. $preset->extension;
       $settings['public'] = $public;
       $settings['width'] = intval($dimensions[0]);
       $settings['height'] = intval($dimensions[1]);

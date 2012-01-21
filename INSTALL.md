@@ -39,7 +39,7 @@
 6. Change the General settings to match your preferences
 7. Setup players for the video types you would like to use
 8. Select and configure your transcoder
-9. If you are going to use FFmpeg transcoding, select at least one preset
+9. If you are going to use transcoding, select at least one preset or add a new preset
 10 Configure S3 storage if you intend to use it
 11. Configure cron. If you do not want to use cron to convert videos, see below for an alternative
 

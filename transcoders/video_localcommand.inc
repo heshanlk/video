@@ -176,12 +176,10 @@ class video_localcommand implements video_transcoder {
     $converted_files = array();
     foreach ($video->presets as $preset) {
       // Preset settings
-      $extension = $preset->getExtension();
       $settings = $preset->getSettings();
-      $presetname = $preset->get_name();
       
       //update our filename after the move to maintain filename uniqueness.
-      $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) .'.'. $extension, $converteddir);
+      $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . $preset->filenamesuffix .'.'. $preset->extension, $converteddir);
       $parameters['!convertfile'] = escapeshellarg($outputfile);
 
       $command_output = '';
@@ -190,7 +188,7 @@ class video_localcommand implements video_transcoder {
         $command = strtr($command, $parameters);
 
         // Process our video
-        if (!$this->run_command($command, $command_output, t('rendering preset %preset, command #@cmdnr', array('%preset' => $presetname, '@cmdnr' => $cmdnr + 1)))) {
+        if (!$this->run_command($command, $command_output, t('rendering preset %preset, command #@cmdnr', array('%preset' => $preset->name, '@cmdnr' => $cmdnr + 1)))) {
           $result = FALSE;
           break 2;
         }
@@ -221,7 +219,7 @@ class video_localcommand implements video_transcoder {
 
       //lets check to make sure our file exists, if not error out
       if (!file_exists($outputfile) || ($filesize = filesize($outputfile)) === 0) {
-        watchdog('video_command', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $presetname), WATCHDOG_ERROR);
+        watchdog('video_command', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $preset->name), WATCHDOG_ERROR);
         $result = FALSE;
         break;
       }
@@ -235,7 +233,7 @@ class video_localcommand implements video_transcoder {
       $file->filepath = substr($outputfile, strlen($drupaldirrp) + 1);
       $file->filemime = file_get_mimetype($outputfile);
       $file->filesize = $filesize;
-      $file->preset = $presetname;
+      $file->preset = $preset->name;
     }
 
     chdir($drupaldir);

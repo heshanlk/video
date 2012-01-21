@@ -74,13 +74,32 @@ interface video_transcoder extends video_plugin {
   public function convert_video(stdClass $video);
 }
 
-abstract class video_preset_base implements video_preset {
+class video_preset {
+  public $id = 0;
+  public $name = '';
+  public $help = '';
+  public $extension = '';
+  public $filenamesuffix = '';
+
+  /**
+   * Settings for the current transcoder
+   * 
+   * @var array
+   */
   private $settings = NULL;
+
+  public function __construct(stdClass $dbdata) {
+    $this->id = $dbdata->id;
+    $this->name = $dbdata->name;
+    $this->help = $dbdata->help;
+    $this->extension = $dbdata->extension;
+    $this->filenamesuffix = $dbdata->filenamesuffix;
+  }
 
   public function getSettings() {
     if ($this->settings == NULL) {
       $transcoder = variable_get('vid_convertor', 'video_localcommand');
-      $settings = db_result(db_query('SELECT data FROM {video_preset_settings} WHERE preset = "%s" AND transcoder = "%s"', $this->get_value(), $transcoder));
+      $settings = db_result(db_query('SELECT data FROM {video_preset_settings} WHERE presetid = %d AND transcoder = "%s"', $this->id, $transcoder));
 
       if ($settings) {
         $this->settings = unserialize($settings);
@@ -97,15 +116,6 @@ abstract class video_preset_base implements video_preset {
     $transcoder = variable_get('vid_convertor', 'video_localcommand');
     $this->settings = $settings;
 
-    db_query('REPLACE INTO {video_preset_settings} SET data = "%s", preset = "%s", transcoder = "%s"', serialize($settings), $this->get_value(), $transcoder);
+    db_query('REPLACE INTO {video_preset_settings} SET data = "%s", presetid = %d, transcoder = "%s"', serialize($settings), $this->id, $transcoder);
   }
-}
-
-interface video_preset {
-  public function get_name();
-  public function get_value();
-  public function get_help();
-  public function getExtension();
-  public function getSettings();
-  public function setSettings(array $settings);
 }

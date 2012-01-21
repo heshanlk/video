@@ -75,14 +75,54 @@ function video_schema() {
     'primary key' => array('vid'),
   );
 
+  $schema['video_preset'] = array(
+    'description' => t('Stores basic preset information'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Preset ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'description' => t('Preset name'),
+        'length' => 50,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'help' => array(
+        'type' => 'varchar',
+        'description' => t('Help text'),
+        'length' => 200,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'extension' => array(
+        'type' => 'char',
+        'description' => t('File extension'),
+        'length' => 5,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'filenamesuffix' => array(
+        'type' => 'varchar',
+        'description' => t('File name suffix'),
+        'length' => 15,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
   $schema['video_preset_settings'] = array(
     'description' => t('Stores preset settings per transcoder'),
     'fields' => array(
-      'preset' => array(
-        'type' => 'varchar',
-        'length' => 30,
-        'default' => '',
-        'description' => t('The unique key of the preset'),
+      'presetid' => array(
+        'description' => t('Preset ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'transcoder' => array(
@@ -99,7 +139,7 @@ function video_schema() {
         'serialize' => TRUE,
       ),
     ),
-    'primary key' => array('preset', 'transcoder'),
+    'primary key' => array('presetid', 'transcoder'),
   );
 
   return $schema;
@@ -111,39 +151,56 @@ function video_schema() {
 function video_install() {
   drupal_install_schema('video');
   
-  // Add legacy 4.x presets
   $paddingtext = '-vf "pad:!paddingwidth:!paddingheight:!paddingleft:!paddingtop:000000"';
   
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'hq_flash', 'video_localcommand', serialize(array(
+  $presetids = array();
+  
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'Flash', 'flv', '', t('Creates files that play in any Flash player, including older versions.'));
+  $presetids['hq_flash'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['hq_flash'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -y -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 '.$paddingtext.' !convertfile',
     ),
     'useflvtool2' => 1,
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_mp4', 'video_localcommand', serialize(array(
+
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 MP4', 'mp4', '', t('Creates files that natively play in Internet Explorer 9+ and Google Chrome using HTML5 and in any other browser using Flash.'));
+  $presetids['html5_mp4'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_mp4'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -strict experimental -y -i !videofile -pass 1 -s !widthx!height -b 500k -threads 0 -vcodec libx264 '.$paddingtext.' -vpre slow_firstpass -an !convertfile',
       '!cmd_path -strict experimental -y -i !videofile -pass 2 -s !widthx!height -b 500k -threads 0 -vcodec libx264 '.$paddingtext.' -vpre slow -acodec aac -ab 128k !convertfile',
     ),
-    'useqtfaststart' => 1,
+    'useqtfaststart' => variable_get('video_ffmpeg_enable_faststart', FALSE) ? 1 : 0,
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_ogv', 'video_localcommand', serialize(array(
+
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 Ogg Theora / Vorbis', 'ogv', '', t('Creates files that natively play in Firefox using HTML5.'));
+  $presetids['html5_ogv'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_ogv'], 'video_localcommand', serialize(array(
     'commands' => array(
       'ffmpeg2theora --videobitrate 500 --max_size !widthx!height --output !convertfile !videofile',
     ),
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_webm', 'video_localcommand', serialize(array(
+
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 WebM', 'webm', '', t('Creates files that natively play in Google Chrome using HTML5.'));
+  $presetids['html5_webm'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_webm'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -strict experimental -y -i !videofile -pass 1 -s !widthx!height -b 500k -threads 0 -vcodec libvpx -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -f webm '.$paddingtext.' -an -y NUL',
       '!cmd_path -strict experimental -y -i !videofile -pass 2 -s !widthx!height -b 500k -threads 0 -vcodec libvpx -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -f webm '.$paddingtext.' -acodec libvorbis -ac 2 -y !convertfile',
     ),
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_webm', 'video_localcommand', serialize(array(
+  
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'iPhone MOV', 'mov', '', t('Creates files that natively play on the iPhone using HTML5.'));
+  $presetids['iphone_mov'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['iphone_mov'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -strict experimental -y -i !videofile -s !widthx!height -f mp4 -vcodec mpeg4 -maxrate 1000k -b 700k -qmin 3 -qmax 5 -bufsize 4096k -g 300 -acodec aac -ab 192k '.$paddingtext.' !convertfile',
     ),
     'useqtfaststart' => 1,
   )));
+
+  variable_set('vid_preset', array($presetids['hq_flash'], $presetids['html5_mp4']));
 }
 
 /**
@@ -320,75 +377,138 @@ function video_update_6407() {
  * Create the video_preset_settings table and populate with legacy preset settings.
  */
 function video_update_6500() {
-  $table = array(
+  $table1 = array(
+    'description' => t('Stores basic preset information'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Preset ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'description' => t('Preset name'),
+        'length' => 50,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'help' => array(
+        'type' => 'varchar',
+        'description' => t('Help text'),
+        'length' => 200,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'extension' => array(
+        'type' => 'char',
+        'description' => t('File extension'),
+        'length' => 5,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'filenamesuffix' => array(
+        'type' => 'varchar',
+        'description' => t('File name suffix'),
+        'length' => 15,
+        'default' => '',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique indexes' => array(
+      'extension' => array('extension', 'filenamesuffix'),
+    ),
+  );
+
+  $table2 = array(
     'description' => t('Stores preset settings per transcoder'),
     'fields' => array(
-      'preset' => array(
-        'type' => 'varchar',
-        'length' => '30',
-        'default' => '',
-        'description' => t('The unique key of the preset'),
-        'not null' => FALSE,
+      'presetid' => array(
+        'description' => t('Preset ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
       ),
       'transcoder' => array(
         'type' => 'varchar',
-        'length' => '30',
+        'length' => 30,
         'default' => '',
         'description' => t('The unique key of the transcoder'),
-        'not null' => FALSE,
+        'not null' => TRUE,
       ),
       'data' => array(
         'type' => 'text',
-        'not null' => FALSE,
+        'not null' => TRUE,
         'description' => t('The serialized settings'),
         'serialize' => TRUE,
       ),
     ),
-    'primary key' => array('preset', 'transcoder'),
+    'primary key' => array('presetid', 'transcoder'),
   );
 
   $ret = array();
   
-  db_create_table($ret, 'video_preset_settings', $table);
+  db_create_table($ret, 'video_preset', $table1);
+  db_create_table($ret, 'video_preset_settings', $table2);
   
-  // Add legacy 4.x presets
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'hq_flash', 'video_localcommand', serialize(array(
+  $presetids = array();
+  
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'Flash', 'flv', '', t('Creates files that play in any Flash player, including older versions.'));
+  $presetids['hq_flash'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['hq_flash'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -y -i !videofile -s !widthx!height -r 15 -b 250 -ar 22050 -ab 48 '.$paddingtext.' !convertfile',
     ),
     'useflvtool2' => 1,
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_mp4', 'video_localcommand', serialize(array(
+
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 MP4', 'mp4', '', t('Creates files that natively play in Internet Explorer 9+ and Google Chrome using HTML5 and in any other browser using Flash.'));
+  $presetids['html5_mp4'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_mp4'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -strict experimental -y -i !videofile -pass 1 -s !widthx!height -b 500k -threads 0 -vcodec libx264 '.$paddingtext.' -vpre slow_firstpass -an !convertfile',
       '!cmd_path -strict experimental -y -i !videofile -pass 2 -s !widthx!height -b 500k -threads 0 -vcodec libx264 '.$paddingtext.' -vpre slow -acodec aac -ab 128k !convertfile',
     ),
     'useqtfaststart' => variable_get('video_ffmpeg_enable_faststart', FALSE) ? 1 : 0,
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_ogv', 'video_localcommand', serialize(array(
+
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 Ogg Theora / Vorbis', 'ogv', '', t('Creates files that natively play in Firefox using HTML5.'));
+  $presetids['html5_ogv'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_ogv'], 'video_localcommand', serialize(array(
     'commands' => array(
       'ffmpeg2theora --videobitrate 500 --max_size !widthx!height --output !convertfile !videofile',
     ),
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_webm', 'video_localcommand', serialize(array(
+
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 WebM', 'webm', '', t('Creates files that natively play in Google Chrome using HTML5.'));
+  $presetids['html5_webm'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_webm'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -strict experimental -y -i !videofile -pass 1 -s !widthx!height -b 500k -threads 0 -vcodec libvpx -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -f webm '.$paddingtext.' -an -y NUL',
       '!cmd_path -strict experimental -y -i !videofile -pass 2 -s !widthx!height -b 500k -threads 0 -vcodec libvpx -keyint_min 0 -g 250 -skip_threshold 0 -qmin 1 -qmax 51 -f webm '.$paddingtext.' -acodec libvorbis -ac 2 -y !convertfile',
     ),
   )));
-  db_query('INSERT INTO {video_preset_settings} SET preset="%s", transcoder="%s", data = "%s"', 'html5_webm', 'video_localcommand', serialize(array(
+  
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'iPhone MOV', 'mov', '', t('Creates files that natively play on the iPhone using HTML5.'));
+  $presetids['iphone_mov'] = db_last_insert_id('video_preset', 'id');
+  db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['iphone_mov'], 'video_localcommand', serialize(array(
     'commands' => array(
       '!cmd_path -strict experimental -y -i !videofile -s !widthx!height -f mp4 -vcodec mpeg4 -maxrate 1000k -b 700k -qmin 3 -qmax 5 -bufsize 4096k -g 300 -acodec aac -ab 192k '.$paddingtext.' !convertfile',
     ),
     'useqtfaststart' => 1,
   )));
-  
+
   // Transform vid_preset variable to something that does not have a 0 as potential value
   $presets = variable_get('vid_preset', array('hq_flash'));
-  $presets = array_diff($presets, array(0));
-  $presets = array_values($presets);
-  variable_set('vid_preset', $presets);
-  
+  $newpresets = array();
+  foreach ($presets as $presetkey) {
+    if (isset($presetids[$presetkey])) {
+      $newpresets[] = $presetids[$presetkey];
+    }
+  }
+  variable_set('vid_preset', $newpresets);
+
   // Change video_ffmpeg to video_localcommand
   if (variable_get('vid_convertor', 'video_ffmpeg') == 'video_ffmpeg') {
     variable_set('vid_convertor', 'video_localcommand');

@@ -175,21 +175,17 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
  * Video transcoder admin settings
  * @return <type>
  */
-function video_preset_admin_settings() {
-  module_load_include('inc', 'video', 'includes/preset');
-  $presetdata = new video_preset();
-  
-  $presets = $presetdata->getAllPresets();
-  $enabled = $presetdata->getEnabledPresets();
+function video_preset_admin_settings($form_state) {
+  $presets = video_get_presets(TRUE);
+  $enabled = video_get_presets();
   
   $options = array();
   $help = array();
   foreach ($presets as $preset) {
-    $options[$preset->get_value()] = check_plain($preset->get_name()) .' ('. l(t('configure'), 'admin/settings/video/presets/'.rawurlencode($preset->get_value())) .')';
+    $options[$preset->id] = check_plain($preset->name);
   
-    $helptext = $preset->get_help();
-    if (!empty($helptext)) {
-      $help[] = check_plain($preset->get_name()) .': '. $helptext;
+    if (!empty($preset->help)) {
+      $help[$preset->id] = $preset->help;
     }
   }
   
@@ -198,11 +194,42 @@ function video_preset_admin_settings() {
     '#title' => t('Video transcode presets'),
     '#options' => $options,
     '#default_value' => array_keys($enabled),
-    '#description' => theme('item_list', $help),
     '#required' => TRUE,
+    '#help' => $help,
   );
   
-  return system_settings_form($form);
+  $form = system_settings_form($form);
+  $form['#theme'] = 'video_preset_admin_settings';
+  return $form;
+}
+
+function theme_video_preset_admin_settings($form) {
+  foreach ($form['vid_preset']['#options'] as $key => $value) {
+    if (!empty($form['vid_preset']['#help'][$key])) {
+      $form['vid_preset'][$key]['#suffix'] = '<small>'. $form['vid_preset']['#help'][$key] .'</small>';
+    }
+    
+    $selected = $form['vid_preset'][$key]['#default_value'];
+    
+    $rows[] = array(
+      'data' => array(
+        drupal_render($form['vid_preset'][$key]),
+        l(t('Configure'), 'admin/settings/video/presets/'. rawurlencode($key) .'/configure'),
+        l(t('Edit'), 'admin/settings/video/presets/'. rawurlencode($key) .'/edit'),
+        $selected ? '' : l(t('Delete'), 'admin/settings/video/presets/'. rawurlencode($key) .'/delete'),
+      ),
+      'class' => $selected ? 'selected' : '',
+    );
+  }
+  $header = array(
+    theme('table_select_header_cell') + array('data' => ' '. t('Preset')),
+    array('data' => t('Operations'), 'colspan' => 3),
+  );
+  unset($form['vid_preset']['#title']);
+  $output = theme('table', $header, $rows);
+  $output .= drupal_render($form);
+  
+  return $output;
 }
 
 function video_preset_admin_settings_validate($form, &$form_state) {
@@ -211,13 +238,150 @@ function video_preset_admin_settings_validate($form, &$form_state) {
   $presets = array_values($presets);
 }
 
+function video_admin_preset($form_state, video_preset $preset = NULL) {
+  $form = array(
+    '#redirect' => 'admin/settings/video/presets',
+    '#preset' => $preset,
+  );
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#required' => TRUE,
+    '#maxlength' => 50,
+    '#default_value' => $preset == NULL ? '' : $preset->name,
+  );
+
+  $form['help'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Help text'),
+    '#required' => FALSE,
+    '#default_value' => $preset == NULL ? '' : $preset->help,
+    '#rows' => 3,
+  );
+
+  $form['extension'] = array(
+    '#type' => 'textfield',
+    '#title' => t('File extension'),
+    '#required' => TRUE,
+    '#maxlength' => 5,
+    '#size' => 10,
+    '#default_value' => $preset == NULL ? '' : $preset->extension,
+    '#description' => t('Give the extension that the converted file will have. Use only lowercase alphanumeric characters. Do not enter a dot.'),
+  );
+
+  $form['filenamesuffix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('File name suffix'),
+    '#required' => FALSE,
+    '#maxlength' => 15,
+    '#size' => 10,
+    '#default_value' => $preset == NULL ? '' : $preset->filenamesuffix,
+    '#description' => t('If you have multiple presets with the same extension, you must use this field to differentiate between converted files with the same extension. This suffix is added after the file name and before the extension. For instance, if you enter &quot;_high&quot; and extension &quot;flv&quot;, sample.mp4 will be converted to sample_high.flv. Use only alphanumeric characters, . , - or _.'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#suffix' => l(t('Back'), $form['#redirect']),
+  );
+  
+  return $form;
+}
+
+function video_admin_preset_validate($form, $form_state) {
+  $v = $form_state['values'];
+  $preset = $form['#preset'];
+
+  if (!empty($v['extension'])) {
+    if (!preg_match('#^[a-z0-9]{1,5}$#', $v['extension'])) {
+      form_error($form['extension'], t('Use only lowercase alphanumeric characters for the file extension.'));
+    }
+  }
+
+  if (!empty($v['filenamesuffix'])) {
+    if (!preg_match('#^[a-zA-Z0-9\-_.]{1,15}$#', $v['filenamesuffix'])) {
+      form_error($form['filenamesuffix'], t('Use only alphanumeric characters, . , - or _ for the file name suffix.'));
+    }
+  }
+
+  if (!empty($v['help']) && drupal_strlen($v['help']) > 200) {
+    form_error($form['help'], t('The maximum length for the help text is 200 characters.'));
+  }
+
+  if (!empty($v['extension'])) {
+    $presetid = $preset == NULL ? 0 : $preset->id;
+    $result = db_fetch_object(db_query('SELECT name FROM {video_preset} WHERE extension = "%s" AND filenamesuffix = "%s" AND id != %d', $v['extension'], $v['filenamesuffix'], $presetid));
+    if ($result) {
+      form_error($form['extension'], t('The given extension and file name suffix are already used by preset @preset. Change the extension and file name suffix to something unique.', array('@preset' => $result->name)));
+    }
+  }
+}
+
+function video_admin_preset_submit($form, $form_state) {
+  $v = $form_state['values'];
+  $preset = $form['#preset'];
+
+  if (!$preset) {
+    $preset = new stdClass();
+    $update = array();
+  }
+  else {
+    $update = 'id';
+  }
+
+  $preset->name = $v['name'];
+  $preset->help = $v['help'];
+  $preset->extension = $v['extension'];
+  $preset->filenamesuffix = $v['filenamesuffix'];
+
+  drupal_write_record('video_preset', $preset, $update);
+}
+
+function video_admin_preset_delete($form_state, video_preset $preset) {
+  $form = array(
+    '#redirect' => 'admin/settings/video/presets',
+    '#preset' => $preset,
+  );
+  
+  $form['text'] = array(
+    '#type' => 'item',
+    '#value' => t('Are you sure you want to delete preset @preset? All associated settings and transcoder configurations will be lost.', array('@preset' => $preset->name)),
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#suffix' => l(t('Back'), $form['#redirect']),
+  );
+    
+  return $form;
+}
+
+function video_admin_preset_delete_validate($form, $form_state) {
+  $preset = $form['#preset'];
+
+  // Selected presets can't be deleted
+  $selected = video_get_presets();
+  if (isset($selected[$preset->id])) {
+    form_error($form['text'], t('You are not allowed to delete presets that are currently active.'));
+  }
+}
+
+function video_admin_preset_delete_submit($form, $form_state) {
+  $preset = $form['#preset'];
+
+  db_query('DELETE FROM {video_preset_settings} WHERE presetid = %d', $preset->id);
+  db_query('DELETE FROM {video_preset} WHERE id = %d', $preset->id);
+}
+
 /**
  * Form for transcoder specific preset settings
  * 
  * @param array $form_state
  * @return array
  */
-function video_preset_admin_configure(&$form_state, video_preset $preset) {
+function video_admin_preset_configure(&$form_state, video_preset $preset) {
   $transcoder = video_get_transcoder();
   $presetform = $transcoder->preset_settings($form_state, $preset);
   
@@ -244,7 +408,7 @@ function video_preset_admin_configure(&$form_state, video_preset $preset) {
   $form['preset'] = array(
     '#type' => 'item',
     '#title' => t('Preset'),
-    '#value' => check_plain($preset->get_name()) .' ('. t('extension:') .' '. $preset->getExtension() .')',
+    '#value' => check_plain($preset->name) .' ('. t('extension:') .' '. $preset->extension .')',
   );
   
   $form['transcoder'] = array(
@@ -273,11 +437,11 @@ function video_preset_admin_configure(&$form_state, video_preset $preset) {
   return $form;
 }
 
-function video_preset_admin_configure_validate($form, &$form_state) {
+function video_admin_preset_configure_validate($form, &$form_state) {
   $form_state['transcoder']->preset_settings_validate($form, $form_state);
 }
 
-function video_preset_admin_configure_submit($form, &$form_state) {
+function video_admin_preset_configure_submit($form, &$form_state) {
   $values = $form_state['values'];
   $settings = array();
 

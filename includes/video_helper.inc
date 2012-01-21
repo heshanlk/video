@@ -2,8 +2,6 @@
 /*
  * @file
  * Class file used to create our video and thumbnail objects.
- * @todo : remove video_zencoder validation form the class
- *
  */
 class video_helper {
   public function video_object($element) {
@@ -110,5 +108,4 @@ class video_helper {
     // Return our object
     return $thumbnail;
   }
-
 }
