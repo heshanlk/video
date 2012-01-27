@@ -1,8 +1,7 @@
 <?php
 /**
- *
- * @file video.module
- *
+ * @file
+ * Main file of the Video module.
  */
 
 define('VIDEO_RENDERING_PENDING', 1);
@@ -170,7 +169,7 @@ function video_preset_load($id) {
   if (!$data) {
     return FALSE;
   }
-  
+
   module_load_include('lib.inc', 'video');
 
   return new video_preset($data);
@@ -328,7 +327,7 @@ function video_field_formatter_info() {
 }
 
 /**
- * Implmentation of hook_cron().
+ * Implementation of hook_cron().
  */
 function video_cron() {
   if (variable_get('video_cron', TRUE)) {
@@ -337,11 +336,11 @@ function video_cron() {
 }
 
 /**
- * Implementation of hook_form_alter()
- * 
+ * Implementation of hook_form_alter().
+ *
  * @param array $form
  * @param array $form_state
- * @param string $form_id 
+ * @param string $form_id
  */
 function video_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
@@ -355,13 +354,13 @@ function video_node_update_submit($form, &$form_state) {
   //lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
     $transcoder = video_get_transcoder();
-    
+
     foreach ($form_state['values']['video_id'] as $fid) {
       $video = new stdClass();
       $video->fid = intval($fid);
       $video->nid = intval($form_state['nid']);
       $transcoder->update_job($video);
-      
+
       // Lets other module to know to update
       video_module_invoke('update', $form, $form_state);
     }
@@ -373,7 +372,7 @@ function video_node_update_submit($form, &$form_state) {
  */
 function video_file_delete($file) {
   $fid = intval($file->fid);
-  
+
   if ($fid <= 0) {
     watchdog('video', 'video_file_delete called with empty argument', array(), WATCHDOG_ERROR);
     return;
@@ -405,7 +404,7 @@ function video_views_api() {
 
 /**
  * Returns the width/height and aspect ratio of the video
- * 
+ *
  * @todo: move this to the transcoder class instead?
  */
 function _video_aspect_ratio($video) {
@@ -414,8 +413,8 @@ function _video_aspect_ratio($video) {
   $wxh = $transcoder->get_dimensions($video);
 
   if (empty($wxh) || empty($wxh['width']) || empty($wxh['height'])) {
-    // No width and height found. This may be because the transcoder does not support retrieving dimensions. 
-    return null;
+    // No width and height found. This may be because the transcoder does not support retrieving dimensions.
+    return NULL;
   }
 
   return array(
@@ -508,7 +507,7 @@ function video_thumb_path($video = NULL, $checkexistence = TRUE) {
   if ($checkexistence) {
     field_file_check_directory(file_directory_path(), FILE_CREATE_DIRECTORY);
     field_file_check_directory($basedir, FILE_CREATE_DIRECTORY);
-    
+
     if ($dir != $basedir) {
       field_file_check_directory($dir, FILE_CREATE_DIRECTORY);
     }
@@ -524,16 +523,16 @@ function video_add_adminjs() {
 /**
  * Increase the database timeout in preparation for long time
  * operations, such as S3 uploads and local transcoding.
- * 
+ *
  * Reconnecting to the database after this operation is not possible
  * due to the way db_set_active stores the connection identifiers.
- * 
+ *
  * At this moment, only mysqli and mysql are handled. The timeout is
  * set to 1 day
  */
 function _video_db_increase_timeout() {
   global $db_type;
-  
+
   if ($db_type === 'mysqli' || $db_type === 'mysql') {
     $timeout = 24 * 60 * 60; // one day
     db_query('SET SESSION wait_timeout = %d', $timeout);
@@ -558,9 +557,9 @@ function video_ctools_plugin_directory($module, $plugin) {
  */
 function video_get_presets($all = FALSE) {
   module_load_include('lib.inc', 'video');
-  
+
   $presets = array();
-  
+
   if ($all) {
     $result = db_query('SELECT * FROM {video_preset}');
   }
@@ -570,14 +569,14 @@ function video_get_presets($all = FALSE) {
       $result = db_query('SELECT * FROM {video_preset} WHERE id IN ('. db_placeholders($current) .')', $current);
     }
     else {
-      $result = db_query('SELECT * FROM {video_preset} ORDER BY id ASC LIMIT 2');
+      $result = db_query_range('SELECT * FROM {video_preset} ORDER BY id ASC LIMIT', 0, 2);
     }
   }
 
-  while($row = db_fetch_object($result)) {
+  while ($row = db_fetch_object($result)) {
     $presets[$row->id] = new video_preset($row);
   }
-  
+
   return $presets;
 }
 
@@ -670,7 +669,7 @@ function video_run_queue($num = NULL) {
   }
 
   $donesomething = FALSE;
-  
+
   $transcoder = video_get_transcoder();
   $filesystem = video_get_filesystem();
   $presets = video_get_presets();
@@ -701,7 +700,7 @@ function _video_process_video(stdClass $video, video_transcoder $transcoder, vid
   if ($video->status != VIDEO_RENDERING_PENDING) {
     return NULL;
   }
-  
+
   $video->presets = $presets;
 
   if (!$filesystem->onpreconvert($video)) return FALSE;

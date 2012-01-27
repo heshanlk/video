@@ -46,7 +46,7 @@ function uploadfield_widget_settings_save($widget) {
 
 /**
  * Element #value_callback function.
- * 
+ *
  * Copied from filefield_widget_value with one change to reset our data array
  */
 function uploadfield_widget_value($element, $edit = FALSE) {

@@ -101,12 +101,12 @@ function video_players_admin_settings($form_state) {
       '#suffix' => '</div>',
     );
   }
-  
+
   $form['extra'] = array(
     '#type' => 'fieldset',
     '#title' => t('Player Settings'),
   );
-  
+
   if (isset($flv_players['flowplayer'])) {
     $form['extra']['video_flowplayer_extraplayerheight'] = array(
       '#type' => 'textfield',
@@ -119,11 +119,11 @@ function video_players_admin_settings($form_state) {
       '#element_validate' => array('_video_validate_number'),
     );
   }
-  
+
   if (count($form['extra']) == 2) {
     unset($form['extra']);
   }
-  
+
   return system_settings_form($form);
 }
 
@@ -143,7 +143,7 @@ function video_transcoder_admin_settings($form_state) {
 
   foreach ($transcoderplugins as $transcoderplugin) {
     $transcoder = video_get_transcoder($transcoderplugin['name']);
-    
+
     $transcoders[$transcoderplugin['name']] = $transcoder->get_name();
     $help[] = $transcoder->get_help();
     $form = array_merge($form, $transcoder->admin_settings($form_state));
@@ -178,17 +178,17 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
 function video_preset_admin_settings($form_state) {
   $presets = video_get_presets(TRUE);
   $enabled = video_get_presets();
-  
+
   $options = array();
   $help = array();
   foreach ($presets as $preset) {
     $options[$preset->id] = check_plain($preset->name);
-  
+
     if (!empty($preset->help)) {
       $help[$preset->id] = $preset->help;
     }
   }
-  
+
   $form['vid_preset'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Video transcode presets'),
@@ -197,7 +197,7 @@ function video_preset_admin_settings($form_state) {
     '#required' => TRUE,
     '#help' => $help,
   );
-  
+
   $form = system_settings_form($form);
   $form['#theme'] = 'video_preset_admin_settings';
   return $form;
@@ -208,9 +208,9 @@ function theme_video_preset_admin_settings($form) {
     if (!empty($form['vid_preset']['#help'][$key])) {
       $form['vid_preset'][$key]['#suffix'] = '<small>'. $form['vid_preset']['#help'][$key] .'</small>';
     }
-    
+
     $selected = $form['vid_preset'][$key]['#default_value'];
-    
+
     $rows[] = array(
       'data' => array(
         drupal_render($form['vid_preset'][$key]),
@@ -228,7 +228,7 @@ function theme_video_preset_admin_settings($form) {
   unset($form['vid_preset']['#title']);
   $output = theme('table', $header, $rows);
   $output .= drupal_render($form);
-  
+
   return $output;
 }
 
@@ -285,7 +285,7 @@ function video_admin_preset($form_state, video_preset $preset = NULL) {
     '#value' => t('Submit'),
     '#suffix' => l(t('Back'), $form['#redirect']),
   );
-  
+
   return $form;
 }
 
@@ -311,7 +311,7 @@ function video_admin_preset_validate($form, $form_state) {
 
   if (!empty($v['extension'])) {
     $presetid = $preset == NULL ? 0 : $preset->id;
-    $result = db_fetch_object(db_query('SELECT name FROM {video_preset} WHERE extension = "%s" AND filenamesuffix = "%s" AND id != %d', $v['extension'], $v['filenamesuffix'], $presetid));
+    $result = db_fetch_object(db_query('SELECT name FROM {video_preset} WHERE extension = "%s" AND filenamesuffix = "%s" AND id <> %d', $v['extension'], $v['filenamesuffix'], $presetid));
     if ($result) {
       form_error($form['extension'], t('The given extension and file name suffix are already used by preset @preset. Change the extension and file name suffix to something unique.', array('@preset' => $result->name)));
     }
@@ -343,18 +343,18 @@ function video_admin_preset_delete($form_state, video_preset $preset) {
     '#redirect' => 'admin/settings/video/presets',
     '#preset' => $preset,
   );
-  
+
   $form['text'] = array(
     '#type' => 'item',
     '#value' => t('Are you sure you want to delete preset @preset? All associated settings and transcoder configurations will be lost.', array('@preset' => $preset->name)),
   );
-  
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
     '#suffix' => l(t('Back'), $form['#redirect']),
   );
-    
+
   return $form;
 }
 
@@ -377,17 +377,17 @@ function video_admin_preset_delete_submit($form, $form_state) {
 
 /**
  * Form for transcoder specific preset settings
- * 
+ *
  * @param array $form_state
  * @return array
  */
 function video_admin_preset_configure(&$form_state, video_preset $preset) {
   $transcoder = video_get_transcoder();
   $presetform = $transcoder->preset_settings($form_state, $preset);
-  
+
   $form_state['preset'] = $preset;
   $form_state['transcoder'] = $transcoder;
-  
+
   // Save the settings keys that are saved to the database later
   $form_state['keys'] = array();
   foreach (element_children($presetform) as $child) {
@@ -400,30 +400,30 @@ function video_admin_preset_configure(&$form_state, video_preset $preset) {
       $form_state['keys'][] = $child;
     }
   }
-  
+
   $form = array(
     '#redirect' => 'admin/settings/video/presets',
   );
-  
+
   $form['preset'] = array(
     '#type' => 'item',
     '#title' => t('Preset'),
     '#value' => check_plain($preset->name) .' ('. t('extension:') .' '. $preset->extension .')',
   );
-  
+
   $form['transcoder'] = array(
     '#type' => 'item',
     '#title' => t('Transcoder'),
     '#value' => check_plain($transcoder->get_name()),
   );
-  
+
   if (!empty($form_state['keys'])) {
     $form = array_merge($form, $presetform);
-    
+
     $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Submit'),
-        '#suffix' => l(t('Back'), $form['#redirect']),
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+      '#suffix' => l(t('Back'), $form['#redirect']),
     );
   }
   else {
@@ -433,7 +433,7 @@ function video_admin_preset_configure(&$form_state, video_preset $preset) {
       '#suffix' => l(t('Back'), $form['#redirect']),
     );
   }
-  
+
   return $form;
 }
 
@@ -445,7 +445,7 @@ function video_admin_preset_configure_submit($form, &$form_state) {
   $values = $form_state['values'];
   $settings = array();
 
-  foreach($form_state['keys'] as $key) {
+  foreach ($form_state['keys'] as $key) {
     if (isset($values[$key]) && $values[$key] !== '') {
       $settings[$key] = $values[$key];
     }
@@ -461,7 +461,7 @@ function video_admin_preset_configure_submit($form, &$form_state) {
 function video_filesystem_admin_settings($form_state) {
   $fs = variable_get('vid_filesystem', 'drupal');
   $downloads = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
-  
+
   if ($downloads == FILE_DOWNLOADS_PRIVATE && empty($_POST['vid_filesystem'])) {
     drupal_set_message(t('Storing videos in the Drupal file system is not supported when using <a href="@filesystem">private downloads</a>.', array('@filesystem' => url('admin/settings/file-system'))), $fs == 'drupal' ? 'error' : 'warn');
   }
@@ -477,7 +477,7 @@ function video_filesystem_admin_settings($form_state) {
 
   foreach ($filesystemplugins as $filesystemplugin) {
     $filesystem = video_get_filesystem($filesystemplugin['name']);
-    
+
     $filesystems[$filesystemplugin['name']] = $filesystem->get_name();
     $help[] = $filesystem->get_help();
 
@@ -564,7 +564,7 @@ function video_video_html5_players() {
 function _video_validate_number($element, $form_state) {
   $key = end($element['#parents']);
   $val = $form_state['values'][$key];
-  
+
   if (!empty($val) && (!preg_match('#^\d+$#', $val) || intval($val) < 0)) {
     form_error($element, t('You must enter an integer value for field %field.', array('%field' => $element['#title'])));
   }

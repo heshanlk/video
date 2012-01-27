@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file
+ * Definition of LocalCommandTranscoderTestCase.
+ */
+
 class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
@@ -22,16 +27,16 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
     module_load_include('lib.inc', 'video');
     module_load_include('inc', 'video', 'transcoders/video_localcommand');
     $transcoder = new video_localcommand();
-    
+
     $video = new stdClass();
     $video->dimensions = '160x90';
-    
+
     $fileinfo = array(
       'width' => 1600,
       'height' => 900,
       'ratio' => '1.7778',
     );
-    
+
     $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
 
     $this->assertIdentical($options->width, 160, 'width');
@@ -48,16 +53,16 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
     module_load_include('lib.inc', 'video');
     module_load_include('inc', 'video', 'transcoders/video_localcommand');
     $transcoder = new video_localcommand();
-    
+
     $video = new stdClass();
     $video->dimensions = '400x300';
-    
+
     $fileinfo = array(
       'width' => 1600,
       'height' => 900,
       'ratio' => '1.7778',
     );
-    
+
     $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
 
     $this->assertIdentical($options->width, 400, 'width');
@@ -74,16 +79,16 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
     module_load_include('lib.inc', 'video');
     module_load_include('inc', 'video', 'transcoders/video_localcommand');
     $transcoder = new video_localcommand();
-    
+
     $video = new stdClass();
     $video->dimensions = '400x400';
-    
+
     $fileinfo = array(
       'width' => 400,
       'height' => 800,
       'ratio' => '0.5000',
     );
-    
+
     $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
 
     $this->assertIdentical($options->width, 200, 'width');

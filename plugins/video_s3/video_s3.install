@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Provides installation functions for video_s3.module.
@@ -91,7 +90,7 @@ function video_s3_schema() {
  */
 function video_s3_install() {
   drupal_install_schema('video_s3');
-  
+
   // The video_s3 module cron hook must execute after the video module
   // in order for locally converted files to be uploaded to S3 in the same cron run.
   db_query("UPDATE {system} SET weight = 10 WHERE name = 'video_s3'");
@@ -112,12 +111,12 @@ function video_s3_uninstall() {
 }
 
 /**
-* Implementation of hook_requirements().
-*/
+ * Implementation of hook_requirements().
+ */
 function video_s3_requirements($phase) {
   $t = get_t();
   $requirements = array();
-  
+
   if (!module_exists('libraries')) {
     $requirements['video_s3_libraries'] = array(
       'title' => $t('Video Amazon S3 requirements'),
@@ -148,7 +147,7 @@ function video_s3_requirements($phase) {
     }
     else {
       require_once $file;
-      
+
       $requirements['video_s3_library'] = array(
         'title' => $t('Video Amazon S3 library'),
         'value' => check_plain(CFRUNTIME_VERSION),
@@ -162,8 +161,8 @@ function video_s3_requirements($phase) {
 
 function video_s3_update_6000() {
   $ret = array();
-  
+
   $ret[] = update_sql("UPDATE {system} SET weight = 10 WHERE name = 'video_s3'");
-  
+
   return $ret;
 }

@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Installation file for the uploadfield module.
+ */
 
 /**
  * Implementation of hook_install().

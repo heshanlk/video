@@ -1,8 +1,8 @@
 <?php
 /**
-* @file
-* Common widget functions
-*/
+ * @file
+ * Common Video module widget functions
+ */
 
 /**
  * Process elements loads on settings
@@ -106,7 +106,8 @@ function video_widget_element_settings(&$element) {
         // Checkbox #default_value does not work when the checkbox is inserted using AHAH
         $element['data']['convert_video_on_save']['#value'] = $convert;
       }
-    } else {
+    }
+    else {
       $element['data']['convert_video_on_save'] = array(
         '#type' => 'value',
         '#value' => $convert,
@@ -127,7 +128,8 @@ function video_widget_element_settings(&$element) {
         // Checkbox #default_value does not work when the checkbox is inserted using AHAH
         $element['data']['use_default_video_thumb']['#value'] = $default_thumb;
       }
-    } else {
+    }
+    else {
       $element['data']['use_default_video_thumb'] = array(
         '#type' => 'value',
         '#value' => $default_thumb,
@@ -138,7 +140,7 @@ function video_widget_element_settings(&$element) {
 
 /**
  * Function updates our options list to show matching aspect ratios and if we have a matching resolution.
- * 
+ *
  * We will update the options array by reference and return the aspect ratio of the file.
  */
 function _video_dimensions_options(&$options, $video) {
@@ -154,7 +156,8 @@ function _video_dimensions_options(&$options, $video) {
     //lets check our width and height first
     if ($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
       $options[$key] = $value . ' ' . t('(Matches Resolution)');
-    } else {
+    }
+    else {
       //now lets check our ratio's
       $ratio = number_format($wxh[0] / $wxh[1], 4);
       if ($ratio == $aspect_ratio['ratio']) {
@@ -233,7 +236,7 @@ function video_convert_process(&$element) {
   if (!empty($value['fid']) && empty($value['data']['bypass_autoconversion'])) {
     $convert = FALSE;
     $fid = intval($value['fid']);
-    
+
     //setup our conversion class and check for the fid existence.
     $transcoder = video_get_transcoder();
 
@@ -285,16 +288,16 @@ function video_convert_process(&$element) {
     if (isset($element['data']['convert_video_on_save']['#value'])) {
       $element_data_convert_on_save = $element['data']['convert_video_on_save']['#value'];
     }
-    
+
     if (isset($value['data']['convert_video_on_save'])) {
       $file_date_convert_on_save = $value['data']['convert_video_on_save'];
     }
-    
+
     $convert_video_on_save = $element_data_convert_on_save || $file_date_convert_on_save;
-    
+
     if (((!isset($element['#default_value']['data']['convert_video_on_save']) || !$element['#default_value']['data']['convert_video_on_save'])
         && $convert_video_on_save) || ($convert && $convert_video_on_save) || $convert_on_save) {
-      
+
       $return = video_process_video($video);
       if ($return === FALSE) {
         drupal_set_message(t('Something went wrong with your video conversion. Please check your recent log entries for further debugging.'), 'error');
@@ -467,7 +470,7 @@ function video_widget_settings_file_path_validate($element, &$form_state) {
 
 /**
  * Compares passed extensions with normal video web extensions.
- * 
+ *
  * @param string $ext
  * @return bool
  */
@@ -483,7 +486,7 @@ function video_web_extensions($ext) {
     'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
     'ogg', 'ogv', 'webm' // ogg/ogv theora
   );
-  
+
   return count(array_diff($extensions, $web_extensions)) == 0;
 }
 
@@ -504,22 +507,22 @@ function video_thumb_process(&$element) {
       $video->filepath = $file['filepath'];
       $video->filename = $file['filepath'];
       $thumbs = $transcoder->generate_thumbnails($video);
-      
+
       if (!empty($thumbs)) {
         drupal_add_js(drupal_get_path('module', 'video') .'/js/video.admin.js');
-        
+
         $thumbss = array();
         foreach ($thumbs as $img) {
           $thumbss[$img->filepath] = theme('video_thumbnails', $img, '', '', array('width' => '50'), FALSE);
         }
-        
+
         if (!empty($file['data']['video_thumb']) && isset($thumbss[$file['data']['video_thumb']])) {
           $currentthumb = $file['data']['video_thumb'];
         }
         else {
           $currentthumb = array_rand($thumbss);
         }
-        
+
         $element['data']['video_thumb'] = array(
           '#type' => 'radios',
           '#title' => t('Video Thumbnail'),
@@ -547,7 +550,7 @@ function video_thumb_process(&$element) {
 
       $element['data']['video_thumb'] = array(
         '#type' => 'value',
-        '#value' => isset($file['data']['video_thumb']) ? $file['data']['video_thumb'] : false,
+        '#value' => isset($file['data']['video_thumb']) ? $file['data']['video_thumb'] : FALSE,
       );
     }
 
@@ -562,7 +565,7 @@ function video_thumb_process(&$element) {
     elseif (!empty($currentthumb)) {
       $large_thumb = array('filepath' => $currentthumb);
     }
-    
+
     if (!empty($large_thumb)) {
       // @todo Integrate the thumbnails with imagecache.
       $element['preview']['#suffix'] = '<div class="video_large_thumbnail-'. $fid .'">'. theme('video_thumbnails', $large_thumb, '', '', array('width' => 150), FALSE) .'</div>';
@@ -588,10 +591,10 @@ function video_explode($delimeter, $dimensions) {
 function video_format_right($value) {
   $format = explode('x', $value, 2);
   if (!isset($format[0]) || !is_numeric(trim($format[0]))) {
-    return false;
+    return FALSE;
   }
   if (!isset($format[1]) || !is_numeric(trim($format[1]))) {
-    return false;
+    return FALSE;
   }
-  return true;
+  return TRUE;
 }

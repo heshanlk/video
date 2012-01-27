@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Provide views data for video.module.
@@ -24,7 +23,7 @@ function video_views_handlers() {
 }
 
 /**
- * Implementation of hook_views_data()
+ * Implementation of hook_views_data().
  */
 function video_views_data() {
   $data = array();

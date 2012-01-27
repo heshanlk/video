@@ -26,7 +26,7 @@ function theme_video_formatter_video_plain($element) {
     if ($video->status == VIDEO_RENDERING_ACTIVE || $video->status == VIDEO_RENDERING_PENDING) {
       return theme('video_inprogress');
     }
-    else if ($video->status == VIDEO_RENDERING_FAILED) {
+    elseif ($video->status == VIDEO_RENDERING_FAILED) {
       return theme('video_encoding_failed');
     }
   }
@@ -65,7 +65,7 @@ function theme_video_formatter_video_nonodelink($element, $imagecache = FALSE) {
   $thumbnail = $video_helper->thumbnail_object($element);
   // return the themed image
   $output = '<div class="popups video video-nonodelink video-' . $element['#field_name'] . '">';
-  $output .= theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title, null, TRUE, $imagecache);
+  $output .= theme('video_image', $thumbnail, $thumbnail->alt, $thumbnail->title, NULL, TRUE, $imagecache);
   $output .= '</div>';
   return $output;
 }
@@ -97,7 +97,7 @@ function theme_video_formatter_video_thumbnail($element, $imagecache = FALSE) {
 function theme_video_formatter_video_colorbox($element, $imagecache = FALSE) {
   global $base_path;
   if (!module_exists('colorbox')) {
-    drupal_set_message(t('You must download and enable !colorbox for this formatter.', array('!colorbox' => l(t('Colorbox'), 'http://www.drupal.org/project/colorbox'))), 'error');
+    drupal_set_message(t('You must download and enable <a href="@colorbox-link">Colorbox</a> for this formatter.', array('@colorbox-link' => 'http://www.drupal.org/project/colorbox')), 'error');
     return theme('video_formatter_video_nodelink', $element);
   }
 
@@ -202,14 +202,17 @@ function theme_video_flv($video, $node) {
           array('url' => urlencode($video->files->{$video->player}->url),
             'autoPlay' => $video->autoplay,
             'autoBuffering' => $video->autobuffering,
-          ),),);
+          ),
+        ),
+      );
     }
     else {
       $options = array(
         'clip' => array('url' => urlencode($video->files->{$video->player}->url),
           'autoPlay' => $video->autoplay,
           'autoBuffering' => $video->autobuffering,
-        ),);
+        ),
+      );
     }
 
     $themed_output = theme(
@@ -235,8 +238,8 @@ function theme_video_html5($video, $node) {
 
     case 'videojs':
       $items = _video_object_to_array($video->files);
-      
-      foreach($items as &$item) {
+
+      foreach ($items as &$item) {
         if (isset($item['url'])) {
           // The following is needed for Zencoder / S3 files
           $item['filepath'] = $item['url'];
@@ -246,14 +249,14 @@ function theme_video_html5($video, $node) {
           $item['filepath'] = $item['url'] = file_create_url(drupal_urlencode($item['url']));
         }
       }
-      
+
       $items['thumbnail'] = (array) $video->thumbnail;
-      
+
       $attributes = array(
         'width' => $video->player_width,
         'height' => $video->player_height,
       );
-      
+
       return theme('videojs', $items, 'video-'. $video->fid, $attributes);
 
     default:

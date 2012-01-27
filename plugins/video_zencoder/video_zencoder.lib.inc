@@ -12,7 +12,7 @@ define('VIDEO_ZC_FAILED', 3);
 
 class video_zencoder_api {
   private $access_key;
-  
+
   /**
    * @var Services_Zencoder
    */
@@ -61,19 +61,19 @@ class video_zencoder_api {
     $zc_outputs = array();
     foreach ($video->presets as $preset) {
       $settings = $preset->getSettings();
-      
+
       if (array_key_exists('additional_settings', $settings)) {
         $settings = array_merge($settings, $settings['additional_settings']);
         unset($settings['additional_settings']);
       }
-      
+
       $settings['label'] = 'VIDEO_'. $video->fid .'_'. $preset->id;
       $settings['url'] = $output_url_prefix . $preset->filenamesuffix .'.'. $preset->extension;
       $settings['public'] = $public;
       $settings['width'] = intval($dimensions[0]);
       $settings['height'] = intval($dimensions[1]);
       $settings['notifications'] = $notifications;
-      
+
       $zc_outputs[] = $settings;
     }
 
@@ -110,7 +110,7 @@ class video_zencoder_api {
       return FALSE;
     }
   }
-  
+
   /**
    * Create Zencoder user account
    */
@@ -126,17 +126,17 @@ class video_zencoder_api {
         'email' => $email,
         'affiliate_code' => 'drupal-video',
       ));
-      
+
       $params = array(
         'email' => $email,
         'api_key' => $result->api_key,
         'password' => $result->password,
       );
-      
+
       variable_set('video_zencoder_api_key', $result->api_key);
       $message = drupal_mail('video_zencoder', 'video_zencoder', $email, language_default(), $params);
       if (!$message['result']) {
-        drupal_set_message(t('Unable to send e-mail!. Your Zencoder Details are as below.<br/> <b>API Key</b> : !api_key<br/> <b>Password</b> : !password<br/>', array('!api_key' => $results['api_key'], '!password' => $results['password'])), 'status');
+        drupal_set_message(t('Unable to send e-mail. Your Zencoder Details are as below.<br/> <b>API Key</b> : @api_key<br/> <b>Password</b> : @password<br/>', array('@api_key' => $results['api_key'], '@password' => $results['password'])), 'status');
       }
       else {
         drupal_set_message(t('Your account has been created and is ready to start processing on Zencoder'));
@@ -148,7 +148,7 @@ class video_zencoder_api {
       $errors = '';
       foreach ($e->getErrors() as $error) {
         if ($error == 'Email has already been taken') {
-          drupal_set_message(t('Your account already exists on Zencoder. So !login to here and enter API key below.', array('!login' => l(t('login'), 'https://app.zencoder.com/session/new'))));
+          drupal_set_message(t('Your account already exists on Zencoder. So <a href="@login-url">login</a> to here and enter API key below.', array('@login-url' => 'https://app.zencoder.com/session/new')));
           variable_set('video_zencoder_api_key', 'Please enter your API Key');
           return TRUE;
         }

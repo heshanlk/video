@@ -1,8 +1,7 @@
 <?php
 /**
- * 
  * @file
- * Theme functions for the videoftp module.
+ * Theme functions for the uploadfield module.
  */
 
 /**

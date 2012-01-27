@@ -1,12 +1,12 @@
 <?php
+/**
+ * @file
+ * Definition of drupal.
+ */
+
 // Register this file as a CTools plugin
 $plugin = array();
 
-/*
- * @file
- * Class file used to store videos on the local disk.
- *
- */
 class drupal implements video_filesystem {
   protected $params = array();
   protected $name = 'Drupal file system';
@@ -36,7 +36,7 @@ class drupal implements video_filesystem {
 
   public function admin_settings_validate($form, &$form_state) {
   }
-  
+
   public function onpreconvert(stdClass $video) {
     return TRUE;
   }
@@ -44,10 +44,10 @@ class drupal implements video_filesystem {
   public function onpostconvert(stdClass $video) {
     return TRUE;
   }
-  
+
   public function delete_video(stdClass $video) {
     // The original file is deleted by the filefield module
-    
+
     // Delete the locally converted videos
     if (!empty($video->data)) {
       foreach ($video->data as $file) {

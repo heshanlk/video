@@ -22,7 +22,7 @@ class video_helper {
       }
     }
 
-    $extension = strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
+    $extension = drupal_strtolower(pathinfo($element['#item']['filename'], PATHINFO_EXTENSION));
     if (empty($extension)) {
       drupal_set_message(
         t('Could not determine the extension of filename @filename for node @node-title, element @element-title, item @item',
@@ -55,7 +55,7 @@ class video_helper {
         && !$element['#item']['data']['bypass_autoconversion']) {
       // discard all existing file data
       $video->files = new stdClass();
-      
+
       $transcoder = video_get_transcoder();
       $transcoder->load_completed_job($video);
     }
@@ -83,12 +83,14 @@ class video_helper {
     $thumbnail->description = '';
 
     // Setup our thumbnail path.
-    $use_default_img = isset($element['#item']['data']['use_default_video_thumb']) ? $element['#item']['data']['use_default_video_thumb'] : false;
+    $use_default_img = isset($element['#item']['data']['use_default_video_thumb']) ? $element['#item']['data']['use_default_video_thumb'] : FALSE;
     if ($use_default_img && !empty($field['widget']['default_video_thumb']['filepath'])) {
       $thumbnail->filepath = $field['widget']['default_video_thumb']['filepath'];
-    } elseif (isset($element['#item']['data']['video_thumb']) ? $element['#item']['data']['video_thumb'] : false) {
+    }
+    elseif (isset($element['#item']['data']['video_thumb']) ? $element['#item']['data']['video_thumb'] : FALSE) {
       $thumbnail->filepath = $element['#item']['data']['video_thumb'];
-    } else {
+    }
+    else {
       //need some type of default if nothing is present
       //drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
     }
@@ -96,7 +98,8 @@ class video_helper {
     if (isset($element['imagecache_preset'])) {
       $thumbnail->url = imagecache_create_url($element['imagecache_preset'], $thumbnail->filepath);
       $thumbnail->filepath = imagecache_create_path($element['imagecache_preset'], $thumbnail->filepath);
-    } else {
+    }
+    else {
       $thumbnail->url = file_create_url($thumbnail->filepath);
     }
 

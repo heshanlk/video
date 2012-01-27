@@ -1,11 +1,15 @@
 <?php
+/**
+ * @file
+ * Drush commands for the Video module
+ */
 
 /**
  * Implementation of hook_drush_command().
  */
 function video_drush_command() {
   $items = array();
-  
+
   $items['video-scheduler'] = array(
     'description' => 'Run video transcoder scheduler',
     'callback' => 'drush_video_scheduler',
@@ -14,7 +18,7 @@ function video_drush_command() {
       '--limit' => 'Change the number of video items to transcode',
     ),
   );
-  
+
   return $items;
 }
 

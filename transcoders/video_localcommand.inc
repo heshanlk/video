@@ -28,11 +28,11 @@ class video_localcommand implements video_transcoder {
 
   /**
    * Run the specified command
-   * 
+   *
    * The nice prefix is automatically added.
    * The command is logged if the settings specify that all commands should be logged.
    * The command and error are logged if the command results in an error
-   * 
+   *
    * @param string $command
    * @param string $output Output of the command
    * @param string $purpose Purpose of the command. This is logged.
@@ -61,7 +61,7 @@ class video_localcommand implements video_transcoder {
     // Returnvar 1 means input file not found. This is normal for information calls.
     if ($return_var != 0 && ($return_var != 1 || !$ignoreoutputfilenotfound)) {
       watchdog('video_command',
-      	'Error executing command!purposetext:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
+        'Error executing command!purposetext:<br/><pre>@command</pre>Output:<br/><pre>@output</pre>',
         array('@command' => $command, '@output' => trim($output), '!purposetext' => $purposetext),
         WATCHDOG_ERROR);
       return FALSE;
@@ -72,7 +72,7 @@ class video_localcommand implements video_transcoder {
 
   public function generate_thumbnails(stdClass $video) {
     global $user;
-    
+
     $final_thumb_path = video_thumb_path($video);
     $total_thumbs = variable_get('video_thumbs', 5);
 
@@ -80,7 +80,7 @@ class video_localcommand implements video_transcoder {
     for ($i = 1; $i <= $total_thumbs; $i++) {
       $filename = '/video-thumb-for-'. $video->fid .'-'. $i .'.jpg';
       $thumbfile = $final_thumb_path . $filename;
-      
+
       //skip files already exists, this will save time
       if (!is_file($thumbfile)) {
         if (!isset($duration)) {
@@ -92,12 +92,12 @@ class video_localcommand implements video_transcoder {
         // Generate the thumbnail from the video.
         $command_output = '';
         $this->run_command($command, $command_output, t('generating thumbnails'));
-        
+
         // don't consider zero-byte files a success
         $exists = file_exists($thumbfile);
         if (!$exists || filesize($thumbfile) == 0) {
           $params = array('%file' => $thumbfile, '%video' => $video->filename);
-          
+
           if ($exists) {
             $error_msg = 'Error generating thumbnail for video %video: generated file %file is empty. This problem may be caused by a broken video file. The video reports that its length is @duration seconds. If this is wrong, please recreate the video and try again.';
             $params['@duration'] = $duration;
@@ -106,14 +106,14 @@ class video_localcommand implements video_transcoder {
           else {
             $error_msg = 'Error generating thumbnail for video %video: generated file %file does not exist.';
           }
-          
+
           // Log the error message and break. Other thumbnails probably will not be generated as well.
           watchdog('video_command', $error_msg, $params, WATCHDOG_ERROR);
           drupal_set_message(t($error_msg, $params), 'error');
           break;
         }
       }
-      
+
       // Begin building the file object.
       // @TODO : use file_munge_filename()
       $file = new stdClass();
@@ -139,10 +139,10 @@ class video_localcommand implements video_transcoder {
       watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
       return FALSE;
     }
-    
+
     // Increase the database timeout to prevent database errors after a long upload
     _video_db_increase_timeout();
-    
+
     $converteddir = realpath($converteddir);
 
     // Get the placeholders for the transcoding command
@@ -171,13 +171,13 @@ class video_localcommand implements video_transcoder {
     chdir($tmpdir);
 
     $result = TRUE;
-    
+
     // process presets
     $converted_files = array();
     foreach ($video->presets as $preset) {
       // Preset settings
       $settings = $preset->getSettings();
-      
+
       //update our filename after the move to maintain filename uniqueness.
       $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . $preset->filenamesuffix .'.'. $preset->extension, $converteddir);
       $parameters['!convertfile'] = escapeshellarg($outputfile);
@@ -205,7 +205,7 @@ class video_localcommand implements video_transcoder {
       if (!empty($settings['useqtfaststart'])) {
         $tmpfile = $outputfile .'-qt';
         $command = $this->faststartcmd .' '. escapeshellarg($outputfile) .' '. escapeshellarg($tmpfile);
-        
+
         // qt-faststart does not return an error code when it doesn't generate an output file,
         // so also check if the output file has been generated.
         if ($this->run_command($command, $command_output, t('running qt-faststart')) && file_exists($tmpfile)) {
@@ -230,7 +230,7 @@ class video_localcommand implements video_transcoder {
       $converted_files[] = $file = new stdClass();
       $file->vid = intval($video->vid);
       $file->filename = basename($outputfile);
-      $file->filepath = substr($outputfile, strlen($drupaldirrp) + 1);
+      $file->filepath = drupal_substr($outputfile, drupal_strlen($drupaldirrp) + 1);
       $file->filemime = file_get_mimetype($outputfile);
       $file->filesize = $filesize;
       $file->preset = $preset->name;
@@ -273,7 +273,7 @@ class video_localcommand implements video_transcoder {
 
     // Execute the command
     $output = '';
-    if ($this->run_command($command, $output, t('retrieving video info'), true)) {
+    if ($this->run_command($command, $output, t('retrieving video info'), TRUE)) {
       return $output;
     }
 
@@ -285,20 +285,20 @@ class video_localcommand implements video_transcoder {
    */
   public function get_playtime($video) {
     $output = $this->get_video_info($video);
-    
+
     $match = array();
     if (preg_match('/Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9])/', $output, $match)) {
       $hours = $match[1];
       $minutes = $match[2];
       $seconds = $match[3];
-      
-      if($match[4] >= 5) { // fractional seconds
+
+      if ($match[4] >= 5) { // fractional seconds
         $seconds++;
       }
-      
+
       return $seconds + ($hours * 3600) + ($minutes * 60);
     }
-    
+
     return NULL;
   }
 
@@ -336,7 +336,7 @@ class video_localcommand implements video_transcoder {
     if (!$this->load_job($video->fid)) {
       return;
     }
-    
+
     // Lets update our table to include the nid
     db_query('UPDATE {video_files} SET nid = %d WHERE fid=%d', $video->nid, $video->fid);
   }
@@ -381,7 +381,7 @@ class video_localcommand implements video_transcoder {
       $video->files->{$extension}->url = file_create_url($value->filepath);
       $video->files->{$extension}->extension = $extension;
       $video->files->{$extension}->filemime = file_get_mimetype($value->filepath);
-      $video->player = strtolower($extension);
+      $video->player = drupal_strtolower($extension);
     }
     return $video;
   }
@@ -412,7 +412,7 @@ class video_localcommand implements video_transcoder {
     $outputwidth = intval($wxh[0]);
     $outputheight = intval($wxh[1]);
     $outputratio = number_format($outputwidth / $outputheight, 4);
-    
+
     $options = new stdClass();
     $options->paddingleft = 0;
     $options->paddingright = 0;
@@ -422,18 +422,18 @@ class video_localcommand implements video_transcoder {
     $options->paddingheight = $outputheight;
     $options->width = $outputwidth;
     $options->height = $outputheight;
-    
+
     $fileratio = $fileinfo['ratio'];
     $filewidth = $fileinfo['width'];
     $fileheight = $fileinfo['height'];
-    
+
     // If the input ratio is not equal to the output ratio
     if ($outputratio != $fileratio && $filewidth && $fileheight) {
       if ($fileratio < $outputratio) {
         // The input file is narrower than the output file
         // Change the output width proportionally
         $options->width = intval(round($filewidth * $outputheight / $fileheight));
-        
+
         // Determine left and right padding
         $padding = $outputwidth - $options->width;
         $options->paddingleft = intval(floor($padding / 2));
@@ -443,14 +443,14 @@ class video_localcommand implements video_transcoder {
         // The input file is wider than the output file
         // Change the output height proportionally
         $options->height = intval(round($fileheight * $outputwidth / $filewidth));
-        
+
         // Determine top and bottom padding
         $padding = $outputheight - $options->height;
         $options->paddingtop = intval(floor($padding / 2));
         $options->paddingbottom = intval(ceil($padding / 2));
       }
     }
-    
+
     return $options;
   }
 
@@ -550,10 +550,10 @@ class video_localcommand implements video_transcoder {
         form_error($form['video_transcoder_path'], t('The file %file does not exist.', array('%file' => $v['video_transcoder_path'])));
       }
     }
-    elseif($v['vid_convertor'] == 'video_localcommand') {
+    elseif ($v['vid_convertor'] == 'video_localcommand') {
       form_error($form['video_transcoder_path'], t('!name field is required.', array('!name' => $form['video_transcoder_path']['#title'])));
     }
-    
+
     if (!empty($v['video_localcommand_qtfaststart_cmd'])) {
       if (!is_file($v['video_localcommand_qtfaststart_cmd'])) {
         form_error($form['helpers']['video_localcommand_qtfaststart_cmd'], t('The file %file does not exist.', array('%file' => $v['video_localcommand_qtfaststart_cmd'])));
@@ -569,9 +569,9 @@ class video_localcommand implements video_transcoder {
 
   public function preset_settings(&$form_state, video_preset $preset) {
     $form = array();
-    
+
     $settings = $preset->getSettings();
-    
+
     if (!isset($settings['commands'])) {
       $settings['commands'] = array('');
     }
@@ -592,7 +592,7 @@ class video_localcommand implements video_transcoder {
         '#required' => $k === 0,
       );
     }
-    
+
     if (!empty($this->flvtoolcmd)) {
       $form['useflvtool2'] = array(
         '#type' => 'checkbox',
@@ -600,7 +600,7 @@ class video_localcommand implements video_transcoder {
         '#default_value' => !empty($settings['useflvtool2']),
       );
     }
-    
+
     if (!empty($this->faststartcmd)) {
       $form['useqtfaststart'] = array(
         '#type' => 'checkbox',
@@ -608,14 +608,14 @@ class video_localcommand implements video_transcoder {
         '#default_value' => !empty($settings['useqtfaststart']),
       );
     }
-    
+
     $form['help'] = array(
       '#type' => 'item',
       '#title' => t('Notes'),
       '#value' =>
         '<p>'. t('The commands are executed in a temporary directory that is removed after the conversion has completed.') .'<br/>'.
-               t('If you are using FFmpeg to transcode large videos, consider adding <code>-nostats</code> to your command line(s) to reduce memory usage while transcoding.') .'<br/>'.
-               t('Submit this form and revisit this page to add more commands.') .'</p>'.
+          t('If you are using FFmpeg to transcode large videos, consider adding <code>-nostats</code> to your command line(s) to reduce memory usage while transcoding.') .'<br/>'.
+          t('Submit this form and revisit this page to add more commands.') .'</p>'.
         '<p>'. t('You can use the following replacement variables in your commands:') .'</p>'.
         theme('item_list', array(
           '<strong>!cmd_path</strong>: '. t('the path to your executable (currently: %executable).', array('%executable' => $this->cmdpath)),
@@ -631,13 +631,13 @@ class video_localcommand implements video_transcoder {
           '<strong>!paddingright</strong>: '. t('the padding added to the right of the output video file, for use with -padright.'),
         )),
     );
-    
+
     return $form;
   }
 
   public function preset_settings_validate($form, &$form_state) {
     if (!empty($form_state['values']['commands'])) {
-      foreach($form_state['values']['commands'] as $k => $v) {
+      foreach ($form_state['values']['commands'] as $k => $v) {
         if (empty($v)) {
           unset($form_state['values']['commands'][$k]);
         }
@@ -645,11 +645,11 @@ class video_localcommand implements video_transcoder {
 
       $form_state['values']['commands'] = array_values($form_state['values']['commands']);
     }
-    
+
     if (!empty($form['useflvtool2'])) {
       $form['useflvtool2'] = TRUE;
     }
-    
+
     if (!empty($form['useqtfaststart'])) {
       $form['useqtfaststart'] = TRUE;
     }

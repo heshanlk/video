@@ -1,6 +1,5 @@
 <?php
 /**
- * 
  * @file
  * Theme functions for the videoftp module.
  */

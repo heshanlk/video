@@ -1,17 +1,12 @@
 <?php
+/**
+ * @file
+ * Transcoder class file to handle Zencoder settings and conversions.
+ */
+
 // Register this file as a CTools plugin
 $plugin = array();
 
-/*
- * @file
- * Transcoder class file to handle Zencoder settings and conversions.
- * @TODO
- * - Cancel transcode job when delete.
- * - Add number of cronjobs pertime  set to 5 now.
- * - Replace load_completed_job with load_job
- * - Add a metadata extractor class to extract width and height
- *
- */
 module_load_include('lib.inc', 'video');
 
 class video_zencoder implements video_transcoder {
@@ -20,18 +15,18 @@ class video_zencoder implements video_transcoder {
 
   public function generate_thumbnails(stdClass $video) {
     global $user;
-    
+
     $job = $this->load_job($video->fid);
     $complete = $job && $job->status == VIDEO_RENDERING_COMPLETE;
-    
+
     $final_thumb_path = video_thumb_path($video);
     $number_of_thumbs = $complete ? variable_get('video_thumbs', 5) : 1;
-    
+
     $files = array();
     for ($i = 0; $i < $number_of_thumbs; $i++) {
       $filename = $video->fid .'_'. sprintf('%04d', $i) .'.png';
       $thumbfile = $final_thumb_path .'/'. $filename;
-      
+
       if (!$complete) {
         $default = drupal_get_path('module', 'video') .'/images/no-thumb.png';
         $thumbfile = video_thumb_path(NULL, FALSE) .'/no-thumb.png';
@@ -44,7 +39,7 @@ class video_zencoder implements video_transcoder {
       elseif (!is_file($thumbfile)) {
         break;
       }
-      
+
       // Begin building the file object.
       $file = new stdClass();
       $file->uid = $user->uid;
@@ -56,7 +51,7 @@ class video_zencoder implements video_transcoder {
       $file->timestamp = time();
       $files[] = $file;
     }
-    
+
     return $files;
   }
 
@@ -83,7 +78,7 @@ class video_zencoder implements video_transcoder {
     if ($encoding_job = $zc->create($video)) {
       $video->jobid = $encoding_job->id;
       $video->data = new stdClass();
-      
+
       foreach ($encoding_job->outputs as $output) {
         $video->data->{$output->id}->id = $output->id;
         $video->data->{$output->id}->label = $output->label;
@@ -147,7 +142,8 @@ class video_zencoder implements video_transcoder {
         '#default_value' => variable_get('agree_terms_zencoder', TRUE),
         '#description' => t('Read terms and conditions on !link.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com'))),
       );
-    } else {
+    }
+    else {
       // Zencoder API is exists
       $form['zencoder_info'] = array(
         '#type' => 'fieldset',
@@ -158,7 +154,7 @@ class video_zencoder implements video_transcoder {
       $form['zencoder_info']['video_zencoder_api_key'] = array(
         '#type' => 'textfield',
         '#title' => t('Zencoder API Key'),
-        '#default_value' => variable_get('video_zencoder_api_key', null),
+        '#default_value' => variable_get('video_zencoder_api_key', NULL),
         '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add a new account.')
       );
       $form['zencoder_info']['video_thumbs'] = array(
@@ -199,16 +195,16 @@ class video_zencoder implements video_transcoder {
       return;
     }
 
-    $errors = false;
+    $errors = FALSE;
     // check terms and condition
     if ($form_state['values']['agree_terms_zencoder'] == 0) {
-      $errors = true;
+      $errors = TRUE;
       form_set_error('agree_terms_zencoder', t('You must agree to the terms and conditions.'));
     }
     // check for email exists
     // Validate the e-mail address:
     if ($error = user_validate_mail($form_state['values']['zencoder_username'])) {
-      $errors = true;
+      $errors = TRUE;
       form_set_error('zencoder_username', $error);
     }
 
@@ -218,7 +214,7 @@ class video_zencoder implements video_transcoder {
       $zc = new video_zencoder_api();
 
       $result = $zc->create_user($form_state['values']['zencoder_username']);
-      if ($result !== true) {
+      if ($result !== TRUE) {
         form_set_error('zencoder_username', $result);
       }
     }
@@ -226,9 +222,9 @@ class video_zencoder implements video_transcoder {
 
   public function preset_settings(&$form_state, video_preset $preset) {
     $settings = $preset->getSettings();
-    
+
     $form = array();
-    
+
     $form['help'] = array(
       '#type' => 'item',
       '#title' => t('Note'),
@@ -238,38 +234,38 @@ It is usually not necessary to change these settings as Zencoder has sensible de
 
     $onetofive = array('' => '') + array_combine(range(1, 5), range(1, 5));
     $truefalse = array('' => '', 'true' => t('Yes'), 'false' => t('No'));
-    $videocodecs = array('','h264', 'mpeg4', 'theora', 'vp6', 'vp8', 'wmv');
+    $videocodecs = array('', 'h264', 'mpeg4', 'theora', 'vp6', 'vp8', 'wmv');
     $audiocodecs = array('', 'aac', 'amr', 'mp3', 'vorbis', 'wma');
     $audiochannels = array('', 1, 2);
-    
+
     $form['quality'] = array(
       '#type' => 'select',
       '#title' => t('Video quality'),
       '#default_value' => isset($settings['quality']) ? $settings['quality'] : '',
       '#options' => $onetofive,
     );
-    
+
     $form['audio_quality'] = array(
       '#type' => 'select',
       '#title' => t('Audio quality'),
       '#default_value' => isset($settings['audio_quality']) ? $settings['audio_quality'] : '',
       '#options' => $onetofive,
     );
-    
+
     $form['speed'] = array(
       '#type' => 'select',
       '#title' => t('Transcoding speed'),
       '#default_value' => isset($settings['speed']) ? $settings['speed'] : '',
       '#options' => $onetofive,
     );
-    
+
     $form['upscale'] = array(
       '#type' => 'select',
       '#title' => t('Allow upscaling'),
       '#default_value' => isset($settings['upscale']) ? $settings['upscale'] : '',
       '#options' => $truefalse,
     );
-    
+
     $form['frame_rate'] = array(
       '#type' => 'textfield',
       '#title' => t('Frame rate'),
@@ -277,7 +273,7 @@ It is usually not necessary to change these settings as Zencoder has sensible de
       '#maxlength' => 15,
       '#size' => 15,
     );
-    
+
     $form['max_frame_rate'] = array(
       '#type' => 'textfield',
       '#title' => t('Maximum frame rate'),
@@ -285,21 +281,21 @@ It is usually not necessary to change these settings as Zencoder has sensible de
       '#maxlength' => 15,
       '#size' => 15,
     );
-    
+
     $form['video_codec'] = array(
       '#type' => 'select',
       '#title' => t('Video codec'),
       '#default_value' => isset($settings['video_codec']) ? $settings['video_codec'] : '',
       '#options' => array_combine($videocodecs, $videocodecs),
     );
-    
+
     $form['audio_codec'] = array(
       '#type' => 'select',
       '#title' => t('Audio codec'),
       '#default_value' => isset($settings['audio_codec']) ? $settings['audio_codec'] : '',
       '#options' => array_combine($audiocodecs, $audiocodecs),
     );
-    
+
     $form['video_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Video bit rate'),
@@ -308,7 +304,7 @@ It is usually not necessary to change these settings as Zencoder has sensible de
       '#maxlength' => 15,
       '#size' => 15,
     );
-    
+
     $form['audio_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => t('Audio bit rate'),
@@ -317,7 +313,7 @@ It is usually not necessary to change these settings as Zencoder has sensible de
       '#maxlength' => 15,
       '#size' => 15,
     );
-    
+
     $form['audio_sample_rate'] = array(
       '#type' => 'textfield',
       '#title' => t('Audio sample rate'),
@@ -326,19 +322,19 @@ It is usually not necessary to change these settings as Zencoder has sensible de
       '#maxlength' => 15,
       '#size' => 15,
     );
-    
+
     $form['audio_channels'] = array(
       '#type' => 'select',
       '#title' => t('Number of audio channels'),
       '#default_value' => isset($settings['audio_channels']) ? $settings['audio_channels'] : '',
       '#options' => array_combine($audiochannels, $audiochannels),
     );
-    
+
     $as = '';
     if (isset($settings['additional_settings']) && is_array($settings['additional_settings'])) {
       $as = $this->settingsArrayToString($settings['additional_settings']);
     }
-    
+
     $form['additional_settings'] = array(
       '#type' => 'textarea',
       '#title' => t('Additional settings'),
@@ -352,19 +348,19 @@ watermark:
   y: 10
   x: 10</pre></blockquote>',
     );
-    
+
     return $form;
   }
-  
+
   public function preset_settings_validate($form, &$form_state) {
     $v =& $form_state['values'];
-    
+
     foreach (array('frame_rate', 'max_frame_rate') as $k) {
       if (!empty($v[$k]) && !preg_match('#^\d+(\.\d+)?$#', $v[$k])) {
         form_error($form[$k], t('The value of the %setting setting must be a floating point number.', array('%setting' => $form[$k]['#title'])));
       }
     }
-    
+
     foreach (array('video_bitrate', 'audio_bitrate', 'audio_sample_rate', 'audio_channels') as $k) {
       if (!empty($v[$k])) {
         if (!preg_match('#^\d+$#', $v[$k])) {
@@ -375,7 +371,7 @@ watermark:
         }
       }
     }
-    
+
     if (!empty($v['additional_settings'])) {
       // Remove unnecessary new lines
       $asstr = trim($v['additional_settings']);
@@ -392,22 +388,22 @@ watermark:
         if (count($parts) != 2) {
           continue;
         }
-        
+
         $key = rtrim($parts[0]);
         $value = trim($parts[1]);
-        
+
         if ($value != '') {
           // Check the spaces of the key
           $level = strspn($key, ' ') / 2;
           if ($level != abs($level)) {
             continue;
           }
-          
+
           // Check if we should go one level lower
           if ($level == count($stack) - 2) {
             array_shift($stack);
           }
-          
+
           if ($level == count($stack) - 1) {
             // Add a value to the current stack top
             $stack[0][ltrim($key)] = $value;
@@ -417,7 +413,7 @@ watermark:
           $stack[0][$key] = array();
           array_unshift($stack, &$stack[0][$key]);
         }
-        
+
         $lines[$lineno] = $key .': '. $value;
       }
 
@@ -427,11 +423,11 @@ watermark:
 
   private function settingsArrayToString(array $settings, $level = 0) {
     $output = '';
-    
+
     foreach ($settings as $k => $v) {
       $output .= str_repeat('  ', $level);
       $output .= $k .':';
-      
+
       if (is_array($v)) {
         $output .= "\n";
         $output .= $this->settingsArrayToString($v, $level + 1);
@@ -440,10 +436,10 @@ watermark:
         $output .= ' '. $v ."\n";
       }
     }
-    
+
     return $output;
   }
-  
+
   /**
    * Return the dimensions of a video
    */
@@ -461,7 +457,7 @@ watermark:
     if (!$this->load_job($video->fid)) {
       return;
     }
-    
+
     // Lets update our table to include the nid
     db_query('UPDATE {video_zencoder} SET nid = %d WHERE fid=%d', $video->nid, $video->fid);
   }
@@ -473,7 +469,7 @@ watermark:
       $zc = new video_zencoder_api();
       $zc->cancel_job($video);
     }
-    
+
     db_query('DELETE FROM {video_zencoder} WHERE fid = %d', $video->fid);
   }
 
@@ -510,11 +506,11 @@ watermark:
       $path = parse_url($value->url, PHP_URL_PATH);
       $extension = pathinfo($path, PATHINFO_EXTENSION);
       $video->files->{$extension}->filename = pathinfo($path, PATHINFO_FILENAME) .'.'. $extension;
-      $video->files->{$extension}->filepath = substr($path, 1); // Remove the leading slash
+      $video->files->{$extension}->filepath = drupal_substr($path, 1); // Remove the leading slash
       $video->files->{$extension}->url = $value->url; // Authentication tokens are added by video_s3->load()
       $video->files->{$extension}->extension = $extension;
       $video->files->{$extension}->filemime = file_get_mimetype($value->url);
-      $video->player = strtolower($extension);
+      $video->player = drupal_strtolower($extension);
     }
     return $video;
   }

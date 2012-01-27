@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * @file
  * Theme file to handle divx output.
  *
@@ -12,7 +12,6 @@
  *
  */
 ?>
-
 <object classid="clsid:67DABFBF-D0AB-41fa-9C46-CC0F21721616" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>" codebase="http://go.divx.com/plugin/DivXBrowserPlugin.cab">
   <param name="src" value="<?php print $video->files->{$video->player}->url; ?>" />
   <param value="<?php print $video->autoplay ? 'true' : 'false'; ?>" name="autoPlay">

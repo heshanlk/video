@@ -16,7 +16,7 @@ class video_amazon_s3 {
   private $ssl;
   private $bucket;
   private $libfile;
-  
+
   /**
    * @var AmazonS3
    */
@@ -26,12 +26,12 @@ class video_amazon_s3 {
     // Create the Zencoder class
     $libpath = libraries_get_path('awssdk');
     $this->libfile = $libpath .'/sdk.class.php';
-    
+
     if (!file_exists($this->libfile)) {
       drupal_set_message(t('The Amazon SDK for PHP has not been installed correctly. See the <a href="@drupal-status-page">Drupal status page</a> for more information.', array('@drupal-status-page' => url('admin/reports/status'))), 'error');
       return;
     }
-    
+
     $this->access_key = variable_get('amazon_s3_access_key', '');
     $this->secret_key = variable_get('amazon_s3_secret_access_key', '');
     $this->ssl = variable_get('amazon_s3_ssl', FALSE);
@@ -45,14 +45,14 @@ class video_amazon_s3 {
 
     // Make our connection to Amazon.
     require_once $this->libfile;
-    
+
     $credential = new stdClass();
     $credential->key = $access_key;
     $credential->secret = $secret_key;
     $credential->token = NULL;
-    
+
     CFCredentials::set(array($credential));
-    
+
     $this->s3 = new AmazonS3();
     $this->s3->use_ssl = $ssl;
   }
@@ -77,7 +77,7 @@ class video_amazon_s3 {
     $cc = variable_get('amazon_s3_cache_control_max_age', 'none');
 
     $headers = array();
-    
+
     if ($expires_offset !== 'none') {
       $headers['Expires'] = gmdate('r', $expires_offset == 0 ? 0 : (time() + $expires_offset));
     }
@@ -147,13 +147,13 @@ class video_amazon_s3 {
     $url = $this->s3->get_object_url($this->bucket, $filepath, time() + $lifetime);
 
     if ($this->ssl) {
-      $url = 'https://'. substr($url, 7);
+      $url = 'https://'. drupal_substr($url, 7);
     }
 
     return $url;
   }
 
-  public function get_object($filepath, $saveTo = false) {
+  public function get_object($filepath, $saveTo = FALSE) {
     return $this->s3->get_object($this->bucket, $filepath, array(
       'fileDownload' => $saveTo,
     ));
@@ -205,16 +205,16 @@ class video_amazon_s3 {
     if (strpos('/', $file->filename) !== FALSE) {
       $filepath = $file->filename;
     }
-    
+
     // Reset the Content-Type header usually sent when the S3 library puts a
     // file - we'll lose it otherwise.
     $headers['Content-Type'] = $file->filemime;
-    
+
     $item = array(
       'bucket' => $file->bucket,
       'filename' => $filepath,
     );
-    
+
     return $this->s3->copy_object($item, $item, array(
       'acl' => $permission,
       'headers' => $headers,
@@ -248,7 +248,7 @@ class video_amazon_s3 {
 
     // Store existing ACLs to preserve them when adding zencoder
     $acl = array();
-    
+
     // check if the acl is already present
     foreach ($acp->body->AccessControlList->Grant as $grant) {
       if ($grant->Grantee->DisplayName == 'zencodertv' && $grant->Permission == $perm) {
@@ -270,7 +270,7 @@ class video_amazon_s3 {
       return $this->s3->set_object_acl($bucket, $filepath, $acl)->isOK();
     }
   }
-  
+
   private function watchdog($message, $variables = array(), $severity = WATCHDOG_NOTICE, $nid = NULL) {
     $link = NULL;
 
@@ -279,16 +279,16 @@ class video_amazon_s3 {
         $link = l(t('view node'), 'node/'. intval($nid->nid));
       }
     }
-    elseif($nid > 0) {
+    elseif ($nid > 0) {
       $link = l(t('view node'), 'node/'. intval($nid));
     }
 
     watchdog('amazon_s3', $message, $variables, $severity, $link);
   }
-  
+
   /**
    * Replace a file with a text file to reduce disk space usage.
-   * 
+   *
    * @param string $filepath
    * @param string $s3url
    */
@@ -298,7 +298,7 @@ class video_amazon_s3 {
       if (!$fp) {
         return FALSE;
       }
-      
+
       fwrite($fp, 'Moved to '. $s3url);
       fclose($fp);
       chmod($filepath, 0644);

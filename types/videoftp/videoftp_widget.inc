@@ -48,17 +48,17 @@ function videoftp_widget_settings_form($widget) {
 
 /**
  * Implementation of CCK's hook_widget_settings($op = 'validate').
- * 
+ *
  * //@todo Integrate this into a universal function to share with uploadfield_widget
  */
 function videoftp_widget_settings_validate($widget) {
   // Check that only web images are specified in the callback.
-  if(!video_web_extensions($widget['file_extensions'])) {
+  if (!video_web_extensions($widget['file_extensions'])) {
     form_set_error('file_extensions', t('Only web-standard videos are supported through the videoftp widget. If needing to upload other types of files, change the widget to use a standard file upload.'));
   }
   // Check for our ftp filepath and try to create it, if not it will throw an error.
-  $ftp_path = file_directory_path().'/'.$widget['ftp_path'];
-  file_check_directory($ftp_path, true, 'ftp_path');
+  $ftp_path = file_directory_path() .'/'. $widget['ftp_path'];
+  file_check_directory($ftp_path, TRUE, 'ftp_path');
 }
 
 /**
@@ -76,7 +76,7 @@ function videoftp_widget_settings_save($widget) {
 
 /**
  * The #value_callback for the videoftp_widget type element.
- * 
+ *
  * Copied from filefield_widget_value with one change to reset our data array
  */
 function videoftp_widget_value($element, $edit = FALSE) {
@@ -173,7 +173,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   if (isset($element['#upload_validators'])) {
     $element['videoftp_attach']['#upload_validators'] = $element['#upload_validators'];
   }
-  
+
   $element['videoftp_remove'] = array(
   // With default CCK edit forms, $element['#parents'] is array($element['#field_name'], $element['#delta']).
   // However, if some module (for example, flexifield) places our widget deeper in the tree, we want to
@@ -214,22 +214,22 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   // Set access on the buttons and select.
   $element['videoftp_attach']['#access'] = empty($item['fid']);
   $element['videoftp_remove']['#access'] = !empty($item['fid']);
-  
+
   $options = videoftp_options($field);
-  
+
   if (empty($options)) {
     $element['ftpselect'] = array(
       '#type' => 'item',
       '#value' => t('No suitable files found.'),
       '#access' => empty($item['fid']),
     );
-    
+
     // Hide the attach button.
     $element['videoftp_attach']['#access'] = FALSE;
   }
   else {
     array_unshift($options, t('Select Video'));
-    
+
     $element['ftpselect'] = array(
       '#type' => 'select',
       '#required' => isset($element['#required']) ? $element['#required'] : $field['required'],
@@ -260,7 +260,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   );
 
   // Create our thumbnails
-  if($field['widget']['autothumbnail']) {
+  if ($field['widget']['autothumbnail']) {
     video_thumb_process($element);
   }
 
@@ -273,7 +273,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
         '#maxlength' => variable_get('filefield_description_length', 128),
     );
   }
-  
+
   if (!empty($field['list_field'])) {
     $element['list'] = array(
         '#type' => empty($item['fid']) ? 'hidden' : 'checkbox',
@@ -290,7 +290,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   }
 
   // Add our extra fields if in preview mode
-  if(!empty($item['fid'])) {
+  if (!empty($item['fid'])) {
     video_widget_element_settings($element);
   }
 
@@ -310,7 +310,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
   $element['#suffix'] = '</div>';
 
   // Lets use the clicked_button #submit[0] value here instead and see how that works out for now...
-  if($form_state['submitted'] == 1) {
+  if ($form_state['submitted'] == 1) {
     video_widget_process($element, $form_state);
   }
   return $element;
@@ -322,7 +322,7 @@ function videoftp_save_upload($element) {
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $element = $element['#post'][$field['field_name']][$delta];
-  $ftp_path = file_directory_path().'/'.$field['widget']['ftp_path'];
+  $ftp_path = file_directory_path() .'/'. $field['widget']['ftp_path'];
 
   if (empty($element['ftpselect']) || !file_exists($ftp_path .'/'. $element['ftpselect'])) {
     return 0;
@@ -341,14 +341,14 @@ function videoftp_save_upload($element) {
   $file = new stdClass();
   $file->uid = $user->uid;
   $file->filename = file_munge_filename(trim(basename($video), '.'), $field['widget']['file_extensions']);
-  $file->filepath = $ftp_path.'/'.$video;
+  $file->filepath = $ftp_path .'/'. $video;
   $file->filemime = file_get_mimetype($file->filename);
   $file->filesize = filesize($file->filepath);
   $file->status = FILE_STATUS_TEMPORARY;
   $file->timestamp = time();
 
   //lets move our file from the ftp folder to the files directory
-  if(file_move($file, $dest)) {
+  if (file_move($file, $dest)) {
     // Insert new record to the database.
     drupal_write_record('files', $file);
   }
@@ -359,42 +359,42 @@ function videoftp_save_upload($element) {
 function videoftp_options($field) {
   $ftp_path = file_directory_path() .'/'. $field['widget']['ftp_path'];
   $video_files = scandir($ftp_path);
-  
+
   if (empty($video_files)) {
     return array();
   }
-  
+
   $max_filesize = NULL;
   if (!empty($field['widget']['max_filesize_per_file'])) {
     $max_filesize = parse_size($field['widget']['max_filesize_per_file']);
   }
-  
+
   $extensions = explode(' ', $field['widget']['file_extensions']);
-  
+
   $options = array();
-  
+
   foreach ($video_files as $file) {
     if ($file == '.' || $file == '..') {
       continue;
     }
-    
+
     if ($max_filesize != NULL) {
       $fullpath = $ftp_path .'/'. $file;
       $filesize = filesize($fullpath);
-      
+
       if ($filesize > $max_filesize) {
         continue;
       }
     }
-    
+
     $ext = pathinfo($file);
     if (!in_array($ext['extension'], $extensions)) {
       continue;
     }
-    
+
     //add the file to the options array for selection
     $options[$file] = $file;
   }
-  
+
   return $options;
 }

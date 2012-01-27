@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * @file
  * Provides installation functions for video_s3.module.
@@ -93,12 +91,12 @@ function video_zencoder_uninstall() {
 }
 
 /**
-* Implementation of hook_requirements().
-*/
+ * Implementation of hook_requirements().
+ */
 function video_zencoder_requirements($phase) {
   $t = get_t();
   $requirements = array();
-  
+
   if (!module_exists('libraries')) {
     $requirements['video_zencoder_libraries'] = array(
       'title' => $t('Video Zencoder requirements'),
@@ -129,20 +127,20 @@ function video_zencoder_requirements($phase) {
     }
     else {
       require_once $file;
-      
+
       // Instantiate the Zencoder API to catch errors during initialization
       try {
         $temp = new Services_Zencoder();
-        
+
         $version = str_replace('ZencoderPHP v', '', Services_Zencoder::USER_AGENT);
-        
+
         $requirements['video_zencoder_library'] = array(
           'title' => $t('Video Zencoder library'),
           'value' => check_plain($version),
           'severity' => REQUIREMENT_OK,
         );
       }
-      catch(Exception $e) {
+      catch (Exception $e) {
         $requirements['video_zencoder_library'] = array(
           'title' => $t('Video Zencoder library'),
           'value' => $e->getMessage(),

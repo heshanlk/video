@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * @file
  * Theme file to handle HTML5 output.
  *
@@ -15,15 +15,15 @@ $autoplayattr = $video->autoplay ? ' autoplay="autoplay"' : '';
 $preload = $video->autobuffering ? 'auto' : 'metadata';
 
 $codecs = array(
-	'video/mp4' => 'avc1.42E01E, mp4a.40.2',
-	'video/webm' => 'vp8, vorbis',
-	'video/ogg' => 'theora, vorbis',
-	'application/ogg' => 'theora, vorbis',
-	'video/ogv' => 'theora, vorbis',
-	'video/quicktime' => 'avc1.42E01E, mp4a.40.2',
+  'video/mp4' => 'avc1.42E01E, mp4a.40.2',
+  'video/webm' => 'vp8, vorbis',
+  'video/ogg' => 'theora, vorbis',
+  'application/ogg' => 'theora, vorbis',
+  'video/ogv' => 'theora, vorbis',
+  'video/quicktime' => 'avc1.42E01E, mp4a.40.2',
 );
 
-$flashtype = null;
+$flashtype = NULL;
 ?>
 <video width="<?php echo $width; ?>" height="<?php echo $height; ?>" preload="<?php echo $preload; ?>" controls="controls" poster="<?php echo $poster; ?>"<?php echo $autoplayattr; ?>>
 <?php
@@ -38,7 +38,7 @@ foreach ($video->files as $filetype => $file) {
   if (!isset($codecs[$mimetype])) {
     continue;
   }
-  
+
   // Find the right flash fallback, prefer flv over mp4
   if ($filetype != 'flv' && ($mimetype == 'video/mp4' || $mimetype == 'video/flv')) {
     $flashtype = $filetype;
@@ -48,7 +48,7 @@ foreach ($video->files as $filetype => $file) {
 <?php
 }
 
-if ($flashtype != null) {
+if ($flashtype != NULL) {
   $video->player = 'flv';
   $video->flash_player = variable_get('video_extension_'. $video->player .'_flash_player', '');
 

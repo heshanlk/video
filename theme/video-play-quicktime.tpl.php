@@ -1,13 +1,12 @@
-<?php 
-/*
+<?php
+/**
  * @file
  * Theme file to handle quicktime output.
- * 
+ *
  * Variables passed.
  * $video is the video object.
  * $node is the node object.
  *
- * 
  * <script type="text/javascript" src="/sites/all/libraries/quicktime/AC_QuickTime.js"></script>
  * <script type="text/javascript">
  *   QT_WriteOBJECT('<?php print $video->files->{$video->player}->url; ?>' , '<?php print $video->width; ?>', '<?php print $video->height; ?>' , '');
@@ -22,10 +21,10 @@
   <param name="pluginurl" value="http://www.apple.com/quicktime/download/" />
   <embed src="<?php print $video->files->{$video->player}->url; ?>"
   	type="video/quicktime"
-    pluginspage="http://www.apple.com/quicktime/download/" 
-    width="<?php print $video->player_width; ?>" 
-    height="<?php print $video->player_height; ?>" 
-    autostart="<?php print $video->autoplay ? 'true' : 'false'; ?>" 
-    controller="true" >
+    pluginspage="http://www.apple.com/quicktime/download/"
+    width="<?php print $video->player_width; ?>"
+    height="<?php print $video->player_height; ?>"
+    autostart="<?php print $video->autoplay ? 'true' : 'false'; ?>"
+    controller="true">
   </embed>
 </object>

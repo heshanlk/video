@@ -31,7 +31,7 @@ if (isset($args['h']) || isset($args['help'])) {
 Video Scheduler.
 
 Usage:        {$script} [OPTIONS]
-Example:      {$script} 
+Example:      {$script}
 
 All arguments are long options.
 
@@ -42,10 +42,10 @@ All arguments are long options.
               Drupal installation, f.e. /home/www/foo/drupal (assuming Drupal
               running on Unix). Current directory is not required.
               Use surrounding quotation marks on Windows.
-  
+
   -s, --site  Used to specify with site will be used for the upgrade. If no
               site is selected then default will be used.
-  
+
   -v, --verbose This option displays the options as they are set, but will
               produce errors from setting the session.
 
@@ -96,7 +96,7 @@ else {
   while ($path && !(file_exists($path . '/index.php') && file_exists($path . '/includes/bootstrap.inc'))) {
     $path = dirname($path);
   }
-  
+
   if (!(file_exists($path . '/index.php') && file_exists($path . '/includes/bootstrap.inc'))) {
     echo "Unable to locate Drupal root, user -r option to specify path to Drupal root\n";
     exit(1);

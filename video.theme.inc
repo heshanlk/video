@@ -56,7 +56,7 @@ function theme_video_widget_video_thumb($item = NULL) {
 /**
  * @defgroup "Theme Callbacks"
  * @{
- * @see uploadfield_theme().
+ * @see uploadfield_theme()
  */
 function theme_video_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE, $imagecache = FALSE) {
   $file = (array)$file;

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * video_handler_field_data.inc
@@ -7,12 +6,11 @@
  * Provides a handler for displaying thumbnails within the serialized data column.
  */
 class video_views_handler_field_data extends content_handler_field {
-  
   function render($values) {
     $values = drupal_clone($values); // Prevent affecting the original.
     $data = unserialize($values->{$this->field_alias});
     $filepath = $data['video_thumb'];
-    
+
     // We're down to a single node here, so we can retrieve the actual field
     // definition for the node type being considered.
     $field = content_fields($this->content_field['field_name'], $values->{$this->aliases['type']});

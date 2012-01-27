@@ -39,7 +39,7 @@ function video_s3_get_object_info($object) {
   return $s3->get_object_info($object);
 }
 
-function video_s3_get_object($object, $save_to = false) {
+function video_s3_get_object($object, $save_to = FALSE) {
   module_load_include('lib.inc', 'video_s3');
   $s3 = new video_amazon_s3();
   $s3->connect();

@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file
+ * File containing Video module interfaces and classes
+ */
+
 interface video_plugin {
   public function get_value();
   public function get_name();
@@ -9,25 +14,25 @@ interface video_plugin {
 
 interface video_filesystem extends video_plugin {
   /**
-   * Process the given video in preparation for use on the 
+   * Process the given video in preparation for use on the
    * front end.
-   * 
+   *
    * @param stdClass $video
    */
   public function load_file(stdClass $video);
-  
+
   /**
    * @param stdClass $video
    * @return bool FALSE if an error occured while doing the operation, TRUE when no operation was needed or on success
    */
   public function onpreconvert(stdClass $video);
-  
+
   /**
    * @param stdClass $video
    * @return bool FALSE if an error occured while doing the operation, TRUE when no operation was needed or on success
    */
   public function onpostconvert(stdClass $video);
-  
+
   /**
    * Delete the video from the file system.
    *
@@ -39,35 +44,35 @@ interface video_filesystem extends video_plugin {
 interface video_transcoder extends video_plugin {
   public function preset_settings(&$form_state, video_preset $preset);
   public function preset_settings_validate($form, &$form_state);
-  
+
   public function create_job(stdClass $video);
   public function update_job(stdClass $video);
   public function delete_job(stdClass $video);
   public function load_job($fid);
-  
+
   /**
    * Return at most $num files that need to be transcoded.
-   * 
+   *
    * @param int $num
    */
   public function load_job_queue($num);
   public function load_completed_job(stdClass $video);
-  
+
   /**
    * Change the rendering status of the file.
-   * 
+   *
    * @param stdClass $video The video
    * @param int $status One of the VIDEO_RENDERING_* constants
    */
   public function change_status(stdClass $video, $status);
   public function generate_thumbnails(stdClass $video);
-  
+
   /**
    * Convert the given video.
-   * 
+   *
    * Make sure to update the provided video object with any information that
    * is required by the file system module after conversion.
-   * 
+   *
    * @param stdClass $video
    * @return bool TRUE if the conversion was successful, FALSE otherwise
    */
@@ -83,7 +88,7 @@ class video_preset {
 
   /**
    * Settings for the current transcoder
-   * 
+   *
    * @var array
    */
   private $settings = NULL;

@@ -1,11 +1,12 @@
 <?php
-// Register this file as a CTools plugin
-$plugin = array();
-
-/*
+/**
  * @file
  * Class file used to store videos in Amazon S3.
  */
+
+// Register this file as a CTools plugin
+$plugin = array();
+
 class video_s3 implements video_filesystem {
   protected $params = array();
   protected $name = 'Amazon S3';
@@ -15,7 +16,7 @@ class video_s3 implements video_filesystem {
    * @var video_amazon_s3
    */
   protected $s3;
-  
+
   public function __construct() {
     module_load_include('lib.inc', 'video_s3');
 
@@ -28,7 +29,7 @@ class video_s3 implements video_filesystem {
   public function load_file(stdClass $video) {
     if ($amazon = $this->s3->get($video->fid)) {
       $transcoder = variable_get('vid_convertor', 'video_localcommand');
-      
+
       foreach ($video->files as $key => &$file) {
         $file->url = $this->s3->getVideoUrl($file->filepath);
 
@@ -195,7 +196,7 @@ class video_s3 implements video_filesystem {
         if (!$this->isValidBucketName($bucket)) {
           $info = t('Unsupported bucket name');
         }
-        elseif($bucket == variable_get('amazon_s3_bucket', '')) {
+        elseif ($bucket == variable_get('amazon_s3_bucket', '')) {
           $info = '<strong>'. t('Active bucket') .'</strong>';
         }
 
@@ -221,7 +222,7 @@ class video_s3 implements video_filesystem {
       form_set_error('amazon_s3', t('The CURL extension is not loaded.'));
       return;
     }
-    
+
     $bucket = $form_state['values']['amazon_s3_bucket'];
     // S3 buckets must contain only lower case alphanumeric characters, dots and dashes.
     if (!$this->isValidBucketName($bucket)) {
@@ -251,13 +252,13 @@ class video_s3 implements video_filesystem {
       }
       else {
         form_set_error('amazon_s3_bucket', t('Could not verify or create the bucket %bucket.', array('%bucket' => $bucket)));
-        $bucket = null;
+        $bucket = NULL;
       }
     }
 
     // Always check the access rights, in case the bucket was created
     // outside of Drupal or before the Zencoder module was active.
-    if ($bucket != null && module_exists('video_zencoder')) {
+    if ($bucket != NULL && module_exists('video_zencoder')) {
       if ($s3->setZencoderAccessPolicy($bucket)) {
         drupal_set_message(t('Successfully granted write access for bucket %bucket to Zencoder.', array('%bucket' => $bucket)));
       }
@@ -269,16 +270,16 @@ class video_s3 implements video_filesystem {
       // The file is already inserted
       return FALSE;
     }
-    
+
     db_query('INSERT INTO {video_s3} (fid, status) VALUES (%d, %d)', $video->fid, VIDEO_S3_ACTIVE);
-    
+
     // Push the original file, but leave it on the local disk for the local transcoder
     if ($video = $this->s3->pushFile($video, TRUE)) {
       db_query('UPDATE {video_s3} SET bucket="%s", filename="%s", filepath="%s", filemime="%s", filesize="%s", status=%d, completed=%d WHERE fid=%d',
         $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_S3_COMPLETE, time(), $video->fid);
       return TRUE;
     }
-    
+
     db_query('UPDATE {video_s3} SET status = %d WHERE fid=%d', VIDEO_S3_FAILED, $video->fid);
     return FALSE;
   }
@@ -295,7 +296,7 @@ class video_s3 implements video_filesystem {
         }
       }
     }
-    
+
     // Replace the local original file after the local command has been able to access it
     if (variable_get('amazon_s3_delete_local', FALSE)) {
       $s3url = 'http://'. $video->bucket .'.s3.amazonaws.com/'. drupal_urlencode($video->filepath);
@@ -304,7 +305,7 @@ class video_s3 implements video_filesystem {
 
     return $success;
   }
-  
+
   public function delete_video(stdClass $video) {
     // Find the bucket
     if (!($s3info = $this->s3->verify($video->fid))) {
@@ -318,7 +319,7 @@ class video_s3 implements video_filesystem {
     if (!empty($video->data)) {
       foreach ($video->data as $subvideo) {
         $filepath = NULL;
-        
+
         if (isset($subvideo->url)) {
           // This video is converted by Zencoder
           $parts = parse_url($subvideo->url);
@@ -328,10 +329,10 @@ class video_s3 implements video_filesystem {
           // This video is locally converted
           $filepath = $subvideo->filepath;
         }
-        
+
         // Delete the remote copy
         $this->s3->s3->delete_object($s3info->bucket, $filepath);
-        
+
         // Delete the local copy
         file_delete($filepath);
       }
@@ -351,7 +352,7 @@ class video_s3 implements video_filesystem {
     // Remove thumbnails locally
     if (is_dir($thumb_folder)) {
       rmdirr($thumb_folder);
-    
+
       // Delete any entries in the files table that may refer to the above path.
       db_query('DELETE FROM {files} WHERE filepath LIKE "%b%%"', strtr(db_escape_string($thumb_folder), array('%' => '\%', '_' => '\_')));
     }
@@ -366,9 +367,9 @@ class video_s3 implements video_filesystem {
 
 /**
  * Replace the empty form value with the variable value.
- * 
+ *
  * Used for the access secret.
- * 
+ *
  * @param array $element
  * @param array $form_state
  */
@@ -376,7 +377,7 @@ function _video_s3_fsadmin_validate_secret($element, &$form_state) {
   $key = end($element['#parents']);
   $val = $form_state['values'][$key];
   $existing = variable_get($key, NULL);
-  
+
   if ($val === '' && $existing !== NULL) {
     $form_state['values'][$key] = $existing;
   }
@@ -385,7 +386,7 @@ function _video_s3_fsadmin_validate_secret($element, &$form_state) {
 /**
  * Handle required fields that are only required when
  * video_s3 is the selected file system.
- * 
+ *
  * @param array $element
  * @param array $form_state
  */
