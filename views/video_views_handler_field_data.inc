@@ -3,7 +3,8 @@
  * @file
  * video_handler_field_data.inc
  *
- * Provides a handler for displaying thumbnails within the serialized data column.
+ * Provides a handler for displaying thumbnails within the serialized
+ * data column.
  */
 class video_views_handler_field_data extends content_handler_field {
   function render($values) {
@@ -32,7 +33,7 @@ class video_views_handler_field_data extends content_handler_field {
     }
 
     $item['#delta'] = $field['multiple'] ?  $values->{$this->aliases['delta']} : 0;
-    //added for thumbnails this should work.
+    // Added for thumbnails this should work.
     $file = pathinfo($filepath);
     $item['filepath'] = $filepath;
     $item['filename'] = $file['basename'];

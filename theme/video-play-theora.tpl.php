@@ -6,7 +6,6 @@
  * Variables passed.
  * $video is the video object.
  * $node is the node object.
- *
  */
 ?>
 <applet code="com.fluendo.player.Cortado.class" archive="<?php print $video->theora_player; ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">

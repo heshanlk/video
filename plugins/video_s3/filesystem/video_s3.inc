@@ -88,7 +88,7 @@ class video_s3 implements video_filesystem {
 
     $form['amazon_s3_access_key'] = array(
       '#type' => 'textfield',
-      '#title' => t('Access Key ID'),
+      '#title' => t('Access key ID'),
       '#default_value' => variable_get('amazon_s3_access_key', ''),
       '#size' => 50,
       '#element_validate' => array('_video_s3_fsadmin_validate'),
@@ -96,14 +96,14 @@ class video_s3 implements video_filesystem {
 
     $form['amazon_s3_secret_access_key'] = array(
       '#type' => 'password',
-      '#title' => t('Secret Access Key'),
+      '#title' => t('Secret access key'),
       '#default_value' => variable_get('amazon_s3_secret_access_key', ''),
       '#description' => t('Once saved, you do not need to re-enter your secret key.  If you need to update your key, then fill this out to update it.'),
       '#size' => 50,
       '#element_validate' => array('_video_s3_fsadmin_validate_secret', '_video_s3_fsadmin_validate'),
     );
 
-    //@todo Maybe move this to the admin settings page instead of global?
+    // @todo Maybe move this to the admin settings page instead of global?
     $form['amazon_s3_bucket'] = array(
       '#type' => 'textfield',
       '#title' => t('Bucket'),
@@ -181,14 +181,11 @@ class video_s3 implements video_filesystem {
       }
     }
 
-    //lets show our buckets in table format with a delete link.
-    //@todo add permissions
-    //were enabled, that means they have successfully connected and created a bucket.
     if (variable_get('amazon_s3_access_key', FALSE) && _video_s3_is_active_fs()) {
       $buckets = $this->s3->s3->get_bucket_list();
 
       // Setup our header.
-      $header = array(t('Bucket Name'), t('Information'));
+      $header = array(t('Bucket name'), t('Information'));
       $rows = array();
       foreach ($buckets as $bucket) {
         $info = '';
@@ -204,7 +201,7 @@ class video_s3 implements video_filesystem {
       }
       $form['amazon_info'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Amazon S3 Information'),
+        '#title' => t('Amazon S3 information'),
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       );
@@ -245,7 +242,7 @@ class video_s3 implements video_filesystem {
 
     if (!in_array($bucket, $buckets)) {
       // Create a bucket with public read access
-      // TODO: region selection
+      // @todo: region selection
       $response = $s3->s3->create_bucket($bucket, AmazonS3::REGION_US_E1, AmazonS3::ACL_PUBLIC);
       if ($response->isOK()) {
         drupal_set_message(t('Successfully created the bucket %bucket.', array('%bucket' => $bucket)));
@@ -370,8 +367,10 @@ class video_s3 implements video_filesystem {
  *
  * Used for the access secret.
  *
- * @param array $element
- * @param array $form_state
+ * @param $element
+ *   Element to validate
+ * @param $form_state
+ *   Form state
  */
 function _video_s3_fsadmin_validate_secret($element, &$form_state) {
   $key = end($element['#parents']);
@@ -384,11 +383,12 @@ function _video_s3_fsadmin_validate_secret($element, &$form_state) {
 }
 
 /**
- * Handle required fields that are only required when
- * video_s3 is the selected file system.
+ * Handle required fields that are only required when S3 is the file system.
  *
- * @param array $element
- * @param array $form_state
+ * @param $element
+ *   Element to validate
+ * @param $form_state
+ *   Form state
  */
 function _video_s3_fsadmin_validate($element, $form_state) {
   if ($form_state['values']['vid_filesystem'] != 'video_s3') {

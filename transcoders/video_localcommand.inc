@@ -81,13 +81,13 @@ class video_localcommand implements video_transcoder {
       $filename = '/video-thumb-for-'. $video->fid .'-'. $i .'.jpg';
       $thumbfile = $final_thumb_path . $filename;
 
-      //skip files already exists, this will save time
+      // Skip files already exists, this will save time
       if (!is_file($thumbfile)) {
         if (!isset($duration)) {
           $duration = $this->get_playtime($video->filepath);
         }
-        $seek = floor($duration / $total_thumbs) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
-        //setup the command to be passed to the transcoder.
+        $seek = floor($duration / $total_thumbs) * $i - 1;  // Adding minus one to prevent seek times equaling the last second of the video
+        // Setup the command to be passed to the transcoder.
         $command = $this->cmdpath .' '. strtr($this->thumbcmdoptions, array('!videofile' => escapeshellarg($video->filepath), '!seek' => $seek, '!thumbfile' => $thumbfile));
         // Generate the thumbnail from the video.
         $command_output = '';
@@ -178,7 +178,7 @@ class video_localcommand implements video_transcoder {
       // Preset settings
       $settings = $preset->getSettings();
 
-      //update our filename after the move to maintain filename uniqueness.
+      // Update our filename after the move to maintain filename uniqueness.
       $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . $preset->filenamesuffix .'.'. $preset->extension, $converteddir);
       $parameters['!convertfile'] = escapeshellarg($outputfile);
 
@@ -217,7 +217,7 @@ class video_localcommand implements video_transcoder {
         }
       }
 
-      //lets check to make sure our file exists, if not error out
+      // Lets check to make sure our file exists, if not error out
       if (!file_exists($outputfile) || ($filesize = filesize($outputfile)) === 0) {
         watchdog('video_command', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $preset->name), WATCHDOG_ERROR);
         $result = FALSE;
@@ -226,7 +226,7 @@ class video_localcommand implements video_transcoder {
 
       $outputfile = realpath($outputfile);
 
-      //Create result object
+      // Create result object
       $converted_files[] = $file = new stdClass();
       $file->vid = intval($video->vid);
       $file->filename = basename($outputfile);
@@ -367,11 +367,6 @@ class video_localcommand implements video_transcoder {
     return $videos;
   }
 
-  /**
-   * @todo : replace with the load job method
-   * @param <type> $video
-   * @return <type>
-   */
   public function load_completed_job(stdClass $video) {
     $result = db_fetch_object(db_query('SELECT data FROM {video_files} WHERE fid = %d', $video->fid));
     foreach (unserialize($result->data) as $value) {
@@ -388,9 +383,6 @@ class video_localcommand implements video_transcoder {
 
   /**
    * Change the status of the file.
-   *
-   * @param (int) $vid
-   * @param (int) $status
    */
   public function change_status(stdClass $video, $status) {
     $video->status = $status;

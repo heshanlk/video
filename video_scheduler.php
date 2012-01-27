@@ -7,9 +7,6 @@
  * add an optional parameter for the drupal site url:
  * "php video_scheduler.php http://example.com/" or
  * "php video_scheduler.php http://example.org/drupal/"
- *
- * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
- *
  */
 
 /**

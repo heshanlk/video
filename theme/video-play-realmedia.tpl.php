@@ -6,7 +6,6 @@
  * Variables passed.
  * $video is the video object.
  * $node is the node object.
- *
  */
 ?>
 <object classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">

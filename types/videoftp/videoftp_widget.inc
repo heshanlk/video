@@ -26,8 +26,8 @@ function videoftp_widget_settings_form($widget) {
     $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv flv mov';
   }
 
-  //fix our path settings
-  $form['path_settings']['file_path']['#default_value'] = ltrim(ltrim($form['path_settings']['file_path']['#default_value'], "videos"), "/"); //wierd i had to break this into two ltrims...
+  // Fix our path settings
+  $form['path_settings']['file_path']['#default_value'] = ltrim(ltrim($form['path_settings']['file_path']['#default_value'], 'videos'), '/');
   $form['path_settings']['file_path']['#description'] = t('Optional subdirectory within the "<em>files/videos/</em>" directory where files will be stored. Do not include preceding or trailing slashes.');
   array_unshift($form['path_settings']['file_path']['#element_validate'], 'video_widget_settings_file_path_validate');
 
@@ -40,7 +40,7 @@ function videoftp_widget_settings_form($widget) {
     '#weight' => 3,
   );
 
-  //default settings
+  // Default settings
   $default = video_default_widget_settings($widget);
   $form = $form + $default;
   return $form;
@@ -49,7 +49,8 @@ function videoftp_widget_settings_form($widget) {
 /**
  * Implementation of CCK's hook_widget_settings($op = 'validate').
  *
- * //@todo Integrate this into a universal function to share with uploadfield_widget
+ * @todo Integrate this into a universal function to share with
+ *   uploadfield_widget
  */
 function videoftp_widget_settings_validate($widget) {
   // Check that only web images are specified in the callback.
@@ -228,7 +229,7 @@ function videoftp_widget_process($element, $edit, &$form_state, $form) {
     $element['videoftp_attach']['#access'] = FALSE;
   }
   else {
-    array_unshift($options, t('Select Video'));
+    array_unshift($options, t('Select video'));
 
     $element['ftpselect'] = array(
       '#type' => 'select',
@@ -347,7 +348,7 @@ function videoftp_save_upload($element) {
   $file->status = FILE_STATUS_TEMPORARY;
   $file->timestamp = time();
 
-  //lets move our file from the ftp folder to the files directory
+  // Lets move our file from the ftp folder to the files directory
   if (file_move($file, $dest)) {
     // Insert new record to the database.
     drupal_write_record('files', $file);
@@ -392,7 +393,7 @@ function videoftp_options($field) {
       continue;
     }
 
-    //add the file to the options array for selection
+    // Add the file to the options array for selection
     $options[$file] = $file;
   }
 

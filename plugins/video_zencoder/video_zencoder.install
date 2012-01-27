@@ -87,7 +87,7 @@ function video_zencoder_install() {
  */
 function video_zencoder_uninstall() {
   drupal_uninstall_schema('video_zencoder');
-  // TODO : Delete our variables.
+  // @todo Delete our variables.
 }
 
 /**
@@ -153,11 +153,10 @@ function video_zencoder_requirements($phase) {
   return $requirements;
 }
 
-// ALTER TABLE `video_zencoder` ADD `dimensions` VARCHAR( 255 ) NULL AFTER `filesize` ;
 /**
- * Update 6401
- * Adding new dimentaion row to the table
- * @return <type>
+ * Implementation of hook_update_N().
+ *
+ * Adding new dimensions column to the table
  */
 function video_zencoder_update_6401() {
   $ret = array();
@@ -177,9 +176,9 @@ function video_zencoder_update_6401() {
 }
 
 /**
- * Update 6402
+ * Implementation of hook_update_N().
+ *
  * Adding data field and remove unwanted fields from the table
- * @return <type>
  */
 function video_zencoder_update_6402() {
   $ret = array();

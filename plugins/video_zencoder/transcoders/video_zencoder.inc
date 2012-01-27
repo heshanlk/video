@@ -66,7 +66,7 @@ class video_zencoder implements video_transcoder {
     }
 
     if (empty($video->bucket)) {
-      watchdog('zencoder', 'You must activate the Video S3 module to work with Zencoder, file @fid does not appear to be uploaded to an Amazon S3 bucket.', array('@fid' => $video->fid), WATCHDOG_ERROR);
+      watchdog('zencoder', 'You must activate the Video Amazon S3 module to work with Zencoder, file @fid does not appear to be uploaded to an Amazon S3 bucket.', array('@fid' => $video->fid), WATCHDOG_ERROR);
       return FALSE;
     }
 
@@ -111,7 +111,7 @@ class video_zencoder implements video_transcoder {
     global $user;
     // check amazon s3 module is exists or not
     if (!module_exists('video_s3')) {
-      drupal_set_message(t('You must enable Video Amazon S3 Module to enable this module.'), 'error');
+      drupal_set_message(t('You must enable Video Amazon S3 module to enable this module.'), 'error');
     }
 
     $form = array();
@@ -123,7 +123,7 @@ class video_zencoder implements video_transcoder {
     if (empty($zencoder_api)) {
       $form['zencoder_user'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Zencoder User'),
+        '#title' => t('Zencoder user'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
         '#description' => t('Save configurations to create your !link account to transcode and manage your videos using Zencoder API. Once you save your configuration this will automatically create an account on Zencoder.com and password and all ther other relevant details will be emailed to you.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com')))
@@ -138,8 +138,8 @@ class video_zencoder implements video_transcoder {
 
       $form['zencoder_user']['agree_terms_zencoder'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Agree Zencoder Terms and Conditions.'),
-        '#default_value' => variable_get('agree_terms_zencoder', TRUE),
+        '#title' => t('Agree to Zencoder terms and conditions.'),
+        '#default_value' => variable_get('agree_terms_zencoder', FALSE),
         '#description' => t('Read terms and conditions on !link.', array('!link' => l(t('Zencoder.com'), 'http://zencoder.com'))),
       );
     }
@@ -153,7 +153,7 @@ class video_zencoder implements video_transcoder {
       );
       $form['zencoder_info']['video_zencoder_api_key'] = array(
         '#type' => 'textfield',
-        '#title' => t('Zencoder API Key'),
+        '#title' => t('Zencoder API key'),
         '#default_value' => variable_get('video_zencoder_api_key', NULL),
         '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add a new account.')
       );
@@ -497,8 +497,6 @@ watermark:
 
   /**
    * @todo : replace with the load job method
-   * @param <type> $video
-   * @return <type>
    */
   public function load_completed_job(stdClass $video) {
     $result = db_fetch_object(db_query('SELECT data FROM {video_zencoder} WHERE fid = %d', $video->fid));
@@ -517,9 +515,6 @@ watermark:
 
   /**
    * Change the status of the file.
-   *
-   * @param stdCLass $video
-   * @param int $status
    */
   public function change_status(stdClass $video, $status) {
     $video->status = $status;

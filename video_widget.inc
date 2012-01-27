@@ -6,7 +6,6 @@
 
 /**
  * Process elements loads on settings
- * @param array $element
  */
 function video_widget_element_settings(&$element) {
   $file = $element['#value'];
@@ -15,7 +14,7 @@ function video_widget_element_settings(&$element) {
   // Check if using the default width and replace tokens.
   $default_dimensions = user_access('override player dimensions');
   $description = t('Set your video dimensions.  This will create your player with these dimensions.');
-  //setup our default dimensions.
+  // Setup our default dimensions.
   $dimensions = $field['widget']['default_dimensions'];
   $player_dimensions = $field['widget']['default_player_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
@@ -27,8 +26,8 @@ function video_widget_element_settings(&$element) {
       $description .= t('Your video size is !size, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] .'x'. $video_info['height']));
     }
 
-    //setup our default display of dimensions.
-    //lets go through our options looking for a matching resolution
+    // Setup our default display of dimensions.
+    // Lets go through our options looking for a matching resolution
     foreach ($options as $key => $value) {
       if (stristr($value, t('(Matches Resolution)')) == TRUE) {
         $dimensions = $key;
@@ -48,14 +47,14 @@ function video_widget_element_settings(&$element) {
 
   $element['data']['dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Dimensions for Video Transcoding'),
+    '#title' => t('Dimensions transcoding'),
     '#default_value' => $dimensions,
     '#description' => $description,
     '#options' => $options,
   );
   $element['data']['player_dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Dimensions for Video Player'),
+    '#title' => t('Dimensions for video player'),
     '#default_value' => $player_dimensions,
     '#description' => t('WxH of your video player.'),
     '#options' => $options,
@@ -139,9 +138,10 @@ function video_widget_element_settings(&$element) {
 }
 
 /**
- * Function updates our options list to show matching aspect ratios and if we have a matching resolution.
+ * Updates options list to show matching aspect ratios and matching resolutions
  *
- * We will update the options array by reference and return the aspect ratio of the file.
+ * We will update the options array by reference and return the aspect ratio of
+ * the file.
  */
 function _video_dimensions_options(&$options, $video) {
   $aspect_ratio = _video_aspect_ratio($video);
@@ -150,15 +150,15 @@ function _video_dimensions_options(&$options, $video) {
     return $aspect_ratio;
   }
 
-  //loop through our options and find matching ratio's and also the exact width/height
+  // Loop through our options and find matching ratio's and also the exact width/height
   foreach ($options as $key => $value) {
     $wxh = explode('x', $value);
-    //lets check our width and height first
+    // Lets check our width and height first
     if ($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
       $options[$key] = $value . ' ' . t('(Matches Resolution)');
     }
     else {
-      //now lets check our ratio's
+      // Now lets check our ratio's
       $ratio = number_format($wxh[0] / $wxh[1], 4);
       if ($ratio == $aspect_ratio['ratio']) {
         $options[$key] = $value . ' ' . t('(Matches Ratio)');
@@ -171,8 +171,6 @@ function _video_dimensions_options(&$options, $video) {
 
 /**
  * Video_widget_process for API handlers for any video types.
- * @param array $element
- * @param array $form_state
  */
 function video_widget_process(&$element, &$form_state) {
   $item = $element['#value'];
@@ -182,9 +180,9 @@ function video_widget_process(&$element, &$form_state) {
       // Auto convert our video file
       if ($field['widget']['autoconversion']) {
         video_convert_process($element);
-        //lets set our node status to unpublished if our video is not converted.
+        // Lets set our node status to unpublished if our video is not converted.
         if (isset($element['#unpublish']) && $element['#unpublish']) {
-          //unpublish the node
+          // Unpublish the node
           $form_state['values']['status'] = 0;
         }
       }
@@ -197,8 +195,8 @@ function video_widget_process(&$element, &$form_state) {
 
       // Call hook_video_submit API
       video_module_invoke('insert', $element, $form_state);
-      //
-      //queue up the file id to update the node id in the video rendering / cdn tables.
+
+      // Queue up the file id to update the node id in the video rendering / cdn tables.
       $form_state['values']['video_id'][] = $item['fid'];
       break;
     case 'node_form_build_preview':
@@ -206,7 +204,7 @@ function video_widget_process(&$element, &$form_state) {
       video_module_invoke('preview', $element, $form_state);
       break;
     case 'node_form_delete_submit':
-      //moved to hook_file_delete in video module.
+      // Moved to hook_file_delete in video module.
       break;
   }
 }
@@ -214,10 +212,9 @@ function video_widget_process(&$element, &$form_state) {
 /**
  * Adds a video to the video rendering table.
  *
- * If auto converting, it will convert your video to flv right now.  We are passing the element by reference
- * just in case we ever want to add more to the element during this process.
- *
- * @param array $element Form element to get the video file from.
+ * If auto converting, it will convert your video to flv right now.  We are
+ * passing the element by reference just in case we ever want to add more to
+ * the element during this process.
  */
 function video_convert_process(&$element) {
   $value = $element['#value'];
@@ -237,7 +234,7 @@ function video_convert_process(&$element) {
     $convert = FALSE;
     $fid = intval($value['fid']);
 
-    //setup our conversion class and check for the fid existence.
+    // Setup our conversion class and check for the fid existence.
     $transcoder = video_get_transcoder();
 
     // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
@@ -270,12 +267,12 @@ function video_convert_process(&$element) {
       }
 
       $convert = TRUE;
-      //lets queue our node status to unpublished.
+      // Lets queue our node status to unpublished.
       $element['#unpublish'] = TRUE;
       $video = $transcoder->load_job($fid);
     }
     elseif ($video->status != VIDEO_RENDERING_COMPLETE) {
-      //lets queue our node status to unpublished.
+      // Lets queue our node status to unpublished.
       $element['#unpublish'] = TRUE;
     }
 
@@ -303,7 +300,7 @@ function video_convert_process(&$element) {
         drupal_set_message(t('Something went wrong with your video conversion. Please check your recent log entries for further debugging.'), 'error');
       }
       elseif ($return === TRUE) {
-        //we are always unpublished until we are converted.
+        // We are always unpublished until we are converted.
         unset($element['#unpublish']);
         drupal_set_message(t('Successfully converted your video.'));
       }
@@ -318,7 +315,7 @@ function video_convert_process(&$element) {
  * Handle saving of manual thumbs
  */
 function video_upload_manual_thumb(&$element) {
-  // TODO: test this
+  // @todo test this
   $destination = video_thumb_path($element['#value']);
   if (!is_dir($destination)) {
     form_set_error('video_thumb_upload', t('The thumbnail image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => $destination)));
@@ -348,21 +345,21 @@ function video_default_widget_settings($widget) {
   // Default video settings.
   $form['plugins'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Video Advanced Settings'),
+    '#title' => t('Video advanced settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#weight' => 10
   );
   $form['plugins']['default_dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Default Video Resolution Dimensions'),
+    '#title' => t('Default transcoding dimensions'),
     '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
     '#options' => video_explode("\n", variable_get('video_dimensions', video_default_dimensions())),
     '#description' => t('Default transcoding resolution WIDTHxHEIGHT, in px, that will be uses to transcode your video files.')
   );
   $form['plugins']['default_player_dimensions'] = array(
     '#type' => 'select',
-    '#title' => t('Default Video Player Dimensions'),
+    '#title' => t('Default video player dimensions'),
     '#default_value' => !empty($widget['default_player_dimensions']) ? $widget['default_player_dimensions'] : '',
     '#options' => video_explode("\n", variable_get('video_dimensions', video_default_dimensions())),
     '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.')
@@ -377,7 +374,7 @@ function video_default_widget_settings($widget) {
   // Default thumbnail settings.
   $form['default'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Video Thumbnail Settings'),
+    '#title' => t('Video thumbnail settings'),
     '#element_validate' => array('video_default_widget_settings_validate'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
@@ -393,7 +390,7 @@ function video_default_widget_settings($widget) {
 
   $form['default']['autothumbnail'] = array(
     '#type' => 'radios',
-    '#title' => t('Thumbnail Generation'),
+    '#title' => t('Thumbnail generation'),
     '#options' => $thumb_options,
     '#description' => t('Create thumbnails using the selected transcoder. Please make sure to configure your transcoder settings before enabling this option.'),
     '#default_value' => isset($widget['autothumbnail']) ? $widget['autothumbnail'] : 'no',
@@ -429,7 +426,6 @@ function video_default_widget_settings($widget) {
 
 /**
  * Element specific validation for video default value.
- *
  */
 function video_default_widget_settings_validate($element, &$form_state) {
   // Verify the destination exists
@@ -461,7 +457,7 @@ function video_default_widget_settings_validate($element, &$form_state) {
 }
 
 function video_widget_settings_file_path_validate($element, &$form_state) {
-  //lets prepend our video folder to the path settings.  first truncate videos/ off the end if it exists.
+  // Lets prepend our video folder to the path settings.  first truncate videos/ off the end if it exists.
   // #848804
   if (!module_exists('filefield_paths')) {
     $form_state['values']['file_path'] = 'videos/'. $form_state['values']['file_path'];
@@ -470,20 +466,17 @@ function video_widget_settings_file_path_validate($element, &$form_state) {
 
 /**
  * Compares passed extensions with normal video web extensions.
- *
- * @param string $ext
- * @return bool
  */
 function video_web_extensions($ext) {
   $extensions = array_filter(explode(' ', $ext));
   $web_extensions = array(
-    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
-    'divx', 'mkv', //divx
-    'rm', // realplayer
-    'flv', 'f4v', //flash player
-    'swf', // swf player
-    'dir', 'dcr', // dcr player
-    'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
+    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // Quicktime
+    'divx', 'mkv', // Divx
+    'rm', // Realplayer
+    'flv', 'f4v', // Flash player
+    'swf', // SWF Player
+    'dir', 'dcr', // DCR Player
+    'asf', 'wmv', 'avi', 'mpg', 'mpeg', // Windows Media
     'ogg', 'ogv', 'webm' // ogg/ogv theora
   );
 
@@ -491,7 +484,7 @@ function video_web_extensions($ext) {
 }
 
 /**
- * Utility function that will add a preview of thumbnails for you to select when uploading videos.
+ * Adds a preview of thumbnails for you to select when uploading videos.
  */
 function video_thumb_process(&$element) {
   $file = $element['#value'];
@@ -525,7 +518,7 @@ function video_thumb_process(&$element) {
 
         $element['data']['video_thumb'] = array(
           '#type' => 'radios',
-          '#title' => t('Video Thumbnail'),
+          '#title' => t('Video thumbnail'),
           '#options' => $thumbss,
           '#default_value' => $currentthumb,
           '#weight' => 10,
@@ -580,7 +573,7 @@ function video_explode($delimeter, $dimensions) {
   $options = array();
   $values = explode($delimeter, $dimensions);
   foreach ($values as $value) {
-    //lets check we have a value and its in the right format
+    // Lets check we have a value and its in the right format
     if (!empty($value) && video_format_right($value)) {
       $options[trim($value)] = trim($value);
     }

@@ -7,7 +7,6 @@ video_add_adminjs();
 
 /**
  * Video general admin settings
- * @return array
  */
 function video_general_admin_settings() {
   $form = array();
@@ -31,13 +30,13 @@ function video_general_admin_settings() {
   );
   $form['video_convert_on_save'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Video Convert on Node Submit'),
+    '#title' => t('Video convert on node submit'),
     '#default_value' => variable_get('video_convert_on_save', FALSE),
     '#description' => t('Convert videos on node submit.')
   );
   $form['video_use_default_thumb'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Override Auto Thumbnails with Default'),
+    '#title' => t('Override auto thumbnails with default'),
     '#default_value' => variable_get('video_use_default_thumb', FALSE),
     '#description' => t('Override auto thumbnails with default thumbnail.')
   );
@@ -52,7 +51,6 @@ function video_general_admin_settings() {
 
 /**
  * Video player admin settings
- * @return <type>
  */
 function video_players_admin_settings($form_state) {
   // Check for SWF Tools and Amazon S3 Private URLs
@@ -63,10 +61,10 @@ function video_players_admin_settings($form_state) {
   $form = array();
   $form['extensions'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Video Extensions'),
+    '#title' => t('Video extensions'),
     '#description' => t('Here you can map specific players to each video extension type.'),
   );
-  //lets get all our supported extensions and players.
+  // Lets get all our supported extensions and players.
   $extensions = video_video_extensions();
   $players = video_video_players();
   $flv_players = video_video_flv_players();
@@ -84,7 +82,7 @@ function video_players_admin_settings($form_state) {
 
     $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
       '#type' => !empty($flv_players) ? 'radios' : 'markup',
-      '#title' => t('Flash Player for') . ' ' . $ext,
+      '#title' => t('Flash player for') . ' ' . $ext,
       '#value' => !empty($flv_players) ? '' : t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools'), 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
       '#options' => $flv_players,
       '#default_value' => variable_get('video_extension_' . $ext . '_flash_player', ''),
@@ -93,7 +91,7 @@ function video_players_admin_settings($form_state) {
     );
     $form['extensions']['video_extension_' . $ext . '_html5_player'] = array(
       '#type' => !empty($html5_players) ? 'radios' : 'markup',
-      '#title' => t('HTML5 Player for') . ' ' . $ext,
+      '#title' => t('HTML5 player for') . ' ' . $ext,
       '#value' => !empty($html5_players) ? '' : t('No HTML5 players detected.<br />You need to install !videojs.', array('!videojs' => l(t('VideoJS'), 'http://www.drupal.org/project/videojs'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
       '#options' => $html5_players,
       '#default_value' => variable_get('video_extension_' . $ext . '_html5_player', ''),
@@ -104,7 +102,7 @@ function video_players_admin_settings($form_state) {
 
   $form['extra'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Player Settings'),
+    '#title' => t('Player settings'),
   );
 
   if (isset($flv_players['flowplayer'])) {
@@ -129,7 +127,6 @@ function video_players_admin_settings($form_state) {
 
 /**
  * Video transcoder admin settings
- * @return array
  */
 function video_transcoder_admin_settings($form_state) {
   $form = array();
@@ -173,7 +170,6 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
 
 /**
  * Video transcoder admin settings
- * @return <type>
  */
 function video_preset_admin_settings($form_state) {
   $presets = video_get_presets(TRUE);
@@ -377,9 +373,6 @@ function video_admin_preset_delete_submit($form, $form_state) {
 
 /**
  * Form for transcoder specific preset settings
- *
- * @param array $form_state
- * @return array
  */
 function video_admin_preset_configure(&$form_state, video_preset $preset) {
   $transcoder = video_get_transcoder();
@@ -456,7 +449,6 @@ function video_admin_preset_configure_submit($form, &$form_state) {
 
 /**
  * File system admin settings
- * @return array
  */
 function video_filesystem_admin_settings($form_state) {
   $fs = variable_get('vid_filesystem', 'drupal');
@@ -513,7 +505,6 @@ function video_filesystem_admin_settings_validate($form, &$form_state) {
 
 /**
  * Video cron admin settings
- * @return <type>
  */
 function video_cron_admin_settings() {
   $form = array();

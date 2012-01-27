@@ -19,13 +19,15 @@ function video_init() {
 
 /**
  * Invokes hook_video_*action*() in every module.
- * Eg :
+ *
+ * Examples:
  * hook_video_submit()
  * hook_video_insert()
  * hook_video_preview()
  * hook_video_delete()
  * hook_video_load()
- * hook_video_form() - to show values once upload is completed eg. Resolution, and Convert on Save etc
+ * hook_video_form() - to show values once upload is completed eg. Resolution,
+ *                     and Convert on Save etc
  *
  * We cannot use module_invoke() for this, because the arguments need to
  * be passed by reference.
@@ -139,7 +141,7 @@ function video_menu() {
   );
 
   $items['admin/settings/video/filesystem'] = array(
-    'title' => 'File System',
+    'title' => 'File system',
     'description' => 'Configure your file system settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_filesystem_admin_settings'),
@@ -150,7 +152,7 @@ function video_menu() {
   );
 
   $items['admin/settings/video/cron'] = array(
-    'title' => 'Cron Settings',
+    'title' => 'Cron settings',
     'description' => 'Configure your cron settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_cron_admin_settings'),
@@ -217,10 +219,6 @@ function video_theme() {
     'file' => 'video_formatter.inc',
   );
 
-  //$theme['video_formatter_video_colorbox'] = array(
-  //  'arguments' => array('element' => NULL, 'imagecache' => NULL),
-  //  'file' => 'video_formatter.inc',
-  //);
   $theme['video_formatter_video_media_js'] = array(
     'arguments' => array('element' => NULL),
     'file' => 'video_formatter.inc',
@@ -235,19 +233,17 @@ function video_theme() {
   );
 
   $path = drupal_get_path('module', 'video') . '/theme';
-  //Lets setup our themes for our players
+  // Lets setup our themes for our players
   $players = video_video_players();
   foreach ($players as $tpl => $value) {
     $theme[$tpl] = array(
       'arguments' => array('video' => NULL, 'node' => NULL, 'themed_output' => NULL),
-      //#843368 fix
-//      'file' => 'video_formatter.inc',
       'template' => str_replace('_', '-', $tpl),
       'path' => $path,
     );
   }
-  //We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
-  //calling our flv template file.
+  // We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
+  // calling our flv template file.
   $theme['video_flv'] = array(
     'arguments' => array('video' => NULL, 'node' => NULL),
     'file' => 'video_formatter.inc'
@@ -256,11 +252,11 @@ function video_theme() {
     'arguments' => array('video' => NULL, 'node' => NULL),
     'file' => 'video_formatter.inc'
   );
-  //setup our imagecache presets
+  // Setup our imagecache presets
   if (module_exists('imagecache')) {
-    //we need formatters for each of our thumbnails.
-    //@todo create a function to check for our colorbox module and only add theme elements that could be used.
-    $thumb_types = array('video_nodelink', 'video_thumbnail', 'video_nonodelink'); //array('video_colorbox', 'video_nodelink');
+    // we need formatters for each of our thumbnails.
+    // @todo create a function to check for our colorbox module and only add theme elements that could be used.
+    $thumb_types = array('video_nodelink', 'video_thumbnail', 'video_nonodelink');
     foreach ($thumb_types as $types) {
       foreach (imagecache_presets() as $preset) {
         $theme['video_formatter_' . $preset['presetname'] . '__' . $types] = array(
@@ -299,21 +295,16 @@ function video_field_formatter_info() {
       'field types' => array('filefield'),
       'description' => t('Displays the video thumbnail (no link to node).'),
     ),
-    //'video_colorbox' => array(
-    //  'label' => t('Video Thumbnail to Colorbox'),
-    //  'field types' => array('filefield'),
-    //  'description' => t('Displays the video thumbnail and adds colorbox support.'),
-    //),
     'video_media_js' => array(
       'label' => t('Video inject with jMedia'),
       'field types' => array('filefield'),
       'description' => t('Displays the video by using jmedia javascript.'),
     ),
   );
-  //setup our imagecache presets
+  // Setup our imagecache presets
   if (module_exists('imagecache')) {
-    //we need formatters for each of our thumbnails.
-    $thumb_types = array('video_nodelink', 'video_thumbnail', 'video_nonodelink'); //array('video_colorbox', 'video_nodelink');
+    // We need formatters for each of our thumbnails.
+    $thumb_types = array('video_nodelink', 'video_thumbnail', 'video_nonodelink');
     foreach ($thumb_types as $types) {
       foreach (imagecache_presets() as $preset) {
         $formatters[$preset['presetname'] . '__' . $types] = array(
@@ -337,10 +328,6 @@ function video_cron() {
 
 /**
  * Implementation of hook_form_alter().
- *
- * @param array $form
- * @param array $form_state
- * @param string $form_id
  */
 function video_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
@@ -351,7 +338,7 @@ function video_form_alter(&$form, &$form_state, $form_id) {
 }
 
 function video_node_update_submit($form, &$form_state) {
-  //lets update our video rending table to include the node id created
+  // Lets update our video rending table to include the node id created
   if (isset($form_state['nid']) && isset($form_state['values']['video_id']) && is_array($form_state['values']['video_id'])) {
     $transcoder = video_get_transcoder();
 
@@ -408,7 +395,7 @@ function video_views_api() {
  * @todo: move this to the transcoder class instead?
  */
 function _video_aspect_ratio($video) {
-  //lets get our video dimensions from the file
+  // Lets get our video dimensions from the file
   $transcoder = video_get_transcoder();
   $wxh = $transcoder->get_dimensions($video);
 
@@ -521,8 +508,9 @@ function video_add_adminjs() {
 }
 
 /**
- * Increase the database timeout in preparation for long time
- * operations, such as S3 uploads and local transcoding.
+ * Increase the database timeout in preparation for long time operations
+ *
+ * Examples of such operations are S3 uploads and local transcoding.
  *
  * Reconnecting to the database after this operation is not possible
  * due to the way db_set_active stores the connection identifiers.
@@ -553,7 +541,12 @@ function video_ctools_plugin_directory($module, $plugin) {
 }
 
 /**
- * @return array of video_preset
+ * Get (active) presets
+ *
+ * @param $all
+ *   Whether to return all presets or just the active ones
+ * @return array
+ *   Requested video_preset instances
  */
 function video_get_presets($all = FALSE) {
   module_load_include('lib.inc', 'video');
@@ -581,7 +574,10 @@ function video_get_presets($all = FALSE) {
 }
 
 /**
- * @return array of filesystem plugins
+ * Get available file system plugins
+ *
+ * @return array
+ *   File system plugins
  */
 function video_get_filesystem_plugins() {
   ctools_include('plugins');
@@ -591,7 +587,12 @@ function video_get_filesystem_plugins() {
 }
 
 /**
- * @return video_filesystem The current filesystem
+ * Get file system instance
+ *
+ * @param $name
+ *   Plugin name (eg. drupal), NULL for current
+ * @return video_filesystem
+ *   The current file system
  */
 function video_get_filesystem($name = NULL) {
   if ($name === NULL) {
@@ -611,7 +612,10 @@ function video_get_filesystem($name = NULL) {
 }
 
 /**
- * @return array of transcoder plugins
+ * Get available transcoder plugins
+ *
+ * @return array
+ *   Transcoder plugins
  */
 function video_get_transcoder_plugins() {
   ctools_include('plugins');
@@ -621,8 +625,13 @@ function video_get_transcoder_plugins() {
 }
 
 /**
- * @param string $name Plugin name (eg. video_localcommand)
- * @return video_transcoder The current transcoder
+ * Get transcoder instance
+ *
+ * @param $name
+ *   Plugin name (eg. video_localcommand), NULL for current
+ *
+ * @return video_transcoder
+ *   The current transcoder
  */
 function video_get_transcoder($name = NULL) {
   if ($name === NULL) {

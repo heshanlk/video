@@ -1,9 +1,7 @@
 <?php
 /**
- *
  * @file
  * Theme functions for the video module.
- *
  */
 
 function theme_video_thumbnails($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
@@ -60,7 +58,7 @@ function theme_video_widget_video_thumb($item = NULL) {
  */
 function theme_video_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE, $imagecache = FALSE) {
   $file = (array)$file;
-  //if this is imagecache skip this as the file might not be created yet
+  // If this is imagecache skip this as the file might not be created yet
   if (!$imagecache && !is_file($file['filepath'])) {
     return '<!-- File not found: '. str_replace("--", "-", $file['filepath']) .'" -->';
   }

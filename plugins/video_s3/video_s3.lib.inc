@@ -1,8 +1,7 @@
 <?php
-/*
+/**
  * @file
  * Class file to handle amazon s3 transfers.
- *
  */
 
 define('VIDEO_S3_PENDING', 1);

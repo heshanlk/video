@@ -15,12 +15,12 @@ function uploadfield_widget_settings_form($widget) {
   if ($form['file_extensions']['#default_value'] == 'txt') {
     $form['file_extensions']['#default_value'] = 'mp4 mpeg avi mpg wmv flv mov';
   }
-  //fix our path settings
-  $form['path_settings']['file_path']['#default_value'] = ltrim(ltrim($form['path_settings']['file_path']['#default_value'], "videos"), "/"); //wierd i had to break this into two ltrims...
+  // Fix our path settings
+  $form['path_settings']['file_path']['#default_value'] = ltrim(ltrim($form['path_settings']['file_path']['#default_value'], 'videos'), '/');
   $form['path_settings']['file_path']['#description'] = t('Optional subdirectory within the "<em>files/videos/</em>" directory where files will be stored. Do not include preceding or trailing slashes.');
   array_unshift($form['path_settings']['file_path']['#element_validate'], 'video_widget_settings_file_path_validate');
 
-  //default settings
+  // Default settings
   $default = video_default_widget_settings($widget);
   $form = $form + $default;
   return $form;

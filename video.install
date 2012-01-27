@@ -79,7 +79,7 @@ function video_schema() {
     'description' => t('Stores basic preset information'),
     'fields' => array(
       'id' => array(
-        'description' => t('Preset ID'),
+        'description' => t('Preset identifier'),
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -120,7 +120,7 @@ function video_schema() {
     'description' => t('Stores preset settings per transcoder'),
     'fields' => array(
       'presetid' => array(
-        'description' => t('Preset ID'),
+        'description' => t('Preset identifier'),
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -243,9 +243,9 @@ function video_requirements($phase) {
 }
 
 /**
- * Update 6405
- * dropping video_rendering table and creating video_files
- * @return <type>
+ * Implementation of hook_update_N().
+ *
+ * Dropping video_rendering table and creating video_files
  */
 function video_update_6405() {
   $ret = array();
@@ -340,19 +340,18 @@ function video_update_6405() {
 }
 
 /**
- * Update 6406
- * @return <type>
+ * Implementation of hook_update_N().
  */
 function video_update_6406() {
   drupal_set_message('The system has reset your thumbnail and FFmpeg command settings to their original state.  If you made adjustments to these commands, you will have to reset them up.');
-//lets reset our FFmpeg system command variables.
+// Lets reset our FFmpeg system command variables.
   variable_set('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
   variable_set('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile');
   return array();
 }
 
 /**
- * Update 6407
+ * Implementation of hook_update_N().
  */
 function video_update_6407() {
   $ret = array();
@@ -374,14 +373,17 @@ function video_update_6407() {
 }
 
 /**
- * Create the video_preset_settings table and populate with legacy preset settings.
+ * Implementation of hook_update_N().
+ *
+ * Create the video_preset_settings table and populate with legacy
+ * preset settings.
  */
 function video_update_6500() {
   $table1 = array(
     'description' => t('Stores basic preset information'),
     'fields' => array(
       'id' => array(
-        'description' => t('Preset ID'),
+        'description' => t('Preset identifier'),
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -425,7 +427,7 @@ function video_update_6500() {
     'description' => t('Stores preset settings per transcoder'),
     'fields' => array(
       'presetid' => array(
-        'description' => t('Preset ID'),
+        'description' => t('Preset identifier'),
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,

@@ -37,7 +37,7 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
       'ratio' => '1.7778',
     );
 
-    $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
+    $options = $transcoder->getDimensionParameters($video, $fileinfo);
 
     $this->assertIdentical($options->width, 160, 'width');
     $this->assertIdentical($options->height, 90, 'height');
@@ -63,7 +63,7 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
       'ratio' => '1.7778',
     );
 
-    $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
+    $options = $transcoder->getDimensionParameters($video, $fileinfo);
 
     $this->assertIdentical($options->width, 400, 'width');
     $this->assertIdentical($options->height, 225, 'height');
@@ -89,7 +89,7 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
       'ratio' => '0.5000',
     );
 
-    $options = $transcoder->getCommandSizeOptions($video, $fileinfo);
+    $options = $transcoder->getDimensionParameters($video, $fileinfo);
 
     $this->assertIdentical($options->width, 200, 'width');
     $this->assertIdentical($options->height, 400, 'height');

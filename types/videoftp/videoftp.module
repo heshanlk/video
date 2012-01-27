@@ -15,7 +15,6 @@ function videoftp_menu() {
   $items['videoftp/ahah/%/%/%'] = array(
     'page callback' => 'videoftp_js',
     'page arguments' => array(2, 3, 4),
-    //'access callback' => 'videoftp_edit_access',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
@@ -101,7 +100,7 @@ function videoftp_elements() {
  * Implementation of CCK's hook_widget_settings().
  */
 function videoftp_widget_settings($op, $widget) {
-  //load up our include file for the widget
+  // Load up our include file for the widget
   module_load_include('inc', 'videoftp', 'videoftp_widget');
   switch ($op) {
     case 'form':

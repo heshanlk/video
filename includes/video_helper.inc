@@ -6,7 +6,7 @@
 class video_helper {
   public function video_object($element) {
     $field = content_fields($element['#field_name'], $element['#type_name']);
-    //setup our width x height
+    // Setup our width x height
     $dimensions = explode("x", $element['#item']['data']['dimensions']);
     $player_dimensions = explode("x", $element['#item']['data']['player_dimensions']);
     if (!isset($dimensions[0]) || !isset($dimensions[1])) {
@@ -77,7 +77,7 @@ class video_helper {
     $thumbnail = new stdClass();
     $thumbnail->filepath = '';
     $thumbnail->url = '';
-    //@todo future enhancements for our thumbnails
+    // @todo future enhancements for our thumbnails
     $thumbnail->alt = '';
     $thumbnail->title = '';
     $thumbnail->description = '';
@@ -91,10 +91,10 @@ class video_helper {
       $thumbnail->filepath = $element['#item']['data']['video_thumb'];
     }
     else {
-      //need some type of default if nothing is present
-      //drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
+      // Need some type of default if nothing is present
+      // Drupal_set_message(t('No thumbnail has been configured for the video.'), 'error');
     }
-    //lets check for an imagecache preset
+    // Lets check for an imagecache preset
     if (isset($element['imagecache_preset'])) {
       $thumbnail->url = imagecache_create_url($element['imagecache_preset'], $thumbnail->filepath);
       $thumbnail->filepath = imagecache_create_path($element['imagecache_preset'], $thumbnail->filepath);
@@ -103,8 +103,8 @@ class video_helper {
       $thumbnail->url = file_create_url($thumbnail->filepath);
     }
 
-    //swftools appends sites/default/files to the front of our path...
-    //@todo Is this a setting?  Need to figure this out.
+    // Swftools appends sites/default/files to the front of our path...
+    // @todo Is this a setting?  Need to figure this out.
     $thumbnail->swfthumb = $thumbnail->filepath;
     // filemime
     $thumbnail->filemime = file_get_mimetype($thumbnail->filepath);

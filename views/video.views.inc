@@ -39,7 +39,7 @@ function video_views_data() {
       $types = array();
       foreach (content_types () as $type) {
         if (isset($type['fields'][$field['field_name']])) {
-          // TODO : run check_plain here instead of on the imploded string below ?
+          // @todo run check_plain here instead of on the imploded string below ?
           $types[] = $type['name'];
         }
       }

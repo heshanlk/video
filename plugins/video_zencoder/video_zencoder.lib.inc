@@ -1,8 +1,7 @@
 <?php
-/*
+/**
  * @file
  * Class file to handle amazon s3 transfers.
- *
  */
 
 define('VIDEO_ZC_PENDING', 0);
@@ -114,7 +113,7 @@ class video_zencoder_api {
   /**
    * Create Zencoder user account
    */
-  public function create_user($email) {
+  public function create_user($mail) {
     if ($this->zencoder == NULL) {
       return FALSE;
     }
@@ -123,18 +122,18 @@ class video_zencoder_api {
       // $result is Services_Zencoder_Account
       $result = $this->zencoder->accounts->create(array(
         'terms_of_service' => '1',
-        'email' => $email,
+        'email' => $mail,
         'affiliate_code' => 'drupal-video',
       ));
 
       $params = array(
-        'email' => $email,
+        'email' => $mail,
         'api_key' => $result->api_key,
         'password' => $result->password,
       );
 
       variable_set('video_zencoder_api_key', $result->api_key);
-      $message = drupal_mail('video_zencoder', 'video_zencoder', $email, language_default(), $params);
+      $message = drupal_mail('video_zencoder', 'video_zencoder', $mail, language_default(), $params);
       if (!$message['result']) {
         drupal_set_message(t('Unable to send e-mail. Your Zencoder Details are as below.<br/> <b>API Key</b> : @api_key<br/> <b>Password</b> : @password<br/>', array('@api_key' => $results['api_key'], '@password' => $results['password'])), 'status');
       }
