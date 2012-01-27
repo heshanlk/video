@@ -315,7 +315,6 @@ function video_convert_process(&$element) {
  * Handle saving of manual thumbs
  */
 function video_upload_manual_thumb(&$element) {
-  // @todo test this
   $destination = video_thumb_path($element['#value']);
   if (!is_dir($destination)) {
     form_set_error('video_thumb_upload', t('The thumbnail image could not be uploaded. The destination %destination does not exist or is not writable by the server.', array('%destination' => $destination)));
