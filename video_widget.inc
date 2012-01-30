@@ -252,12 +252,14 @@ function video_convert_process(&$element) {
       }
 
       // Lets move our video and then convert it.
-      if (!file_move($file, $originaldir .'/'. $file->filename)) {
+      $filepath = $video->filepath;
+      if (!file_move($filepath, $originaldir .'/'. $file->filename)) {
         watchdog('video_command', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
         return;
       }
 
       // Update our filepath since we moved it
+      $file->filepath = $filepath;
       drupal_write_record('files', $file, 'fid');
 
       // Video has not been added to the queue yet so lets add it.
