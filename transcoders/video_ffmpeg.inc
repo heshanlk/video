@@ -144,14 +144,17 @@ class video_ffmpeg implements transcoder_interface {
     }
 
     $original = $originaldir .'/'. $video->filename;
+
     //lets move our video and then convert it.
-    if (!file_move($video, $original)) {
+    $filepath = $video->filepath;
+    if (!file_move($filepath, $original)) {
       watchdog('video_ffmpeg', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
       $this->change_status($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
 
     // Update our filepath since we moved it
+    $video->filepath = $filepath;
     drupal_write_record('files', $video, 'fid');
 
     // Increase the database timeout to prevent database errors after a long upload
@@ -259,7 +262,9 @@ class video_ffmpeg implements transcoder_interface {
       }
 
       // Try to move back the original file
-      file_move($video, $files .'/videos');
+      $filepath = $video->filepath;
+      file_move($filepath, $files .'/videos');
+      $video->filepath = $filepath;
       drupal_write_record('files', $video, 'fid');
 
       $this->change_status($video->vid, VIDEO_RENDERING_FAILED);

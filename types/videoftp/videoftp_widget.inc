@@ -348,8 +348,10 @@ function videoftp_save_upload($element) {
   $file->timestamp = time();
 
   //lets move our file from the ftp folder to the files directory
-  if(file_move($file, $dest)) {
+  $filepath = $file->filepath;
+  if(file_move($filepath, $dest)) {
     // Insert new record to the database.
+    $file->filepath = $filepath;
     drupal_write_record('files', $file);
   }
   _field_file_cache($file); // cache the file in order to minimize load queries
