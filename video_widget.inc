@@ -252,9 +252,9 @@ function video_convert_process(&$element) {
       }
 
       // Lets move our video and then convert it.
-      $filepath = $video->filepath;
+      $filepath = $file->filepath;
       if (!file_move($filepath, $originaldir .'/'. $file->filename)) {
-        watchdog('video_command', 'Could not move video %orig to the original folder.', array('%orig' => $video->filepath), WATCHDOG_ERROR);
+        watchdog('video_command', 'Could not move video %orig to the original folder.', array('%orig' => $file->filepath), WATCHDOG_ERROR);
         return;
       }
 
