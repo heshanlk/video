@@ -133,7 +133,7 @@ class video_localcommand implements video_transcoder {
     // This will update our current video status to active.
     $this->change_status($video, VIDEO_RENDERING_ACTIVE);
 
-    $converteddir = dirname($video->filepath) .'/../converted';
+    $converteddir = dirname(dirname($video->filepath)) .'/converted';
 
     if (!field_file_check_directory($converteddir, FILE_CREATE_DIRECTORY)) {
       watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
@@ -142,8 +142,6 @@ class video_localcommand implements video_transcoder {
 
     // Increase the database timeout to prevent database errors after a long upload
     _video_db_increase_timeout();
-
-    $converteddir = realpath($converteddir);
 
     // Get the placeholders for the transcoding command
     $fileinfo = _video_aspect_ratio($video->filepath);
@@ -164,7 +162,6 @@ class video_localcommand implements video_transcoder {
 
     // Create a temporary directory and move to it
     $drupaldir = getcwd();
-    $drupaldirrp = realpath($drupaldir);
     $tmpdir = tempnam(file_directory_temp(), 'drupal-video-'. $video->fid);
     unlink($tmpdir);
     mkdir($tmpdir, 0777);
@@ -180,7 +177,8 @@ class video_localcommand implements video_transcoder {
 
       // Update our filename after the move to maintain filename uniqueness.
       $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . $preset->filenamesuffix .'.'. $preset->extension, $converteddir);
-      $parameters['!convertfile'] = escapeshellarg($outputfile);
+      $outputfilefull = $drupaldir .'/'. $outputfile;
+      $parameters['!convertfile'] = escapeshellarg($outputfilefull);
 
       $command_output = '';
       // Setup our default command to be run.
@@ -196,21 +194,21 @@ class video_localcommand implements video_transcoder {
 
       // Run flvtool2, if required
       if (!empty($settings['useflvtool2'])) {
-        $command = $this->flvtoolcmd .' -U '. escapeshellarg($outputfile);
+        $command = $this->flvtoolcmd .' -U '. escapeshellarg($outputfilefull);
         $this->run_command($command, $command_output, t('running flvtool2'));
       }
 
       // Run qt-faststart, if required
       // qt-faststart needs a temporary file
       if (!empty($settings['useqtfaststart'])) {
-        $tmpfile = $outputfile .'-qt';
-        $command = $this->faststartcmd .' '. escapeshellarg($outputfile) .' '. escapeshellarg($tmpfile);
+        $tmpfile = $outputfilefull .'-qt';
+        $command = $this->faststartcmd .' '. escapeshellarg($outputfilefull) .' '. escapeshellarg($tmpfile);
 
         // qt-faststart does not return an error code when it doesn't generate an output file,
         // so also check if the output file has been generated.
         if ($this->run_command($command, $command_output, t('running qt-faststart')) && file_exists($tmpfile)) {
-          file_delete($outputfile);
-          rename($tmpfile, $outputfile);
+          file_delete($outputfilefull);
+          rename($tmpfile, $outputfilefull);
         }
         else {
           file_delete($tmpfile);
@@ -218,19 +216,17 @@ class video_localcommand implements video_transcoder {
       }
 
       // Lets check to make sure our file exists, if not error out
-      if (!file_exists($outputfile) || ($filesize = filesize($outputfile)) === 0) {
+      if (!file_exists($outputfilefull) || ($filesize = filesize($outputfilefull)) === 0) {
         watchdog('video_command', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $preset->name), WATCHDOG_ERROR);
         $result = FALSE;
         break;
       }
 
-      $outputfile = realpath($outputfile);
-
       // Create result object
       $converted_files[] = $file = new stdClass();
       $file->vid = intval($video->vid);
       $file->filename = basename($outputfile);
-      $file->filepath = drupal_substr($outputfile, drupal_strlen($drupaldirrp) + 1);
+      $file->filepath = $outputfile;
       $file->filemime = file_get_mimetype($outputfile);
       $file->filesize = $filesize;
       $file->preset = $preset->name;
