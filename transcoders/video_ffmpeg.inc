@@ -165,10 +165,6 @@ class video_ffmpeg implements transcoder_interface {
     $dimension = explode('x', $dimensions, 2);
     $filepath = realpath($video->filepath);
 
-    // Make the directories absolute
-    $originaldir = realpath($originaldir);
-    $converteddir = realpath($converteddir);
-
     // Create a temporary directory
     $drupaldir = getcwd();
     $drupaldirrp = realpath($drupaldir);
@@ -185,9 +181,12 @@ class video_ffmpeg implements transcoder_interface {
     foreach ($presets as $presetname => $preset) {
       //update our filename after the move to maintain filename uniqueness.
       $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) .'.'. $preset['extension'], $converteddir);
+      $convertedfull = $drupaldir .'/'. $converted;
+
+      var_dump($convertedfull);
 
       //call our transcoder
-      $ffmpeg_output = $converted;
+      $ffmpeg_output = $convertedfull;
       if ($this->enablefaststart && ($preset['extension'] == 'mp4' || $preset['extension'] == 'mov')) {
         $ffmpeg_output = file_directory_temp() .'/'. basename($converted);
       }
@@ -213,29 +212,27 @@ class video_ffmpeg implements transcoder_interface {
         }
       }
 
-      if ($ffmpeg_output != $converted && file_exists($ffmpeg_output)) {
+      if ($ffmpeg_output != $convertedfull && file_exists($ffmpeg_output)) {
         // Because the transcoder_interface doesn't allow the run_command() to include the ability to pass
         // the command to be execute so we need to fudge the command to run qt-faststart.
-        $command_result = $this->run_command($this->faststartcmd .' '. $ffmpeg_output .' '. $converted, $command_output, t('running qt-faststart'));
+        $command_result = $this->run_command($this->faststartcmd .' '. $ffmpeg_output .' '. $convertedfull, $command_output, t('running qt-faststart'));
 
         // Delete the temporary output file.
         file_delete($ffmpeg_output);
       }
 
       //lets check to make sure our file exists, if not error out
-      if (!file_exists($converted) || ($filesize = filesize($converted)) === 0) {
+      if (!file_exists($convertedfull) || ($filesize = filesize($convertedfull)) === 0) {
         watchdog('video_ffmpeg', 'Video conversion failed for preset %preset: result file was not found.', array('%preset' => $presetname), WATCHDOG_ERROR);
         $result = FALSE;
         break;
       }
 
-      $converted = realpath($converted);
-
       //Create result object
       $converted_files[] = $file = new stdClass();
       $file->vid = intval($video->vid);
       $file->filename = basename($converted);
-      $file->filepath = substr($converted, strlen($drupaldirrp) + 1);
+      $file->filepath = $converted;
       $file->filemime = file_get_mimetype($converted);
       $file->filesize = $filesize;
       $file->preset = $presetname;
