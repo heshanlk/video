@@ -167,7 +167,6 @@ class video_ffmpeg implements transcoder_interface {
 
     // Create a temporary directory
     $drupaldir = getcwd();
-    $drupaldirrp = realpath($drupaldir);
     $tmpdir = tempnam(file_directory_temp(), 'ffmpeg-'. $video->fid);
     unlink($tmpdir);
     mkdir($tmpdir, 0777);
@@ -182,8 +181,6 @@ class video_ffmpeg implements transcoder_interface {
       //update our filename after the move to maintain filename uniqueness.
       $converted = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) .'.'. $preset['extension'], $converteddir);
       $convertedfull = $drupaldir .'/'. $converted;
-
-      var_dump($convertedfull);
 
       //call our transcoder
       $ffmpeg_output = $convertedfull;
