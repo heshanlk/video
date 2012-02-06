@@ -347,6 +347,7 @@ watermark:
   url: http://example.com/watermark.gif
   y: 10
   x: 10</pre></blockquote>',
+      '#wysiwyg' => FALSE,
     );
 
     return $form;

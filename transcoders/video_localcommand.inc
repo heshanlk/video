@@ -501,6 +501,7 @@ class video_localcommand implements video_transcoder {
           '<strong>!thumbfile</strong>: '. t('a newly created temporary file to overwrite with the thumbnail'),
         )),
       '#default_value' => $this->thumbcmdoptions,
+      '#wysiwyg' => FALSE,
     );
 
     // Video conversion settings.
@@ -578,6 +579,7 @@ class video_localcommand implements video_transcoder {
         '#default_value' => $command,
         '#rows' => 2,
         '#required' => $k === 0,
+        '#wysiwyg' => FALSE,
       );
     }
 

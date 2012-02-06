@@ -45,6 +45,7 @@ function video_general_admin_settings() {
     '#title' => t('Available dimensions when uploading videos'),
     '#description' => t('Enter one dimension per line. Each resolution must be in the form of <code>width</code>x<code>height</code>. Example dimensions: <code>1280x720</code>.'),
     '#default_value' => variable_get('video_dimensions', video_default_dimensions()),
+    '#wysiwyg' => FALSE,
   );
   return system_settings_form($form);
 }
@@ -181,7 +182,7 @@ function video_preset_admin_settings($form_state) {
     $options[$preset->id] = check_plain($preset->name);
 
     if (!empty($preset->help)) {
-      $help[$preset->id] = $preset->help;
+      $help[$preset->id] = check_plain($preset->help);
     }
   }
 
@@ -254,6 +255,7 @@ function video_admin_preset($form_state, video_preset $preset = NULL) {
     '#required' => FALSE,
     '#default_value' => $preset == NULL ? '' : $preset->help,
     '#rows' => 3,
+    '#wysiwyg' => FALSE,
   );
 
   $form['extension'] = array(
