@@ -400,6 +400,7 @@ class video_ffmpeg implements transcoder_interface {
       '#title' => t('Video thumbnailer options'),
       '#description' => t('Provide the options for the thumbnailer.  Available argument values are: ') . '<ol><li>' . t('!videofile (the video file to thumbnail)') . '<li>' . t('!thumbfile (a newly created temporary file to overwrite with the thumbnail)</ol>'),
       '#default_value' => $this->thumbcmdoptions,
+      '#wysiwyg' => FALSE,
     );
 
     // Video conversion settings.

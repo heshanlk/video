@@ -65,6 +65,7 @@ class video_metadata {
       '#title' => t('Selectable Dimensions when uploading videos'),
       '#description' => t('Enter one dimension per line as Video Resolutions.  Each resolution must be in the form of WxH where W=Width and H=Height in pixels.  Example dimensions are 1280x720.'),
       '#default_value' => variable_get("video_metadata_dimensions", video_default_dimensions()),
+      '#wysiwyg' => FALSE,
     );
 
     return $form;
