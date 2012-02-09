@@ -139,7 +139,7 @@ function video_players_admin_settings() {
         '#type' => 'radios',
         '#title' => t('HTML5 Player for') . ' ' . $ext,
         '#options' => $html5_players,
-        '#markup' => t('Additional HTML5 players module.<br />You can install !VideoJS.', array('!VideoJS' => l(t('Video JS'), 'http://www.drupal.org/project/videojs'))),
+        '#markup' => t('Additional HTML5 players module.<br />You can install !videojs.', array('!videojs' => l(t('Video.js'), url('http://drupal.org/project/videojs')))),
         '#default_value' => variable_get('video_extension_' . $ext . '_html5_player', ''),
         '#prefix' => '<div class="admin_html5_player_wrapper" id="html5_player_' . $ext . '">',
         '#suffix' => '</div>',
