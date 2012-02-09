@@ -258,13 +258,13 @@ function video_admin_preset($form_state, video_preset $preset = NULL) {
     '#wysiwyg' => FALSE,
   );
 
-  // @todo select list based on video_video_extensions() ?
+  $extensions = array_keys(video_video_extensions());
+  $extensions = array_combine($extensions, $extensions);
   $form['extension'] = array(
-    '#type' => 'textfield',
+    '#type' => 'select',
     '#title' => t('File extension'),
     '#required' => TRUE,
-    '#maxlength' => 5,
-    '#size' => 10,
+    '#options' => $extensions,
     '#default_value' => $preset == NULL ? '' : $preset->extension,
     '#description' => t('Give the extension that the converted file will have. Use only lowercase alphanumeric characters. Do not enter a dot.'),
   );
