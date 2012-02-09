@@ -242,7 +242,7 @@ function video_video_flv_players() {
 function video_video_html5_players() {
   $options = array();
   if (module_exists('videojs')) {
-    $options['videojs'] = t('Video JS');
+    $options['videojs'] = t('Video.js');
   }
   if (module_exists('video')) {
     $options['video'] = t('Video (Default)');
