@@ -233,18 +233,6 @@ function theme_video_html5($video, $node) {
 
     case 'videojs':
       $items = _video_object_to_array($video->files);
-      
-      foreach($items as &$item) {
-        if (isset($item['url'])) {
-          // The following is needed for Zencoder / S3 files
-          $item['filepath'] = $item['url'];
-        }
-        else {
-          // The following is needed because the VideoJS module doesn't create a full path by itself
-          $item['filepath'] = $item['url'] = file_create_url(drupal_urlencode($item['url']));
-        }
-      }
-      
       $items['thumbnail'] = (array) $video->thumbnail;
       
       $attributes = array(

@@ -121,7 +121,7 @@ function video_players_admin_settings($form_state) {
     $form['extensions']['video_extension_' . $ext . '_html5_player'] = array(
       '#type' => !empty($html5_players) ? 'radios' : 'markup',
       '#title' => t('HTML5 Player for') . ' ' . $ext,
-      '#value' => !empty($html5_players) ? '' : t('No HTML5 players detected.<br />You need to install !videojs.', array('!videojs' => l(t('VideoJS'), 'http://www.drupal.org/project/videojs'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
+      '#value' => !empty($html5_players) ? '' : t('No HTML5 players detected.<br />You need to install !videojs.', array('!videojs' => l(t('Video.js'), 'http://www.drupal.org/project/videojs'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
       '#options' => $html5_players,
       '#default_value' => variable_get('video_extension_' . $ext . '_html5_player', ''),
       '#prefix' => '<div class="admin_html5_player_wrapper" id="html5_player_' . $ext . '">',
