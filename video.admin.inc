@@ -93,7 +93,7 @@ function video_players_admin_settings($form_state) {
     $form['extensions']['video_extension_' . $ext . '_html5_player'] = array(
       '#type' => !empty($html5_players) ? 'radios' : 'markup',
       '#title' => t('HTML5 player for') . ' ' . $ext,
-      '#value' => !empty($html5_players) ? '' : t('No HTML5 players detected.<br />You need to install !videojs.', array('!videojs' => l(t('VideoJS'), 'http://www.drupal.org/project/videojs'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
+      '#value' => !empty($html5_players) ? '' : t('No HTML5 players detected.<br />You need to install !videojs.', array('!videojs' => l(t('Video.js'), 'http://www.drupal.org/project/videojs'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
       '#options' => $html5_players,
       '#default_value' => variable_get('video_extension_' . $ext . '_html5_player', ''),
       '#prefix' => '<div class="admin_html5_player_wrapper" id="html5_player_' . $ext . '">',
@@ -258,6 +258,7 @@ function video_admin_preset($form_state, video_preset $preset = NULL) {
     '#wysiwyg' => FALSE,
   );
 
+  // @todo select list based on video_video_extensions() ?
   $form['extension'] = array(
     '#type' => 'textfield',
     '#title' => t('File extension'),
@@ -548,7 +549,7 @@ function video_video_html5_players() {
   );
 
   if (module_exists('videojs')) {
-    $options['videojs'] = t('Video JS');
+    $options['videojs'] = t('Video.js');
   }
 
   return $options;
