@@ -94,7 +94,7 @@ class video_zencoder_api {
       ));
     }
     catch (Services_Zencoder_Exception $e) {
-      watchdog('zencoder', 'Zencoder reports errors while converting %file:<br/>!errorlist', array('%file' => $file->filename, '!errorlist' => theme('item_list', $e->getErrors())), WATCHDOG_ERROR);
+      watchdog('zencoder', 'Zencoder reports errors while converting %file:<br/>!errorlist', array('%file' => $video->filename, '!errorlist' => theme('item_list', $e->getErrors())), WATCHDOG_ERROR);
       return FALSE;
     }
   }

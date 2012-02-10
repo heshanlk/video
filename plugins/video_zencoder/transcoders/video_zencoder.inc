@@ -90,7 +90,7 @@ class video_zencoder implements video_transcoder {
       return TRUE;
     }
 
-    watchdog('zencoder', 'Failed to queue file %file to Zencoder.', array('%file' => $s3_file->filepath), WATCHDOG_ERROR);
+    watchdog('zencoder', 'Failed to queue file %file to Zencoder.', array('%file' => $video->filepath), WATCHDOG_ERROR);
     $this->change_status($video, VIDEO_RENDERING_FAILED);
     return FALSE;
   }
