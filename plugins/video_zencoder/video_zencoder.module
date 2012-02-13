@@ -56,8 +56,12 @@ function _video_zencoder_postback_jobs() {
     return;
   }
 
-  module_load_include('inc', 'video_zencoder', 'transcoders/video_zencoder');
-  $zc = new video_zencoder();
+  $zc = video_get_transcoder('video_zencoder');
+  if ($zc == null) {
+    watchdog('zencoder', 'Could not load Zencoder transcoder.', array(), WATCHDOG_CRITICAL);
+    return;
+  }
+
   $video = db_fetch_object(db_query('SELECT * FROM {video_zencoder} WHERE jobid = %d', $jobid));
 
   if ($video == NULL) {
