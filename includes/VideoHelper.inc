@@ -25,6 +25,8 @@ class VideoHelper {
       $video->fid = $variables['item']['fid'];
       $video->original = $variables['item'];
       $extension = strtolower(pathinfo($variables['item']['filename'], PATHINFO_EXTENSION));
+      $video->files = new stdClass();
+      $video->files->{$extension} = new stdClass();
       $video->files->{$extension}->filename = pathinfo($variables['item']['filename'], PATHINFO_FILENAME) . '.' . $extension;
       $video->files->{$extension}->filepath = $variables['item']['uri'];
       $video->files->{$extension}->url = file_create_url($variables['item']['uri']);
