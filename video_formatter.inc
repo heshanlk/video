@@ -166,14 +166,14 @@ function theme_video_formatter_video_media_js($element) {
  * Displays a "encoding in progress message"
  */
 function theme_video_inprogress() {
-  return '<div class="video-ffmpeg-helper-inprogress">' . t('This video is currently being processed. Please wait.') . '</div>';
+  return '<div class="video-helper-inprogress">' . t('This video is currently being processed. Please wait.') . '</div>';
 }
 
 /**
  * Display an "encoding failed" message"
  */
 function theme_video_encoding_failed() {
-  return '<div class="video-ffmpeg-helper-encoding-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
+  return '<div class="video-helper-encoding-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators.') . '</div>';
 }
 
 /**
