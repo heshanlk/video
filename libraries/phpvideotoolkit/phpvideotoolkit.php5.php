@@ -513,6 +513,8 @@ class PHPVideoToolkit {
   }
 
   private function _captureExecBuffer($command, $tmp_dir=false) {
+    $buffer = array();
+    $err = 0;
     exec($command . ' 2>&1', $buffer, $err);
     if ($err !== 127) {
       if (isset($buffer[0]) === false) {
