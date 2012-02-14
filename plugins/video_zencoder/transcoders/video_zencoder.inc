@@ -333,6 +333,7 @@ class video_zencoder implements transcoder_interface {
     foreach ($data as $value) {
       $path = parse_url($value->url, PHP_URL_PATH);
       $extension = pathinfo($path, PATHINFO_EXTENSION);
+      $video->files->{$extension} = new stdClass();
       $video->files->{$extension}->filename = pathinfo($path, PATHINFO_FILENAME) .'.'. $extension;
       $video->files->{$extension}->filepath = substr($path, 1); // Remove the leading slash
       $video->files->{$extension}->url = $value->url; // Authentication tokens are added by video_s3->load()

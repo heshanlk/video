@@ -37,6 +37,8 @@ class video_helper {
     $video = new stdClass();
     $video->fid = $element['#item']['fid'];
     $video->original = $element['#item'];
+    $video->files = new stdClass();
+    $video->files->{$extension} = new stdClass();
     $video->files->{$extension}->filename = pathinfo($element['#item']['filepath'], PATHINFO_FILENAME) .'.'. $extension;
     $video->files->{$extension}->filepath = $element['#item']['filepath'];
     $video->files->{$extension}->url = file_create_url($element['#item']['filepath']);

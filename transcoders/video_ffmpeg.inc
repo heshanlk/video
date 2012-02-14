@@ -514,6 +514,7 @@ class video_ffmpeg implements transcoder_interface {
       return $video;
     foreach ($data as $value) {
       $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
+      $video->files->{$extension} = new stdClass();
       $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) . '.' . $extension;
       $video->files->{$extension}->filepath = $value->filepath;
       $video->files->{$extension}->url = file_create_url($value->filepath);
