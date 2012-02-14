@@ -367,6 +367,7 @@ class video_localcommand implements video_transcoder {
     $result = db_fetch_object(db_query('SELECT data FROM {video_files} WHERE fid = %d', $video->fid));
     foreach (unserialize($result->data) as $value) {
       $extension = pathinfo($value->filepath, PATHINFO_EXTENSION);
+      $video->files->{$extension} = new stdClass();
       $video->files->{$extension}->filename = pathinfo($value->filepath, PATHINFO_FILENAME) .'.'. $extension;
       $video->files->{$extension}->filepath = $value->filepath;
       $video->files->{$extension}->url = file_create_url($value->filepath);

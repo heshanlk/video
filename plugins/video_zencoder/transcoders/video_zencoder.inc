@@ -80,6 +80,7 @@ class video_zencoder implements video_transcoder {
       $video->data = new stdClass();
 
       foreach ($encoding_job->outputs as $output) {
+        $video->data->{$output->id} = new stdClass();
         $video->data->{$output->id}->id = $output->id;
         $video->data->{$output->id}->label = $output->label;
         $video->data->{$output->id}->url = $output->url;
@@ -504,6 +505,7 @@ watermark:
     foreach (unserialize($result->data) as $value) {
       $path = parse_url($value->url, PHP_URL_PATH);
       $extension = pathinfo($path, PATHINFO_EXTENSION);
+      $video->files->{$extension} = new stdClass();
       $video->files->{$extension}->filename = pathinfo($path, PATHINFO_FILENAME) .'.'. $extension;
       $video->files->{$extension}->filepath = drupal_substr($path, 1); // Remove the leading slash
       $video->files->{$extension}->url = $value->url; // Authentication tokens are added by video_s3->load()
