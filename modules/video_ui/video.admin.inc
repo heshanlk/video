@@ -128,7 +128,7 @@ function video_players_admin_settings() {
     else {
       $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
         '#type' => 'markup',
-        '#markup' => t('No flash players detected.<br />You need to install !swf_tools or !flowplayer.', array('!swf_tools' => l(t('SWF Tools'), 'http://www.drupal.org/project/swftools'), '!flowplayer' => l(t('Flowplayer'), 'http://www.drupal.org/project/flowplayer'))),
+        '#markup' => t('No flash players detected.<br />You need to install !flowplayer.', array('!flowplayer' => l(t('Flowplayer API'), 'http://www.drupal.org/project/flowplayer'))),
         '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
         '#suffix' => '</div>',
       );
@@ -139,7 +139,7 @@ function video_players_admin_settings() {
         '#type' => 'radios',
         '#title' => t('HTML5 Player for') . ' ' . $ext,
         '#options' => $html5_players,
-        '#markup' => t('Additional HTML5 players module.<br />You can install !videojs.', array('!videojs' => l(t('Video.js'), url('http://drupal.org/project/videojs')))),
+        '#markup' => t('Additional HTML5 players module.<br />You can install !videojs.', array('!videojs' => l(t('Video.js'), 'http://drupal.org/project/videojs'))),
         '#default_value' => variable_get('video_extension_' . $ext . '_html5_player', ''),
         '#prefix' => '<div class="admin_html5_player_wrapper" id="html5_player_' . $ext . '">',
         '#suffix' => '</div>',

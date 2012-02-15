@@ -101,16 +101,12 @@ class VideoHelper {
     else {
       return;
     }
+
     $thumbnail->url = file_create_url($thumbnail->filepath);
-    // uri
     $thumbnail->uri = $thumbnail->filepath;
-    //mime
     $thumbnail->filemime = file_get_mimetype($thumbnail->filepath);
-    //swftools appends sites/default/files to the front of our path...
-    //@todo Is this a setting?  Need to figure this out.
-    $thumbnail->swfthumb = $thumbnail->filepath;
+
     // Return our object
     return $thumbnail;
   }
-
 }

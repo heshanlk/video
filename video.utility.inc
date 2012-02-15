@@ -354,15 +354,14 @@ function video_video_players() {
   return $players;
 }
 
-/*
+/**
  * Return our possible flash players.
+ *
+ * When extending this method, also change the error message in
+ * video_players_admin_settings().
  */
-
 function video_video_flv_players() {
   $options = array();
-  if (module_exists('swftools')) {
-    $options['swftools'] = t('SWF Tools');
-  }
   if (module_exists('flowplayer')) {
     $options['flowplayer'] = t('Flowplayer');
   }

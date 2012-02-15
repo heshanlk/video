@@ -184,26 +184,14 @@ function theme_video_conversion_failed() {
 
 function theme_video_flv($variables) {
   $video = $variables['video'];
+
 // set the video flash player
 // Moved to last to recheck incase we changed our extension above.
   $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');
   switch ($video->flash_player) {
-    case 'swftools':
-      $options = array(
-        'params' => array(
-          'width' => $video->player_width,
-          'height' => $video->player_height,
-        ),
-        'othervars' => array(
-          //@todo: swftools bug, can't enable this until they fix their pathing for the images.
-          'image' => $video->thumbnail->swfthumb,
-        ),
-      );
-      $themed_output = swf(file_create_url($video->files->{$video->player}->uri), $options);
-      break;
     case 'flowplayer':
       // kjh: use a playlist to display the thumbnail if not auto playing
-      if (isset($video->autoplay) && isset($video->thumbnail->url) && !empty($video->thumbnail->url)) {
+      if (isset($video->autoplay) && !empty($video->thumbnail->url)) {
         $options = array(
           'playlist' => array($video->thumbnail->url,
             array('url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
