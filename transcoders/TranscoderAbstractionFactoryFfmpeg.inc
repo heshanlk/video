@@ -124,7 +124,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     $files = NULL;
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
-      $seek = ($duration / $no_of_thumbnails) * $i - 1;  //adding minus one to prevent seek times equaling the last second of the video
+      $seek = floor($duration / ($no_of_thumbnails + 1)) * $i;
       $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
       $thumbnail_path = $schema_thumb_path . '/' . $filename;
       $thumbnail_real_path = drupal_realpath($thumbnail_path);
