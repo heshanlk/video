@@ -365,8 +365,8 @@ function video_video_flv_players() {
   if (module_exists('flowplayer')) {
     $options['flowplayer'] = t('Flowplayer');
   }
-  if (module_exists('jwplayer')) {
-    $options['jwplayer'] = t('JWPlayer');
+  if (module_exists('jw_player')) {
+    $options['jwplayer'] = t('JW Player');
   }
   return $options;
 }

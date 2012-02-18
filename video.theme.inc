@@ -211,13 +211,13 @@ function theme_video_flv($variables) {
     case 'jwplayer':
       foreach ($video->files as $ext => $file) {
         $item = (array) $file;
-        $item +=array('image' => (array) $video->thumbnail);
+        $item += array('image' => (array) $video->thumbnail);
       }
       $attributes = array();
       $attributes['width'] = $video->player_width;
       $attributes['height'] = $video->player_height;
-      return theme('jwplayer', array('item' => $item, 'player_id' => 'jwplayer', 'attributes' => $attributes));
-      break;
+      return theme('jw_player', array('file_object' => (object) $item, 'options' => $attributes));
+
     default:
       $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/config/media/video/players'));
       break;

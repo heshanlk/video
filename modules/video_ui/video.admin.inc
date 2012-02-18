@@ -128,7 +128,7 @@ function video_players_admin_settings() {
     else {
       $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
         '#type' => 'markup',
-        '#markup' => t('No flash players detected.<br />You need to install !flowplayer.', array('!flowplayer' => l(t('Flowplayer API'), 'http://www.drupal.org/project/flowplayer'))),
+        '#markup' => t('No flash players detected.<br />You need to install !flowplayer or !jwplayer.', array('!flowplayer' => l(t('Flowplayer API'), 'http://www.drupal.org/project/flowplayer'), '!jwplayer' => l(t('JW Player'), 'http://www.drupal.org/project/jw_player'))),
         '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
         '#suffix' => '</div>',
       );
