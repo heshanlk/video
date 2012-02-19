@@ -38,7 +38,7 @@ class Transcoder {
           $file = file_load_multiple(array(), array('uri' => $file->uri));
         }
         if (!empty($file))
-          $thumbnails = array_merge($file, $thumbnails);
+          $thumbnails = array_merge($thumbnails, $file);
       }
       $exists = db_query('SELECT 1 FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField();
       if ($exists == FALSE) { // returns TRUE is there is a record.
