@@ -509,3 +509,10 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
   }
   return $element;
 }
+
+/**
+ * Implements hook_filefield_sources_widgets().
+ */
+function video_filefield_sources_widgets() {
+  return array('video_upload');
+}
