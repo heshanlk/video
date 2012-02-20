@@ -80,7 +80,7 @@ function video_views_data() {
   // started
   $data['video_queue']['started'] = array(
     'title' => t('Video conversion start'),
-    'help' => t('The time of conversion process has been started.'),
+    'help' => t('The time that conversion process started.'),
     'field' => array(
       'handler' => 'views_handler_field_date',
       'click sortable' => TRUE,
@@ -96,7 +96,7 @@ function video_views_data() {
   // completed
   $data['video_queue']['completed'] = array(
     'title' => t('Video conversion end'),
-    'help' => t('The time of conversion process has been complete.'),
+    'help' => t('The time that the conversion process completed.'),
     'field' => array(
       'handler' => 'views_handler_field_date',
       'click sortable' => TRUE,

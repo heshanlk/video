@@ -104,7 +104,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $form['settings']['video']['wxh'] = array(
     '#type' => 'select',
     '#title' => t('Dimensions'),
-    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimention from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
+    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
     '#default_value' => !empty($preset['settings']['wxh']) ? $preset['settings']['wxh'] : '640x480',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
   );
@@ -187,7 +187,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $form['settings']['adv_video']['keyframe_interval'] = array(
     '#type' => 'textfield',
     '#title' => t('Key frame interval'),
-    '#description' => t('By default, a keyframe will be created at most every 250 frames. Specifying a different keyframe interval will allow you to create more or less keyframes in your video. A greater number of keyframes will increase the size of your output file, but will allow for more precise scrubbing in most players. Keyframe interval should be specified as a positive integer. For example, a value of 100 will create a keyframe every 100 frames.'),
+    '#description' => t('By default, a keyframe will be created at most every 250 frames. Specifying a different keyframe interval will allow you to create more or fewer keyframes in your video. A greater number of keyframes will increase the size of your output file, but will allow for more precise scrubbing in most players. Keyframe interval should be specified as a positive integer. For example, a value of 100 will create a keyframe every 100 frames.'),
     '#default_value' => !empty($preset['settings']['keyframe_interval']) ? $preset['settings']['keyframe_interval'] : ''
   );
   $form['settings']['adv_video']['video_bitrate'] = array(
@@ -329,7 +329,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $form['settings']['vid_optimization']['denoise'] = array(
     '#type' => 'select',
     '#title' => t('Denoise'),
-    '#description' => t('Apply denoise filter. Generally results in slightly better compression, and slightly slower encoding. Beware of any value higher than "Weak" (unless you\'re encoding animation).'),
+    '#description' => t('Apply denoise filter. Generally results in slightly better compression and slightly slower encoding. Beware of any value higher than "Weak" (unless you\'re encoding animation).'),
     '#options' => array(
       0 => 'None',
       'weak' => 'Weak - usually OK for general use',
@@ -386,8 +386,7 @@ function video_presets_overview() {
     return theme('table', array('header' => $header, 'rows' => $rows));
   }
   else {
-    return t('No Preset were found. Please use the !create_link link to create
-      a new video preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add')));
+    return t('No presets were found. Please use the !create_link link to create a new video preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add')));
   }
 }
 
@@ -422,7 +421,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#type' => 'textfield',
     '#title' => t('Preset name'),
     '#maxlength' => VIDEO_PRESET_MAX_LENGTH,
-    '#description' => t('Spaces are NOT allowed; punctuation is not allowed except for periods, hyphens, apostrophes, and underscores.'),
+    '#description' => t('Spaces are NOT allowed. The only permitted punctuation is period, hyphen, apostrophe, and underscore.'),
     '#required' => TRUE,
     '#weight' => -10,
     '#element_validate' => array('_video_preset_name_validate'),

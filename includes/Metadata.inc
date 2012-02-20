@@ -48,7 +48,7 @@ class Metadata {
       '#type' => 'checkbox',
       '#title' => t('Enable Metadata'),
       '#default_value' => variable_get('video_metadata', FALSE),
-      '#description' => t('Metadata is particularly useful in video, where information about its contents (such as transcripts of conversations and text descriptions of its scenes) are not directly understandable by a computer, but where efficient search is desirable.'),
+      '#description' => t('Metadata is particularly useful in video, where content information (such as conversation transcripts or scene descriptions) are not directly accessible by a computer, but where searchability is desired.'),
     );
     $options = $this->_metadata();
     $form['video_metadata'] = array(
@@ -63,8 +63,8 @@ class Metadata {
     $form = $form + $options['admin_settings'];
     $form['video_metadata_dimensions'] = array(
       '#type' => 'textarea',
-      '#title' => t('Selectable Dimensions when uploading videos'),
-      '#description' => t('Enter one dimension per line as Video Resolutions.  Each resolution must be in the form of WxH where W=Width and H=Height in pixels.  Example dimensions are 1280x720.'),
+      '#title' => t('Available Dimensions for uploaded videos'),
+      '#description' => t('Enter one set of Video Resolution dimensions (for example 1280x720) per line.'),
       '#default_value' => variable_get("video_metadata_dimensions", video_default_dimensions()),
     );
 

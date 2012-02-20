@@ -32,7 +32,7 @@ class flvtool2 implements metadata_interface {
    * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function getHelp() {
-    return t('!flvtools calculates various meta data and inserts a onMetaData tag in the video. It cuts FLV files and adds cue Points (onCuePoint). A debug command shows the inside of a FLV file and the print command gives meta data information in XML or YAML format.', array('!flvtools' => l(t('FlvTools2 '), 'http://github.com/unnu/flvtool2')));
+    return t('!flvtools calculates metadata and inserts an onMetaData tag in the video. It cuts FLV files and adds cue Points (onCuePoint). A debug command shows the inside of a FLV file and the print command gives meta data information in XML or YAML format.', array('!flvtools' => l(t('FlvTools2 '), 'http://github.com/unnu/flvtool2')));
   }
 
   public function runCommand($options) {

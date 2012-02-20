@@ -155,7 +155,7 @@ function video_schema() {
   );
   // video converted file reference
   $schema['video_output'] = array(
-    'description' => 'Track file id for conveted files.',
+    'description' => 'Track file id for converted files.',
     'fields' => array(
       'vid' => array(
         'description' => 'Video ID.',
@@ -202,7 +202,7 @@ function video_field_schema($field) {
         'unsigned' => TRUE,
       ),
       'thumbnail' => array(
-        'description' => 'The {file_managed}.fid being referenced for video thumbanil.',
+        'description' => 'The {file_managed}.fid being referenced for video thumbnail.',
         'type' => 'int',
         'not null' => FALSE,
         'unsigned' => TRUE,

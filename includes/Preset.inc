@@ -26,8 +26,7 @@ class Preset {
     $presets = video_preset_get_presets();
     if (count($presets) == 0) {
       $form['video_preset'] = array(
-        '#markup' => t('No Preset were found. Please use the !create_link link to create
-      a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
+        '#markup' => t('No presets were found. Please use the !create_link link to create a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
         '#prefix' => '<div id="preset-checkboxes">',
         '#suffix' => '</div>',
       );
@@ -42,16 +41,16 @@ class Preset {
       '#type' => 'checkbox',
       '#title' => t('Use preset WxH for video conversion.'),
       '#default_value' => variable_get('video_use_preset_wxh', FALSE),
-      '#description' => t('Override the user selected WxH with the preset values. This is recommend.')
+      '#description' => t('Override the user selected WxH with the preset values (Recommended).')
     );
     $form['video_preset'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
       '#options' => $preset,
       '#default_value' => variable_get('video_preset', array('FLV')),
-      '#description' => t('Please use the !manage_link link to manage
+      '#description' => t('Use the !manage_link link to manage
        Video Presets. Use the !create_link link to create
-      a new Video Preset, or upload an existing Feature to your modules directory.', array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),
+       a new Video Preset, or upload an existing Feature to your modules directory.', array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),
         '!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
       '#prefix' => '<div id="preset-checkboxes">',
       '#suffix' => '</div>',

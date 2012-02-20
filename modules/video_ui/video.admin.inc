@@ -81,8 +81,7 @@ function video_general_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Publish when conversion complete'),
     '#default_value' => variable_get('video_publish_on_complete', FALSE),
-    '#description' => t('Now this feature is fully controlled by !rules module. Download 
-      the module and configure your rules to effect when the video conversions has been completed and failed.', array('!rules' => l('Rules', 'http://drupal.org/project/rules'))),
+    '#description' => t('This feature is now fully controlled by !rules module. Download the module and configure rules to take effect when video conversions have completed or failed.', array('!rules' => l('Rules', 'http://drupal.org/project/rules'))),
     '#disabled' => TRUE
   );
   return system_settings_form($form);
@@ -174,21 +173,21 @@ function video_cron_admin_settings() {
   $form = array();
   $form['video_cron'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Use Drupals built in cron.'),
+    '#title' => t('Use Drupal\'s built-in cron.'),
     '#default_value' => variable_get('video_cron', TRUE),
-    '#description' => t('If you would like to use Drupals built in cron hook, check this box.  Please be warned that transcoding videos is very resource intensive.  If you use poor mans cron, I highly discourage this option.  I also suggest you setup your cron to call this function through CLI instead of WGET.'),
+    '#description' => t('Check this box to use Drupal\'s built in cron hook. Be aware that video transcoding is very resource-intensive. If you use poor man\'s cron, this option is strongly discouraged. We suggest you set up your cron to call this function through CLI instead of WGET.'),
   );
   $form['video_queue_timeout'] = array(
     '#type' => 'textfield',
     '#title' => t('Video queue timeout (s).'),
     '#default_value' => variable_get('video_queue_timeout', 90),
-    '#description' => t('The maximum time allow a video to complete their transcoding. Put a larger value for larger size video.'),
+    '#description' => t('The maximum time allowed for a video transcode to complete. Use a larger value for larger-sized video.'),
   );
   $form['video_ffmpeg_instances'] = array(
     '#type' => 'textfield',
     '#title' => t('Total videos to convert during each cron process.'),
     '#default_value' => variable_get('video_ffmpeg_instances', 5),
-    '#description' => t('How many videos do you want to process on each cron run?  Either through hook_cron or the video_scheduler.php.'),
+    '#description' => t('How many videos do you want to process on each cron run?  Either through hook_cron or video_scheduler.php.'),
   );
   return system_settings_form($form);
 }

@@ -210,7 +210,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 //        '#title' => t('Password'),
 //        '#default_value' => variable_get('zencoder_password', ''),
 //        '#size' => 50,
-//        '#description' => t('Make sure the password is protect in somewhere, since it will need to login back to the Zencoder website.')
+//        '#description' => t('Keep this password somewhere safe, since it will be needed to log in to the Zencoder website.')
 //      );
       $form['zencoder_user']['agree_terms_zencoder'] = array(
         '#type' => 'checkbox',
@@ -241,31 +241,31 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       );
       $form['zencoder_info']['video_thumbnail_size'] = array(
         '#type' => 'select',
-        '#title' => t('Dimention of thumbnails'),
+        '#title' => t('Dimension of thumbnails'),
         '#default_value' => variable_get('video_thumbnail_size', '320x240'),
         '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
       );
       $form['zencoder_info']['video_zencoder_postback'] = array(
         '#type' => 'textfield',
         '#title' => t('Postback URL for Zencoder'),
-        '#description' => t('Important : Do not change this if you do not know
-          what your doing. This postback URL will receive video data when they are completed transcoding.'),
+        '#description' => t('Important : Don\'t change this if you don\'t know
+          what you\'re doing. This postback URL will receive video data as video transcodings are completed.'),
         '#default_value' => variable_get('video_zencoder_postback', $base_url . '/postback/jobs'),
       );
       $form['zencoder_info']['video_zencoder_base_url'] = array(
         '#type' => 'textfield',
         '#title' => t('Output file base'),
         '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory 
-          URL where we\'ll put the transcoded file. If your using ftp://, sftp:// 
-          or similar then you have to <b>mount sites/default/files folder to FTP base folder</b> before 
-          create videos.<br/> You can use <em>mount</em> command (mount --bind /source_dir /dest_dir_01):
+          URL where we\'ll put the transcoded file. If you\'re using ftp://, sftp://, etc.
+          then you must <b>mount sites/default/files folder as the FTP base folder</b> before
+          creating videos.<br/> You can use the <em>mount</em> command (mount --bind /source_dir /dest_dir_01):
           <br/> Eg : <br/><code>1. mkdir /home/USERNAME/videos</code><br/>
           <code>2. mount --bind /var/www/html/DRUPAL/sites/default/files/videos/ /home/USERNAME/files/videos</code><br/>
           <code>3. cd /home/USERNAME/videos</code><br/>
           <code>4. ls -l</code><br/>
           <code><b>It should display </b><br/>converted<br/>original<br/>thumbnails</code><br/>
           <code>5. chown -R USERNAME:USERNAME videos/</code>
-          <br/><br/>Example URL patterens: <code>s3://my-output-bucket, cf://username:api_key@container/, 
+          <br/><br/>Example URL patterns: <code>s3://my-output-bucket, cf://username:api_key@container/, 
           ftp://user:password@ftp.example.com</code>', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
         '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
       );
@@ -273,7 +273,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#type' => 'checkbox',
         '#title' => t('Use full path'),
         '#default_value' => variable_get('video_zencoder_use_full_path', FALSE),
-        '#description' => t('If enabled the full dir path to the file will show up in the filepath of the outputfile.<br/><b>Disable</b> this to reduse the security fall. We don\'t encourage to enble this.')
+        '#description' => t('If enabled the full dir path to the file will show up in the filepath of the outputfile.<br/><b>Disable</b> this to reduce the security risk. We discourage enabling this option.')
       );
       // testing
       $form['zencoder_info']['testing'] = array(
@@ -286,14 +286,14 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#type' => 'checkbox',
         '#title' => t('Test mode'),
         '#default_value' => variable_get('video_zencoder_testing_mode', FALSE),
-        '#description' => t('Enable test mode to test upload/playback locally(If you do not have any public IP to test)')
+        '#description' => t('Enable test mode to test upload/playback locally (if you have no public IP to test)')
       );
       $form['zencoder_info']['testing']['video_zencoder_test_file_path'] = array(
         '#type' => 'textfield',
         '#title' => t('Path to test video file'),
-        '#description' => t('Add a file path to a video file to download by Zencoder 
-          to trnascode, you have to mention this file for testing if your using your 
-          locabox and there is no any public ip where Zencoder can download video.'),
+        '#description' => t('Add the path to a video file for Zencoder to transcode.
+          You must use this file for testing when using a local machine with no public IP
+          address from which Zencoder can download video.'),
         '#default_value' => variable_get('video_zencoder_test_file_path', 'http://example.com/video.mp4'),
       );
     }

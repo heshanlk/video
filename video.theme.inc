@@ -60,7 +60,7 @@ function theme_video_formatter_player($variables) {
   module_load_include('inc', 'video', '/includes/VideoHelper');
   $video_helper = new VideoHelper;
   $video = $video_helper->video_object($variables);
-  // override player dimentions
+  // override player dimensions
   if (isset($variables['player_dimensions']) && !empty($variables['player_dimensions'])) {
     $player_dimensions = explode('x', $variables['player_dimensions']);
     $video->player_width = trim($player_dimensions[0]);
@@ -175,7 +175,7 @@ function theme_video_inprogress() {
  * Display an "encoding failed" message"
  */
 function theme_video_conversion_failed() {
-  return '<div class="video-conversion-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists please contact website administrators. Please check logs for further debugging.') . '</div>';
+  return '<div class="video-conversion-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists contact your website administrator. Please check logs for further debugging.') . '</div>';
 }
 
 /*
@@ -219,7 +219,7 @@ function theme_video_flv($variables) {
       return theme('jw_player', array('file_object' => (object) $item, 'options' => $attributes));
 
     default:
-      $themed_output = t('No flash player has been setup. ' . l(t('Please select a player to play Flash videos.'), 'admin/config/media/video/players'));
+      $themed_output = t('No flash player has been set up. ' . l(t('Please select a player to play Flash videos.'), 'admin/config/media/video/players'));
       break;
   }
   return theme('video_play_flv', array('video' => $video, 'themed_output' => $themed_output));

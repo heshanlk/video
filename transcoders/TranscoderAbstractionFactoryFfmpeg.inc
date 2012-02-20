@@ -353,7 +353,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $form['ffmpeg']['thumbnail']['video_thumbnail_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),
-      '#description' => t('Path to save video thumbnails extracted from the videos.'),
+      '#description' => t('Path to save video thumbnails extracted from videos.'),
       '#default_value' => variable_get('video_thumbnail_path', 'videos/thumbnails'),
     );
     $form['ffmpeg']['thumbnail']['video_thumbnail_count'] = array(
@@ -364,8 +364,8 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     );
     $form['ffmpeg']['thumbnail']['video_thumb_save_all'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Save all thumbnails in {file_manged} table'),
-      '#description' => t('Save all auto created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
+      '#title' => t('Save all thumbnails in {file_managed} table'),
+      '#description' => t('Save all auto-created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
       '#default_value' => variable_get('video_thumb_save_all', FALSE),
     );
     $form['video_ffmpeg_end'] = array(

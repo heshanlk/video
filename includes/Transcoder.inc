@@ -10,7 +10,7 @@ class Transcoder {
 
   /**
    * Extract frames from the video file. This helper function will intract with
-   * only the database and it will save all the thumbanil file reference in to
+   * only the database and it will save all the thumbnail file reference in to
    * the database.
    * @param type $video
    * @return type 
@@ -22,9 +22,9 @@ class Transcoder {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
     $transcoder->setInput($video);
-    $thumbanils = $transcoder->extractFrames();
-    if (!empty($thumbanils)) {
-      foreach ($thumbanils as $file) {
+    $thumbnails = $transcoder->extractFrames();
+    if (!empty($thumbnails)) {
+      foreach ($thumbnails as $file) {
         // if media module exists add type as an image
         if (module_exists('media'))
           $file->type = 'image';

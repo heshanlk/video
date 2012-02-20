@@ -12,7 +12,7 @@ function video_field_info() {
   return array(
     'video' => array(
       'label' => t('Video'),
-      'description' => t('This field stores the ID of an video file as an integer value.'),
+      'description' => t('This field stores the ID of a video file as an integer value.'),
       'settings' => array(
         'uri_scheme' => variable_get('file_default_scheme', 'public'),
         'autoconversion' => 0,
@@ -218,7 +218,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
         // set to false when convert on save
         $job = FALSE;
         if ($video_conversion->process($item['fid'])) {
-          drupal_set_message(t('Transcoding job submission was successful. Your video will convert and publish very soon.'));
+          drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
         }
         else {
           $video = $transcoder->loadJob();
@@ -420,7 +420,7 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
       '#title' => t('Dimensions'),
       '#type' => 'select',
       '#default_value' => $settings['widthxheight'],
-      '#description' => t('Select the desired widthxheight of the video player. You can add your own dimention from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
+      '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
       '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
     );
   }

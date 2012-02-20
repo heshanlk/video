@@ -147,7 +147,7 @@ abstract class TranscoderAbstractionFactory {
   /**
    * Get file informations
    * @return $file associative array with file informations
-   * like duration, dimentions
+   * like duration, dimensions
    */
   public function getFileInfo() {
     $file = array();

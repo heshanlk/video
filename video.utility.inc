@@ -166,7 +166,7 @@ function video_widget_element_settings(&$element, &$form_state) {
       $element['re_convert_video'] = array(
         '#type' => 'checkbox',
         '#title' => t('Video conversion has been <b>' . $status[$video->video_status] . '!</b>. Re-queue video?.'),
-        '#description' => t('This will re-convert your video to output formats when you save, or scheduling it for cron.'),
+        '#description' => t('This will re-convert your video to output formats when you save, or schedule it for cron.'),
         '#attributes' => array('class' => array('video-re-convert', 'video-' . $video->video_status)),
       );
     }
@@ -175,7 +175,7 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
         '#default_value' => isset($file['bypass_autoconversion']) ? $file['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
-        '#description' => t('This will bypass your auto conversion of videos.'),
+        '#description' => t('This will bypass the auto-conversion of videos.'),
         '#attributes' => array('class' => array('video-bypass-auto-conversion')),
       );
     }
@@ -210,7 +210,7 @@ function video_widget_element_settings(&$element, &$form_state) {
         '#type' => 'checkbox',
         '#title' => t('Use the default thumbnail for this video?'),
         '#default_value' => $default_thumb,
-        '#description' => t('This will set a flag for this video to use the default video thumbnail when outputed..'),
+        '#description' => t('This will set a flag for this video to use the default video thumbnail when output.'),
         '#attributes' => array('class' => array('video-use-default-video-thumb')),
       );
       if ($default_thumb) {
@@ -399,7 +399,7 @@ function video_default_instance_settings($widget) {
     '#title' => t('Output video dimensions'),
     '#default_value' => !empty($widget['default_dimensions']) ? $widget['default_dimensions'] : '',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-    '#description' => t('This settings can be overridden when node edit or preset settings. You can select most suitable values to output dimensions when node edit and selecting a wrong value may cause failure of the video conversion.'),
+    '#description' => t('This setting can be overridden in node edit or preset settings. Select the most suitable values to use as output dimensions, as selecting a bad value could cause video conversion to fail.'),
     '#weight' => 16,
   );
   return $form;
@@ -416,7 +416,7 @@ function video_default_field_settings($settings) {
   $form['autoconversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('<b>Enable auto video conversion.</b>'),
-    '#description' => t('Convert videos automatically using FFmpeg or Zencoder. You can define videos presets at !preset to automatically convert videos to web compatible formats eg. FLV, MP4. Please make sure to configure your !settings to make this work properly.', array(
+    '#description' => t('Convert videos automatically using FFmpeg or Zencoder. You can define presets at !preset to automatically convert videos to web compatible formats eg. FLV, MP4. Make sure to configure your !settings to make this work properly.', array(
       '!settings' => l(t('transcoder settings'), 'admin/config/media/video/transcoders'),
       '!preset' => l(t('preset settings'), 'admin/config/media/video/presets'),
     )),
@@ -444,7 +444,7 @@ function video_default_field_settings($settings) {
     '#title' => t('Default video thumbnail'),
     '#type' => 'managed_file',
     '#element_validate' => array('video_field_default_thumbnail_validate'),
-    '#description' => t('You can use a default thumbnail for all videos or some videos which are failed to extract thumbnail from the video. Settings to use default video thumbnails will be available on node edit (You can change the permissions for other users too).'),
+    '#description' => t('You can use a default thumbnail for all videos or videos from which a thumbnail can\'t be extracted. Settings to use default video thumbnails will be available on node edit. You can change the permissions for other users too.'),
     '#default_value' => !empty($settings['default_video_thumbnail']['fid']) ? $settings['default_video_thumbnail']['fid'] : '',
     '#upload_location' => 'public://videos/thumbnails/default',
     '#weight' => 19,
@@ -455,7 +455,7 @@ function video_default_field_settings($settings) {
     '#options' => image_style_options(FALSE),
     '#empty_option' => '<' . t('no preview') . '>',
     '#default_value' => !empty($settings['preview_video_thumb_style']) ? $settings['preview_video_thumb_style'] : '',
-    '#description' => t('This image styles will be use to show extracted video thumbnails on video node edit. Extracted thumbnail preview will also use this style too.'),
+    '#description' => t('This image style will be used to show extracted video thumbnails on video node edit. Extracted thumbnail preview will also use this style.'),
     '#weight' => 20,
   );
   return $form;

@@ -25,16 +25,16 @@ function video_rules_event_info() {
   );
   return array(
     'video_success' => $defaults + array(
-  'label' => t('After video conversion success'),
-  'variables' => array(
-    'node' => array('type' => 'node', 'label' => t('video success')),
-  ),
+      'label' => t('After video conversion success'),
+      'variables' => array(
+        'node' => array('type' => 'node', 'label' => t('video success')),
+      ),
     ),
     'video_failed' => $defaults + array(
-  'label' => t('After video conversion failed.'),
-  'variables' => array(
-    'node' => array('type' => 'node', 'label' => t('video failed')),
-  ),
+      'label' => t('After video conversion failed.'),
+      'variables' => array(
+        'node' => array('type' => 'node', 'label' => t('video failed')),
+      ),
     ),
   );
   return $items;
