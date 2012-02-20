@@ -909,7 +909,7 @@ class PHPVideoToolkit {
       if ($fps !== false) {
         $fps = floatval($fps);
         $data['duration']['timecode']['frames']['frame_rate'] = $data['video']['frame_rate'] = $fps;
-        $data['duration']['timecode']['seconds']['total'] = $data['duration']['seconds'] = $this->formatTimecode($data['duration']['timecode']['frames']['exact'], '%hh:%mm:%ss.%fn', '%st.%ms', $data['video']['frame_rate']);
+        $data['duration']['timecode']['seconds']['total'] = $data['duration']['seconds'] = $this->formatTimecode($data['duration']['timecode']['frames']['exact'], '%hh:%mm:%ss.%ms', '%ss.%ms', $data['video']['frame_rate']);
       }
       $fps_value = $fps_matches[0];
 // 				get the ratios

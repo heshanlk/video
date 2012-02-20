@@ -123,7 +123,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     // get the video file informations
     $file_info = $this->getFileInfo();
     // video duration
-    $duration = $file_info['duration']['seconds'];
+    $duration = floor($file_info['duration']['seconds']);
     // Total thumbs to generate
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     $files = NULL;
@@ -219,7 +219,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     // get the video file informations
     $file_info = $this->getFileInfo();
     // video duration
-    $duration = $file_info['duration']['seconds'];
+    $duration = floor($file_info['duration']['seconds']);
     // Setup our converted video object
     $output = new stdClass();
     $output->filename = $this->settings['filename'];
