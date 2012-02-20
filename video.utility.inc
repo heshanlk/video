@@ -27,7 +27,7 @@ function video_thumb_process(&$element, &$form_state) {
       if ($thumbs = $transcoder->extractFrames($file)) {
         $default_thumb = array_rand($thumbs);
         if (!empty($thumbs)) {
-          foreach ($thumbs as $fid => $img) {
+          foreach ($thumbs as $img) {
             // if file object contain url then use file name to identify object
             $thumbss[$img->fid] = theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $img->uri));
           }

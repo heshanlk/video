@@ -174,10 +174,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         }
 
         if (!file_exists($thumbnail_real_path)) {
-          $error_param = array('%file' => $thumbnail_path);
-          $error_msg = t("Error generating thumbnail for video: generated file %file does not exist.", $error_param);
-          // Log the error message.
-          watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+          watchdog('transcoder', 'Error generating thumbnail for video: generated file %file does not exist.', array('%file' => $thumbnail_path), WATCHDOG_ERROR);
           continue;
         }
       }

@@ -24,43 +24,48 @@ class Transcoder {
     $transcoder->setInput($video);
     $thumbnails = $transcoder->extractFrames();
     if (!empty($thumbnails)) {
+      $files = array();
       foreach ($thumbnails as $file) {
         // if media module exists add type as an image
-        if (module_exists('media'))
+        if (module_exists('media')) {
           $file->type = 'image';
-        if (variable_get('video_thumb_save_all', FALSE))
+        }
+        if (variable_get('video_thumb_save_all', FALSE)) {
           $file->status = FILE_STATUS_PERMANENT;
+        }
         $existing_file = file_load_multiple(array(), array('uri' => $file->uri));
-        if ($existing_file) // check thumbnail file exists
+        if ($existing_file)  { // check thumbnail file exists
           $file = (array) $existing_file;
+        }
         else { // create new file entries for thumbnails
           drupal_write_record('file_managed', $file);
           $file = file_load_multiple(array(), array('uri' => $file->uri));
         }
-        if (!empty($file))
-          $thumbnails = array_merge($thumbnails, $file);
+        if (!empty($file)) {
+          $files[] = array_shift($file);
+        }
       }
       $exists = db_query('SELECT 1 FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField();
       if ($exists == FALSE) { // returns TRUE is there is a record.
         $insertquery = db_insert('video_thumbnails') // Table name no longer needs {}
             ->fields(array(
               'vid' => $vid,
-              'thumbnails' => serialize($thumbnails),
+              'thumbnails' => serialize($files),
             ))
             ->execute();
       }
       else {
         $updatequery = db_update('video_thumbnails')
             ->fields(array(
-              'thumbnails' => serialize($thumbnails),
+              'thumbnails' => serialize($files),
             ))
             ->condition('vid', $vid)
             ->execute();
       }
       return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
     }
-    else
-      return FALSE;
+
+    return FALSE;
   }
 
   /**
