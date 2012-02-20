@@ -383,7 +383,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
         // change the job status
         db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE))->condition('vid', $video_output->vid, '=')->execute();
-        echo "Dubble w00t!";
+
         // Replace thumbnail
         $video_queue = db_query("SELECT entity_id, entity_type FROM {video_queue} WHERE vid = :vid", array(':vid' => $video_output->vid))->fetch();
         $entity = reset(entity_load($video_queue->entity_type, array($video_queue->entity_id)));
