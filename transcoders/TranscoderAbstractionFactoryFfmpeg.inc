@@ -1,8 +1,12 @@
 <?php
-
 class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
+  const INFO_CID = 'video:transcoder:ffmpeg';
+  const INFO_CACHE = 'cache';
 
-  protected $transcoder = array();
+  /**
+   *@var PHPVideoToolkit
+   */
+  protected $transcoder = NULL;
 
   public function __construct() {
     module_load_include('php', 'video', 'libraries/phpvideotoolkit/phpvideotoolkit.php5');
@@ -244,15 +248,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function getCodecs() {
-    $cid = 'video:transcoder:ffmpeg';
-    $cache = cache_get($cid);
-    if (!empty($cache->data)) {
-      $info = $cache->data;
-    }
-    else {
-      $info = $this->transcoder->getFFmpegInfo(FALSE);
-      cache_set($cid, $info);
-    }
+    $info = $this->getCachedFFmpegInfo();
     $available_codecs = $info['codecs'];
     $codecs = array('decode' => array(), 'encode' => array());
     foreach ($available_codecs as $key => $value) {
@@ -271,15 +267,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function getAvailableFormats($type = false) {
-    $cid = 'video:transcoder:ffmpeg';
-    $cache = cache_get($cid);
-    if (!empty($cache->data)) {
-      $info = $cache->data;
-    }
-    else {
-      $info = $this->transcoder->getFFmpegInfo(FALSE);
-      cache_set($cid, $info);
-    }
+    $info = $this->getCachedFFmpegInfo();
     $formats = array();
     switch ($type) {
       case false :
@@ -310,26 +298,12 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function getVersion() {
-    $cid = 'video:transcoder:ffmpeg';
-    $cache = cache_get($cid);
-    if (!empty($cache->data)) {
-      $ffmpeg = $cache->data;
+    $info = $this->getCachedFFmpegInfo();
+    if ($info['ffmpeg-found'] == TRUE) {
+      return self::getVersionFromOutput($info['raw']);
     }
-    else {
-      $ffmpeg = $this->transcoder->getFFmpegInfo(FALSE);
-      cache_set($cid, $ffmpeg);
-    }
-    if ($ffmpeg['ffmpeg-found'] == TRUE) {
-      if (is_array($ffmpeg['binary']['versions'])) {
-        $version = isset($ffmpeg['binary']['versions']['version']) ? $ffmpeg['binary']['versions']['version'] : 'svn:' . $ffmpeg['binary']['versions']['svn'];
-      }
-      else {
-        $version = $ffmpeg['binary']['versions'];
-      }
-      return $version;
-    }
-    else
-      return FALSE;
+
+    return FALSE;
   }
 
   public function getName() {
@@ -403,29 +377,77 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function adminSettingsValidate($form, &$form_state) {
     $ffmpeg_path = $form_state['values']['video_ffmpeg_path'];
-    if (!empty($ffmpeg_path)) {
+    if (!empty($ffmpeg_path) && $ffmpeg_path != variable_get('video_ffmpeg_path')) {
       // we have to initialize PHP toolkit object again, if changed the path of executable
       $toolkit = new PHPVideoToolkit($ffmpeg_path);
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
       if ($ffmpeg['ffmpeg-found'] == TRUE) {
-        if (is_array($ffmpeg['binary']['versions'])) {
-          $version = isset($ffmpeg['binary']['versions']['version']) ? $ffmpeg['binary']['versions']['version'] : 'svn:' . $ffmpeg['binary']['versions']['svn'];
-        }
-        else {
-          $version = $ffmpeg['binary']['versions'];
-        }
+        $version = self::getVersionFromOutput($ffmpeg['raw']);
         drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
       }
       else {
-        drupal_set_message(t('FFmpeg not found on your system. To convert 
-          videos and create thumbnails you have to install FFmpeg on your server. 
-          For more informations please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
-        form_set_error('video_ffmpeg_path' . t('FFmpeg not found on your system. To convert 
-          videos and create thumbnails you have to install FFmpeg on your server. 
-          For more informations please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+        drupal_set_message(t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
+        form_set_error('video_ffmpeg_path', t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
+
+      // Clear FFmpeg information when the path has changed.
+      cache_clear_all(self::INFO_CID, self::INFO_CACHE);
     }
     return;
   }
 
+  /**
+   * Returns a cached copy of PHPVideoToolkit::getFFmpegInfo()
+   *
+   * @return
+   *   array of FFmpeg installation information.
+   */
+  private function getCachedFFmpegInfo() {
+    $cache = cache_get(self::INFO_CID, self::INFO_CACHE);
+    if (!empty($cache->data)) {
+      return $cache->data;
+    }
+    else {
+      $info = $this->transcoder->getFFmpegInfo(FALSE);
+      cache_set(self::INFO_CID, $info, self::INFO_CACHE);
+      return $info;
+    }
+  }
+
+  /**
+   * Returns the FFmpeg version string from an output string.
+   *
+   * FFmpeg returns its version in the output of almost any call.
+   *
+   * Used instead of PHPVideoToolkit::getVersion(), because PHPVideoToolkit
+   * has not been updated and does not support git versions.
+   *
+   * @param
+   *   string containing output of ffmpeg -version
+   * @return
+   *   string containing version of FFmpeg
+   */
+  public static function getVersionFromOutput($output) {
+    $matches = array();
+
+    // Git check outs
+    $pattern = '/ffmpeg version N-\d+-g([a-f0-9]+)/';
+    if (preg_match($pattern, $output, $matches)) {
+      return 'git: '. $matches[1];
+    }
+
+    // Release
+    $pattern = '/ffmpeg version ([0-9.]*)/i';
+    if (preg_match($pattern, $output, $matches)) {
+      return $matches[1];
+    }
+
+    // Fallback to unrecognized string
+    $pattern = '/ffmpeg version ([^\n]*)/i';
+    if (preg_match($pattern, $output, $matches)) {
+      return $matches[1];
+    }
+
+    return NULL;
+  }
 }
