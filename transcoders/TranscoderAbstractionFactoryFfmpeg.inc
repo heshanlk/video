@@ -436,16 +436,26 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       return 'git: '. $matches[1];
     }
 
+    // Git check outs
+    $pattern = '/ffmpeg version git-(\d{4}-\d{2}-\d{2}-[a-f0-9]+)/';
+    if (preg_match($pattern, $output, $matches)) {
+      return 'git: '. $matches[1];
+    }
+
     // Release
-    $pattern = '/ffmpeg version ([0-9.]*)/i';
+    $pattern = '/ffmpeg version ([0-9.]+)/i';
     if (preg_match($pattern, $output, $matches)) {
       return $matches[1];
     }
 
     // Fallback to unrecognized string
-    $pattern = '/ffmpeg version ([^\n]*)/i';
+    $pattern = '/ffmpeg version ([^\n]+)/i';
     if (preg_match($pattern, $output, $matches)) {
-      return $matches[1];
+      $version = $matches[1];
+      if(($pos = strpos($version, ' Copyright')) !== FALSE) {
+        $version = substr($version, 0, $pos);
+      }
+      return t('unrecognized: !version', array('!version' => $version));
     }
 
     return NULL;

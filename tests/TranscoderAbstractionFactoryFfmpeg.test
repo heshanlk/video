@@ -1,0 +1,50 @@
+<?php
+/**
+ * @file
+ * Tests for the TranscoderAbstractionFactoryFfmpeg class
+ */
+class TranscoderAbstractionFactoryFfmpegTestCase extends DrupalUnitTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Video FFmpeg tests',
+      'description' => 'Tests for the TranscoderAbstractionFactoryFfmpeg class',
+      'group' => 'Video',
+    );
+  }
+
+  function setUp() {
+    require_once dirname(__FILE__) . '/../transcoders/TranscoderAbstractionFactoryFfmpeg.inc';
+    drupal_load('module', 'video');
+    parent::setUp();
+  }
+
+  /**
+   * Test of TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput()
+   */
+  public function testVersionInfo() {
+    $versionstring = '';
+    $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
+    $this->assertEqual(NULL, $result, t('An empty string should return NULL.'));
+
+    $versionstring = 'ffmpeg version N-38044-g6e6bdeb Copyright (c) 2000-2012 the FFmpeg developers';
+    $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
+    $this->assertEqual('git: 6e6bdeb', $result, t('Should detect git checkout build properly.'));
+
+    $versionstring = 'FFmpeg version 0.6.4-4:0.6.4-0ubuntu0.11.04.1, Copyright (c) 2000-2010 the Libav developers';
+    $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
+    $this->assertEqual('0.6.4', $result, t('Should detect normal version build properly.'));
+
+    $versionstring = 'ffmpeg version git-2012-01-26-ee0cab7';
+    $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
+    $this->assertEqual('git: 2012-01-26-ee0cab7', $result, t('Should detect shallow git checkouts.'));
+
+    $versionstring = 'ffmpeg version abcdefg';
+    $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
+    $this->assertEqual('unrecognized: abcdefg', $result, t('Should return unrecognized version.'));
+
+    $versionstring = 'ffmpeg version abcdefg Copyright (c) 2000-2012 the FFmpeg developers';
+    $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
+    $this->assertEqual('unrecognized: abcdefg', $result, t('Should leave off copyright string from unrecognized version.'));
+  }
+}
