@@ -14,8 +14,8 @@ class TranscoderAbstractionFactoryFfmpegTestCase extends DrupalUnitTestCase {
   }
 
   function setUp() {
-    require_once dirname(__FILE__) . '/../transcoders/TranscoderAbstractionFactoryFfmpeg.inc';
     drupal_load('module', 'video');
+    require_once dirname(__FILE__) . '/../transcoders/TranscoderAbstractionFactoryFfmpeg.inc';
     parent::setUp();
   }
 
