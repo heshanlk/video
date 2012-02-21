@@ -78,13 +78,13 @@ function videoftp_elements() {
   }
 
   return $elements;
-  
+
   $elements = array(
     'videoftp_widget' => array(
       '#input' => TRUE,//
       '#columns' => array('fid', 'list', 'data', 'filepath'),//
       '#process' => array('videoftp_widget_process'),//
-  	  '#value_callback' => 'videoftp_widget_value',
+      '#value_callback' => 'videoftp_widget_value',
     ),
   );
 
@@ -122,7 +122,7 @@ function videoftp_widget(&$form, &$form_state, $field, $items, $delta = NULL) {
 
   $item = array('fid' => 0, 'list' => $field['list_default']);
   $data = array('description' => '', 'video_thumb' => '', 'bypass_autoconversion' => variable_get('video_bypass_conversion', FALSE));
-  
+
   if (isset($items[$delta])) {
     if (isset($items[$delta]['data'])) {
       $data = array_merge($data, $items[$delta]['data']);

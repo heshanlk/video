@@ -56,7 +56,7 @@ function uploadfield_elements() {
 }
 
 /**
- * Implementation of hook_file_download.
+ * Implementation of hook_file_download().
  */
 function uploadfield_file_download($filepath) {
   // Return headers for default images.

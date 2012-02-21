@@ -149,13 +149,15 @@ function video_schema() {
  * Implementation of hook_install().
  */
 function video_install() {
+  $t = get_t();
+
   drupal_install_schema('video');
 
   $paddingtext = '-vf "pad:!paddingwidth:!paddingheight:!paddingleft:!paddingtop:000000"';
 
   $presetids = array();
 
-  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'Flash', 'flv', '', t('Creates files that play in any Flash player, including older versions.'));
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'Flash', 'flv', '', $t('Creates files that play in any Flash player, including older versions.'));
   $presetids['hq_flash'] = db_last_insert_id('video_preset', 'id');
   db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['hq_flash'], 'video_localcommand', serialize(array(
     'commands' => array(
@@ -164,7 +166,7 @@ function video_install() {
     'useflvtool2' => 1,
   )));
 
-  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 MP4', 'mp4', '', t('Creates files that natively play in Internet Explorer 9+ and Google Chrome using HTML5 and in any other browser using Flash.'));
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 MP4', 'mp4', '', $t('Creates files that natively play in Internet Explorer 9+ and Google Chrome using HTML5 and in any other browser using Flash.'));
   $presetids['html5_mp4'] = db_last_insert_id('video_preset', 'id');
   db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_mp4'], 'video_localcommand', serialize(array(
     'commands' => array(
@@ -174,7 +176,7 @@ function video_install() {
     'useqtfaststart' => variable_get('video_ffmpeg_enable_faststart', FALSE) ? 1 : 0,
   )));
 
-  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 Ogg Theora / Vorbis', 'ogv', '', t('Creates files that natively play in Firefox using HTML5.'));
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 Ogg Theora / Vorbis', 'ogv', '', $t('Creates files that natively play in Firefox using HTML5.'));
   $presetids['html5_ogv'] = db_last_insert_id('video_preset', 'id');
   db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_ogv'], 'video_localcommand', serialize(array(
     'commands' => array(
@@ -182,7 +184,7 @@ function video_install() {
     ),
   )));
 
-  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 WebM', 'webm', '', t('Creates files that natively play in Google Chrome using HTML5.'));
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'HTML5 WebM', 'webm', '', $t('Creates files that natively play in Google Chrome using HTML5.'));
   $presetids['html5_webm'] = db_last_insert_id('video_preset', 'id');
   db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['html5_webm'], 'video_localcommand', serialize(array(
     'commands' => array(
@@ -191,7 +193,7 @@ function video_install() {
     ),
   )));
 
-  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'iPhone MOV', 'mov', '', t('Creates files that natively play on the iPhone using HTML5.'));
+  db_query('INSERT INTO {video_preset} SET name="%s", extension="%s", filenamesuffix="%s", help="%s"', 'iPhone MOV', 'mov', '', $t('Creates files that natively play on the iPhone using HTML5.'));
   $presetids['iphone_mov'] = db_last_insert_id('video_preset', 'id');
   db_query('INSERT INTO {video_preset_settings} SET presetid=%d, transcoder="%s", data = "%s"', $presetids['iphone_mov'], 'video_localcommand', serialize(array(
     'commands' => array(
@@ -343,7 +345,7 @@ function video_update_6405() {
  * Implementation of hook_update_N().
  */
 function video_update_6406() {
-  drupal_set_message('The system has reset your thumbnail and FFmpeg command settings to their original state.  If you made adjustments to these commands, you will have to reset them up.');
+  drupal_set_message(t('The system has reset your thumbnail and FFmpeg command settings to their original state. If you made adjustments to these commands, you will have to reset them.'));
 // Lets reset our FFmpeg system command variables.
   variable_set('video_ffmpeg_thumbnailer_options', '-i !videofile -an -y -f mjpeg -ss !seek -vframes 1 !thumbfile');
   variable_set('video_ffmpeg_helper_auto_cvr_options', '-y -i !videofile -f flv -ar 22050 -ab !audiobitrate -s !size -b !videobitrate -qscale 1 !convertfile');
