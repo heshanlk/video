@@ -889,7 +889,7 @@ class PHPVideoToolkit {
     if (count($matches) > 0) {
       $data['video'] = array();
 // 				get the dimension parts
-      preg_match('/([0-9]{1,5})x([0-9]{1,5})/', $matches[2], $dimensions_matches);
+      preg_match('/([1-9][0-9]*)x([1-9][0-9]*)/', $matches[2], $dimensions_matches);
 // 				print_r($dimensions_matches);
       $dimensions_value = $dimensions_matches[0];
       $data['video']['dimensions'] = array(
