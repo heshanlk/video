@@ -11,6 +11,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   public function __construct() {
     module_load_include('php', 'video', 'libraries/phpvideotoolkit/phpvideotoolkit.php5');
     $this->transcoder = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), file_directory_temp() . '/');
+    PHPVideoToolkit::$ffmpeg_info = $this->getCachedFFmpegInfo();
     parent::__construct();
   }
 
@@ -337,7 +338,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $form['ffmpeg']['ffmpeg']['video_ffmpeg_path'] = array(
       '#type' => 'textfield',
       '#title' => t('FFMPEG'),
-      '#description' => t('Absolute path to ffmpeg executable.'),
+      '#description' => t('Absolute path to FFmpeg executable.') . t('When you install a new FFmpeg version, please <a href="@performance-page">clear the caches</a> to let Drupal detect the updated codec support.', array('@performance-page' => url('admin/config/development/performance'))),
       '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
     );
     // Thumbnail Videos We need to put this stuff last.

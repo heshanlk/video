@@ -2603,8 +2603,8 @@ class PHPVideoToolkit {
    * @param $codec string The shortcode for the codec to check for.
    * @return boolean True if the codec can be encoded by ffmpeg, otherwise false.
    */
-  public static function canCodecBeEncoded($type, $codec) {
-    return self::validateCodec($codec, $type, 'encode');
+  public function canCodecBeEncoded($type, $codec) {
+    return $this->validateCodec($codec, $type, 'encode');
   }
 
   /**
@@ -2613,8 +2613,8 @@ class PHPVideoToolkit {
    * @param $codec string The shortcode for the codec to check for.
    * @return boolean True if the codec can be decoded by ffmpeg, otherwise false.
    */
-  public static function canCodecBeDecoded($type, $codec) {
-    return self::validateCodec($codec, $type, 'decode');
+  public function canCodecBeDecoded($type, $codec) {
+    return $this->validateCodec($codec, $type, 'decode');
   }
 
   /**
@@ -2625,15 +2625,8 @@ class PHPVideoToolkit {
    * @param $method string 'encode' or 'decode', The method to check against the codec
    * @return boolean True if the codec can be used with the given method by ffmpeg, otherwise false.
    */
-  public static function validateCodec($codec, $type, $method) {
-// 			check to see if this is a static call
-    if (isset($this) === false) {
-      $toolkit = new PHPVideoToolkit();
-      $info = $toolkit->getFFmpegInfo(true);
-    }
-    else {
-      $info = $this->getFFmpegInfo(true);
-    }
+  public function validateCodec($codec, $type, $method) {
+    $info = $this->getFFmpegInfo(true);
     return isset($info['codecs'][$type]) === true && isset($info['codecs'][$type][$codec]) === true && isset($info['codecs'][$type][$codec][$method]) === true ? $info['codecs'][$type][$codec][$method] : false;
   }
 
@@ -2643,8 +2636,8 @@ class PHPVideoToolkit {
    * @param $format string The shortcode for the codec to check for.
    * @return boolean True if the codec can be encoded by ffmpeg, otherwise false.
    */
-  public static function canFormatBeMuxed($format) {
-    return self::validateFormat($format, 'mux');
+  public function canFormatBeMuxed($format) {
+    return $this->validateFormat($format, 'mux');
   }
 
   /**
@@ -2653,8 +2646,8 @@ class PHPVideoToolkit {
    * @param $codec string The shortcode for the codec to check for.
    * @return boolean True if the codec can be decoded by ffmpeg, otherwise false.
    */
-  public static function canFormatBeDemuxed($format) {
-    return self::validateFormat($format, 'demux');
+  public function canFormatBeDemuxed($format) {
+    return $this->validateFormat($format, 'demux');
   }
 
   /**
@@ -2664,15 +2657,8 @@ class PHPVideoToolkit {
    * @param $method string 'mux' or 'demux', The method to check against the format
    * @return boolean True if the format can be used with the given method by ffmpeg, otherwise false.
    */
-  public static function validateFormat($format, $method) {
-// 			check to see if this is a static call
-    if (isset($this) === false) {
-      $toolkit = new PHPVideoToolkit();
-      $info = $toolkit->getFFmpegInfo(true);
-    }
-    else {
-      $info = $this->getFFmpegInfo(true);
-    }
+  public function validateFormat($format, $method) {
+    $info = $this->getFFmpegInfo(true);
     return isset($info['formats'][$format]) === true && isset($info['formats'][$format][$method]) === true ? $info['formats'][$format][$method] : false;
   }
 
@@ -2682,16 +2668,8 @@ class PHPVideoToolkit {
    * @param mixed $method The mux method to check for, either 'muxing', 'demuxing' or 'both' (formats that can both mux and demux), otherwise false will return a complete list.
    * @return array An array of formats available to ffmpeg.
    */
-  public static function getAvailableFormats($method=false) {
-// 			check to see if this is a static call
-    if (isset($this) === false) {
-      $toolkit = new PHPVideoToolkit();
-      $info = $toolkit->getFFmpegInfo(true);
-    }
-    else {
-      $info = $this->getFFmpegInfo(true);
-    }
-// 			are we checking for particluar method?   
+  public function getAvailableFormats($method=false) {
+    $info = $this->getFFmpegInfo(true);
     $return_vals = array();
     switch ($method) {
       case false :
