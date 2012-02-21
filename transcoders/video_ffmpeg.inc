@@ -47,7 +47,7 @@ class video_ffmpeg implements transcoder_interface {
     $return_var = 0;
 
     ob_start();
-    passthru($command, &$return_var);
+    passthru($command, $return_var);
     $output = ob_get_clean();
 
     // Returnvar 1 means input file not found. This is normal for information calls.
