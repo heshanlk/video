@@ -128,8 +128,12 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     // Total thumbs to generate
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     $files = NULL;
+
+    $debugline = 'Video '.$this->settings['input']['uri'].': duration = '.$duration.', frames = ';
+
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
       $seek = floor($duration / ($no_of_thumbnails + 1)) * $i;
+      $debugline .= $seek .', ';
       $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
       $thumbnail_path = $schema_thumb_path . '/' . $filename;
       $thumbnail_real_path = drupal_realpath($thumbnail_path);
@@ -192,6 +196,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         $files[] = $file;
       }
     }
+    watchdog('video', $debugline, array(), WATCHDOG_DEBUG);
     return!empty($files) ? $files : FALSE;
   }
 
