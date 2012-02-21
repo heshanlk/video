@@ -129,10 +129,15 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     $files = NULL;
 
+    // Precaution for very short videos
+    if ((2 * $no_of_thumbnails) > $duration) {
+      $no_of_thumbnails = floor($duration / 2);
+    }
+
     $debugline = 'Video '.$this->settings['input']['uri'].': duration = '.$duration.', frames = ';
 
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
-      $seek = floor($duration / ($no_of_thumbnails + 1)) * $i;
+      $seek = ceil($duration / ($no_of_thumbnails + 1) * $i);
       $debugline .= $seek .', ';
       $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
       $thumbnail_path = $schema_thumb_path . '/' . $filename;
