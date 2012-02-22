@@ -2823,7 +2823,7 @@ class PHPVideoToolkit {
 // 			we need to add an extra argument to set the pix format.
     $format = $this->hasCommand('-f');
     if ($format === false) {
-      $extension = strtolower(array_pop(explode('.', $this->_input_file)));
+      $extension = pathinfo($this->_input_file, PATHINFO_EXTENSION);
       if ($extension === 'gif') {
         $this->addCommand('-pix_fmt', 'rgb24');
       }
