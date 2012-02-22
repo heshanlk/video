@@ -72,12 +72,14 @@ class VideoHelper {
   public function thumbnail_object($variables) {
     $field_settings = $variables['field']['settings'];
     $instance_settings = $variables['instance']['settings'];
+    $title = isset($variables['entity']->title) ? $variables['entity']->title : '';
+
     // Build our thumbnail object
     $thumbnail = new stdClass();
     $thumbnail->filepath = '';
     $thumbnail->url = '';
-    $thumbnail->alt = $variables['entity']->title;
-    $thumbnail->title = $variables['entity']->title;
+    $thumbnail->alt = $title;
+    $thumbnail->title = $title;
     $use_default_img = isset($variables['item']['use_default_video_thumb']) ? TRUE : FALSE;
     if ($use_default_img && !empty($field_settings['default_video_thumbnail'])) {
       $default_thumbnail = file_load($field_settings['default_video_thumbnail']['fid']);
