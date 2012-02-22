@@ -206,7 +206,7 @@ function theme_video_flv($variables) {
             'autoBuffering' => $video->autobuffering,
           ),);
       }
-      $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->formatter, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
+      $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->fid, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
       break;
     case 'jwplayer':
       foreach ($video->files as $ext => $file) {
