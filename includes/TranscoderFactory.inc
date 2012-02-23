@@ -232,12 +232,12 @@ abstract class TranscoderAbstractionFactory {
       ->execute()->fetchAllKeyed(0, 0);
     $files = file_load_multiple($fids);
 
-    $video = new stdClass();
+    $videofiles = new stdClass();
     foreach ($files as $file) {
-      $extension = pathinfo($file->filename, PATHINFO_EXTENSION);
-      $video->{$extension} = $file;
+      $extension = drupal_strtolower(pathinfo($file->filename, PATHINFO_EXTENSION));
+      $videofiles->{$extension} = $file;
     }
-    return $video;
+    return $videofiles;
   }
 
   /**

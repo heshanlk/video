@@ -301,6 +301,13 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         }
         break;
     }
+
+    if (isset($formats['ogg']) && !isset($formats['ogv'])) {
+      $formats['ogv'] = $formats['ogg'];
+      unset($formats['ogg']);
+      asort($formats);
+    }
+
     return $formats;
   }
 

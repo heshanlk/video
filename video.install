@@ -332,3 +332,73 @@ function video_update_7204(&$sandbox) {
   }
   return $ret;
 }
+
+/**
+ * Fix problems with Ogg and WebM videos
+ * 
+ * Change videos with file type audio/ogg to video/ogg
+ * Change *.webm videos from application/octet-stream to video/webm
+ * If using FFmpeg, update all presets to use ogv as extension instead of ogg.
+ */
+function video_update_7205(&$sandbox) {
+  $msg = array();
+
+  // Change videos with file type audio/ogg to video/ogg.
+  $result = db_select('video_output', 'o');
+  $result->join('file_managed', 'f', 'f.fid = o.output_fid');
+  $result = $result
+    ->fields('f', array('fid'))
+    ->condition('f.filemime', 'audio/ogg')->execute();
+
+  $cnt = 0;
+  while ($file = $result->fetchObject()) {
+    db_update('file_managed')
+      ->condition('fid', $file->fid)
+      ->fields(array('filemime' => 'video/ogg'))
+      ->execute();
+    $cnt++;
+  }
+
+  if ($cnt > 0) {
+    $msg[] = t('Updated @count files in the file_managed table to have mime type video/ogg instead of audio/ogg', array('@count' => $cnt));
+  }
+
+  // Change *.webm videos with file type application/octet-stream to video/webm.
+  $result = db_select('video_output', 'o');
+  $result->join('file_managed', 'f', 'f.fid = o.output_fid');
+  $result = $result
+    ->fields('f', array('fid'))
+    ->condition('f.filename', '%.webm', 'LIKE')
+    ->condition('f.filemime', 'application/octet-stream')->execute();
+
+  $cnt = 0;
+  while ($file = $result->fetchObject()) {
+    db_update('file_managed')
+      ->condition('fid', $file->fid)
+      ->fields(array('filemime' => 'video/webm'))
+      ->execute();
+    $cnt++;
+  }
+
+  if ($cnt > 0) {
+    $msg[] = t('Updated @count *.webm files in the file_managed table to have mime type video/webm instead of application/octet-stream', array('@count' => $cnt));
+  }
+
+  // If on FFmpeg, update all presets to use ogv as extension instead of ogg.
+  if (variable_get('video_convertor') == 'TranscoderAbstractionFactoryFfmpeg') {
+    $presets = db_select('video_preset', 'p')->fields('p')->execute()->fetchAll();
+    foreach ($presets as $preset) {
+      $settings = unserialize($preset->settings);
+      if ($settings['video_extension'] == 'ogg') {
+        $settings['video_extension'] = 'ogv';
+        db_update('video_preset')
+          ->fields(array('settings' => serialize($settings)))
+          ->condition('pid', $preset->pid);
+
+        $msg[] = t('Updated preset %preset to have file extension ogv instead of ogg.', array('%preset' => $preset->name));
+      }
+    }
+  }
+
+  return implode('<br />', $msg);
+}
