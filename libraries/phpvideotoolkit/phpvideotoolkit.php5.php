@@ -1379,7 +1379,7 @@ class PHPVideoToolkit {
 //<-		   		exits
       }
     }
-    return $this->addCommand('-vcodec', $video_codec);
+    return $this->addCommand('-strict experimental -vcodec', $video_codec);
   }
 
   /**
