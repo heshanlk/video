@@ -227,7 +227,7 @@ function video_convert_process(&$element) {
     $dimensions = $value['data']['dimensions'];
   }
   elseif (!empty($element['data']['dimensions'])) {
-    $dimensions = $element['data']['dimensions'];
+    $dimensions = $element['data']['dimensions']['#default_value'];
   }
 
   if (!empty($value['fid']) && empty($value['data']['bypass_autoconversion'])) {
