@@ -1,13 +1,13 @@
-<?php 
-/*
+<?php
+/**
  * @file
  * Theme file to handle director output.
- * 
+ *
  * Variables passed.
  * $video is the video object.
  * $node is the node object.
  */
-?> 
+?>
 <object classid="clsid:166B1BCA-3F9C-11CF-8075-444553540000" type="application/x-director" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>" codebase="http://download.macromedia.com/pub/shockwave/cabs/director/sw.cab#version=10,0,0,0">
   <param name="src" value="<?php print file_create_url($video->files->{$video->player}->uri); ?>" />
   <object class="video-object" type="application/x-director" data="<?php print file_create_url($video->files->{$video->player}->uri); ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>" mode="zero">

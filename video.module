@@ -1,6 +1,6 @@
 <?php
 /**
- * @file video.module
+ * @file
  * All module hooks implementation can be found in this file.
  */
 
@@ -21,17 +21,16 @@ module_load_include('inc', 'video', 'video.field');
 module_load_include('inc', 'video', 'video.features');
 module_load_include('inc', 'video', 'video.filters');
 
-/*
- * Implementation of hook_init().
+/**
+ * Implements hook_init().
  */
-
 function video_init() {
   drupal_add_css(drupal_get_path('module', 'video') . '/css/video.css');
   drupal_add_js(drupal_get_path('module', 'video') . '/js/video.js');
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function video_menu() {
   $items = array();
@@ -55,7 +54,7 @@ function video_menu() {
 }
 
 /**
- * Implementation of hook_permission().
+ * Implements hook_permission().
  */
 function video_permission() {
   $perms = array(
@@ -92,7 +91,7 @@ function video_permission() {
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function video_theme() {
   $theme = array();
@@ -186,7 +185,7 @@ function video_queue_process($video) {
 }
 
 /**
- * Implementation of hook_file_delete().
+ * Implements hook_file_delete().
  */
 function video_file_delete($file) {
   db_delete('video_queue')
@@ -195,12 +194,12 @@ function video_file_delete($file) {
 }
 
 /**
- * Implementation of hook_features_api()
+ * Implements hook_features_api().
  */
 function video_features_api() {
   return array(
     'video' => array(
-      'name' => t('Video Presets'),
+      'name' => t('Video presets'),
       'default_hook' => 'video_default_presets',
       'file' => drupal_get_path('module', 'video') . '/video.features.inc',
     ),
@@ -208,7 +207,7 @@ function video_features_api() {
 }
 
 /**
- * Implementation of hook_views_api().
+ * Implements hook_views_api().
  */
 function video_views_api() {
   return array(
@@ -218,7 +217,7 @@ function video_views_api() {
 }
 
 /**
- * Implementation of hook_views_handlers().
+ * Implements hook_views_handlers().
  */
 function video_views_handlers() {
   return array(

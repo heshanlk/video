@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Default theme implementation to display a single Drupal page.
@@ -66,8 +65,9 @@
  * @see template_process()
  */
 ?>
-
-<div id="video-browser-page-wrapper"><div id="video-browser-page">
-  <?php if (isset($messages)) { print $messages; } ?>
-  <?php print render($page['content']); ?>
-</div></div> <!-- /#page, /#page-wrapper -->
+<div id="video-browser-page-wrapper">
+  <div id="video-browser-page">
+<?php if (isset($messages)) print $messages; ?>
+<?php print render($page['content']); ?>
+  </div>
+</div>

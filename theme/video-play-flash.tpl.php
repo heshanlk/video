@@ -1,14 +1,13 @@
-<?php 
-/*
+<?php
+/**
  * @file
  * Theme file to handle flash output.
- * 
+ *
  * Variables passed.
  * $video is the video object.
  * $node is the node object.
- * 
  */
-?> 
+?>
 <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
   <param name="movie" value="<?php print file_create_url($video->files->{$video->player}->uri); ?>" />
   <param name="autoplay" value="<?php print $video->autoplay; ?>" />
