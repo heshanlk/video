@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Contains code to support the Features module.
+ */
 
 // include the preset file
 module_load_include('inc', 'video', 'modules/video_ui/video.preset');

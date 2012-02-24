@@ -1,9 +1,7 @@
 <?php
-
-/*
+/**
  * @file
  * Class file used to store metadata on the video.
- *
  */
 
 class flvtool2 implements metadata_interface {
@@ -21,7 +19,6 @@ class flvtool2 implements metadata_interface {
 
   /**
    * Interface Implementations
-   * @see sites/all/modules/video/includes/metadata_interface#get_name()
    */
   public function getName() {
     return $this->name;
@@ -29,10 +26,9 @@ class flvtool2 implements metadata_interface {
 
   /**
    * Interface Implementations
-   * @see sites/all/modules/video/includes/metadata_interface#get_help()
    */
   public function getHelp() {
-    return t('!flvtools calculates metadata and inserts an onMetaData tag in the video. It cuts FLV files and adds cue Points (onCuePoint). A debug command shows the inside of a FLV file and the print command gives meta data information in XML or YAML format.', array('!flvtools' => l(t('FlvTools2 '), 'http://github.com/unnu/flvtool2')));
+    return t('!flvtools calculates metadata and inserts an onMetaData tag in the video. It cuts FLV files and adds cue Points (onCuePoint). A debug command shows the inside of a FLV file and the print command gives meta data information in XML or YAML format.', array('!flvtools' => l(t('FLVtool2'), 'http://github.com/unnu/flvtool2')));
   }
 
   public function runCommand($options) {
@@ -58,7 +54,7 @@ class flvtool2 implements metadata_interface {
     );
     $form['video_metadata_path'] = array(
       '#type' => 'textfield',
-      '#title' => t('Path to FLVTool2'),
+      '#title' => t('Path to FLVtool2'),
       '#description' => t('Executable path to flvtool2.'),
       '#default_value' => variable_get('video_metadata_path', $this->meta_command_path),
     );
@@ -70,9 +66,5 @@ class flvtool2 implements metadata_interface {
   }
 
   public function adminSettingsValidate($form, &$form_state) {
-    return;
   }
-
 }
-
-?>

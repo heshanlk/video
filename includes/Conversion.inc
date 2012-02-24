@@ -1,15 +1,11 @@
 <?php
-
-/*
+/**
  * @file
- * Class file to handle video conversion using ffmpeg and webservices.
- *
+ * Class file to handle video conversion using FFmpeg and webservices.
  */
 
 class Conversion {
-
   public function __construct() {
-    
   }
 
   /**
@@ -20,7 +16,7 @@ class Conversion {
       foreach ($videos as $video) {
         $this->process($video);
       }
-      //clear cache once completed the conversion to update the file paths
+      // clear cache once completed the conversion to update the file paths
       cache_clear_all();
     }
   }
@@ -112,7 +108,4 @@ class Conversion {
     $transcoder->setInput((array) file_load($fid));
     return $transcoder->loadJob();
   }
-
 }
-
-?>

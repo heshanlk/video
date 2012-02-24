@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Video filter embedded code to add video as filter and using WYSIWYG
@@ -48,8 +47,6 @@ function video_filter($text) {
 
 /**
  * Create markup from tokens
- * @param type $match
- * @return type 
  */
 function video_token_to_markup($match) {
   $match = str_replace("[", "", $match);

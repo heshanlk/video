@@ -1,13 +1,10 @@
 <?php
-
-/*
+/**
  * @file
  * Class file used to create our video and thumbnail objects.
- *
  */
 
 class VideoHelper {
-
   public function video_object($variables) {
     $cid = 'video:video:' . md5($variables['item']['fid']);
     $cache = cache_get($cid);
@@ -15,10 +12,10 @@ class VideoHelper {
       return $cache->data;
     }
     else {
-      //@todo cache the video object
+      // @todo cache the video object
       $field_settings = $variables['field']['settings'];
       $instance_settings = $variables['instance']['settings'];
-      //setup our width x height
+      // Setup our width x height
       $player_dimensions = explode("x", $variables['player_dimensions']);
       // Build our video object for all types.
       $video = new stdClass();
@@ -54,7 +51,7 @@ class VideoHelper {
         }
         // add player to the video object
         if (!empty($video->files)) {
-          //get the preset and check for output file type to set as player
+          // get the preset and check for output file type to set as player
           $video_preset = new Preset();
           $presets = $video_preset->properties();
           foreach ($presets as $preset) {

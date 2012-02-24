@@ -1,19 +1,18 @@
 <?php
-
-/*
+/**
  * @file
  * Class file used to wrap the transcoder helper functions.
- * 
  */
 
 class Transcoder {
-
   /**
    * Extract frames from the video file. This helper function will intract with
    * only the database and it will save all the thumbnail file reference in to
    * the database.
-   * @param type $video
-   * @return type 
+   *
+   * @param $video
+   * @return
+   *   array of file objects, or false on failure
    */
   public function extractFrames($video) {
     // Save thiumnails to the vide_thumbnails table
@@ -72,9 +71,10 @@ class Transcoder {
    * This helper function will help to execute video conversion job by loading
    * job from the database and once it completed saving its data in to the
    * database.
-   * @global type $user
-   * @param type $video
-   * @return type 
+   *
+   * @param $video
+   * @return
+   *   array of converted file objects
    */
   public function executeConvertion($video) {
     global $user;
@@ -88,7 +88,7 @@ class Transcoder {
     $presets = $video_preset->properties();
     // if no presets enabled then write an error log
     if (empty($presets)) {
-      watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l('enable or create new preset', 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
+      watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l(t('enable or create new preset'), 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
       return FALSE;
     }
     $factory = new TranscoderAbstractionAbstractFactory();
@@ -99,7 +99,7 @@ class Transcoder {
       $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
       // set transcoder options
       $transcoder->setOptions($preset['settings']);
-      //set up output path
+      // set up output path
       $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
       if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
         watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $output_directory, array(), WATCHDOG_ERROR);
@@ -150,7 +150,6 @@ class Transcoder {
 
   /**
    * This helper function clean the database records if exist for current job.
-   * @param type $vid 
    */
   protected function cleanConverted($vid) {
     // @todo : if this impact on performance then think about other way
@@ -177,10 +176,9 @@ class Transcoder {
   /**
    * Get admin settings forms from the transcoder classes and construct the admin
    * form will do here.
-   * @return type 
    */
   public function adminSettings() {
-    //@todo use Drupal Form API status facility for this
+    // @todo use Drupal Form API status facility for this
     $form = array();
     $options = $this->_transcoders();
     $form['video_convertor'] = array(
@@ -199,7 +197,6 @@ class Transcoder {
   /**
    * Get all transcoders implemented to work with video  module and get its 
    * values and names to display in admin settings form.
-   * @return type 
    */
   private function _transcoders() {
     // @TODO : think to change this to observer patteren
@@ -232,14 +229,11 @@ class Transcoder {
   /**
    * Change the status of the job, this will effect in database and use when 
    * represent a job data.
-   * @param type $vid
-   * @param type $status 
    */
   public function changeStatus($vid, $status) {
-    db_update('video_queue')->fields(array(
-          'status' => $status,))
-        ->condition('vid', $vid, '=')
-        ->execute();
+    db_update('video_queue')
+      ->fields(array('status' => $status))
+      ->condition('vid', $vid)
+      ->execute();
   }
-
 }

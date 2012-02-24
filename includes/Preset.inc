@@ -1,16 +1,13 @@
 <?php
-
-/*
+/**
  * @file
  * Class file used to store video presets on the video.
- *
  */
 
 class Preset {
-
   private $preset;
 
-  public function __construct($preset = null) {
+  public function __construct($preset = NULL) {
     $this->preset = $preset;
     if (!isset($preset))
       $this->preset = variable_get('video_preset', array('FLV'));

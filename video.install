@@ -1,10 +1,8 @@
 <?php
-
 /**
  * @file
  * Provides installation schema for video.module
  * @author Heshan Wanigasooriya <heshan@heidisoft.com>
- * 
  */
 
 /**
@@ -158,13 +156,13 @@ function video_schema() {
     'description' => 'Track file id for converted files.',
     'fields' => array(
       'vid' => array(
-        'description' => 'Video ID.',
+        'description' => 'Video identifier.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'original_fid' => array(
-        'description' => 'Original File ID.',
+        'description' => 'Original file identifier.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -256,7 +254,7 @@ function video_requirements($phase) {
     }
     else {
       $requirements['video']['value'] = t('Not found');
-      $requirements['video']['description'] = t('Missing the transcoder library. Please <a href="!url">install FFmpeg</a> in to your server if you intend to transcode or to auto create thumbnails.', array('!url' => url('http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts')));
+      $requirements['video']['description'] = t('Missing the transcoder library. Please <a href="@url">install FFmpeg</a> in to your server if you intend to transcode or to auto create thumbnails.', array('@url' => url('http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts')));
       $requirements['video']['severity'] = REQUIREMENT_WARNING;
     }
   }
@@ -309,8 +307,7 @@ function video_update_7203(&$sandbox) {
 }
 
 /**
- * Alter video_queue table to rename nid to entity_id and 
- * added entity_type column.
+ * Alter video_queue table to rename nid to entity_id and add entity_type.
  */
 function video_update_7204(&$sandbox) {
   $ret = array();

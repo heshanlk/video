@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Provides the administration settings for the Video Drupal module.
@@ -7,7 +6,6 @@
 
 /**
  * Video transcoder admin settings
- * @return <type>
  */
 function video_transcoder_admin_settings() {
   $transcoder = new Transcoder;
@@ -33,7 +31,6 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
 
 /**
  * Video preset admin settings
- * @return <type>
  */
 function video_preset_admin_settings() {
   $preset = new Preset();
@@ -43,7 +40,6 @@ function video_preset_admin_settings() {
 
 /**
  * Video general admin settings
- * @return <type>
  */
 function video_general_admin_settings() {
   $form = array();
@@ -81,7 +77,7 @@ function video_general_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Publish when conversion complete'),
     '#default_value' => variable_get('video_publish_on_complete', FALSE),
-    '#description' => t('This feature is now fully controlled by !rules module. Download the module and configure rules to take effect when video conversions have completed or failed.', array('!rules' => l('Rules', 'http://drupal.org/project/rules'))),
+    '#description' => t('This feature is now fully controlled by !rules module. Download the module and configure rules to take effect when video conversions have completed or failed.', array('!rules' => l(t('Rules'), 'http://drupal.org/project/rules'))),
     '#disabled' => TRUE
   );
   return system_settings_form($form);
@@ -89,16 +85,15 @@ function video_general_admin_settings() {
 
 /**
  * Video player admin settings
- * @return <type>
  */
 function video_players_admin_settings() {
   $form = array();
   $form['extensions'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Video Extensions'),
+    '#title' => t('Video extensions'),
     '#description' => t('Here you can map specific players to each video extension type.'),
   );
-  //lets get all our supported extensions and players.
+  // lets get all our supported extensions and players.
   $extensions = video_video_extensions();
   $players = video_video_players();
   $flv_players = video_video_flv_players();
@@ -117,7 +112,7 @@ function video_players_admin_settings() {
     if (!empty($flv_players)) {
       $form['extensions']['video_extension_' . $ext . '_flash_player'] = array(
         '#type' => 'radios',
-        '#title' => t('Flash Player for') . ' ' . $ext,
+        '#title' => t('Flash player for @extension', array('@extension' => $ext)),
         '#options' => $flv_players,
         '#default_value' => variable_get('video_extension_' . $ext . '_flash_player', ''),
         '#prefix' => '<div class="admin_flv_player_wrapper" id="flv_player_' . $ext . '">',
@@ -136,7 +131,7 @@ function video_players_admin_settings() {
     if (!empty($html5_players)) {
       $form['extensions']['video_extension_' . $ext . '_html5_player'] = array(
         '#type' => 'radios',
-        '#title' => t('HTML5 Player for') . ' ' . $ext,
+        '#title' => t('HTML5 player for @extension', array('@extension' => $ext)),
         '#options' => $html5_players,
         '#markup' => t('Additional HTML5 players module.<br />You can install !videojs.', array('!videojs' => l(t('Video.js'), 'http://drupal.org/project/videojs'))),
         '#default_value' => variable_get('video_extension_' . $ext . '_html5_player', ''),
@@ -150,7 +145,6 @@ function video_players_admin_settings() {
 
 /**
  * Video Metadata admin settings
- * @return <type>
  */
 function video_metadata_admin_settings() {
   $metadata = new Metadata;
@@ -167,7 +161,6 @@ function video_metadata_admin_settings_validate($form, &$form_state) {
 
 /**
  * Video cron admin settings
- * @return <type>
  */
 function video_cron_admin_settings() {
   $form = array();

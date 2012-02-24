@@ -1,10 +1,18 @@
 <?php
+/**
+* @file
+* File containing class TranscoderAbstractionFactoryFfmpeg
+*/
+
+/**
+ * Class that handles FFmpeg transcoding.
+ */
 class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
   const INFO_CID = 'video:transcoder:ffmpeg';
   const INFO_CACHE = 'cache';
 
   /**
-   *@var PHPVideoToolkit
+   * @var PHPVideoToolkit
    */
   protected $transcoder = NULL;
 
@@ -19,11 +27,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     parent::setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE);
     $result = $this->transcoder->setInputFile(drupal_realpath($this->settings['input']['uri']));
     if ($result !== PHPVideoToolkit::RESULT_OK) {
-      //if there was an error then get it
-      $error_msg = $this->transcoder->getLastError();
-      watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+      watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
+      $this->errors['input'] = $this->transcoder->getLastError();
       $this->transcoder->reset();
-      $this->errors['input'] = $error_msg;
       return FALSE;
     }
   }
@@ -93,11 +99,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           break;
       }
       if ($result !== PHPVideoToolkit::RESULT_OK) {
-        //if there was an error then get it
-        $error_msg = $this->transcoder->getLastError();
-        watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+        watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
+        $this->errors['options'] = $this->transcoder->getLastError();
         $this->transcoder->reset(true);
-        $this->errors['options'] = $error_msg;
         return FALSE;
       }
     }
@@ -107,11 +111,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     parent::setOutput($output_directory, $output_name, $overwrite_mode);
     $result = $this->transcoder->setOutput(drupal_realpath($output_directory) . '/', $output_name);
     if ($result !== PHPVideoToolkit::RESULT_OK) {
-      //if there was an error then get it
-      $error_msg = $this->transcoder->getLastError();
-      watchdog('transcoder', t('Error set options !message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+      watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
+      $this->errors['output'] = $this->transcoder->getLastError();
       $this->transcoder->reset(true);
-      $this->errors['output'] = $error_msg;
       return FALSE;
     }
   }
@@ -134,15 +136,15 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       $no_of_thumbnails = floor($duration / 2);
     }
 
-    $debugline = 'Video '.$this->settings['input']['uri'].': duration = '.$duration.', frames = ';
+    $debugline = 'Video ' . $this->settings['input']['uri'] . ': duration = ' . $duration . ', frames = ';
 
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
       $seek = ceil($duration / ($no_of_thumbnails + 1) * $i);
-      $debugline .= $seek .', ';
+      $debugline .= $seek . ', ';
       $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
       $thumbnail_path = $schema_thumb_path . '/' . $filename;
       $thumbnail_real_path = drupal_realpath($thumbnail_path);
-      //skip files already exists, this will save ffmpeg traffic
+      // Skip files already exists, this will save ffmpeg traffic
       if (!is_file($thumbnail_real_path)) {
         // if FFmpeg-php library installed use it
         if (class_exists('ffmpeg_movie')) {
@@ -166,18 +168,15 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
           $result = $this->transcoder->setOutput(drupal_realpath($schema_thumb_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
           if (!$result) {
-            //if there was an error then get it 
-            $error_msg = t($this->transcoder->getLastError());
-            watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+            // If there was an error then get it
+            watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
             $this->transcoder->reset(true);
             continue;
           }
           // @todo think about how to move execute() method to parent class
           $result = $this->transcoder->execute(FALSE, TRUE);
           if ($result !== PHPVideoToolkit::RESULT_OK) {
-            //if there was an error then get it
-            $error_msg = t($this->transcoder->getLastError());
-            watchdog('transcoder', $error_msg, array(), WATCHDOG_ERROR);
+            watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
             $this->transcoder->reset(true);
             continue;
           }
@@ -209,15 +208,13 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     // execute command
     $result = $this->transcoder->execute(FALSE, TRUE);
     if ($result !== PHPVideoToolkit::RESULT_OK) {
-      //if there was an error then get it 
-      $error_msg = $this->transcoder->getLastError();
-      watchdog('transcoder', t('!message'), array('!message' => $error_msg), WATCHDOG_ERROR);
+      watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
+      $this->errors['execute'] = $this->transcoder->getLastError();
       $this->transcoder->reset(true);
-      $this->errors['execute'] = $error_msg;
       return FALSE;
     }
     $command_output = $this->transcoder->getLastOutput();
-    //lets check to make sure our file exists, if not error out
+    // Lets check to make sure our file exists, if not error out
     $output_file = $this->settings['base_url'] . '/' . $this->settings['filename'];
     if (!file_exists(drupal_realpath($output_file)) || !filesize(drupal_realpath($output_file))) {
       watchdog('transcoder', 'Video conversion has been failed!. FFmpeg reported the following output: !output', array('!output' => $command_output), WATCHDOG_ERROR);
@@ -241,7 +238,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function getFileInfo() {
-    //@todo Add to cache
+    // @todo Add to cache
     $file = $this->settings['input']['uri'];
     $cid = 'video:file:' . md5($file);
     $cache = cache_get($cid);
@@ -274,29 +271,29 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     return $codecs;
   }
 
-  public function getAvailableFormats($type = false) {
+  public function getAvailableFormats($type = FALSE) {
     $info = $this->getCachedFFmpegInfo();
     $formats = array();
     switch ($type) {
-      case false :
+      case FALSE:
         return array_keys($info['formats']);
       case 'both' :
         foreach ($info['formats'] as $id => $data) {
-          if ($data['mux'] === true && $data['demux'] === true) {
+          if ($data['mux'] === TRUE && $data['demux'] === TRUE) {
             $formats[$id] = $data['fullname'];
           }
         }
         break;
       case 'muxing' :
         foreach ($info['formats'] as $id => $data) {
-          if ($data['mux'] === true) {
+          if ($data['mux'] === TRUE) {
             $formats[$id] = $data['fullname'];
           }
         }
         break;
       case 'demuxing' :
         foreach ($info['formats'] as $id => $data) {
-          if ($data['demux'] === true) {
+          if ($data['demux'] === TRUE) {
             $formats[$id] = $data['fullname'];
           }
         }
@@ -394,8 +391,8 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
       }
       else {
-        drupal_set_message(t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
-        form_set_error('video_ffmpeg_path', t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l('documentation', 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+        drupal_set_message(t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
+        form_set_error('video_ffmpeg_path', t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
 
       // Clear FFmpeg information when the path has changed.
@@ -441,13 +438,13 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     // Git check outs
     $pattern = '/ffmpeg version N-\d+-g([a-f0-9]+)/';
     if (preg_match($pattern, $output, $matches)) {
-      return 'git: '. $matches[1];
+      return 'git: ' . $matches[1];
     }
 
     // Git check outs
     $pattern = '/ffmpeg version git-(\d{4}-\d{2}-\d{2}-[a-f0-9]+)/';
     if (preg_match($pattern, $output, $matches)) {
-      return 'git: '. $matches[1];
+      return 'git: ' . $matches[1];
     }
 
     // Release
@@ -460,7 +457,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $pattern = '/ffmpeg version ([^\n]+)/i';
     if (preg_match($pattern, $output, $matches)) {
       $version = $matches[1];
-      if(($pos = strpos($version, ' Copyright')) !== FALSE) {
+      if (($pos = strpos($version, ' Copyright')) !== FALSE) {
         $version = substr($version, 0, $pos);
       }
       return t('unrecognized: !version', array('!version' => $version));

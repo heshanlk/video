@@ -1,7 +1,13 @@
 <?php
+/**
+ * @file
+ * File containing class TranscoderAbstractionFactoryZencoder
+ */
 
+/**
+ * Class that handles Zencoder transcoding.
+ */
 class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
-
   protected $options = array();
 
   public function __construct() {
@@ -10,12 +16,13 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $this->options['api_key'] = variable_get('video_zencoder_api_key', NULL);
   }
 
-  public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
+  public function setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE) {
     parent::setInput($file, $input_frame_rate, $validate_decode_codecs);
     $this->options['input'] = file_create_url($this->settings['input']['uri']);
-    //http://heidisoft.drupal.video.s3.amazonaws.com/sites/demo.heidisoft.com/files/videos/converted/ecstasypromo.mp4
-    if (variable_get('video_zencoder_testing_mode', FALSE))
+    // http://heidisoft.drupal.video.s3.amazonaws.com/sites/demo.heidisoft.com/files/videos/converted/ecstasypromo.mp4
+    if (variable_get('video_zencoder_testing_mode', FALSE)) {
       $this->options['input'] = variable_get('video_zencoder_test_file_path', 'http://example.com/video.mp4');
+    }
   }
 
   public function setOptions($options = NULL) {
@@ -87,7 +94,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     for ($i = 0; $i < $no_of_thumbnails; $i++) {
       $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
-      //skip files already exists, this will save ffmpeg traffic
+      // Skip files already exists, this will save ffmpeg traffic
       if (!file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
         // Download generated thumbnails from S3 if amasons3 module exists.
         if (module_exists('amazons3') && file_uri_scheme(variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]')) == 's3') {
@@ -100,7 +107,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
             $s3_get_object = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . '/' . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path . '/' . $filename)));
             if (variable_get('video_zencoder_testing_mode', FALSE))
             // change the job status
-              db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE,))->condition('fid', $this->settings['input']['fid'], '=')->execute();
+              db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE))->condition('fid', $this->settings['input']['fid'])->execute();
           }
           if (!file_exists(drupal_realpath($schema_thumb_path . '/' . $filename)) && $s3_get_object) {
             $error_param = array('%file' => $schema_thumb_path, '%out' => $s3_get_object);
@@ -185,18 +192,18 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       '#type' => 'markup',
       '#markup' => '<div id="' . $this->getValue() . '">',
     );
-    $zencoder_api = variable_get('video_zencoder_api_key', null);
+    $zencoder_api = variable_get('video_zencoder_api_key', NULL);
     if (!isset($zencoder_api) && empty($zencoder_api)) {
       $form['zencoder_user'] = array(
         '#type' => 'fieldset',
-        '#title' => $t('Zencoder User'),
+        '#title' => $t('Zencoder user'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
         '#description' => $t('Add your email address, password and <em>save configurations</em> 
           to creare your Zencoder account. It will help you to transcode and manage your videos 
           using Zencode website. Once you save your configurations then this will automatically 
           create an account on the Zencoder.com and password and all ther other relevent details 
-          will be emailled to you.', array('!link' => l($t('Zencoder.com'), 'http://zencoder.com')))
+          will be emailed to you.', array('!link' => l($t('Zencoder.com'), 'http://zencoder.com')))
       );
       $form['zencoder_user']['zencoder_username'] = array(
         '#type' => 'textfield',
@@ -228,7 +235,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       );
       $form['zencoder_info']['video_zencoder_api_key'] = array(
         '#type' => 'textfield',
-        '#title' => t('Zencoder API Key'),
+        '#title' => t('Zencoder API key'),
         '#default_value' => variable_get('video_zencoder_api_key', NULL),
         '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add new account.')
       );
@@ -266,7 +273,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           <code><b>It should display </b><br/>converted<br/>original<br/>thumbnails</code><br/>
           <code>5. chown -R USERNAME:USERNAME videos/</code>
           <br/><br/>Example URL patterns: <code>s3://my-output-bucket, cf://username:api_key@container/, 
-          ftp://user:password@ftp.example.com</code>', array('!more' => l('More info', 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
+          ftp://user:password@ftp.example.com</code>', array('!more' => l(t('More info'), 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
         '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
       );
       $form['zencoder_info']['video_zencoder_use_full_path'] = array(
@@ -319,22 +326,21 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     // get the API key from zencoder and save it to variable
     if (!form_get_errors()) {
-      $user = new stdClass;
-      $user->email = $form_state['values']['zencoder_username'];
-//      $user->password = $form_state['values']['zencoder_password'];
-      $result = $this->createUser($user);
-      if ($result !== TRUE)
+      $mail = $form_state['values']['zencoder_username'];
+      $result = $this->createUser($mail);
+      if ($result !== TRUE) {
         form_set_error('zencoder_username', $result);
+      }
     }
   }
 
-  protected function createUser($user) {
+  protected function createUser($mail) {
     $request = new ZencoderRequest(
             'https://app.zencoder.com/api/account',
             FALSE, // API key isn't needed for new account creation
             array(
               "terms_of_service" => "1",
-              "email" => $user->email,
+              "email" => $mail,
 //              "password" => $user->password,
               "affiliate_code" => "drupal-video"
             )
@@ -342,7 +348,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if ($request->successful) {
       $results = $request->results;
       variable_set('video_zencoder_api_key', $results['api_key']);
-      drupal_set_message(t('Your Zencoder Details are as below.<br/><b>API Key</b> : !api_key<br/> <b>Password</b> : !password<br/> You can now login to !zencoder website and track your transcoding jobs online. Make sure you <b>save user/pass combination somewhere</b> before proceed.', array('!api_key' => $results['api_key'], '!password' => $results['password'], '!zencoder' => l('Zencoder', 'http://zencoder.com'))), 'status');
+      drupal_set_message(t('Your Zencoder Details are as below.<br/><b>API Key</b> : @api_key<br/> <b>Password</b> : @password<br/> You can now login to !zencoder website and track your transcoding jobs online. Make sure you <b>save user/pass combination somewhere</b> before proceed.', array('@api_key' => $results['api_key'], '@password' => $results['password'], '!zencoder' => l(t('Zencoder'), 'http://zencoder.com'))), 'status');
       return TRUE;
     }
     else {
@@ -362,7 +368,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if (!$video_output->vid)
       return;
     // get JSON post data
-    watchdog('transcoder', t('Zencoder : Postback received from the Zencoder Transcoding servers for vid: !vid.', array('!vid' => $video_output->vid)));
+    watchdog('transcoder', 'Zencoder : Postback received from the Zencoder Transcoding servers for vid: @vid.', array('@vid' => $video_output->vid));
 
     if ($notification->output->state == "finished") {
       if ($notification->job->state == "finished") {
@@ -378,7 +384,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
         else {
           foreach ($request->errors as $error) {
-            watchdog('transcoder', t('Zencoder reports errors !errors.', array('!errors' => $error)), NULL, WATCHDOG_ERROR);
+            watchdog('transcoder', 'Zencoder reports errors !errors.', array('!errors' => $error), WATCHDOG_ERROR);
           }
         }
         // change the job status
@@ -387,7 +393,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         // Replace thumbnail
         $video_queue = db_query("SELECT entity_id, entity_type FROM {video_queue} WHERE vid = :vid", array(':vid' => $video_output->vid))->fetch();
         $entity = reset(entity_load($video_queue->entity_type, array($video_queue->entity_id)));
-        //get field name
+        // Get field name
         $field_name = NULL;
         $bundle = (isset($entity->type) && !empty($entity->type)) ? $entity->type : $entity->node_type;
         foreach (field_info_instances($video_queue->entity_type, $bundle) as $key => $field) {
@@ -430,7 +436,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
     else {
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('vid', $video_output->vid, '=')->execute();
-      watchdog('transcoder', t('Zencoder reports errors !errors.', array('!errors' => $notification->output->error_message)), NULL, WATCHDOG_ERROR);
+      watchdog('transcoder', 'Zencoder reports errors !errors.', array('!errors' => $notification->output->error_message), WATCHDOG_ERROR);
       echo "Fail!\n";
     }
   }

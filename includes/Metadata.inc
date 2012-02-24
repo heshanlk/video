@@ -1,17 +1,14 @@
 <?php
-
-/*
+/**
  * @file
  * Class file used to store metadata on the video.
- * 
  */
 
 class Metadata {
-
   private $metadata;
 
-  public function __construct($metadata = null) {
-    //get our configured transcoder.
+  public function __construct($metadata = NULL) {
+    // get our configured transcoder.
     if (!isset($metadata))
       $metadata = variable_get('video_metadata', 'flvtool2');
     if (!module_load_include('inc', 'video', '/metadata/' . $metadata)) {
@@ -26,7 +23,6 @@ class Metadata {
               require_once $file->filename;
           }
         }
-//
       }
     }
     if (class_exists($metadata)) {

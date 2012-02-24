@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Theme related functions for the Video module.
+ */
 
 /**
  * Returns HTML for an video field widget.
@@ -31,11 +35,13 @@ function theme_video_widget($variables) {
   return $output;
 }
 
-/*
- * Default video cck formatter.  Makes sure the video being displayed exists, has been converted (if in que).
- * If not or the video is processed, then it will get the default player for the specific video type for output.
+/**
+ * Default video cck formatter.
+ *
+ * Makes sure the video being displayed exists, has been converted (if in 
+ * queue). If not or the video is processed, then it will get the default
+ * player for the specific video type for output.
  */
-
 function theme_video_formatter_player($variables) {
   $themed_output = '';
   if (empty($variables['item']['fid']))
@@ -51,7 +57,7 @@ function theme_video_formatter_player($variables) {
       if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
         return theme('video_inprogress');
       }
-      else if ($video->video_status == VIDEO_RENDERING_FAILED) {
+      elseif ($video->video_status == VIDEO_RENDERING_FAILED) {
         return theme('video_conversion_failed');
       }
     }
@@ -93,7 +99,7 @@ function theme_video_formatter_thumbnail($variables) {
   if (empty($variables['item']['fid']))
     return '<!-- File not found: ' . $variables['item']['fid'] . ' -->';
 
-//setup our thumbnail object
+// setup our thumbnail object
   module_load_include('inc', 'video', '/includes/VideoHelper');
   $video_helper = new VideoHelper;
 // @TODO : change the object to an array
@@ -193,18 +199,24 @@ function theme_video_flv($variables) {
       // kjh: use a playlist to display the thumbnail if not auto playing
       if (isset($video->autoplay) && !empty($video->thumbnail->url)) {
         $options = array(
-          'playlist' => array($video->thumbnail->url,
-            array('url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
+          'playlist' => array(
+            $video->thumbnail->url,
+            array(
+              'url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
               'autoPlay' => $video->autoplay,
               'autoBuffering' => $video->autobuffering,
-            ),),);
+            ),
+          ),
+        );
       }
       else {
         $options = array(
-          'clip' => array('url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
+          'clip' => array(
+            'url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
             'autoPlay' => $video->autoplay,
             'autoBuffering' => $video->autobuffering,
-          ),);
+          ),
+        );
       }
       $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->fid, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
       break;

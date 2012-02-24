@@ -1,16 +1,12 @@
 <?php
-
 /**
  * @file video.common.inc
  * This file will be used to keep all utility functions data structures.
- * 
- * @author Heshan <heshan@heidisoft.com>
- * 
- */
-/*
- * Utility function that will add a preview of thumbnails for you to select when uploading videos.
  */
 
+/**
+ * Adds a preview of thumbnails for you to select when uploading videos.
+ */
 function video_thumb_process(&$element, &$form_state) {
   // Developed for ffmpeg support
   $file = $element['#value'];
@@ -59,7 +55,7 @@ function video_thumb_process(&$element, &$form_state) {
 //        '#element_validate' => array('video_thumbnail_validate'),
         '#type' => 'managed_file',
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
-        '#default_value' => !empty($file['thumbnail']['fid']) && is_integer($file['thumbnail']['fid']) ? $file['thumbnail']['fid'] : NULL,
+        '#default_value' => !empty($file['thumbnail']['fid']) && is_int($file['thumbnail']['fid']) ? $file['thumbnail']['fid'] : NULL,
         '#upload_location' => $scheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file['fid'],
 //        '#required' => TRUE
       );
@@ -97,7 +93,6 @@ function video_thumb_process(&$element, &$form_state) {
 
 /**
  * Process elements loads on settings
- * @param <type> $element
  */
 function video_widget_element_settings(&$element, &$form_state) {
   $file = $element['#value'];
@@ -109,7 +104,7 @@ function video_widget_element_settings(&$element, &$form_state) {
   // Check if using the default width and replace tokens.
   $default_dimensions = user_access('override player dimensions');
   $description = t('Set your video dimensions.  This will create your player with these dimensions.');
-  //setup our default dimensions.
+  // Setup our default dimensions.
   $dimensions = $settings['default_dimensions'];
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()));
@@ -124,8 +119,8 @@ function video_widget_element_settings(&$element, &$form_state) {
       if you choose dimensions that do not match your ratio, we will pad your
       video by adding black bars on either the top or bottom while maintaining
       your videos original aspect ratio.', array('!size' => $video_info['width'] . 'x' . $video_info['height']));
-    //setup our default display of dimensions.
-    //lets go through our options looking for a matching resolution
+    // setup our default display of dimensions.
+    // lets go through our options looking for a matching resolution
     foreach ($options as $key => $value) {
       if (stristr($value, t('(Matches Resolution)')) == TRUE) {
         $dimensions = $key;
@@ -233,37 +228,36 @@ function video_web_extensions($ext) {
   $extensions = array_filter(explode(' ', $ext));
   $web_extensions = array(
     'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', 'm4v', // quicktime
-    'divx', 'mkv', //divx
+    'divx', 'mkv', // divx
     'rm', // realplayer
-    'flv', 'f4v', //flash player
+    'flv', 'f4v', // flash player
     'swf', // swf player
     'dir', 'dcr', // dcr player
     'asf', 'wmv', 'avi', 'mpg', 'mpeg', // windows media
     'ogg', 'ogv', 'webm' // ogg/ogv theora
   );
-  if (count(array_diff($extensions, $web_extensions))) {
-    return FALSE;
-  }
-  return TRUE;
+
+  return count(array_diff($extensions, $web_extensions)) == 0;
 }
 
-/*
- * Function updates our options list to show matching aspect ratios and if we have a matching resolution.
- * 
- * We will update the options array by reference and return the aspect ratio of the file.
+/**
+ * Updates our option list to show matching aspect ratios matching resolutions
+ *
+ * We will update the options array by reference and return the aspect ratio
+ * of the file.
  */
 
 function _video_dimensions_options(&$options, $video) {
   $aspect_ratio = _video_aspect_ratio($video);
-  //loop through our options and find matching ratio's and also the exact width/height
+  // loop through our options and find matching ratio's and also the exact width/height
   foreach ($options as $key => $value) {
     $wxh = explode('x', $value);
-    //lets check our width and height first
+    // lets check our width and height first
     if ($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
       $options[$key] = $value . ' ' . t('(Matches Resolution)');
     }
     else {
-      //now lets check our ratio's
+      // now lets check our ratio's
       $ratio = number_format($wxh[0] / $wxh[1], 4);
       if ($ratio == $aspect_ratio['ratio']) {
         $options[$key] = $value . ' ' . t('(Matches Ratio)');
@@ -280,7 +274,7 @@ function _video_dimensions_options(&$options, $video) {
  */
 
 function _video_aspect_ratio($video) {
-  //lets get our video dimensions from the file
+  // lets get our video dimensions from the file
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct();
   $transcoder->setInput((array) $video);
@@ -288,13 +282,13 @@ function _video_aspect_ratio($video) {
   $width = $wxh['video']['dimensions']['width'];
   $height = $wxh['video']['dimensions']['height'];
   if (!$width || !$height) {
-    //no width and height found just return.
+    // no width and height found just return.
     watchdog('video_conversion', 'We could not determine the height and width of the video', array(), WATCHDOG_DEBUG);
 //    drupal_set_message(t('The system counld not determine the width and height of your video: !video.  If transcoding, the system could have problems.', array('!video' => $video)));
     return;
   }
 
-  //now lets get aspect ratio and compare our options in the select dropdown then add an asterick if any to each option representing a matching aspect ratio.
+  // now lets get aspect ratio and compare our options in the select dropdown then add an asterick if any to each option representing a matching aspect ratio.
   $ratio = number_format($width / $height, 4);
   $aspect_ratio = array(
     'width' => $width,
@@ -388,8 +382,6 @@ function video_video_html5_players() {
 
 /**
  * Field instances settings
- * @param <type> $widget
- * @return <type>
  */
 function video_default_instance_settings($widget) {
   $form = array();
@@ -407,8 +399,6 @@ function video_default_instance_settings($widget) {
 
 /**
  * Default video field settings.
- * @param type $settings
- * @return string 
  */
 function video_default_field_settings($settings) {
   $form = array();
@@ -435,7 +425,7 @@ function video_default_field_settings($settings) {
     '#type' => 'radios',
     '#title' => t('Video thumbnails'),
     '#options' => $thumb_options,
-    '#description' => t('If you choose <i>Automatically extract thumbnails from video</i> then please make sure to configure your !settings to make this work properly.', array('!settings' => l('transcoder settings', 'admin/config/media/video/transcoders'))),
+    '#description' => t('If you choose <i>Automatically extract thumbnails from video</i> then please make sure to configure your !settings to make this work properly.', array('!settings' => l(t('transcoder settings'), 'admin/config/media/video/transcoders'))),
     '#default_value' => isset($settings['autothumbnail']) ? $settings['autothumbnail'] : 'no',
     '#weight' => 18,
   );
@@ -469,7 +459,7 @@ function video_explode($delimeter, $dimensions) {
   $options = array();
   $values = explode($delimeter, $dimensions);
   foreach ($values as $value) {
-    //lets check we have a value and its in the right format
+    // lets check we have a value and its in the right format
     if (!empty($value) && video_format_right($value)) {
       $options[trim($value)] = trim($value);
     }
@@ -523,7 +513,6 @@ function _video_object_to_array($data) {
 
 /**
  * Element specific validation for video thumbnail value.
- *
  */
 function video_thumbnail_validate($element, &$form_state) {
   $fid = $element['#value'];

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Implement an video field, based on the file module's file field.
@@ -55,7 +54,6 @@ function video_field_settings_form($field, $instance) {
 
 /**
  * Element specific validation for video default value.
- *
  */
 function video_field_default_thumbnail_validate($element, &$form_state) {
   $settings = $form_state['values']['field']['settings'];
@@ -86,7 +84,7 @@ function video_field_instance_settings_form($field, $instance) {
     case 'video_ftp':
       $form['ftp_path'] = array(
         '#type' => 'textfield',
-        '#title' => t('FTP Filepath'),
+        '#title' => t('FTP filepath'),
         '#default_value' => !empty($widget['ftp_path']) ? $widget['ftp_path'] : 'ftpvideos',
         '#description' => t('The subdirectory within the "<em>files/</em>" directory where you have upload the videos for attachment.  Once the video is attached it will be moved from this directory to the main files directory.'),
         '#required' => TRUE,
@@ -94,7 +92,7 @@ function video_field_instance_settings_form($field, $instance) {
       );
       break;
   }
-  //default settings
+  // default settings
   $default = video_default_instance_settings($settings);
   $form = $default + $form;
   return $form;
@@ -105,7 +103,7 @@ function video_field_instance_settings_form($field, $instance) {
  */
 function video_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
   if ($field['settings']['autoconversion'] == 1) {
-    //load the converted video
+    // load the converted video
   }
   file_field_load($entity_type, $entities, $field, $instances, $langcode, $items, $age);
 }
@@ -420,7 +418,7 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
       '#title' => t('Dimensions'),
       '#type' => 'select',
       '#default_value' => $settings['widthxheight'],
-      '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
+      '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l(t('video metadata settings'), 'admin/config/media/video/metadata'))),
       '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
     );
   }

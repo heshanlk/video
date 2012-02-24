@@ -1,14 +1,22 @@
 <?php
+/**
+ * @file
+ * Administrative interface for maintaining video presets.
+ */
 
 define('VIDEO_PRESET_MAX_LENGTH', 64);
 
 /**
- * This is used to add all the other settings that you need to declare in your preset.
- * The preset object is passed to this form, so you can use that data to populate the default values
- * for your form elements by using $preset['settings']['param2'].
+ * All the other settings that you need to declare in your preset.
  *
- * @param <array> - The preset object.
- * @return <array> - The additional form settings that you would like to add to your preset.
+ * The preset object is passed to this form, so you can use that data to
+ * populate the default values for your form elements by using
+ * $preset['settings']['param2'].
+ *
+ * @param $preset
+ *   The preset object.
+ * @return
+ *   The additional form settings that you would like to add to your preset.
  */
 function video_preset_default_form($form, &$form_state, $preset) {
   $factory = new TranscoderAbstractionAbstractFactory();
@@ -40,7 +48,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $form['settings']['video']['video_preset'] = array(
     '#type' => 'select',
     '#title' => t('Video preset'),
-    '#description' => t('A preset file contains a sequence of option=value pairs, one for each line, specifying a sequence of options which would be awkward to specify on the command line. Lines starting with the hash (\'#\') character are ignored and are used to provide comments. Check the \`ffpresets\' directory in the FFmpeg source tree for examples. See the !doc', array('!doc' => l('ffmpeg documentation', 'http://ffmpeg.org/ffmpeg.html#TOC13'))),
+    '#description' => t('A preset file contains a sequence of option=value pairs, one for each line, specifying a sequence of options which would be awkward to specify on the command line. Lines starting with the hash (\'#\') character are ignored and are used to provide comments. Check the \`ffpresets\' directory in the FFmpeg source tree for examples. See the !doc', array('!doc' => l(t('FFmpeg documentation'), 'http://ffmpeg.org/ffmpeg.html#TOC13'))),
     '#options' => array(
       'none' => 'None',
       'libx264-baseline' => 'libx264-baseline',
@@ -104,7 +112,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $form['settings']['video']['wxh'] = array(
     '#type' => 'select',
     '#title' => t('Dimensions'),
-    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
+    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l(t('Video metadata settings'), 'admin/config/media/video/metadata'))),
     '#default_value' => !empty($preset['settings']['wxh']) ? $preset['settings']['wxh'] : '640x480',
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
   );
@@ -310,7 +318,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   // video optimizations
   $form['settings']['vid_optimization'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Video Optimization'),
+    '#title' => t('Video optimization'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE
   );
@@ -342,7 +350,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   // Create clip
   $form['settings']['create_clip'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Create Clip'),
+    '#title' => t('Create clip'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE
   );
@@ -354,7 +362,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   );
   $form['settings']['create_clip']['clip_length'] = array(
     '#type' => 'textfield',
-    '#title' => t('Clip length '),
+    '#title' => t('Clip length'),
     '#description' => t('The length of the subclip (in timecode or number of seconds).'),
     '#default_value' => !empty($preset['settings']['clip_length']) ? $preset['settings']['clip_length'] : ''
   );
@@ -392,10 +400,6 @@ function video_presets_overview() {
 
 /**
  * Preset form
- * @param <type> $form
- * @param <type> $form_state
- * @param <type> $preset
- * @return string
  */
 function video_preset_form($form, &$form_state, $preset = FALSE) {
   $form = array();
@@ -442,7 +446,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
   // Buttons
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save Preset'),
+    '#value' => t('Save preset'),
     '#weight' => 30,
   );
 
@@ -468,10 +472,6 @@ function video_preset_validate($form, &$form_state) {
 
 /**
  * Flatten the settings array.
- *
- * @param <type> $array
- * @param <type> $return
- * @return <type>
  */
 function video_preset_array_flatten($array, $return=array()) {
   foreach ($array as $key => $value) {
@@ -510,7 +510,7 @@ function video_preset_submit($form, &$form_state) {
 
   // Save this preset.
   video_preset_save($preset);
-  drupal_set_message(t('Preset !preset successfully saved.', array('!preset' => $preset['name'])));
+  drupal_set_message(t('Preset %preset successfully saved.', array('%preset' => $preset['name'])));
   $form_state['redirect'] = 'admin/config/media/video/presets';
 }
 
@@ -527,9 +527,7 @@ function video_preset_delete_submit($form, &$form_state) {
  */
 function video_preset_delete_confirm($form, &$form_state, $preset) {
   $form['name'] = array('#type' => 'value', '#value' => $preset['name']);
-  $message = t('Are you sure you want to delete the preset %name?', array('%name' => $preset['name']));
-  $caption = '<p>' . t('This action cannot be undone.') . '</p>';
-  return confirm_form($form, $message, 'admin/config/media/video/presets', $caption, t('Delete'));
+  return confirm_form($form, t('Are you sure you want to delete the preset %name?', array('%name' => $preset['name'])), 'admin/config/media/video/presets', '<p>' . t('This action cannot be undone.') . '</p>', t('Delete'));
 }
 
 /**
@@ -558,7 +556,7 @@ function _video_preset_name_validate($element, &$form_state) {
  */
 function video_preset_import_form($form, &$form_state) {
   $form['preset'] = array(
-    '#title' => t('Preset Code'),
+    '#title' => t('Preset code'),
     '#type' => 'textarea',
     '#rows' => 10,
     '#description' => t('Copy the export text and paste it into this text field to import a new preset.'),
@@ -566,7 +564,7 @@ function video_preset_import_form($form, &$form_state) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Import Preset'),
+    '#value' => t('Import preset'),
     '#weight' => 30,
   );
 
@@ -628,7 +626,7 @@ function video_preset_export_form($form, &$form_state, $preset) {
 
   $lines = substr_count($code, "\n");
   $form['export'] = array(
-    '#title' => t('Export Preset'),
+    '#title' => t('Export preset'),
     '#type' => 'textarea',
     '#value' => $code,
     '#rows' => $lines,
@@ -670,8 +668,6 @@ function video_preset_save($preset) {
 
 /**
  * Returns the default presets.
- *
- * @return <type>
  */
 function video_preset_get_default_presets() {
   $default_presets = module_invoke_all('video_default_presets');
@@ -803,16 +799,11 @@ function video_validate_preset_name($name) {
 
 /**
  * Check for default preset
- * @param <type> $preset_name
- * @return <type>
  */
 function video_is_default_preset($preset_name) {
   // Get the default presets.
   $default_presets = video_preset_get_default_presets();
 
   // See if there is a default preset name.
-  if ($default_presets && isset($default_presets[$preset_name]))
-    return TRUE;
-  else
-    return FALSE;
+  return ($default_presets && isset($default_presets[$preset_name]));
 }

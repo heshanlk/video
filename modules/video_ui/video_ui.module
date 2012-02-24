@@ -1,11 +1,8 @@
 <?php
-
 /**
- *
  * @file video_ui.module
- * Administrative interface to Video. Without this module you cannot configure the video module.
+ * Administrative interface to the Video module.
  * @author : Heshan (heshan@heidisoft.com)
- *
  */
 
 /**
@@ -52,7 +49,7 @@ function video_ui_menu() {
   );
   // Preset settings
   $items['admin/config/media/video/presets'] = array(
-    'title' => 'Manage Preset',
+    'title' => 'Presets',
     'description' => 'Configure your transcoder presets to convert your videos.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_preset_admin_settings'),
@@ -82,6 +79,7 @@ function video_ui_menu() {
   );
   $items['admin/config/media/video/presets/add'] = array(
     'title' => 'Add preset',
+    'description' => 'Add a new video conversion preset.',
     'file' => 'video.preset.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_preset_form'),
@@ -89,7 +87,8 @@ function video_ui_menu() {
     'type' => MENU_LOCAL_TASK
   );
   $items['admin/config/media/video/presets/import'] = array(
-    'title' => t('Import preset'),
+    'title' => 'Import preset',
+    'description' => 'Import a video conversion preset.',
     'file' => 'video.preset.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_preset_import_form'),
@@ -99,6 +98,7 @@ function video_ui_menu() {
 
   $items['admin/config/media/video/presets/preset/%video_preset'] = array(
     'title' => 'Edit video preset',
+    'description' => 'Edit a video conversion preset.',
     'title callback' => 'video_preset_page_title',
     'title arguments' => array(6),
     'file' => 'video.preset.inc',
@@ -108,6 +108,7 @@ function video_ui_menu() {
   );
   $items['admin/config/media/video/presets/preset/%video_preset/edit'] = array(
     'title' => 'Edit',
+    'description' => 'Edit a video conversion preset.',
     'file' => 'video.preset.inc',
     'page arguments' => array(6),
     'access arguments' => array('administer video presets'),
@@ -115,13 +116,15 @@ function video_ui_menu() {
   );
   $items['admin/config/media/video/presets/preset/%video_preset/delete'] = array(
     'title' => 'Delete',
+    'description' => 'Delete a video conversion preset.',
     'file' => 'video.preset.inc',
     'page arguments' => array('video_preset_delete_confirm', 6),
     'access arguments' => array('administer video presets'),
     'type' => MENU_CALLBACK
   );
   $items['admin/config/media/video/presets/preset/%video_preset/export'] = array(
-    'title' => t('Export'),
+    'title' => 'Export',
+    'description' => 'Export a video conversion preset.',
     'file' => 'video.preset.inc',
     'title callback' => 'video_preset_page_title',
     'title arguments' => array(6),
@@ -143,7 +146,7 @@ function video_ui_menu() {
   );
   // Cron settings
   $items['admin/config/media/video/cron'] = array(
-    'title' => 'Cron Settings',
+    'title' => 'Cron settings',
     'description' => 'Configure your cron settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_cron_admin_settings'),
@@ -159,9 +162,6 @@ function video_ui_menu() {
 
 /**
  * Implementing the special "auto-loader" for menu %video_preset.
- *
- * @param <string> $preset_name
- * @return <object> $preset
  */
 function video_preset_load($preset_name) {
   module_load_include('inc', 'video_ui', 'video.preset');
