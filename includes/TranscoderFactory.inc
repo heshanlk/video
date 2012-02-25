@@ -226,12 +226,15 @@ abstract class TranscoderAbstractionFactory {
    * Load output from a transcoding job from the database.
    */
   public function loadOutput() {
-    $file = $this->settings['input'];
-    $output = db_query("SELECT vo.output_fid FROM {video_output} vo WHERE vo.original_fid = :fid", array(':fid' => $file['fid']))
-        ->fetchAll();
-    foreach ($output as $output_fid) {
-      $file = file_load($output_fid->output_fid);
-      $extension = end(explode('.', $file->filename));
+    $fids = db_select('video_output', 'vo')
+      ->fields('vo', array('output_fid'))
+      ->condition('vo.original_fid', $this->settings['input']['fid'])
+      ->execute()->fetchAllKeyed(0, 0);
+    $files = file_load_multiple($fids);
+
+    $video = new stdClass();
+    foreach ($files as $file) {
+      $extension = pathinfo($file->filename, PATHINFO_EXTENSION);
       $video->{$extension} = $file;
     }
     return $video;
