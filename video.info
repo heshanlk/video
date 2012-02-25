@@ -4,7 +4,7 @@ package = Media
 core = 7.x
 dependencies[] = file
 dependencies[] = image
-files[] = video.module
+
 # Including class files to lazyload
 files[] = includes/Conversion.inc
 files[] = includes/Metadata.inc

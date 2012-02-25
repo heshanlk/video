@@ -4,4 +4,3 @@ package = Media
 core = 7.x
 configure = admin/config/media/video
 dependencies[] = video
-files[] = video_ui.module
