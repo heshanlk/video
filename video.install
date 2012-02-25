@@ -6,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function video_schema() {
   // video queue
@@ -219,7 +219,7 @@ function video_field_schema($field) {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function video_install() {
   // Create the videos directory and ensure it's writable.
@@ -228,7 +228,7 @@ function video_install() {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function video_uninstall() {
   drupal_uninstall_schema('video');
@@ -239,7 +239,7 @@ function video_uninstall() {
 }
 
 /**
- * Implementation of hook_requirements().
+ * Implements hook_requirements().
  */
 function video_requirements($phase) {
   $requirements = array();

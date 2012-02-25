@@ -274,9 +274,9 @@ function video_preset_default_form($form, &$form_state, $preset) {
 //    '#type' => 'checkbox',
 //    '#title' => t('<b>Enable watermark video</b>'),
 //    '#default_value' => !empty($preset['settings']['video_enable_watermark']) ? $preset['settings']['video_enable_watermark'] : FALSE,
-//    '#description' => t('In visible digital watermarking, the information is 
-//        visible in the video. Typically, the information is text or a 
-//        logo, which identifies the owner of the media. When a television broadcaster adds its logo to the 
+//    '#description' => t('In visible digital watermarking, the information is
+//        visible in the video. Typically, the information is text or a
+//        logo, which identifies the owner of the media. When a television broadcaster adds its logo to the
 //        corner of transmitted video, this also is a visible watermark.')
 //  );
 //  $form['settings']['warermark']['video_watermark_fid'] = array(
@@ -467,7 +467,6 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
  * Validation for the preset form.
  */
 function video_preset_validate($form, &$form_state) {
-  
 }
 
 /**

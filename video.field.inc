@@ -360,7 +360,7 @@ function video_field_widget_process($element, &$form_state, $form) {
  */
 
 /**
- * Implementation of CCK's hook_field_formatter_info().
+ * Implements CCK's hook_field_formatter_info().
  */
 function video_field_formatter_info() {
   $formatters = array(

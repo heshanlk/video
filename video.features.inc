@@ -8,7 +8,7 @@
 module_load_include('inc', 'video', 'modules/video_ui/video.preset');
 
 /**
- * Implementation of hook_features_export_options().
+ * Implements hook_features_export_options().
  */
 function video_features_export_options() {
   $options = array();
@@ -19,7 +19,7 @@ function video_features_export_options() {
 }
 
 /**
- * Implementation of hook_features_export().
+ * Implements hook_features_export().
  */
 function video_features_export($data, &$export, $module_name = '') {
   foreach ($data as $preset) {
@@ -28,7 +28,7 @@ function video_features_export($data, &$export, $module_name = '') {
 }
 
 /**
- * Implementation of hook_features_export_render().
+ * Implements hook_features_export_render().
  */
 function video_features_export_render($module_name, $data) {
   $items = array();
@@ -43,7 +43,7 @@ function video_features_export_render($module_name, $data) {
 }
 
 /**
- * Implementation of hook_features_revert().
+ * Implements hook_features_revert().
  */
 function video_features_revert($module) {
   if ($default_presets = features_get_default('video', $module)) {

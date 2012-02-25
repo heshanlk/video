@@ -195,7 +195,7 @@ class Transcoder {
   }
 
   /**
-   * Get all transcoders implemented to work with video  module and get its 
+   * Get all transcoders implemented to work with video  module and get its
    * values and names to display in admin settings form.
    */
   private function _transcoders() {
@@ -227,7 +227,7 @@ class Transcoder {
   }
 
   /**
-   * Change the status of the job, this will effect in database and use when 
+   * Change the status of the job, this will effect in database and use when
    * represent a job data.
    */
   public function changeStatus($vid, $status) {

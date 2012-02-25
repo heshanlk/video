@@ -5,7 +5,7 @@
  */
 
 /**
- * Implementation of hook_wysiwyg_include_directory()
+ * Implements hook_wysiwyg_include_directory().
  */
 function video_wysiwyg_include_directory($type) {
   switch ($type) {

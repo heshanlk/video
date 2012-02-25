@@ -6,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_INCLUDE_plugin().
+ * Implements hook_INCLUDE_plugin().
  */
 function video_video_plugin() {
   drupal_add_library('system', 'ui.dialog');

@@ -8,8 +8,7 @@
  * "php video_scheduler.php http://example.com/" or
  * "php video_scheduler.php http://example.org/drupal/"
  *
- * @author Heshan Wanigasooriya <heshan at heidisoft dot com, heshanmw at gmail dot com>
- *
+ * @author Heshan Wanigasooriya <heshan at heidisoft dot com>
  */
 /**
  * Drupal shell execution script
@@ -29,7 +28,7 @@ if (isset($args['h']) || isset($args['help'])) {
 Video Scheduler.
 
 Usage:        {$script} [OPTIONS]
-Example:      {$script} 
+Example:      {$script}
 
 All arguments are long options.
 
@@ -40,10 +39,10 @@ All arguments are long options.
               Drupal installation, f.e. /home/www/foo/drupal (assuming Drupal
               running on Unix). Current directory is not required.
               Use surrounding quotation marks on Windows.
-  
+
   -s, --site  Used to specify with site will be used for the upgrade. If no
               site is selected then default will be used.
-  
+
   -v, --verbose This option displays the options as they are set, but will
               produce errors from setting the session.
 
@@ -128,7 +127,7 @@ ini_set('display_errors', 1);
 // turn off the output buffering that drupal is doing by default.
 ob_end_flush();
 
-//include our conversion class (also contains our defines)
+// include our conversion class (also contains our defines)
 module_load_include('inc', 'video', 'includes/Conversion');
 $video_conversion = new Conversion;
 $video_conversion->runQueue();

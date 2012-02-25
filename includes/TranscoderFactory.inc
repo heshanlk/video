@@ -25,7 +25,6 @@ abstract class TranscoderAbstractionFactory {
   protected $errors = array();
 
   protected function __construct() {
-    
   }
 
   /**
@@ -68,7 +67,6 @@ abstract class TranscoderAbstractionFactory {
 
   /**
    * Get enabled and supporting codecs by the transcoder.
-   * @return array 
    */
   public function getCodecs() {
     $codecs = array(

@@ -1,6 +1,6 @@
 <?php
 /**
- * @file video.common.inc
+ * @file
  * This file will be used to keep all utility functions data structures.
  */
 
@@ -267,12 +267,11 @@ function _video_dimensions_options(&$options, $video) {
   return $aspect_ratio;
 }
 
-/*
+/**
  * Returns the width/height and aspect ratio of the video
- * 
+ *
  * @todo: move this to the transcoder class instead?
  */
-
 function _video_aspect_ratio($video) {
   // lets get our video dimensions from the file
   $factory = new TranscoderAbstractionAbstractFactory();

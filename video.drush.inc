@@ -4,7 +4,7 @@
  * Implement an drush commands to trasncode videos.
  */
 /**
- * Implementation of hook_drush_command().
+ * Implements hook_drush_command().
  */
 function video_drush_command() {
   $items = array();

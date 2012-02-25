@@ -1,7 +1,7 @@
 <?php
-
 /**
- * @file rules integration for the video module
+ * @file
+ * rules integration for the video module
  *
  * @addtogroup rules
  * @{

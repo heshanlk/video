@@ -199,11 +199,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#title' => $t('Zencoder user'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
-        '#description' => $t('Add your email address, password and <em>save configurations</em> 
-          to creare your Zencoder account. It will help you to transcode and manage your videos 
-          using Zencode website. Once you save your configurations then this will automatically 
-          create an account on the Zencoder.com and password and all ther other relevent details 
-          will be emailed to you.', array('!link' => l($t('Zencoder.com'), 'http://zencoder.com')))
+        '#description' => $t('Add your email address, password and <em>save configurations</em> to create your Zencoder account. It will help you to transcode and manage your videos using Zencode website. Once you save your configurations then this will automatically create an account on the Zencoder.com and password and all ther other relevent details will be emailed to you.', array('!link' => l($t('Zencoder.com'), 'http://zencoder.com')))
       );
       $form['zencoder_user']['zencoder_username'] = array(
         '#type' => 'textfield',
@@ -262,8 +258,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $form['zencoder_info']['video_zencoder_base_url'] = array(
         '#type' => 'textfield',
         '#title' => t('Output file base'),
-        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory 
-          URL where we\'ll put the transcoded file. If you\'re using ftp://, sftp://, etc.
+        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory URL where we\'ll put the transcoded file. If you\'re using ftp://, sftp://, etc.
           then you must <b>mount sites/default/files folder as the FTP base folder</b> before
           creating videos.<br/> You can use the <em>mount</em> command (mount --bind /source_dir /dest_dir_01):
           <br/> Eg : <br/><code>1. mkdir /home/USERNAME/videos</code><br/>
@@ -272,7 +267,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           <code>4. ls -l</code><br/>
           <code><b>It should display </b><br/>converted<br/>original<br/>thumbnails</code><br/>
           <code>5. chown -R USERNAME:USERNAME videos/</code>
-          <br/><br/>Example URL patterns: <code>s3://my-output-bucket, cf://username:api_key@container/, 
+          <br/><br/>Example URL patterns: <code>s3://my-output-bucket, cf://username:api_key@container/,
           ftp://user:password@ftp.example.com</code>', array('!more' => l(t('More info'), 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
         '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
       );

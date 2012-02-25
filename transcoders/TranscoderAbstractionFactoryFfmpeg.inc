@@ -1,8 +1,8 @@
 <?php
 /**
-* @file
-* File containing class TranscoderAbstractionFactoryFfmpeg
-*/
+ * @file
+ * File containing class TranscoderAbstractionFactoryFfmpeg
+ */
 
 /**
  * Class that handles FFmpeg transcoding.
@@ -458,7 +458,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     if (preg_match($pattern, $output, $matches)) {
       $version = $matches[1];
       if (($pos = strpos($version, ' Copyright')) !== FALSE) {
-        $version = substr($version, 0, $pos);
+        $version = drupal_substr($version, 0, $pos);
       }
       return t('unrecognized: !version', array('!version' => $version));
     }

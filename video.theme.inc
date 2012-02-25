@@ -38,7 +38,7 @@ function theme_video_widget($variables) {
 /**
  * Default video cck formatter.
  *
- * Makes sure the video being displayed exists, has been converted (if in 
+ * Makes sure the video being displayed exists, has been converted (if in
  * queue). If not or the video is processed, then it will get the default
  * player for the specific video type for output.
  */

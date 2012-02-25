@@ -12,7 +12,7 @@
  */
 
 /**
- * Implements hook_views_data()
+ * Implements hook_views_data().
  */
 function video_views_data() {
   // Basic table information.
