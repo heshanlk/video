@@ -248,12 +248,12 @@ class ZencoderOutputNotification {
   var $output;
   var $job;
 
-  function ZencoderOutputNotification($params) {
+  public function ZencoderOutputNotification($params) {
     if(!empty($params["output"])) $this->output = new ZencoderOutputFile($params["output"]);
     if(!empty($params["job"])) $this->job = new ZencoderJob($params["job"], array("build" => true));
   }
 
-  function catch_and_parse() {
+  public static function catch_and_parse() {
     $notificiation_data = json_decode(trim(file_get_contents('php://input')), true);
     return new ZencoderOutputNotification($notificiation_data);
   }
