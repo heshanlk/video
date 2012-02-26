@@ -19,7 +19,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   public function setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE) {
     parent::setInput($file, $input_frame_rate, $validate_decode_codecs);
     $this->options['input'] = file_create_url($this->settings['input']['uri']);
-    // http://heidisoft.drupal.video.s3.amazonaws.com/sites/demo.heidisoft.com/files/videos/converted/ecstasypromo.mp4
+
     if (variable_get('video_zencoder_testing_mode', FALSE)) {
       $this->options['input'] = variable_get('video_zencoder_test_file_path', 'http://example.com/video.mp4');
     }
@@ -84,54 +84,61 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
   public function extractFrames() {
     global $user;
-    $s3_get_object = FALSE;
+
     // Get the file system directory.
-    $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
+    $thumb_path = variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
+    $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . $thumb_path;
     file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
+
+    // Check if S3 should be loaded.
+    $s3 = NULL;
+    if (module_exists('amazons3') && self::isS3Url(variable_get('video_zencoder_base_url'))) {
+      $s3 = self::createS3Client();
+      $bucket = variable_get('amazons3_bucket');
+    }
 
     $files = array();
     // Total thumbs to generate
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     for ($i = 0; $i < $no_of_thumbnails; $i++) {
-      $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
-      // Skip files already exists, this will save ffmpeg traffic
-      if (!file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
-        // Download generated thumbnails from S3 if amasons3 module exists.
-        if (module_exists('amazons3') && file_uri_scheme(variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]')) == 's3') {
-          libraries_load('awssdk');
-          $key = variable_get('aws_key', '');
-          $secret_key = variable_get('aws_secret_key', '');
-          $bucket = variable_get('amazons3_bucket');
-          $s3 = new AmazonS3($key, $secret_key);
-          if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename)) {
-            $s3_get_object = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . '/' . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path . '/' . $filename)));
-            if (variable_get('video_zencoder_testing_mode', FALSE))
-            // change the job status
-              db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE))->condition('fid', $this->settings['input']['fid'])->execute();
-          }
-          if (!file_exists(drupal_realpath($schema_thumb_path . '/' . $filename)) && $s3_get_object) {
-            $error_param = array('%file' => $schema_thumb_path, '%out' => $s3_get_object);
-            $error_msg = t("Error downloading thumbnail for video: generated file %file does not exist.<br />S3 Output:<br />%out", $error_param);
-            // Log the error message.
-            watchdog('zencoder', $error_msg, array(), WATCHDOG_ERROR);
-            continue;
+      $filename = file_munge_filename('thumbnail-' . $this->settings['input']['fid'] . '_' . sprintf('%04d', $i) . '.png', '', TRUE);
+      $filepath = drupal_realpath($schema_thumb_path . '/' . $filename);
+
+      // Download file from S3, if available
+      if (!file_exists($filepath) && $s3 != NULL) {
+        $s3_get_object = NULL;
+        if ($s3->get_object_metadata($bucket, $thumb_path . '/' . $filename)) {
+          $s3_get_object = $s3->get_object($bucket, $thumb_path . '/' . $filename, array('fileDownload' => $filepath));
+          if (variable_get('video_zencoder_testing_mode', FALSE)) {
+            db_update('video_queue')
+              ->fields(array('status' => VIDEO_RENDERING_COMPLETE))
+              ->condition('fid', $this->settings['input']['fid'])->execute();
           }
         }
+        if (!file_exists($filepath) && $s3_get_object) {
+          watchdog('zencoder',
+            'Error downloading thumbnail for video %filepath: generated file %thumbpath does not exist.<br />S3 Output:<br />%out',
+            array('%filepath' => $this->settings['input']['filepath'], '%thumbpath' => $filepath, '%out' => $s3_get_object),
+            WATCHDOG_ERROR);
+          continue;
+        }
       }
+
       // Create file object only file is exists
       if (file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
         $file = new stdClass();
         $file->uid = $user->uid;
         $file->status = 0;
-        $file->filename = trim($filename);
+        $file->filename = $filename;
         $file->uri = $schema_thumb_path . '/' . $filename;
-        $file->filemime = file_get_mimetype($filename);
+        $file->filemime = 'image/png';
         $file->filesize = filesize(drupal_realpath($schema_thumb_path . '/' . $filename));
         $file->timestamp = time();
         $files[] = $file;
       }
     }
-    return!empty($files) ? $files : FALSE;
+
+    return !empty($files) ? $files : FALSE;
   }
 
   public function execute() {
@@ -307,24 +314,40 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function adminSettingsValidate($form, &$form_state) {
-    if (variable_get('video_zencoder_api_key', FALSE))
-      return;
-    // check terms and condition
-    if ($form_state['values']['agree_terms_zencoder'] == 0) {
-      form_set_error('agree_terms_zencoder', t('You must agree !link.', array('!link' => l(t('terms and conditions'), 'http://zencoder.com/terms'))));
-    }
-    // check for email exists
-    // Validate the e-mail address:
-    if ($error = user_validate_mail($form_state['values']['zencoder_username'])) {
-      form_set_error('zencoder_username', $error);
-    }
+    $v = $form_state['values'];
 
-    // get the API key from zencoder and save it to variable
-    if (!form_get_errors()) {
-      $mail = $form_state['values']['zencoder_username'];
-      $result = $this->createUser($mail);
-      if ($result !== TRUE) {
-        form_set_error('zencoder_username', $result);
+    if (variable_get('video_zencoder_api_key', FALSE)) {
+      // Check S3 settings
+      if (!empty($v['video_zencoder_base_url'])) {
+        if (self::isS3Url($v['video_zencoder_base_url'])) {
+          $s3compat = self::checkS3Compatibility();
+          if (!empty($s3compat)) {
+            form_error($form['zencoder_info']['video_zencoder_base_url'],
+              t('Using Amazon S3 base URLs is not possible because of the following errors:') .
+              theme('item_list', array('items' => $s3compat))
+            );
+          }
+        }
+      }
+    }
+    else {
+      // check terms and condition
+      if ($form_state['values']['agree_terms_zencoder'] == 0) {
+        form_set_error('agree_terms_zencoder', t('You must agree to the !link.', array('!link' => l(t('terms and conditions'), 'http://zencoder.com/terms'))));
+      }
+      // check for email exists
+      // Validate the e-mail address:
+      if ($error = user_validate_mail($form_state['values']['zencoder_username'])) {
+        form_set_error('zencoder_username', $error);
+      }
+
+      // get the API key from zencoder and save it to variable
+      if (!form_get_errors()) {
+        $mail = $form_state['values']['zencoder_username'];
+        $result = $this->createUser($mail);
+        if ($result !== TRUE) {
+          form_set_error('zencoder_username', $result);
+        }
       }
     }
   }
@@ -387,7 +410,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
         // Replace thumbnail
         $video_queue = db_query("SELECT entity_id, entity_type FROM {video_queue} WHERE vid = :vid", array(':vid' => $video_output->vid))->fetch();
-        $entity = reset(entity_load($video_queue->entity_type, array($video_queue->entity_id)));
+        $entities = entity_load($video_queue->entity_type, array($video_queue->entity_id));
+        $entity = reset($entities);
         // Get field name
         $field_name = NULL;
         $bundle = (isset($entity->type) && !empty($entity->type)) ? $entity->type : $entity->node_type;
@@ -401,11 +425,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
         $thumbnail_id = rand(1, $no_of_thumbnails);
         $filename = 'thumbnail-' . $video_output->original_fid . '_' . sprintf("%04d", $thumbnail_id) . '.png';
-        libraries_load('awssdk');
-        $key = variable_get('aws_key', '');
-        $secret_key = variable_get('aws_secret_key', '');
+
         $bucket = variable_get('amazons3_bucket');
-        $s3 = new AmazonS3($key, $secret_key);
+
+        $s3 = self::createS3Client();
         if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename) && !file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
           $s3_get_object = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . '/' . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path . '/' . $filename)));
           $file = new stdClass();
@@ -436,4 +459,49 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
   }
 
+  /**
+   * Creates a new Amazon S3 client object.
+   *
+   * @return
+   *   AmazonS3 instance.
+   */
+  private static function createS3Client($key = NULL, $secret = NULL) {
+    $info = libraries_load('awssdk');
+    if (!$info['installed']) {
+      return NULL;
+    }
+
+    $key = $key == NULL ? variable_get('aws_key', '') : $key;
+
+    if (version_compare($info['version'], '1.5', '>=')) {
+      $secret = $secret == NULL ? variable_get('aws_secret', '') : $secret;
+      return new AmazonS3(array('key' => $key, 'secret' => $secret));
+    }
+    else {
+      $secret = $secret == NULL ? variable_get('aws_secret_key', '') : $secret;
+      return new AmazonS3($key, $secret);
+    }
+  }
+
+  public static function checkS3Compatibility() {
+    $errors = array();
+
+    if (!module_exists('amazons3')) {
+      $errors[] = t('You need to install and enable the <a href="@amazons3-url">Amazon S3</a> module.', array('@amazons3-url' => url('http://drupal.org/project/amazons3')));
+    }
+
+    if (variable_get('aws_key', NULL) === NULL) {
+      $errors[] = t('You need to setup the <a href="@awssdk-config-page">Amazon Web Services access keys</a>.', array('@awssdk-config-page' => url('admin/config/media/awssdk')));
+    }
+
+    if (variable_get('amazons3_bucket', NULL) === NULL) {
+      $errors[] = t('You need to setup the default <a href="@amazons3-config-page">Amazon S3 bucket name</a>.', array('@amazons3-config-page' => url('admin/config/media/amazons3')));
+    }
+
+    return $errors;
+  }
+
+  public static function isS3Url($url) {
+    return file_uri_scheme($url) == 's3';
+  }
 }

@@ -16,3 +16,4 @@ files[] = transcoders/TranscoderAbstractionFactoryFfmpeg.inc
 files[] = transcoders/TranscoderAbstractionFactoryZencoder.inc
 files[] = views/video_handler_field_video_duration.inc
 files[] = tests/TranscoderAbstractionFactoryFfmpeg.test
+files[] = tests/TranscoderAbstractionFactoryZencoder.test
