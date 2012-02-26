@@ -36,7 +36,7 @@ function video_menu() {
   $items = array();
   $items['postback/jobs'] = array(
     'page callback' => '_video_transcoder_postback_jobs',
-    'access arguments' => array('transocder postback'),
+    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
   $items['video/browser'] = array(
@@ -81,10 +81,6 @@ function video_permission() {
     'administer video presets' => array(
       'title' => t('Administer video presets'),
       'description' => t('Perform administration tasks for the video presets.'),
-    ),
-    'transocder postback' => array(
-      'title' => t('Transcoder postback path access'),
-      'description' => t('This URL should be accessible to anonymous users. Transcoder will send details about transcoding jobs to this url.'),
     ),
   );
   return $perms;
