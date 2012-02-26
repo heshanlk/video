@@ -1,6 +1,6 @@
 <?php
 /**
- * @file video_ui.module
+ * @file
  * Administrative interface to the Video module.
  * @author : Heshan (heshan@heidisoft.com)
  */
