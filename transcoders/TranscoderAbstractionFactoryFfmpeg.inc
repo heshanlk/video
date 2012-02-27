@@ -141,7 +141,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
       $seek = ceil($duration / ($no_of_thumbnails + 1) * $i);
       $debugline .= $seek . ', ';
-      $filename = file_munge_filename("thumbnail-" . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
+      $filename = file_munge_filename('thumbnail-' . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
       $thumbnail_path = $schema_thumb_path . '/' . $filename;
       $thumbnail_real_path = drupal_realpath($thumbnail_path);
       // Skip files already exists, this will save ffmpeg traffic
@@ -201,7 +201,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       }
     }
     watchdog('video', $debugline, array(), WATCHDOG_DEBUG);
-    return!empty($files) ? $files : FALSE;
+    return !empty($files) ? $files : FALSE;
   }
 
   public function execute() {
