@@ -128,7 +128,7 @@ function video_field_prepare_view($entity_type, $entities, $field, $instances, $
  * Implements hook_field_presave().
  */
 function video_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  // change the theumbnails if default is checked
+  // change the thumbnails if default is checked
   foreach ($items as $delta => $item) {
     if (!empty($field['settings']['default_video_thumbnail']['fid'])) {
       if ($item['use_default_video_thumb'])
@@ -172,7 +172,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
  * Video file save to the video_queue table for conversions
  */
 function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  // Create entry for video conversion if auto converison is enabled
+  // Create entry for video conversion if auto conversion is enabled
   if ($field['settings']['autoconversion'] == 1) {
     $job = FALSE;
     switch ($entity_type) {
