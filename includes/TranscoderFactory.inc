@@ -246,7 +246,7 @@ abstract class TranscoderAbstractionFactory {
   public function loadJobQueue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.entity_id, vf.dimensions, vf.status as video_status
+    $result = db_query_range('SELECT f.*, vf.vid, vf.entity_id, vf.entity_type, vf.dimensions, vf.status as video_status
       FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
       WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
