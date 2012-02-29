@@ -192,9 +192,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         $file = new stdClass();
         $file->uid = $user->uid;
         $file->status = 0;
-        $file->filename = trim($filename);
+        $file->filename = $filename;
         $file->uri = $thumbnail_path;
-        $file->filemime = file_get_mimetype($filename);
+        $file->filemime = 'image/png';
         $file->filesize = filesize($thumbnail_real_path);
         $file->timestamp = time();
         $files[] = $file;
@@ -205,7 +205,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function execute() {
-    // execute command
     $result = $this->transcoder->execute(FALSE, TRUE);
     if ($result !== PHPVideoToolkit::RESULT_OK) {
       watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
@@ -213,27 +212,30 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       $this->transcoder->reset(true);
       return FALSE;
     }
+
     $command_output = $this->transcoder->getLastOutput();
-    // Lets check to make sure our file exists, if not error out
     $output_file = $this->settings['base_url'] . '/' . $this->settings['filename'];
-    if (!file_exists(drupal_realpath($output_file)) || !filesize(drupal_realpath($output_file))) {
-      watchdog('transcoder', 'Video conversion has been failed!. FFmpeg reported the following output: !output', array('!output' => $command_output), WATCHDOG_ERROR);
-//      $this->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
+    $output_file_rp = drupal_realpath($output_file);
+    if (!file_exists($output_file_rp) || ($filesize = filesize($output_file_rp)) == 0) {
+      watchdog('transcoder', 'Video conversion has failed! FFmpeg reported the following output: !output', array('!output' => $command_output), WATCHDOG_ERROR);
       return FALSE;
     }
-    // get the video file informations
+
+    // Work-around for missing WebM support in file_get_mimetype().
+    // See http://drupal.org/node/1347624 .
+    $iswebm = substr($this->settings['filename'], -5) === '.webm';
+
     $file_info = $this->getFileInfo();
-    // video duration
-    $duration = floor($file_info['duration']['seconds']);
-    // Setup our converted video object
+
     $output = new stdClass();
     $output->filename = $this->settings['filename'];
     $output->uri = $output_file;
-    $output->filemime = file_get_mimetype($output_file);
-    $output->filesize = filesize(drupal_realpath($output_file));
+    $output->filemime = $iswebm ? 'video/webm' : file_get_mimetype($output_file);
+    $output->filesize = $filesize;
     $output->timestamp = time();
     $output->jobid = NULL;
-    $output->duration = $duration;
+    $output->duration = floor($file_info['duration']['seconds']);
+
     return $output;
   }
 
