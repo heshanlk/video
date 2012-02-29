@@ -247,15 +247,17 @@ function theme_video_html5($variables) {
   switch ($video->html5_player) {
     case 'video':
       return theme('video_play_html5', array('video' => $video, 'themed_output' => $themed_output));
-      break;
+
     case 'videojs':
       $items = _video_object_to_array($video->files);
-      $items +=array('thumbnail' => (array) $video->thumbnail);
+      if (!empty($video->thumbnail) && isset($video->thumbnail->uri)) {
+        $items['thumbnail'] = _video_object_to_array($video->thumbnail);
+      }
+
       $attributes = array();
       $attributes['width'] = $video->player_width;
       $attributes['height'] = $video->player_height;
       return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $video->fid, 'attributes' => $attributes));
-      break;
   }
 }
 

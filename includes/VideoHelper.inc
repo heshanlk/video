@@ -95,10 +95,12 @@ class VideoHelper {
         $thumbnail->filepath = $default_thumbnail->uri;
       }
       else
-        return;
+      {
+        return NULL;
+      }
     }
     else {
-      return;
+      return NULL;
     }
 
     $thumbnail->url = file_create_url($thumbnail->filepath);
