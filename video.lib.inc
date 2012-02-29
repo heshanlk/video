@@ -75,6 +75,8 @@ interface video_transcoder extends video_plugin {
    *   TRUE if the conversion was successful, FALSE otherwise
    */
   public function convert_video(stdClass $video);
+
+  public function requirements();
 }
 
 class video_preset {

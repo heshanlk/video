@@ -645,4 +645,36 @@ class video_localcommand implements video_transcoder {
       $form['useqtfaststart'] = TRUE;
     }
   }
+
+  public function requirements() {
+    $requirements = array();
+    $t = get_t();
+
+    if (strpos($this->cmdpath, ' -') !== FALSE) {
+      $requirements['video_localcommand_args'] = array(
+        'title' => $t('Video local command'),
+        'description' => $t('It is no longer necessary to add command line arguments to the %setting setting. You can add command line arguments per preset.', array('%setting' => t('Path to transcoder executable'))),
+        'value' => l($t('Change setting'), 'admin/settings/video/transcoders'),
+        'severity' => REQUIREMENT_WARNING,
+      );
+    }
+    elseif(!file_exists($this->cmdpath)) {
+      $requirements['video_localcommand_args'] = array(
+        'title' => $t('Video local command'),
+        'description' => $t('The file %cmdpath can\'t be found. Please change your settings.', array('%cmdpath' => $this->cmdpath)),
+        'value' => l($t('Change setting'), 'admin/settings/video/transcoders'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    elseif(!is_executable($this->cmdpath)) {
+      $requirements['video_localcommand_args'] = array(
+        'title' => $t('Video local command'),
+        'description' => $t('The file %cmdpath is not an executable. Please change your settings.', array('%cmdpath' => $this->cmdpath)),
+        'value' => l($t('Change setting'), 'admin/settings/video/transcoders'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+
+    return $requirements;
+  }
 }

@@ -226,6 +226,10 @@ function video_uninstall() {
  * Implementation of hook_requirements().
  */
 function video_requirements($phase) {
+  if ($phase != 'runtime') {
+    return array();
+  }
+
   $t = get_t();
   $requirements = array();
 
@@ -239,6 +243,12 @@ function video_requirements($phase) {
       'value' => l($t('Change setting'), 'admin/settings/video/filesystem'),
       'severity' => REQUIREMENT_ERROR,
     );
+  }
+
+  $transcoder = video_get_transcoder();
+  $transcoderrequirements = $transcoder->requirements();
+  if (!empty($transcoderrequirements)) {
+    $requirements = array_merge($requirements, $transcoderrequirements);
   }
 
   return $requirements;

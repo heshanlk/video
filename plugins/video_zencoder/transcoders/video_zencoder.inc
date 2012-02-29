@@ -523,4 +523,8 @@ watermark:
     $video->status = $status;
     db_query('UPDATE {video_zencoder} SET status = %d WHERE vid = %d ', $status, $video->vid);
   }
+
+  public function requirements() {
+    return array();
+  }
 }
