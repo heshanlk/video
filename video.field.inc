@@ -131,15 +131,18 @@ function video_field_presave($entity_type, $entity, $field, $instance, $langcode
   // change the thumbnails if default is checked
   foreach ($items as $delta => $item) {
     if (!empty($field['settings']['default_video_thumbnail']['fid'])) {
-      if ($item['use_default_video_thumb'])
+      if (!empty($item['use_default_video_thumb'])) {
         $items[$delta]['thumbnail'] = $field['settings']['default_video_thumbnail']['fid'];
+      }
     }
+
     // save thumbnail as permanent
     if (!empty($items[$delta]['thumbnail'])) {
       $file = file_load($items[$delta]['thumbnail']);
       $file->status |= FILE_STATUS_PERMANENT;
       $file = file_save($file);
     }
+
     // delete from cache if exists
     $cid = 'video:video:' . md5($item['fid']);
     $cache = cache_get($cid);
@@ -147,6 +150,7 @@ function video_field_presave($entity_type, $entity, $field, $instance, $langcode
       cache_clear_all($cid, 'cache');
     }
   }
+
   file_field_presave($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
@@ -157,6 +161,10 @@ function video_field_insert($entity_type, $entity, $field, $instance, $langcode,
   file_field_insert($entity_type, $entity, $field, $instance, $langcode, $items);
   // calling function to handle conversion when auto conversion is enabled
   _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
+
+  // Register the thumbnails in file_usage
+  $thumbnails = _video_field_extract_thumbnails($field, $items);
+  file_field_insert($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
 }
 
 /**
@@ -164,66 +172,53 @@ function video_field_insert($entity_type, $entity, $field, $instance, $langcode,
  */
 function video_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_update($entity_type, $entity, $field, $instance, $langcode, $items);
-  // calling function to handle conversion when auto conversion is enabled
   _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
-}
 
-/**
- * Video file save to the video_queue table for conversions
- */
-function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  // Create entry for video conversion if auto conversion is enabled
-  if ($field['settings']['autoconversion'] == 1) {
-    $job = FALSE;
-    switch ($entity_type) {
-      case 'node':
-        $entity_id = $entity->nid;
-        break;
-      case 'comment':
-        $entity_id = $entity->cid;
-        break;
+  // Register the thumbnails in file_usage
+  $thumbnails = _video_field_extract_thumbnails($field, $items);
+  // Modification of file_field_update().
+  // That function can't be called because the logic for finding
+  // existing fids is not the same.
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  
+  // On new revisions, all files are considered to be a new usage and no
+  // deletion of previous file usages are necessary.
+  if (!empty($entity->revision)) {
+    foreach ($thumbnails as $item) {
+      $file = (object) $item;
+      file_usage_add($file, 'file', $entity_type, $id);
     }
-    // conversion class
-    module_load_include('inc', 'video', 'includes/Conversion');
-    $video_conversion = new Conversion();
-    // transcoder factory
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    foreach ($items as $delta => $item) {
-      // set input file
-      $transcoder->setInput($item);
-      // skip adding entry if bypass conversion is checked
-      if (isset($item['bypass_autoconversion']) && ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE))) {
-        // delete the conversion job if any
-        $transcoder->deleteJob($item);
-        return;
+    return;
+  }
+
+  // Build a display of the current FIDs.
+  $current_fids = array();
+  foreach ($thumbnails as $item) {
+    $current_fids[] = $item['fid'];
+  }
+
+  // Create a bare-bones entity so that we can load its previous values.
+  $original = entity_create_stub_entity($entity_type, array($id, $vid, $bundle));
+  field_attach_load($entity_type, array($id => $original), FIELD_LOAD_CURRENT, array('field_id' => $field['id']));
+
+  // Compare the original field values with the ones that are being saved.
+  $original_fids = array();
+  if (!empty($original->{$field['field_name']}[$langcode])) {
+    $original_thumbs = _video_field_extract_thumbnails($field, $original->{$field['field_name']}[$langcode]);
+    foreach ($original_thumbs as $original_thumb) {
+      $original_fids[] = $original_thumb['fid'];
+      if (isset($original_thumb['fid']) && !in_array($original_thumb['fid'], $current_fids)) {
+        // Decrement the file usage count by 1 and delete the file if possible.
+        file_field_delete_file($original_thumb, $field, $entity_type, $id);
       }
-      // re queue for video conversion
-      if (isset($item['re_convert_video']) && $item['re_convert_video'] == 1) {
-        $video = $transcoder->loadJob();
-        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_PENDING);
-        $job = TRUE;
-      }
-      // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-      if (!$video = $transcoder->loadJob()) {
-        if (!($transcoder->createJob($item, $entity_id, $entity_type)))
-          drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
-        else
-          $job = TRUE;
-      }
-      // if convert on save is checked
-      if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1) {
-        // set to false when convert on save
-        $job = FALSE;
-        if ($video_conversion->process($item['fid'])) {
-          drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
-        }
-        else {
-          $video = $transcoder->loadJob();
-          $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
-          drupal_set_message(t('Something went wrong with your video transcoding.  Please check your recent log entries for further debugging.'), 'error');
-        }
-      }
+    }
+  }
+
+  // Add new usage entries for newly added files.
+  foreach ($thumbnails as $item) {
+    if (!in_array($item['fid'], $original_fids)) {
+      $file = (object) $item;
+      file_usage_add($file, 'file', $entity_type, $id);
     }
   }
 }
@@ -233,6 +228,10 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
  */
 function video_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_delete($entity_type, $entity, $field, $instance, $langcode, $items);
+
+  // Deregister the thumbnails in file_usage
+  $thumbnails = _video_field_extract_thumbnails($field, $items);
+  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
 }
 
 /**
@@ -240,6 +239,10 @@ function video_field_delete($entity_type, $entity, $field, $instance, $langcode,
  */
 function video_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, &$items) {
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $items);
+
+  // Deregister the thumbnails in file_usage
+  $thumbnails = _video_field_extract_thumbnails($field, $items);
+  file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
 }
 
 /**
@@ -298,8 +301,8 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
 
   $elements = file_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
   $settings = $instance['settings'];
-  foreach (element_children($elements) as $delta) {
 
+  foreach (element_children($elements) as $delta) {
     // If not using custom extension validation, ensure this is an video.
     $supported_extensions = array_keys(video_video_extensions());
     $extensions = isset($elements[$delta]['#upload_validators']['file_validate_extensions'][0]) ? $elements[$delta]['#upload_validators']['file_validate_extensions'][0] : implode(' ', $supported_extensions);
@@ -308,6 +311,11 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
 
     // Add all extra functionality provided by the video widget.
     $elements[$delta]['#process'][] = 'video_field_widget_process';
+
+    // Add thumbnail stub to prevent errors in file_ajax_upload().
+    $elements[$delta]['thumbnail'] = array(
+      '#type' => 'value',
+    );
   }
 
   if ($field['cardinality'] == 1) {
@@ -331,27 +339,22 @@ function video_field_widget_process($element, &$form_state, $form) {
   $item = $element['#value'];
   $item['fid'] = $element['fid']['#value'];
   $field = field_widget_field($element, $form_state);
-  $instance = field_widget_instance($element, $form_state);
   $settings = $field['settings'];
+
   $element['#theme'] = 'video_widget';
   $element['preview'] = array();
+
   // Title is not necessary for each individual field.
   if ($field['cardinality'] != 1) {
     unset($element['#title']);
   }
-  // add file elements by widget type
-  switch ($instance['widget']['type']) {
-    case 'video_upload':
-      break;
-    case 'video_ftp':
-      break;
-  }
+
   // Add our extra fields if in preview mode
   if (!empty($item['fid'])) {
     video_widget_element_settings($element, $form_state);
-    // Create our thumbnails
     video_thumb_process($element, $form_state);
   }
+
   return $element;
 }
 
@@ -513,4 +516,85 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
  */
 function video_filefield_sources_widgets() {
   return array('video_upload');
+}
+
+/**
+ * Video file save to the video_queue table for conversions
+ */
+function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  // Create entry for video conversion if auto conversion is enabled
+  if ($field['settings']['autoconversion'] == 1) {
+    $job = FALSE;
+    switch ($entity_type) {
+      case 'node':
+        $entity_id = $entity->nid;
+        break;
+      case 'comment':
+        $entity_id = $entity->cid;
+        break;
+    }
+    // conversion class
+    module_load_include('inc', 'video', 'includes/Conversion');
+    $video_conversion = new Conversion();
+    // transcoder factory
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    foreach ($items as $delta => $item) {
+      // set input file
+      $transcoder->setInput($item);
+      // skip adding entry if bypass conversion is checked
+      if (isset($item['bypass_autoconversion']) && ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE))) {
+        // delete the conversion job if any
+        $transcoder->deleteJob($item);
+        return;
+      }
+      // re queue for video conversion
+      if (isset($item['re_convert_video']) && $item['re_convert_video'] == 1) {
+        $video = $transcoder->loadJob();
+        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_PENDING);
+        $job = TRUE;
+      }
+      // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
+      if (!$video = $transcoder->loadJob()) {
+        if (!($transcoder->createJob($item, $entity_id, $entity_type)))
+          drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
+        else
+          $job = TRUE;
+      }
+      // if convert on save is checked
+      if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1) {
+        // set to false when convert on save
+        $job = FALSE;
+        if ($video_conversion->process($item['fid'])) {
+          drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
+        }
+        else {
+          $video = $transcoder->loadJob();
+          $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
+          drupal_set_message(t('Something went wrong with your video transcoding.  Please check your recent log entries for further debugging.'), 'error');
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Extract thumbnails from video items.
+ *
+ * This helper function is used to get the thumbnails
+ * to associate with the current entity.
+ * The default thumbnail is not returned.
+ */
+function _video_field_extract_thumbnails(array $field, array $items) {
+  $defaultfid = !empty($field['settings']['default_video_thumbnail']) ? $field['settings']['default_video_thumbnail']['fid'] : 0;
+
+  $thumbnailfids = array();
+
+  foreach ($items as $item) {
+    if (!empty($item['thumbnail']) && $item['thumbnail'] != $defaultfid) {
+      $thumbnailfids[] = intval($item['thumbnail']);
+    }
+  }
+
+  return _video_object_to_array(file_load_multiple($thumbnailfids));
 }

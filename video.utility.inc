@@ -8,15 +8,13 @@
  * Adds a preview of thumbnails for you to select when uploading videos.
  */
 function video_thumb_process(&$element, &$form_state) {
-  // Developed for ffmpeg support
   $file = $element['#value'];
-  $delta = $file['fid'];
+  $fid = $file['fid'];
   $field = field_widget_field($element, $form_state);
-  $instance = field_widget_instance($element, $form_state);
-  $settings = $instance['widget']['settings'];
-  $gen_fail = FALSE;
 
-  if (isset($element['preview']) && $file['fid'] != 0) {
+  if (isset($element['preview']) && $fid != 0) {
+    $gen_fail = FALSE;
+
     if (in_array($field['settings']['autothumbnail'], array('auto', 'auto_fallback'))) {
       $default_thumb = array();
       $transcoder = new Transcoder;
@@ -34,32 +32,43 @@ function video_thumb_process(&$element, &$form_state) {
         $element['thumbnail'] = array(
           '#type' => 'radios',
           '#title' => t('Video thumbnails'),
-//          '#element_validate' => array('video_thumbnail_validate'),
           '#options' => $thumbss,
           '#default_value' => !empty($file['thumbnail']) ? $file['thumbnail'] : $thumbs[$default_thumb]->fid,
           '#weight' => 10,
-          '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'Drupal.behaviors.videoEdit()', 'rel' => 'video_large_thumbnail-' . $delta),
+          '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'Drupal.behaviors.videoEdit()', 'rel' => 'video_large_thumbnail-' . $fid),
         );
       }
       else {
         $gen_fail = TRUE;
       }
     }
+
     // if fail creating thumbnails fall back to manual or manual upload
-    if (($gen_fail || $field['settings']['autothumbnail'] == 'auto_fallback') ||
-        $field['settings']['autothumbnail'] == 'manual_upload') {
-      $file += (array) file_load($file['fid']);
+    if ($gen_fail || $field['settings']['autothumbnail'] == 'auto_fallback' || $field['settings']['autothumbnail'] == 'manual_upload') {
+      $file += (array) file_load($fid);
       $scheme = file_uri_scheme($file['uri']);
       $element['thumbnail'] = array(
         '#title' => t('Video thumbnail'),
-//        '#element_validate' => array('video_thumbnail_validate'),
         '#type' => 'managed_file',
         '#description' => t('The uploaded image will be used as video thumbnail on this video.'),
-        '#default_value' => !empty($file['thumbnail']['fid']) && is_int($file['thumbnail']['fid']) ? $file['thumbnail']['fid'] : NULL,
-        '#upload_location' => $scheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $file['fid'],
-//        '#required' => TRUE
+        '#default_value' => NULL,
+        '#upload_location' => $scheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $fid,
+        '#weight' => 10,
       );
+
+      // Set the current thumbnail fid, if it is not the default one
+      if (!empty($file['thumbnail'])) {
+        if (empty($field['settings']['default_video_thumbnail']) || $file['thumbnail'] != $field['settings']['default_video_thumbnail']['fid']) {
+          $element['thumbnail']['#default_value'] = $file['thumbnail'];
+        }
+        else {
+          // Unset the form_state value for the thumbnail field if it is the default thumbnail.
+          // This prevents the "may not be referenced" error.
+          form_set_value($element, NULL, $form_state);
+        }
+      }
     }
+
     // if no thumbnail creation
     if ($field['settings']['autothumbnail'] == 'no') {
       $element['thumbnail'] = array(
@@ -67,8 +76,8 @@ function video_thumb_process(&$element, &$form_state) {
         '#value' => NULL,
       );
     }
+
     // Setup our large thumbnail that is on the left.
-    // @todo Add smaller video preview instead of thumbnail?
     $large_thumb = NULL;
     if (isset($file['thumbnail']['fid']) && is_array($file['thumbnail'])) {
       $large_thumb = file_load($file['thumbnail']['fid']);
@@ -79,15 +88,10 @@ function video_thumb_process(&$element, &$form_state) {
     elseif (!empty($field['settings']['default_video_thumbnail']['fid'])) {
       $large_thumb = file_load($field['settings']['default_video_thumbnail']['fid']);
     }
-    else {
-//      $large_thumb = file_load($default_thumb);
+
+    if (!empty($large_thumb)) {
+      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $fid . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
     }
-//    print_r($field['settings']);
-//    $default_thumbnail = file_load($field['settings']['default_video_thumbnail']);
-    // @todo Add video player
-//    dsm($large_thumb);
-    if (!empty($large_thumb))
-      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $delta . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
   }
 }
 
@@ -197,13 +201,16 @@ function video_widget_element_settings(&$element, &$form_state) {
       );
     }
   }
+
   // use of default thumbnail
-  $default_thumb = (isset($file['thumbnail']) && $field['settings']['default_video_thumbnail']['fid'] == $file['thumbnail']) ? $field['settings']['default_video_thumbnail']['fid'] : variable_get('video_use_default_thumb', FALSE);
-  if (isset($field['settings']['default_video_thumbnail']['fid']) && !empty($field['settings']['default_video_thumbnail']['fid'])) {
+  if (!empty($field['settings']['default_video_thumbnail']['fid'])) {
+    $defaultfid = $field['settings']['default_video_thumbnail']['fid'];
+
+    $default_thumb = (isset($file['thumbnail']) && $defaultfid == $file['thumbnail']) || variable_get('video_use_default_thumb', FALSE);
     if (user_access('use default thumb')) {
       $element['use_default_video_thumb'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Use the default thumbnail for this video?'),
+        '#title' => t('Use the default thumbnail for this video'),
         '#default_value' => $default_thumb,
         '#description' => t('This will set a flag for this video to use the default video thumbnail when output.'),
         '#attributes' => array('class' => array('video-use-default-video-thumb')),
@@ -508,18 +515,4 @@ function _video_object_to_array($data) {
     return $result;
   }
   return $data;
-}
-
-/**
- * Element specific validation for video thumbnail value.
- */
-function video_thumbnail_validate($element, &$form_state) {
-  $fid = $element['#value'];
-  // Make the file permanent and store it in the form.
-  if (!empty($fid)) {
-    $file = file_load($fid);
-    $file->status |= FILE_STATUS_PERMANENT;
-    $file = file_save($file);
-//    $element['#value'] = (array) $file;
-  }
 }
