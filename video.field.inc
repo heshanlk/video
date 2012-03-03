@@ -26,7 +26,7 @@ function video_field_info() {
         'default_dimensions' => '640x360',
       ),
       'default_widget' => 'video_upload',
-      'default_formatter' => 'video',
+      'default_formatter' => 'video_formatter_player',
     ),
   );
 }
