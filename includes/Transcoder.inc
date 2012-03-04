@@ -186,7 +186,7 @@ class Transcoder {
       '#title' => t('Video transcoder'),
       '#default_value' => variable_get('video_convertor', 'TranscoderAbstractionFactoryZencoder'),
       '#options' => $options['radios'],
-      '#description' => t('Selecting a video transcoder will help you convert videos and generate thumbnails. !list', array('!list' => theme('item_list', array('items' => $options['help'])))),
+      '#description' => '<p>' . t('Select a video transcoder will help you convert videos and generate thumbnails.') . '</p>' . theme('item_list', array('items' => $options['help'])),
       '#prefix' => '<div id="transcoder-radios">',
       '#suffix' => '</div>',
     );
@@ -199,7 +199,6 @@ class Transcoder {
    * values and names to display in admin settings form.
    */
   private function _transcoders() {
-    // @TODO : think to change this to observer patteren
     $files = array();
     // Lets find our transcoder classes and build our radio options
     // We do this by scanning our transcoders folder
@@ -219,9 +218,15 @@ class Transcoder {
     foreach ($files as $file) {
       module_load_include('inc', $file->module, '/transcoders/' . $file->name);
       $focus = new $file->name;
-      $form['radios'][$file->name] = $focus->getName();
-//      $form['help'][] = $focus->getHelp();
-      $form['admin_settings'] = $form['admin_settings'] + $focus->adminSettings();
+
+      $errorMessage = '';
+      if (!$focus->isAvailable($errorMessage)) {
+        $form['help'][] = t('@name is unavailable: !errormessage', array('@name' => $focus->getName(), '!errormessage' => $errorMessage));
+      }
+      else {
+        $form['radios'][$file->name] = check_plain($focus->getName());
+        $form['admin_settings'] = $form['admin_settings'] + $focus->adminSettings();
+      }
     }
     return $form;
   }

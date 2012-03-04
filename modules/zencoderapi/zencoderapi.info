@@ -1,0 +1,5 @@
+name = Zencoder API
+description = This module provides the Zencoder API. Only enable this module when another module needs it.
+package = Media
+core = 7.x
+dependencies[] = libraries

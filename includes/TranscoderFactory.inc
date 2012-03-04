@@ -14,6 +14,8 @@ interface TranscoderFactoryInterface {
   public function execute();
 
   public function getName();
+
+  public function isAvailable(&$errormsg);
 }
 
 /**
@@ -25,6 +27,10 @@ abstract class TranscoderAbstractionFactory {
   protected $errors = array();
 
   protected function __construct() {
+  }
+
+  public function isAvailable(&$errormsg) {
+    return TRUE;
   }
 
   /**

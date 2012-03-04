@@ -247,15 +247,27 @@ function video_requirements($phase) {
   if ($phase == 'runtime') {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
-    $requirements['video']['title'] = $transcoder->getName();
-    if ($ffmpeg_version = $transcoder->getVersion()) {
-      $requirements['video']['value'] = $ffmpeg_version;
-      $requirements['video']['severity'] = REQUIREMENT_OK;
+
+    $requirements['video'] = array(
+      'title' => t('Video transcoder: @transcoder', array('@transcoder' => $transcoder->getName())),
+      'value' => NULL,
+    );
+
+    $errormsg = '';
+    $version = $transcoder->getVersion();
+    $available = $transcoder->isAvailable($errormsg);
+
+    if (!$version) {
+      $requirements['video']['description'] = t('Missing the transcoder library. Please <a href="@url">install FFmpeg</a> in to your server if you intend to transcode or to auto create thumbnails.', array('@url' => url('http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts')));
+      $requirements['video']['severity'] = REQUIREMENT_ERROR;
+    }
+    elseif (!$available) {
+      $requirements['video']['description'] = t('The selected transcoder can\'t be used: !reason. Select another transcoder or resolve the problem.', array('!reason' => $errormsg));
+      $requirements['video']['severity'] = REQUIREMENT_ERROR;
     }
     else {
-      $requirements['video']['value'] = t('Not found');
-      $requirements['video']['description'] = t('Missing the transcoder library. Please <a href="@url">install FFmpeg</a> in to your server if you intend to transcode or to auto create thumbnails.', array('@url' => url('http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts')));
-      $requirements['video']['severity'] = REQUIREMENT_WARNING;
+      $requirements['video']['value'] = $version;
+      $requirements['video']['severity'] = REQUIREMENT_OK;
     }
   }
 
@@ -401,4 +413,12 @@ function video_update_7205(&$sandbox) {
   }
 
   return implode('<br />', $msg);
+}
+
+/**
+ * Remove zencoder_username and agree_terms_zencoder variables.
+ */
+function video_update_7206(&$sandbox) {
+  variable_del('zencoder_username');
+  variable_del('agree_terms_zencoder');
 }
