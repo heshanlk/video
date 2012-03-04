@@ -180,7 +180,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
   // That function can't be called because the logic for finding
   // existing fids is not the same.
   list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
-  
+
   // On new revisions, all files are considered to be a new usage and no
   // deletion of previous file usages are necessary.
   if (!empty($entity->revision)) {

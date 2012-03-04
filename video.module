@@ -160,7 +160,7 @@ function video_cron() {
 }
 
 /**
- * Implements hook_cron_queue_info()
+ * Implements hook_cron_queue_info().
  */
 function video_cron_queue_info() {
   $queues['video_queue'] = array(
