@@ -17,12 +17,7 @@ function video_transcoder_admin_settings() {
  * Form API callback to validate the upload settings form.
  */
 function video_transcoder_admin_settings_validate($form, &$form_state) {
-  // check ffmpeg_wrapper module installed or not
-  if ($form_state['values']['video_convertor'] == 'video_ffmpeg_wrapper' && !module_exists('ffmpeg_wrapper')) {
-    form_set_error('video_convertor', t('You need to download and install the !ffmpeg_wrapper module to enable this option.', array('!ffmpeg_wrapper' => l(t('FFMPEG Wrapper'), 'http://drupal.org/project/ffmpeg_wrapper'))));
-  }
-
-  // add vallidations by trnacoder interface
+  // add validations by transcoder interface
   $transcoder = $form_state['values']['video_convertor'];
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct($transcoder);
