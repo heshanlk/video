@@ -334,8 +334,8 @@ function video_update_7204(&$sandbox) {
 }
 
 /**
- * Fix problems with Ogg and WebM videos
- * 
+ * Fix problems with Ogg and WebM videos.
+ *
  * Change videos with file type audio/ogg to video/ogg
  * Change *.webm videos from application/octet-stream to video/webm
  * If using FFmpeg, update all presets to use ogv as extension instead of ogg.

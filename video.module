@@ -141,10 +141,9 @@ function video_theme() {
   return $theme;
 }
 
-/*
- * Implmentation of hook_cron().
+/**
+ * Implements hook_cron().
  */
-
 function video_cron() {
   if (variable_get('video_cron', TRUE)) {
     module_load_include('inc', 'video', 'includes/Conversion');
@@ -161,7 +160,7 @@ function video_cron() {
 }
 
 /**
- * Implmentation of hook_cron_queue_info()
+ * Implements hook_cron_queue_info()
  */
 function video_cron_queue_info() {
   $queues['video_queue'] = array(
@@ -353,7 +352,7 @@ function video_file_browser() {
     '#title' => t('Player dimensions'),
     '#type' => 'select',
     '#default_value' => '352x288',
-    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l('video metadata settings', 'admin/config/media/video/metadata'))),
+    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l(t('video metadata settings'), 'admin/config/media/video/metadata'))),
     '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
     '#attributes' => array('class' => array('video-file-browser-dimensions'))
   );

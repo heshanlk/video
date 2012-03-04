@@ -9,4 +9,3 @@
  * $themed_output is the rendered html.
  */
 print $themed_output;
-?>
