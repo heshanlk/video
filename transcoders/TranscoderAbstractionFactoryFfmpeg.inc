@@ -82,9 +82,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
             $value = 200;
           }
 
-          if ($value < 1000) {
-            $value *= 1000;
-          }
           $result = $this->transcoder->setVideoBitRate($value);
           break;
         case 'wxh':

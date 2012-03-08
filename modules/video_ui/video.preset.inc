@@ -202,7 +202,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#type' => 'textfield',
     '#title' => t('Video bitrate'),
     '#description' => t('A target bitrate in kbps. Not necessary if you select a Video Quality setting, unless you want to target a specific bitrate.'),
-    '#default_value' => !empty($preset['settings']['video_bitrate']) ? $preset['settings']['video_bitrate'] : ''
+    '#default_value' => !empty($preset['settings']['video_bitrate']) ? $preset['settings']['video_bitrate'] : '',
   );
   $form['settings']['adv_video']['bitrate_cap'] = array(
     '#type' => 'textfield',
