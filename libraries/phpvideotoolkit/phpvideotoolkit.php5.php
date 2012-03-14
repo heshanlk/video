@@ -576,7 +576,8 @@ class PHPVideoToolkit {
     $codecs = self::_captureExecBuffer($this->_ffmpeg_binary . ' -codecs', $tmp_dir);
     $filters = self::_captureExecBuffer($this->_ffmpeg_binary . ' -bsfs', $tmp_dir);
     $protocols = self::_captureExecBuffer($this->_ffmpeg_binary . ' -protocols', $tmp_dir);
-    self::$ffmpeg_found = $data['ffmpeg-found'] = !(strpos($buffer[0], 'command not found') !== FALSE || strpos($buffer[0], 'No such file or directory') !== FALSE);
+
+    self::$ffmpeg_found = $data['ffmpeg-found'] = !empty($buffer) && strpos($buffer[0], 'command not found') === FALSE && strpos($buffer[0], 'No such file or directory') === FALSE;
 
     $data['compiler'] = array();
     $data['binary'] = array();
@@ -592,7 +593,7 @@ class PHPVideoToolkit {
     $buffer = $data['raw'];
 
 // 			start building the info array
-    $look_ups = array('formats' => 'File formats:', 'configuration' => 'configuration: ', 'codecs' => 'Codecs:', 'filters' => 'Bitstream filters:', 'protocols' => 'Supported file protocols:', 'abbreviations' => 'Frame size, frame rate abbreviations:', 'Note:');
+    $look_ups = array('configuration' => 'configuration: ', 'formats' => 'File formats:', 'codecs' => 'Codecs:', 'filters' => 'Bitstream filters:', 'protocols' => 'Supported file protocols:', 'abbreviations' => 'Frame size, frame rate abbreviations:', 'Note:');
     $total_lookups = count($look_ups);
     $pregs = array();
     $indexs = array();
