@@ -171,7 +171,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
             continue;
           }
           // @todo think about how to move execute() method to parent class
-          $result = $this->transcoder->execute(FALSE, TRUE);
+          $result = $this->transcoder->execute();
           if ($result !== PHPVideoToolkit::RESULT_OK) {
             watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
             $this->transcoder->reset(true);
@@ -202,10 +202,21 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function execute() {
-    $result = $this->transcoder->execute(FALSE, TRUE);
+    $result = $this->transcoder->execute();
     if ($result !== PHPVideoToolkit::RESULT_OK) {
-      watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
-      $this->errors['execute'] = $this->transcoder->getLastError();
+      $errorlist = $this->transcoder->getErrors();
+      $_commandoutput = $this->transcoder->getCommandOutput();
+      $commandoutput = array();
+      foreach ($_commandoutput as $cmd) {
+        $commandoutput[] = '<pre>' . check_plain($cmd['command']) . '</pre><pre>' . check_plain($cmd['output']) . '</p>';
+      }
+
+      watchdog('transcoder', 'FFmpeg failed to transcode %video. !errorlist !commandlist', array(
+        '%video' => $this->settings['input']['filename'],
+        '!errorlist' => theme('item_list', array('type' => 'ol', 'items' => $errorlist, 'title' => t('Reported errors'))),
+        '!commandlist' => theme('item_list', array('type' => 'ol', 'items' => $commandoutput, 'title' => t('Executed commands and output')))
+      ), WATCHDOG_ERROR);
+      $this->errors['execute'] = $errorlist;
       $this->transcoder->reset(true);
       return FALSE;
     }

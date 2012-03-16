@@ -78,11 +78,12 @@ class Transcoder {
    */
   public function executeConvertion($video) {
     global $user;
-    $output = array();
+
     // load the presets
     $this->changeStatus($video->vid, VIDEO_RENDERING_ACTIVE);
+
     // update the video conversion start time
-    db_update('video_queue')->fields(array('started' => time()))->condition('vid', $video->vid, '=')->execute();
+    db_update('video_queue')->fields(array('started' => time()))->condition('vid', $video->vid)->execute();
 
     $video_preset = new Preset();
     $presets = $video_preset->properties();
@@ -91,42 +92,52 @@ class Transcoder {
       watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l(t('enable or create new preset'), 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
       return FALSE;
     }
+
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
     $transcoder->setInput((array) $video);
+    $output = array();
+    $transcodingsuccess = TRUE;
+    $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
+
     foreach ($presets as $name => $preset) {
       // override the widthXheight if enabled
       $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
       // set transcoder options
       $transcoder->setOptions($preset['settings']);
-      // set up output path
-      $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
+      
       if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
-        watchdog('transcoder', 'Video conversion failed.  Could not create the directory: ' . $output_directory, array(), WATCHDOG_ERROR);
+        watchdog('transcoder', 'Video conversion failed.  Could not create the directory: %dir', array('%dir' => $output_directory), WATCHDOG_ERROR);
         return FALSE;
       }
+
       $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
       $transcoder->setOutput($output_directory, $output_name);
       if ($output_file = $transcoder->execute()) {
-        // check for errors before set the output file
-        if ($transcoder->checkErrors())
-          return FALSE;
         $output[] = $output_file;
       }
+      else {
+        $transcodingsuccess = FALSE;
+        break;
+      }
     }
+
     // update the video conversion completed time
-    db_update('video_queue')->fields(array('completed' => time()))->condition('vid', $video->vid, '=')->execute();
-    // add files to file_manged table and add reference to the file_usage table
-    if (isset($output) && !empty($output) && is_array($output)) {
+    db_update('video_queue')->fields(array('completed' => time()))->condition('vid', $video->vid)->execute();
+
+    // add files to file_managed table and add reference to the file_usage table
+    if (!empty($output) && $transcodingsuccess) {
       $this->cleanConverted($video->vid);
       foreach ($output as $file) {
-        if (!isset($file->jobid))
+        if (!isset($file->jobid)) {
           $file->jobid = $video->vid;
+        }
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $video->uid;
         // if media module exists add type as an image
-        if (module_exists('media'))
+        if (module_exists('media')) {
           $file->type = 'video';
+        }
         drupal_write_record('file_managed', $file);
         $output_vid = array(
           'vid' => $video->vid,
@@ -136,16 +147,21 @@ class Transcoder {
         );
         drupal_write_record('video_output', $output_vid);
         // add duration to the video_queue table
-        db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('vid', $video->vid, '=')->execute();
+        db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('vid', $video->vid)->execute();
         // change the status if files are exists
-        if (file_exists(drupal_realpath($file->uri)))
-          $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
+        if (!file_exists(drupal_realpath($file->uri))) {
+          $transcodingsuccess = FALSE;
+        }
       }
-      return $output;
     }
-    else {
+
+    if (!$transcodingsuccess) {
+      $this->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
+
+    $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
+    return $output;
   }
 
   /**

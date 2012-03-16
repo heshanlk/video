@@ -66,18 +66,20 @@ class Conversion {
     }
     // Make sure this video is pending or do nothing.
     if ($video->video_status != VIDEO_RENDERING_INQUEUE) {
-      $transcoder = new Transcoder;
+      $transcoder = new Transcoder();
       if ($job = $transcoder->executeConvertion($video)) {
         // rules integration
-        if (module_exists('rules') && $video->entity_type == 'node')
+        if (module_exists('rules') && $video->entity_type == 'node') {
           rules_invoke_event('video_success', node_load($video->entity_id));
+        }
         return $job;
       }
       else {
         // rules integration
-        if (module_exists('rules') && $video->entity_type == 'node')
+        if (module_exists('rules') && $video->entity_type == 'node') {
           rules_invoke_event('video_failed', node_load($video->entity_id));
-        watchdog('transcoder', 'Video conversion failed!. Please check logs for debugging.', array(), WATCHDOG_WARNING);
+        }
+        watchdog('transcoder', 'Video conversion for %videofilename failed. Please check logs for debugging.', array('%videofilename' => $video->filename), WATCHDOG_ERROR);
       }
     }
     else {

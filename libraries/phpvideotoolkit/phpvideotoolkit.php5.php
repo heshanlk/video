@@ -458,6 +458,12 @@ class PHPVideoToolkit {
   protected $_post_processes = array();
 
   /**
+   * Stores command output
+   * @var array
+   */
+  protected $_command_output = array();
+
+  /**
    * Holds commands should be sent added to the exec before the input file, this is by no means a definitive list
    * of all the ffmpeg commands, as it only utilizes the ones in use by this class. Also only commands that have
    * specific required places are entered in the arrays below. Anything not in these arrays will be treated as an
@@ -506,6 +512,7 @@ class PHPVideoToolkit {
     $this->_process_address = NULL;
     $this->_log_file = NULL;
     $this->_commands = array();
+    $this->_command_output = array();
     $this->_timer_start = 0;
     $this->_process_file_count = 0;
     $this->__destruct();
@@ -515,24 +522,27 @@ class PHPVideoToolkit {
     $buffer = array();
     $err = 0;
     exec($command . ' 2>&1', $buffer, $err);
+
     if ($err !== 127) {
       if (isset($buffer[0]) === FALSE) {
         $tmp_file = ($tmp_dir === FALSE ? $this->_tmp_directory : $tmp_dir) . '_temp_' . uniqid(time() . '-') . '.txt';
         exec($command . ' &>' . $tmp_file, $buffer, $err);
         if ($handle = fopen($tmp_file, 'r')) {
           $buffer = array();
-          // 					loop through the lines of data and collect the buffer
           while (!feof($handle)) {
             array_push($buffer, fgets($handle, 4096));
           }
+          fclose($handle);
         }
         @unlink($tmp_file);
       }
     }
-    else {
-// 				throw ffmpeg not found error
-      $buffer = array();
-    }
+
+    $this->_command_output[] = array(
+      'command' => $command,
+      'output' => implode("\n", $buffer),
+    );
+
     return $buffer;
   }
 
@@ -3129,8 +3139,10 @@ class PHPVideoToolkit {
 //				add the files the the class a record of what has been generated
       array_unshift($this->_files, $files);
 
-      array_push($lines, $this->_getMessage('ffmpeg_log_separator'), $this->_getMessage('ffmpeg_log_ffmpeg_output'), $this->_getMessage('ffmpeg_log_separator'), implode("\n", $files));
-      $this->_addToLog($lines, 'a+');
+      if ($log) {
+        array_push($lines, $this->_getMessage('ffmpeg_log_separator'), $this->_getMessage('ffmpeg_log_ffmpeg_output'), $this->_getMessage('ffmpeg_log_separator'), implode("\n", $files));
+        $this->_addToLog($lines, 'a+');
+      }
 
       return $file_exists ? self::RESULT_OK_BUT_UNWRITABLE : self::RESULT_OK;
     }
@@ -3172,8 +3184,10 @@ class PHPVideoToolkit {
 
 // 					rename the file to the final destination and check it went ok
         if (rename($this->_process_address, $this->_output_address)) {
-          array_push($lines, $this->_getMessage('ffmpeg_log_separator'), $this->_getMessage('ffmpeg_log_ffmpeg_output'), $this->_getMessage('ffmpeg_log_separator'), $this->_output_address);
-          $this->_addToLog($lines, 'a+');
+          if ($log) {
+            array_push($lines, $this->_getMessage('ffmpeg_log_separator'), $this->_getMessage('ffmpeg_log_ffmpeg_output'), $this->_getMessage('ffmpeg_log_separator'), $this->_output_address);
+            $this->_addToLog($lines, 'a+');
+          }
 
 // 						the file has been renamed ok
 // 						add the error to the log file
@@ -3447,6 +3461,16 @@ class PHPVideoToolkit {
   }
 
   /**
+   * Returns all commands and their output
+   *
+   * @return
+   *   array of arrays, the inner array contains keys command and output.
+   */
+  public function getCommandOutput() {
+    return $this->_command_output;
+  }
+  
+  /**
    * Raises an error
    *
    * @access protected
@@ -3605,4 +3629,3 @@ class PHPVideoToolkit {
   }
 
 }
-
