@@ -146,11 +146,15 @@ class Transcoder {
           'job_id' => $file->jobid
         );
         drupal_write_record('video_output', $output_vid);
+
         // add duration to the video_queue table
         db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('vid', $video->vid)->execute();
-        // change the status if files are exists
-        if (!file_exists(drupal_realpath($file->uri))) {
-          $transcodingsuccess = FALSE;
+
+        // Change the status if the file exists.
+        // this happens for ffmpeg and other transcoders that transcoder
+        // directly. For Zencoder, the status is changed later.
+        if (file_exists(drupal_realpath($file->uri))) {
+          $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
         }
       }
     }
@@ -160,7 +164,6 @@ class Transcoder {
       return FALSE;
     }
 
-    $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
     return $output;
   }
 
