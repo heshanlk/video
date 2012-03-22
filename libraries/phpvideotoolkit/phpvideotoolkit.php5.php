@@ -581,78 +581,68 @@ class PHPVideoToolkit {
 
     $format = '';
     $data = array('reading_from_cache' => FALSE);
-// 			execute the ffmpeg lookup
-    $buffer = self::_captureExecBuffer($this->_ffmpeg_binary . ' -formats', $tmp_dir);
+
+    $formats = self::_captureExecBuffer($this->_ffmpeg_binary . ' -formats', $tmp_dir);
     $codecs = self::_captureExecBuffer($this->_ffmpeg_binary . ' -codecs', $tmp_dir);
     $filters = self::_captureExecBuffer($this->_ffmpeg_binary . ' -bsfs', $tmp_dir);
     $protocols = self::_captureExecBuffer($this->_ffmpeg_binary . ' -protocols', $tmp_dir);
 
-    self::$ffmpeg_found = $data['ffmpeg-found'] = !empty($buffer) && strpos($buffer[0], 'command not found') === FALSE && strpos($buffer[0], 'No such file or directory') === FALSE;
+    self::$ffmpeg_found = $data['ffmpeg-found'] = !empty($formats) && strpos($formats[0], 'command not found') === FALSE && strpos($formats[0], 'No such file or directory') === FALSE;
 
     $data['compiler'] = array();
     $data['binary'] = array();
     $data['ffmpeg-php-support'] = self::hasFFmpegPHPSupport();
-
-    $data['raw'] = implode("\r\n", $buffer) . "\r\n" . implode("\r\n", $codecs) . "\r\n" . implode("\r\n", $filters) . implode("\r\n", $protocols);
-
     if (!self::$ffmpeg_found) {
       self::$ffmpeg_info = $data;
       return $data;
     }
 
-    $buffer = $data['raw'];
+    $formats = implode("\n", $formats);
+    $codecs = implode("\n", $codecs);
+    $filters = implode("\n", $filters);
+    $protocols = implode("\n", $protocols);
 
-// 			start building the info array
-    $look_ups = array('configuration' => 'configuration: ', 'formats' => 'File formats:', 'codecs' => 'Codecs:', 'filters' => 'Bitstream filters:', 'protocols' => 'Supported file protocols:', 'abbreviations' => 'Frame size, frame rate abbreviations:', 'Note:');
-    $total_lookups = count($look_ups);
-    $pregs = array();
-    $indexs = array();
+    $data['raw'] = $formats . "\n" . $codecs . "\n" . $filters . "\n" . $protocols;
 
-// 			search for the content
-    foreach ($look_ups as $key => $reg) {
-      if (strpos($buffer, $reg) !== FALSE) {
-        $index = array_push($pregs, $reg);
-        $indexs[$key] = $index;
+    // grab the versions
+    $data['binary']['versions'] = self::getVersion($data['raw']);
+
+    // grab the ffmpeg configuration flags
+    $config_flags = array();
+    if (preg_match_all('/--[a-zA-Z0-9\-]+/', $formats, $config_flags)) {
+      $data['binary']['configuration'] = $config_flags[0];
+      $data['binary']['vhook-support'] = in_array('--enable-vhook', $config_flags[0]) || !in_array('--disable-vhook', $config_flags[0]);
+
+      // grab the ffmpeg compile info
+      preg_match('/built on (.*), gcc: (.*)/', $formats, $conf);
+      if (count($conf) > 0) {
+        $data['compiler']['gcc'] = $conf[2];
+        $data['compiler']['build_date'] = $conf[1];
+        $data['compiler']['build_date_timestamp'] = strtotime($conf[1]);
       }
     }
 
-    preg_match('/' . implode('(.*)', $pregs) . '(.*)/s', $buffer, $matches);
-
-    $configuration = '';
-    if (isset($indexs['configuration']))
-      $configuration = trim($matches[$indexs['configuration']]);
-// 			grab the ffmpeg configuration flags
-    preg_match_all('/--[a-zA-Z0-9\-]+/', $configuration, $config_flags);
-    $data['binary']['configuration'] = $config_flags[0];
-    $data['binary']['vhook-support'] = in_array('--enable-vhook', $config_flags[0]) || !in_array('--disable-vhook', $config_flags[0]);
-    // 			grab the versions
-    $data['binary']['versions'] = self::getVersion($buffer);
-    // 			grab the ffmpeg compile info
-    preg_match('/built on (.*), gcc: (.*)/', $configuration, $conf);
-    if (count($conf) > 0) {
-      $data['compiler']['gcc'] = $conf[2];
-      $data['compiler']['build_date'] = $conf[1];
-      $data['compiler']['build_date_timestamp'] = strtotime($conf[1]);
-    }
-// 			grab the file formats available to ffmpeg
-    preg_match_all('/ (DE|D|E) (.*) {1,} (.*)/', $matches[$indexs['formats']], $formats);
+    // grab the file formats available to ffmpeg
+    $formatmatches = array();
     $data['formats'] = array();
+    if (preg_match_all('/ (DE|D|E) (.*) {1,} (.*)/', $formats, $formatmatches)) {
 // 			loop and clean
 // Formats:
 //  D. = Demuxing supported
 //  .E = Muxing supported
-    for ($i = 0, $a = count($formats[0]); $i < $a; $i++) {
-      $data['formats'][strtolower(trim($formats[2][$i]))] = array(
-        'mux' => $formats[1][$i] == 'DE' || $formats[1][$i] == 'E',
-        'demux' => $formats[1][$i] == 'DE' || $formats[1][$i] == 'D',
-        'fullname' => $formats[3][$i]
-      );
+      for ($i = 0, $a = count($formatmatches[0]); $i < $a; $i++) {
+        $data['formats'][strtolower(trim($formatmatches[2][$i]))] = array(
+          'mux' => $formatmatches[1][$i] == 'DE' || $formatmatches[1][$i] == 'E',
+          'demux' => $formatmatches[1][$i] == 'DE' || $formatmatches[1][$i] == 'D',
+          'fullname' => $formatmatches[3][$i]
+        );
+      }
     }
 
-// 			grab the codecs available
-    preg_match_all('/ ([DEVAST ]{0,6}) ([A-Za-z0-9\_]*) (.*)/', $matches[$indexs['codecs']], $codecs);
+    // grab the codecs available
+    $codecsmatches = array();
     $data['codecs'] = array('video' => array(), 'audio' => array(), 'subtitle' => array());
-
+    if (preg_match_all('/ ([DEVAST ]{0,6}) ([A-Za-z0-9\_]*) (.*)/', $codecs, $codecsmatches)) {
     // Codecs:
 //  D..... = Decoding supported
 //  .E.... = Encoding supported
@@ -662,66 +652,57 @@ class PHPVideoToolkit {
 //  ...S.. = Supports draw_horiz_band
 //  ....D. = Supports direct rendering method 1
 //  .....T = Supports weird frame truncation
-    for ($i = 0, $a = count($codecs[0]); $i < $a; $i++) {
-      $options = preg_split('//', $codecs[1][$i], -1, PREG_SPLIT_NO_EMPTY);
-      if ($options) {
-        $id = trim($codecs[2][$i]);
-        $type = $options[2] === 'V' ? 'video' : ($options[2] === 'A' ? 'audio' : 'subtitle');
-        switch ($options[2]) {
+      for ($i = 0, $a = count($codecsmatches[0]); $i < $a; $i++) {
+        $options = preg_split('//', $codecsmatches[1][$i], -1, PREG_SPLIT_NO_EMPTY);
+        if ($options) {
+          $id = trim($codecsmatches[2][$i]);
+          $type = $options[2] === 'V' ? 'video' : ($options[2] === 'A' ? 'audio' : 'subtitle');
+          switch ($options[2]) {
           // 					video
-          case 'V' :
-            $data['codecs'][$type][$id] = array(
-              'encode' => isset($options[1]) === TRUE && $options[1] === 'E',
-              'decode' => isset($options[0]) === TRUE && $options[0] === 'D',
-              'draw_horizontal_band' => isset($options[3]) === TRUE && $options[3] === 'S',
-              'direct_rendering_method_1' => isset($options[4]) === TRUE && $options[4] === 'D',
-              'weird_frame_truncation' => isset($options[5]) === TRUE && $options[5] === 'T',
-              'fullname' => trim($codecs[3][$i])
-            );
-            break;
+            case 'V' :
+              $data['codecs'][$type][$id] = array(
+                'encode' => isset($options[1]) === TRUE && $options[1] === 'E',
+                'decode' => isset($options[0]) === TRUE && $options[0] === 'D',
+                'draw_horizontal_band' => isset($options[3]) === TRUE && $options[3] === 'S',
+                'direct_rendering_method_1' => isset($options[4]) === TRUE && $options[4] === 'D',
+                'weird_frame_truncation' => isset($options[5]) === TRUE && $options[5] === 'T',
+                'fullname' => trim($codecsmatches[3][$i])
+              );
+              break;
           // 					audio
-          case 'A' :
+            case 'A' :
           // 					subtitle
-          case 'S' :
-            $data['codecs'][$type][$id] = array(
-              'encode' => isset($options[1]) === TRUE && $options[1] === 'E',
-              'decode' => isset($options[0]) === TRUE && $options[0] === 'D',
-              'fullname' => trim($codecs[3][$i])
-            );
-            break;
+            case 'S' :
+              $data['codecs'][$type][$id] = array(
+                'encode' => isset($options[1]) === TRUE && $options[1] === 'E',
+                'decode' => isset($options[0]) === TRUE && $options[0] === 'D',
+                'fullname' => trim($codecsmatches[3][$i])
+              );
+              break;
+          }
         }
       }
     }
 
-// 			grab the bitstream filters available to ffmpeg
+    // grab the bitstream filters available to ffmpeg
     $data['filters'] = array();
-    if (isset($indexs['filters']) === TRUE && isset($matches[$indexs['filters']]) === TRUE) {
-      $filters = trim($matches[$indexs['filters']]);
-      if (empty($filters) === FALSE) {
-        $data['filters'] = explode(' ', $filters);
-      }
-    }
-// 			grab the file prototcols available to ffmpeg
-    $data['protocols'] = array();
-    if (isset($indexs['protocols']) === TRUE && isset($matches[$indexs['protocols']]) === TRUE) {
-      $protocols = trim($matches[$indexs['protocols']]);
-      if (empty($protocols) === FALSE) {
-        $data['protocols'] = explode(' ', str_replace(':', '', $protocols));
-      }
+    $locate = 'Bitstream filters:';
+    if (!empty($filters) && ($pos = strpos($filters, $locate)) !== FALSE) {
+      $filters = trim(substr($filters, $pos + strlen($locate)));
+      $data['filters'] = explode("\n", $filters);
     }
 
-// 			grab the abbreviations available to ffmpeg
-    $data['abbreviations'] = array();
-    if (isset($indexs['abbreviations']) === TRUE && isset($matches[$indexs['abbreviations']]) === TRUE) {
-      $abbreviations = array_shift(explode("\r", trim($matches[$indexs['abbreviations']])));
-      if (empty($abbreviations) === FALSE) {
-        $data['abbreviations'] = explode(' ', $abbreviations);
-      }
+    // grab the file protocols available to ffmpeg
+    $data['protocols'] = array();
+    $locate = 'Supported file protocols:';
+    if (!empty($protocols) && ($pos = strpos($protocols, $locate)) !== FALSE) {
+      $protocols = trim(substr($filters, $pos + strlen($locate)));
+      $data['protocols'] = explode("\n", $filters);
     }
 
     PHPVideoToolkit::$ffmpeg_info = $data;
 
-// 			cache the data
+// cache the data
     if ($cache_file !== FALSE && $read_from_cache === TRUE) {
       $data['_cache_date'] = time();
       file_put_contents($cache_file, '<?php
