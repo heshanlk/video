@@ -109,22 +109,6 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
 }
 
 /**
- * Implements hook_field_prepare_view().
- */
-function video_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
-  // If there are no files specified at all, use the default.
-  foreach ($entities as $id => $entity) {
-    if (empty($items[$id]) && $field['settings']['default_video_thumbnail']['fid']) {
-      if ($file = file_load($field['settings']['default_video_thumbnail']['fid'])) {
-        $items[$id][0] = (array) $file + array(
-          'is_default' => TRUE,
-        );
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_field_presave().
  */
 function video_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
