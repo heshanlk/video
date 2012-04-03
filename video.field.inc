@@ -508,15 +508,9 @@ function video_filefield_sources_widgets() {
 function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
   // Create entry for video conversion if auto conversion is enabled
   if ($field['settings']['autoconversion'] == 1) {
-    $job = FALSE;
-    switch ($entity_type) {
-      case 'node':
-        $entity_id = $entity->nid;
-        break;
-      case 'comment':
-        $entity_id = $entity->cid;
-        break;
-    }
+    // Find the entity id
+    list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
+
     // conversion class
     module_load_include('inc', 'video', 'includes/Conversion');
     $video_conversion = new Conversion();
@@ -536,19 +530,15 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
       if (isset($item['re_convert_video']) && $item['re_convert_video'] == 1) {
         $video = $transcoder->loadJob();
         $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_PENDING);
-        $job = TRUE;
       }
       // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
       if (!$video = $transcoder->loadJob()) {
-        if (!($transcoder->createJob($item, $entity_id, $entity_type)))
+        if (!($transcoder->createJob($item, $entity_id, $entity_type))) {
           drupal_set_message(t('Something went wrong with your video job creation.  Please check your recent log entries for further debugging.'), 'error');
-        else
-          $job = TRUE;
+        }
       }
       // if convert on save is checked
       if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1) {
-        // set to false when convert on save
-        $job = FALSE;
         if ($video_conversion->process($item['fid'])) {
           drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
         }
