@@ -365,11 +365,13 @@ function video_default_widget_settings($widget) {
     '#options' => video_explode("\n", variable_get('video_dimensions', video_default_dimensions())),
     '#description' => t('Default player WIDTHxHEIGHT in px.  This is your actual player dimensions that your video will be playing in.')
   );
+
   $form['plugins']['autoconversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable video conversion'),
-    '#description' => t('Automatically convert videos to web compatible types such as FLV, Please make sure to configure your transcoder settings. If this option is not enabled, the input video will be used as it is uploaded.'),
-    '#default_value' => $widget['autoconversion'],
+    '#description' =>
+      t('Automatically convert videos to web compatible types such as FLV, Please make sure to configure your transcoder settings.') .
+      '<br/><strong>' . t('If this option is not enabled, the input video will be used as it is uploaded.') . '</strong>',
   );
 
   // Default thumbnail settings.
