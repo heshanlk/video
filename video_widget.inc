@@ -138,35 +138,38 @@ function video_widget_element_settings(&$element) {
 }
 
 /**
- * Updates options list to show matching aspect ratios and matching resolutions
+ * Updates options list to show matching aspect ratios and resolutions
  *
- * We will update the options array by reference and return the aspect ratio of
- * the file.
+ * We will update the options array by reference and return the dimensions of
+ * the video.
  */
 function _video_dimensions_options(&$options, $video) {
-  $aspect_ratio = _video_aspect_ratio($video);
+  $transcoder = video_get_transcoder();
+  $dimensions = $transcoder->get_dimensions($video);
 
-  if (empty($aspect_ratio)) {
-    return $aspect_ratio;
+  if (empty($dimensions)) {
+    return $dimensions;
   }
+
+  $videoratio = _video_aspect_ratio($dimensions['width'], $dimensions['height']);
 
   // Loop through our options and find matching ratio's and also the exact width/height
   foreach ($options as $key => $value) {
     $wxh = explode('x', $value);
     // Lets check our width and height first
-    if ($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
+    if ($videoratio['width'] == $wxh[0] && $videoratio['height'] == $wxh[1]) {
       $options[$key] = $value . ' ' . t('(Matches Resolution)');
     }
     else {
       // Now lets check our ratio's
-      $ratio = number_format($wxh[0] / $wxh[1], 4);
-      if ($ratio == $aspect_ratio['ratio']) {
+      $ratio = _video_aspect_ratio($wxh[0], $wxh[1]);
+      if ($ratio == $videoratio) {
         $options[$key] = $value . ' ' . t('(Matches Ratio)');
       }
     }
   }
 
-  return $aspect_ratio;
+  return $dimensions;
 }
 
 /**

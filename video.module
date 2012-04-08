@@ -390,25 +390,10 @@ function video_views_api() {
 }
 
 /**
- * Returns the width/height and aspect ratio of the video
- *
- * @todo: move this to the transcoder class instead?
+ * Returns the aspect ratio for the given width and height.
  */
-function _video_aspect_ratio($video) {
-  // Lets get our video dimensions from the file
-  $transcoder = video_get_transcoder();
-  $wxh = $transcoder->get_dimensions($video);
-
-  if (empty($wxh) || empty($wxh['width']) || empty($wxh['height'])) {
-    // No width and height found. This may be because the transcoder does not support retrieving dimensions.
-    return NULL;
-  }
-
-  return array(
-    'width' => $wxh['width'],
-    'height' => $wxh['height'],
-    'ratio' => number_format($wxh['width'] / $wxh['height'], 4),
-  );
+function _video_aspect_ratio($width, $height) {
+  return number_format($width / $height, 4);
 }
 
 /**

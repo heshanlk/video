@@ -77,6 +77,18 @@ interface video_transcoder extends video_plugin {
   public function convert_video(stdClass $video);
 
   public function requirements();
+
+  /**
+   * Return the width and height of the given file.
+   *
+   * @param $filepath
+   *   string containing the path to the video file.
+   *
+   * @return
+   *   array containing keys width and height or NULL when
+   *   the width and height can't be determined.
+   */
+  public function get_dimensions($filepath);
 }
 
 class video_preset {

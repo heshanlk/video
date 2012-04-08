@@ -445,7 +445,7 @@ watermark:
   /**
    * Return the dimensions of a video
    */
-  public function get_dimensions($video) {
+  public function get_dimensions($filepath) {
     // @TODO get object properties
     return NULL;
   }

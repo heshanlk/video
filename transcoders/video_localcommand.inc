@@ -136,7 +136,13 @@ class video_localcommand implements video_transcoder {
     $converteddir = dirname(dirname($video->filepath)) .'/converted';
 
     if (!field_file_check_directory($converteddir, FILE_CREATE_DIRECTORY)) {
-      watchdog('video_command', 'Video conversion failed. Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
+      watchdog('video_command', 'Video conversion could not be started: Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
+      return FALSE;
+    }
+
+    $sourcedimensions = $this->get_dimensions($video->filepath);
+    if (empty($sourcedimensions)) {
+      watchdog('video_command', 'Video conversion could not be started: Could not find file information for file %file.', array('%file' => $video->filepath), WATCHDOG_ERROR);
       return FALSE;
     }
 
@@ -144,8 +150,7 @@ class video_localcommand implements video_transcoder {
     _video_db_increase_timeout();
 
     // Get the placeholders for the transcoding command
-    $fileinfo = _video_aspect_ratio($video->filepath);
-    $dimensionparameters = $this->getDimensionParameters($video, $fileinfo);
+    $dimensionparameters = $this->getDimensionParameters($video, $sourcedimensions);
     $parameters = array(
       '!cmd_path' => $this->cmdpath,
       '!videofile' => escapeshellarg(realpath($video->filepath)),
@@ -264,8 +269,8 @@ class video_localcommand implements video_transcoder {
   /**
    * Get some information from the video file
    */
-  private function get_video_info($video) {
-    $command = $this->cmdpath .' -i '. escapeshellarg($video);
+  private function get_video_info($filepath) {
+    $command = $this->cmdpath .' -i '. escapeshellarg($filepath);
 
     // Execute the command
     $output = '';
@@ -279,8 +284,8 @@ class video_localcommand implements video_transcoder {
   /**
    * Return the playtime seconds of a video
    */
-  public function get_playtime($video) {
-    $output = $this->get_video_info($video);
+  public function get_playtime($filepath) {
+    $output = $this->get_video_info($filepath);
 
     $match = array();
     if (preg_match('/Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9])/', $output, $match)) {
@@ -298,21 +303,21 @@ class video_localcommand implements video_transcoder {
     return NULL;
   }
 
-  /*
+  /**
    * Return the dimensions of a video
    */
-
-  public function get_dimensions($video) {
-    $output = $this->get_video_info($video);
-    $res = array('width' => 0, 'height' => 0);
+  public function get_dimensions($filepath) {
+    $output = $this->get_video_info($filepath);
     $match = array();
 
     if (preg_match('#(\d{2,4})x(\d{2,4})#', $output, $match)) {
-      $res['width'] = intval($match[1]);
-      $res['height'] = intval($match[2]);
+      return array(
+        'width' => intval($match[1]),
+        'height' => intval($match[2]),
+      );
     }
 
-    return $res;
+    return NULL;
   }
 
   public function get_name() {
@@ -396,11 +401,11 @@ class video_localcommand implements video_transcoder {
    * a better way to check the end WxH.  Maybe compare the final resolution to our defaults?  I don't think
    * that just checking to make sure the final number is even is accurate enough.
    */
-  public function getDimensionParameters(stdClass $video, array $fileinfo) {
+  public function getDimensionParameters(stdClass $video, array $sourcedimensions) {
     $wxh = explode('x', $video->dimensions, 2);
     $outputwidth = intval($wxh[0]);
     $outputheight = intval($wxh[1]);
-    $outputratio = number_format($outputwidth / $outputheight, 4);
+    $outputratio = _video_aspect_ratio($outputwidth, $outputheight);
 
     $options = new stdClass();
     $options->paddingleft = 0;
@@ -412,9 +417,9 @@ class video_localcommand implements video_transcoder {
     $options->width = $outputwidth;
     $options->height = $outputheight;
 
-    $fileratio = $fileinfo['ratio'];
-    $filewidth = $fileinfo['width'];
-    $fileheight = $fileinfo['height'];
+    $filewidth = $sourcedimensions['width'];
+    $fileheight = $sourcedimensions['height'];
+    $fileratio = _video_aspect_ratio($filewidth, $fileheight);
 
     // If the input ratio is not equal to the output ratio
     if ($outputratio != $fileratio && $filewidth && $fileheight) {
@@ -658,7 +663,7 @@ class video_localcommand implements video_transcoder {
         'severity' => REQUIREMENT_WARNING,
       );
     }
-    elseif(!file_exists($this->cmdpath)) {
+    elseif (!file_exists($this->cmdpath)) {
       $requirements['video_localcommand_args'] = array(
         'title' => $t('Video local command'),
         'description' => $t('The file %cmdpath can\'t be found. Please change your settings.', array('%cmdpath' => $this->cmdpath)),
@@ -666,7 +671,7 @@ class video_localcommand implements video_transcoder {
         'severity' => REQUIREMENT_ERROR,
       );
     }
-    elseif(!is_executable($this->cmdpath)) {
+    elseif (!is_executable($this->cmdpath)) {
       $requirements['video_localcommand_args'] = array(
         'title' => $t('Video local command'),
         'description' => $t('The file %cmdpath is not an executable. Please change your settings.', array('%cmdpath' => $this->cmdpath)),
