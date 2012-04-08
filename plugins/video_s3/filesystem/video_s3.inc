@@ -15,21 +15,21 @@ class video_s3 implements filesystem_interface {
   }
 
   public function load_file($video) {
-    $transcoder = variable_get('vid_convertor', 'video_ffmpeg');
-
     module_load_include('lib.inc', 'video_s3');
     $s3 = new video_amazon_s3();
 
-    if ($amazon = $s3->get($video->fid)) {
+    if ($s3file = $s3->get($video->fid)) {
+      $s3->connect();
       foreach ($video->files as $key => &$file) {
-        $s3->connect();
-        $file->url = $s3->getVideoUrl($file->filepath);
+        $filepath = $file->filepath;
 
         // For old video's (pre-4.5), the filename property is actually a path
         // and no ffmpeg converted files were saved to S3.
-        if (strpos('/', $amazon->filename) !== FALSE && $transcoder == 'video_ffmpeg') {
-          $file->url = $s3->getVideoUrl($amazon->filename);
+        if (strpos('/', $file->filename) !== FALSE) {
+          $filepath = $file->filename;
         }
+
+        $file->url = $s3->getVideoUrl($filepath, $s3file->bucket);
       }
     }
   }
