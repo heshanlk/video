@@ -82,7 +82,7 @@ function _video_zencoder_postback_jobs() {
     $thumbsdownloaded = 0;
     for ($i = 0; $i < $number_of_thumbs; $i++) {
       $thumbfile = $video_thumb_path .'/'. $video->fid .'_'. sprintf('%04d', $i) .'.png';
-      
+
       if (video_s3_get_object_info($thumbfile)) {
         if (video_s3_get_object($thumbfile, $thumbfile)) {
           $thumbsdownloaded++;
