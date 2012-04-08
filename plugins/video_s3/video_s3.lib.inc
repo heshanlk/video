@@ -123,28 +123,29 @@ class video_amazon_s3 {
     return NULL;
   }
 
-  public function getVideoUrl($filepath) {
+  public function getVideoUrl($filepath, $bucket = NULL) {
     if (variable_get('amazon_s3_private', FALSE)) {
-      return $this->get_authenticated_url($filepath);
+      return $this->get_authenticated_url($filepath, $bucket);
     }
-    else {
-      $cfdomain = variable_get('amazon_s3_cf_domain', FALSE);
 
-      return
-        ($this->ssl ? 'https://' : 'http://') .
-        ($cfdomain ? $cfdomain .'/' : ($this->bucket .'.s3.amazonaws.com/')) .
-        drupal_urlencode($filepath); // Escape spaces
-    }
+    $cfdomain = variable_get('amazon_s3_cf_domain', FALSE);
+    $bucket = $bucket == NULL ? $this->bucket : $bucket;
+
+    return
+      ($this->ssl ? 'https://' : 'http://') .
+      ($cfdomain ? $cfdomain .'/' : ($bucket .'.s3.amazonaws.com/')) .
+      drupal_urlencode($filepath); // Escape spaces
   }
 
   public function get_object_info($filepath) {
     return $this->s3->get_object_headers($this->bucket, $filepath)->isOK();
   }
 
-  public function get_authenticated_url($filepath) {
+  public function get_authenticated_url($filepath, $bucket = NULL) {
     $lifetime = (int)variable_get('amazon_s3_lifetime', 1800);
-    $url = $this->s3->get_object_url($this->bucket, $filepath, time() + $lifetime);
+    $bucket = $bucket == NULL ? $this->bucket : $bucket;
 
+    $url = $this->s3->get_object_url($bucket, $filepath, time() + $lifetime);
     if ($this->ssl) {
       $url = 'https://'. drupal_substr($url, 7);
     }

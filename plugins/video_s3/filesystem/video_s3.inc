@@ -27,17 +27,18 @@ class video_s3 implements video_filesystem {
   }
 
   public function load_file(stdClass $video) {
-    if ($amazon = $this->s3->get($video->fid)) {
-      $transcoder = variable_get('vid_convertor', 'video_localcommand');
+    $s3 = $this->s3;
 
+    if ($s3 != NULL && $s3file = $s3->get($video->fid)) {
       foreach ($video->files as $key => &$file) {
-        $file->url = $this->s3->getVideoUrl($file->filepath);
-
+        $filepath = $file->filepath;
         // For old video's (pre-4.5), the filename property is actually a path
         // and no locally converted files were saved to S3.
-        if (strpos('/', $amazon->filename) !== FALSE && $transcoder == 'video_localcommand') {
-          $file->url = $s3->getVideoUrl($amazon->filename);
+        if (strpos('/', $file->filename) !== FALSE) {
+          $filepath = $file->filename;
         }
+
+        $file->url = $s3->getVideoUrl($filepath, $s3file->bucket);
       }
     }
   }
