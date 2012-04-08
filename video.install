@@ -269,6 +269,29 @@ function video_requirements($phase) {
       $requirements['video']['value'] = $version;
       $requirements['video']['severity'] = REQUIREMENT_OK;
     }
+
+    // Check if URL wrappers are present when allow_url_fopen is off
+    // Also see http://drupal.org/node/1521224
+    if (!ini_get('allow_url_fopen')) {
+      $wrappers = module_invoke_all('stream_wrappers');
+      $remotes = array();
+      foreach ($wrappers as $wrapper) {
+        if (empty($wrapper['type']) || ($wrapper['type'] & STREAM_WRAPPERS_LOCAL) == 0) {
+          $remotes[] = $wrapper['name'];
+        }
+      }
+
+      // $remotes contains all remote stream wrappers
+      if (!empty($remotes)) {
+        $requirements['php_allow_url_fopen'] = array(
+          'title' => t('PHP remote stream wrappers'),
+          'value' => t('Not supported'),
+          'severity' => REQUIREMENT_WARNING,
+          'description' => t('Your PHP configuration disallows remote stream wrappers. Change the php.ini setting <em>allow_url_fopen</em> to <em>On</em> to use the following locations for storing files:') . 
+          theme('item_list', array('items' => $remotes)),
+        );
+      }
+    }
   }
 
   return $requirements;
