@@ -47,5 +47,9 @@ class TranscoderAbstractionFactoryFfmpegTestCase extends DrupalUnitTestCase {
     $versionstring = 'ffmpeg version abcdefg Copyright (c) 2000-2012 the FFmpeg developers';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
     $this->assertEqual('unrecognized: abcdefg', $result, t('Should leave off copyright string from unrecognized version.'));
+
+    $versionstring = 'ffmpeg version 0.10.2';
+    $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
+    $this->assertEqual('0.10.2', $result, t('0.10.x should also be recognized.'));
   }
 }

@@ -587,7 +587,7 @@ class PHPVideoToolkit {
     $filters = self::_captureExecBuffer($this->_ffmpeg_binary . ' -bsfs', $tmp_dir);
     $protocols = self::_captureExecBuffer($this->_ffmpeg_binary . ' -protocols', $tmp_dir);
 
-    self::$ffmpeg_found = $data['ffmpeg-found'] = !empty($formats) && strpos($formats[0], 'command not found') === FALSE && strpos($formats[0], 'No such file or directory') === FALSE;
+    self::$ffmpeg_found = $data['ffmpeg-found'] = !empty($formats) && strpos($formats[0], 'not found') === FALSE && strpos($formats[0], 'No such file or directory') === FALSE;
 
     $data['compiler'] = array();
     $data['binary'] = array();
@@ -3450,7 +3450,7 @@ class PHPVideoToolkit {
   public function getCommandOutput() {
     return $this->_command_output;
   }
-  
+
   /**
    * Raises an error
    *

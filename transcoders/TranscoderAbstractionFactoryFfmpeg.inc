@@ -399,23 +399,22 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function adminSettingsValidate($form, &$form_state) {
     $ffmpeg_path = $form_state['values']['video_ffmpeg_path'];
-    if (!empty($ffmpeg_path) && $ffmpeg_path != variable_get('video_ffmpeg_path')) {
-      // we have to initialize PHP toolkit object again, if changed the path of executable
+
+    if (!empty($ffmpeg_path)) {
       $toolkit = new PHPVideoToolkit($ffmpeg_path);
+      PHPVideoToolkit::$ffmpeg_info = FALSE;
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
-      if ($ffmpeg['ffmpeg-found'] == TRUE) {
-        $version = self::getVersionFromOutput($ffmpeg['raw']);
+
+      if ($ffmpeg['ffmpeg-found'] && ($version = self::getVersionFromOutput($ffmpeg['raw'])) != NULL) {
         drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
       }
       else {
-        drupal_set_message(t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))), 'error');
-        form_set_error('video_ffmpeg_path', t('FFmpeg not found on your system. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+        form_set_error('video_ffmpeg_path', t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $ffmpeg_path, '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
 
       // Clear FFmpeg information when the path has changed.
       cache_clear_all(self::INFO_CID, self::INFO_CACHE);
     }
-    return;
   }
 
   /**
