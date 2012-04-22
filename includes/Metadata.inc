@@ -61,7 +61,8 @@ class Metadata {
       '#type' => 'textarea',
       '#title' => t('Available Dimensions for uploaded videos'),
       '#description' => t('Enter one set of Video Resolution dimensions (for example 1280x720) per line.'),
-      '#default_value' => variable_get("video_metadata_dimensions", video_default_dimensions()),
+      '#default_value' => variable_get('video_metadata_dimensions', video_utility::getDefaultDimensions()),
+      '#required' => TRUE,
     );
 
     return $form;
@@ -94,10 +95,17 @@ class Metadata {
     return $form;
   }
 
-  public function adminSettingsValidate($form, $form_state) {
-    return $this->metadata->adminSettingsValidate($form, $form_state);
-  }
+  public function adminSettingsValidate($form, &$form_state) {
+    $v =& $form_state['values'];
+    if (!empty($v['video_metadata_dimensions'])) {
+      $v['video_metadata_dimensions'] = str_replace("\r", '', $v['video_metadata_dimensions']);
+      if (!video_utility::validateDimensionList($v['video_metadata_dimensions'])) {
+        form_error($form['video_metadata_dimensions'], t('The list of dimensions contains errors: only enter new lines and dimensions in the form widthxheight.'));
+      }
+    }
 
+    $this->metadata->adminSettingsValidate($form, $form_state);
+  }
 }
 
 interface metadata_interface {

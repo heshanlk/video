@@ -13,7 +13,7 @@
  *
  * @ingroup themeable
  */
-function theme_video_widget($variables) {
+function theme_video_widget(array $variables) {
   $element = $variables['element'];
   $output = '';
   $output .= '<div class="video-widget form-managed-file clearfix">';
@@ -42,18 +42,17 @@ function theme_video_widget($variables) {
  * queue). If not or the video is processed, then it will get the default
  * player for the specific video type for output.
  */
-function theme_video_formatter_player($variables) {
-  $themed_output = '';
-  if (empty($variables['item']['fid']))
+function theme_video_formatter_player(array $variables) {
+  if (empty($variables['item']['fid'])) {
     return '';
+  }
+
   $field_settings = $variables['field']['settings'];
-  $instance_settings = $variables['instance']['settings'];
   // Only needs to be ran if they are converting videos
-  if (isset($field_settings['autoconversion']) && $field_settings['autoconversion']) {
+  if (!empty($field_settings['autoconversion'])) {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
-    $transcoder->setInput($variables['item']);
-    if ($video = $transcoder->loadJob()) {
+    if ($video = $transcoder->loadJob($variables['item']['fid'], 'fid')) {
       if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
         return theme('video_inprogress');
       }
@@ -62,32 +61,30 @@ function theme_video_formatter_player($variables) {
       }
     }
   }
+
   // Setup our video object
-  module_load_include('inc', 'video', '/includes/VideoHelper');
-  $video_helper = new VideoHelper;
+  $video_helper = new VideoHelper();
   $video = $video_helper->video_object($variables);
+
   // override player dimensions
-  if (isset($variables['player_dimensions']) && !empty($variables['player_dimensions'])) {
-    $player_dimensions = explode('x', $variables['player_dimensions']);
+  if (!empty($variables['player_dimensions'])) {
+    $player_dimensions = explode('x', $variables['player_dimensions'], 2);
     $video->player_width = trim($player_dimensions[0]);
     $video->player_height = trim($player_dimensions[1]);
   }
+
   // Lets spit out our theme based on the extension
-  $defaults = video_video_extensions();
+  $defaults = video_utility::getVideoExtensions();
   $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
 
-  // Lets do some special handling for our flv files, HTML5 to accomdate multiple players.
-  switch ($theme_function) {
-    case 'video_play_flv':
-      return theme('video_flv', array('video' => $video, 'themed_output' => $themed_output));
-      break;
-    case 'video_play_html5':
-      return theme('video_html5', array('video' => $video, 'themed_output' => $themed_output));
-      break;
-    default:
-      return theme($theme_function, array('video' => $video, 'themed_output' => $themed_output));
-      break;
+  if ($theme_function == 'video_play_flv') {
+    $theme_function = 'video_flv';
   }
+  if ($theme_function == 'video_play_html5') {
+    $theme_function = 'video_html5';
+  }
+
+  return theme($theme_function, array('video' => $video, 'themed_output' => ''));
 }
 
 /*
@@ -96,12 +93,12 @@ function theme_video_formatter_player($variables) {
 
 function theme_video_formatter_thumbnail($variables) {
 // Inside a view $variables may contain null data. In that case, just return.
-  if (empty($variables['item']['fid']))
+  if (empty($variables['item']['fid'])) {
     return '<!-- File not found: ' . $variables['item']['fid'] . ' -->';
+  }
 
 // setup our thumbnail object
-  module_load_include('inc', 'video', '/includes/VideoHelper');
-  $video_helper = new VideoHelper;
+  $video_helper = new VideoHelper();
 // @TODO : change the object to an array
   $thumbnail = (array) $video_helper->thumbnail_object($variables);
 // return if no file path found for the video thumbnails and add log message
@@ -249,9 +246,9 @@ function theme_video_html5($variables) {
       return theme('video_play_html5', array('video' => $video, 'themed_output' => $themed_output));
 
     case 'videojs':
-      $items = _video_object_to_array($video->files);
+      $items = video_utility::objectToArray($video->files);
       if (!empty($video->thumbnail) && isset($video->thumbnail->uri)) {
-        $items['thumbnail'] = _video_object_to_array($video->thumbnail);
+        $items['thumbnail'] = video_utility::objectToArray($video->thumbnail);
       }
 
       $attributes = array();

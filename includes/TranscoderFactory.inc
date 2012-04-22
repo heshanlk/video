@@ -8,21 +8,34 @@
  * Interface for transocder classes
  */
 interface TranscoderFactoryInterface {
-
-  public function extractFrames();
+  /**
+   * Extract frames from the current video.
+   *
+   * The thumbnails should be saved to the given scheme. The files should not
+   * be saved to the database, this will be done by the caller.
+   * The uid, filesize and timestamp properties does not need to be set by this
+   * method.
+   *
+   * @return
+   *   array of file objects, FALSE on error
+   */
+  public function extractFrames($destinationScheme);
 
   public function execute();
 
   public function getName();
 
+  public function getValue();
+
   public function isAvailable(&$errormsg);
+
+  public function getDimensions();
 }
 
 /**
  * Abstract class for the transcoder classes to keep common methods
  */
 abstract class TranscoderAbstractionFactory {
-
   protected $settings = array();
   protected $errors = array();
 
@@ -50,11 +63,9 @@ abstract class TranscoderAbstractionFactory {
   /**
    * Set options is to set transcoding settings before send to the transcoder.
    */
-  public function setOptions($options = NULL) {
-    if (is_array($options)) {
-      foreach ($options as $key => $value) {
-        $this->settings[$key] = $value;
-      }
+  public function setOptions(array $options) {
+    foreach ($options as $key => $value) {
+      $this->settings[$key] = $value;
     }
   }
 
@@ -143,10 +154,20 @@ abstract class TranscoderAbstractionFactory {
    *   Associative array with file informations like duration, dimensions
    */
   public function getFileInfo() {
-    $file = array();
-    $file['duration']['seconds'] = 100;
-    $file['video']['dimensions'] = array('width' => 640, 'height' => 350);
-    return $file;
+    return NULL;
+  }
+
+  public function getDimensions() {
+    $i = $this->getFileInfo();
+
+    if (empty($i) || empty($i['video']['dimensions']['width']) || empty($i['video']['dimensions']['height'])) {
+      return NULL;
+    }
+
+    return array(
+      'width' => intval($i['video']['dimensions']['width']),
+      'height' => intval($i['video']['dimensions']['height']),
+    );
   }
 
   /**
@@ -174,58 +195,55 @@ abstract class TranscoderAbstractionFactory {
   abstract public function adminSettingsValidate($form, &$form_state);
 
   /**
-   * Create new transcoder job on database.
+   * Create new transcoder job in the database.
    */
-  public function createJob($video, $entity_id, $entity_type = 'node') {
-    return db_insert('video_queue')
-            ->fields(array(
-              'fid' => $video['fid'],
-              'entity_id' => $entity_id,
-              'entity_type' => $entity_type,
-              'status' => VIDEO_RENDERING_PENDING,
-              'dimensions' => $video['dimensions'],
-            ))
-            ->execute();
+  public function createJob($fid, $dimensions, $entity_id, $entity_type, $field_name, $langcode, $delta) {
+    $video = new stdClass();
+    $video->fid = intval($fid);
+    $video->entity_id = intval($entity_id);
+    $video->entity_type = $entity_type;
+    $video->status = VIDEO_RENDERING_PENDING;
+    $video->dimensions = $dimensions;
+    $video->data = array(
+      'field_name' => $field_name,
+      'langcode' => $langcode,
+      'delta' => intval($delta),
+    );
+
+    return drupal_write_record('video_queue', $video) === SAVED_NEW ? $video : FALSE;
   }
 
   /**
    * Delete transcoder job and its details from database.
+   *
+   * @todo improve this method: not everything is deleted.
    */
-  public function deleteJob($video) {
-    $video = (object) $video;
-    if (!$video = $this->loadJob())
-      return;
-    // converted output values
-    $converted = unserialize($video->data);
-    if (!empty($converted)) {
-      foreach ($converted as $file) {
-        if (file_exists(drupal_realpath($file->uri)))
-          @drupal_unlink($file->uri);
-      }
+  public function deleteJob() {
+    if (!$video = $this->loadJob()) {
+      return FALSE;
     }
-    // now delete our rows.
-    db_delete('video_queue')
-        ->condition('fid', $video->fid)
-        ->execute();
-    // now delete our rows.
-    db_delete('video_output')
-        ->condition('original_fid', $video->fid)
-        ->execute();
+
+    db_delete('video_queue')->condition('fid', $video->fid)->execute();
+    db_delete('video_output')->condition('original_fid', $video->fid)->execute();
+    return TRUE;
   }
 
   /**
    * Load transcoding job from the database.
    */
-  public function loadJob() {
-    $file = $this->settings['input'];
-    $job = NULL;
-    $job = db_query("SELECT f.*, vf.vid, vf.entity_id, vf.entity_type, vf.dimensions, vf.data, vf.status as video_status
-      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND f.fid = :fid", array(':fid' => $file['fid']))
-        ->fetch();
-    if (!empty($job))
-      return $job;
-    else
+  public function loadJob($id = NULL, $field = 'fid') {
+    if ($id == NULL) {
+      $id = $this->settings['input']['fid'];
+    }
+
+    $job = db_query('SELECT vf.*, f.*, vf.status as video_status FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND vf.' . $field . ' = :id', array(':id' => $id))->fetch();
+    if (empty($job)) {
       return FALSE;
+    }
+
+    $job->data = empty($job->data) ? NULL : unserialize($job->data);
+
+    return $job;
   }
 
   /**
@@ -252,10 +270,9 @@ abstract class TranscoderAbstractionFactory {
   public function loadJobQueue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
-    $result = db_query_range('SELECT f.*, vf.vid, vf.entity_id, vf.entity_type, vf.dimensions, vf.status as video_status
-      FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid
-      WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
+    $result = db_query_range('SELECT vf.*, f.*, vf.status as video_status FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
+      $row->data = empty($row->data) ? NULL : unserialize($row->data);
       $videos[] = $row;
     }
     return $videos;
@@ -273,6 +290,10 @@ interface TranscoderAbstractFactoryInterface {
 }
 
 class TranscoderAbstractionAbstractFactory implements TranscoderAbstractFactoryInterface {
+  /**
+   * @return
+   *   TranscoderFactoryInterface
+   */
   public static function getProduct($transcoder = NULL) {
     // get our configured transcoder.
     if (!isset($transcoder))

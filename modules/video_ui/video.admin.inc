@@ -89,8 +89,8 @@ function video_players_admin_settings() {
     '#description' => t('Here you can map specific players to each video extension type.'),
   );
   // lets get all our supported extensions and players.
-  $extensions = video_video_extensions();
-  $players = video_video_players();
+  $extensions = video_utility::getVideoExtensions();
+  $players = video_utility::getVideoPlayers();
   $flv_players = video_video_flv_players();
   $html5_players = video_video_html5_players();
 
@@ -178,4 +178,35 @@ function video_cron_admin_settings() {
     '#description' => t('How many videos do you want to process on each cron run?  Either through hook_cron or video_scheduler.php.'),
   );
   return system_settings_form($form);
+}
+
+/**
+ * Return our possible flash players.
+ *
+ * When extending this method, also change the error message in
+ * video_players_admin_settings().
+ */
+function video_video_flv_players() {
+  $options = array();
+  if (module_exists('flowplayer')) {
+    $options['flowplayer'] = t('Flowplayer');
+  }
+  if (module_exists('jw_player')) {
+    $options['jwplayer'] = t('JW Player');
+  }
+  return $options;
+}
+
+/**
+ * Return our possible flash players.
+ */
+function video_video_html5_players() {
+  $options = array();
+  if (module_exists('videojs')) {
+    $options['videojs'] = t('Video.js');
+  }
+  if (module_exists('video')) {
+    $options['video'] = t('Video for everybody');
+  }
+  return $options;
 }

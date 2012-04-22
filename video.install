@@ -75,8 +75,7 @@ function video_schema() {
         'not null' => FALSE,
         'size' => 'big',
         'serialize' => TRUE,
-        'description' => 'A serialized array of converted files.
-          Use of this field is discouraged and it will likely disappear in a future version of Drupal.',
+        'description' => 'A serialized array of converted files.',
       ),
     ),
     'indexes' => array(
@@ -113,8 +112,7 @@ function video_schema() {
         'not null' => FALSE,
         'size' => 'big',
         'serialize' => TRUE,
-        'description' => 'Serialized preset settings that do not warrant a dedicated column.
-          Use of this field is discouraged and it will likely disappear in a future version of Drupal.',
+        'description' => 'Serialized preset settings.',
       ),
     ),
     'unique keys' => array(
@@ -124,30 +122,33 @@ function video_schema() {
   );
   // video thumbnails
   $schema['video_thumbnails'] = array(
-    'description' => 'The video thumbnails table.',
+    'description' => 'Table to store thumbnails associated with each video.',
     'fields' => array(
-      'vid' => array(
+      'videofid' => array(
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'description' => 'Foreign Key {video_queue}.fid.',
+        'description' => 'fid of original video.',
       ),
-      'thumbnails' => array(
-        'type' => 'blob',
-        'not null' => FALSE,
-        'size' => 'big',
-        'serialize' => TRUE,
-        'description' => 'Serialized array of thumbnails data.
-          Use of this field is discouraged and it will likely disappear in a future version of Drupal.',
+      'thumbnailfid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'fid of thumbnail.',
       ),
     ),
-    'indexes' => array(
-      'thumbnail' => array('vid'),
+    'unique keys' => array(
+      'thumbnail' => array('thumbnailfid'),
     ),
+    'primary key' => array('videofid', 'thumbnailfid'),
     'foreign keys' => array(
-      'thumbnails' => array(
-        'table' => 'video_queue',
-        'columns' => array('vid' => 'vid'),
+      'videofid' => array(
+        'table' => 'file_managed',
+        'columns' => array('videofid' => 'fid'),
+      ),
+      'thumbnailfid' => array(
+        'table' => 'file_managed',
+        'columns' => array('thumbnailfid' => 'fid'),
       ),
     ),
   );
@@ -287,7 +288,7 @@ function video_requirements($phase) {
           'title' => t('PHP remote stream wrappers'),
           'value' => t('Not supported'),
           'severity' => REQUIREMENT_WARNING,
-          'description' => t('Your PHP configuration disallows remote stream wrappers. Change the php.ini setting <em>allow_url_fopen</em> to <em>On</em> to use the following locations for storing files:') . 
+          'description' => t('Your PHP configuration disallows remote stream wrappers. Change the php.ini setting <em>allow_url_fopen</em> to <em>On</em> to use the following locations for storing files:') .
           theme('item_list', array('items' => $remotes)),
         );
       }
@@ -444,4 +445,43 @@ function video_update_7205(&$sandbox) {
 function video_update_7206(&$sandbox) {
   variable_del('zencoder_username');
   variable_del('agree_terms_zencoder');
+}
+
+/**
+ * Remove old video_thumbnails table and create a new one.
+ */
+function video_update_7207(&$sandbox) {
+  variable_del('video_thumb_save_all');
+  db_drop_table('video_thumbnails');
+  db_create_table('video_thumbnails', array(
+    'description' => 'Table to store thumbnails associated with each video.',
+    'fields' => array(
+      'videofid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'fid of original video.',
+      ),
+      'thumbnailfid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'fid of thumbnail.',
+      ),
+    ),
+    'unique keys' => array(
+      'thumbnail' => array('thumbnailfid'),
+    ),
+    'primary key' => array('videofid', 'thumbnailfid'),
+    'foreign keys' => array(
+      'videofid' => array(
+        'table' => 'file_managed',
+        'columns' => array('videofid' => 'fid'),
+      ),
+      'thumbnailfid' => array(
+        'table' => 'file_managed',
+        'columns' => array('thumbnailfid' => 'fid'),
+      ),
+    ),
+  ));
 }

@@ -43,23 +43,16 @@ class Conversion {
    *   TRUE of FALSE if video was converted successfully.
    */
   public function process($video) {
-    if (is_object($video) && isset($video->fid)) {
-      $return = $this->render($video);
-    }
-    else {
+    if (!is_object($video) || !isset($video->fid)) {
       $video = $this->loadJob($video);
-      $return = $this->render($video);
     }
-    // clear the cache for the video id
-    $cid = 'video:video:' . md5($video->fid);
-    $cache = cache_get($cid);
-    if (!empty($cache->data)) {
-      cache_clear_all($cid, 'cache');
-    }
+
+    $return = $this->render($video);
+    cache_clear_all('video:video:' . md5($video->fid), 'cache');
     return $return;
   }
 
-  private function render($video) {
+  private function render(stdClass $video) {
     if (!is_object($video)) {
       watchdog('transcoder', 'Video object is not present', array(), WATCHDOG_ERROR);
       return FALSE;
@@ -67,7 +60,7 @@ class Conversion {
     // Make sure this video is pending or do nothing.
     if ($video->video_status != VIDEO_RENDERING_INQUEUE) {
       $transcoder = new Transcoder();
-      if ($job = $transcoder->executeConvertion($video)) {
+      if ($job = $transcoder->executeConversion($video)) {
         // rules integration
         if (module_exists('rules') && $video->entity_type == 'node') {
           rules_invoke_event('video_success', node_load($video->entity_id));
@@ -88,13 +81,13 @@ class Conversion {
         VIDEO_RENDERING_COMPLETE => 'completed',
         VIDEO_RENDERING_FAILED => 'failed'
       );
-      watchdog('transcoder', 'Video conversion has been !status. You should add video to the queue. Please check the re-queue to enable the video conversion.', array('!status' => $status[$video->video_status]), WATCHDOG_WARNING);
+      watchdog('transcoder', 'Video conversion has been @status. You should add video to the queue. Please check the re-queue to enable the video conversion.', array('@status' => $status[$video->video_status]), WATCHDOG_WARNING);
       return FALSE;
     }
   }
 
   public function changeStatus($vid, $status) {
-    $transcoder = new Transcoder;
+    $transcoder = new Transcoder();
     return $transcoder->changeStatus($vid, $status);
   }
 
@@ -107,7 +100,6 @@ class Conversion {
   public function loadJob($fid) {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
-    $transcoder->setInput((array) file_load($fid));
-    return $transcoder->loadJob();
+    return $transcoder->loadJob($fid, 'fid');
   }
 }

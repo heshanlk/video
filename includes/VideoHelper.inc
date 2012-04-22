@@ -59,7 +59,7 @@ class VideoHelper {
       }
     }
 
-    cache_set($cid, $video);
+    cache_set($cid, $video, 'cache', time() + 7 * 24 * 3600);
     return $video;
   }
 

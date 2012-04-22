@@ -15,9 +15,10 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
    * @var PHPVideoToolkit
    */
   protected $transcoder = NULL;
+  protected $realoutputdir = NULL;
+  protected $realoutputname = NULL;
 
   public function __construct() {
-    module_load_include('php', 'video', 'libraries/phpvideotoolkit/phpvideotoolkit.php5');
     $this->transcoder = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), file_directory_temp() . '/');
     PHPVideoToolkit::$ffmpeg_info = $this->getCachedFFmpegInfo();
     parent::__construct();
@@ -25,23 +26,39 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
     parent::setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE);
-    $result = $this->transcoder->setInputFile(drupal_realpath($this->settings['input']['uri']));
+
+    $srcuri = $this->settings['input']['uri'];
+    $srcpath = drupal_realpath($srcuri);
+    if (empty($srcpath)) {
+      // If stored on a remote file system, such as S3, download the video to a temporary file.
+      $srcpath = video_utility::createTemporaryLocalCopy($srcuri);
+      if (empty($srcpath)) {
+        watchdog('transcoder', 'Could not download @uri to a temporary file for transcoding.', array('@uri' => $srcuri), WATCHDOG_ERROR);
+        return FALSE;
+      }
+    }
+
+    $result = $this->transcoder->setInputFile($srcpath);
     if ($result !== PHPVideoToolkit::RESULT_OK) {
       watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
       $this->errors['input'] = $this->transcoder->getLastError();
       $this->transcoder->reset();
       return FALSE;
     }
+
+    return TRUE;
   }
 
-  public function setOptions($options = NULL) {
+  public function setOptions(array $options) {
     // Reset the transcoder class keeping the input file info
-    $this->transcoder->reset(true);
+    $this->transcoder->reset(TRUE);
 
     $video_info = $this->getFileInfo();
     foreach ($options as $key => $value) {
-      if (empty($value) || $value === 'none')
+      if (empty($value) || $value === 'none') {
         continue;
+      }
+
       $result = TRUE;
       switch ($key) {
         case 'max_frame_rate':
@@ -85,16 +102,11 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $result = $this->transcoder->setVideoBitRate($value);
           break;
         case 'wxh':
-          if (isset($value) && !empty($value) && variable_get('video_use_preset_wxh', FALSE)) {
-            $dimensions = trim($value);
-          }
-          else {
-            $dimensions = $this->settings['input']['dimensions'];
-          }
-          $dimension = explode('x', $dimensions);
+          $dimension = explode('x', trim($value));
           $result = $this->transcoder->setVideoDimensions($dimension[0], $dimension[1]);
           break;
       }
+
       if ($result !== PHPVideoToolkit::RESULT_OK) {
         watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
         $this->errors['options'] = $this->transcoder->getLastError();
@@ -102,108 +114,124 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         return FALSE;
       }
     }
+
+    return TRUE;
   }
 
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
-    parent::setOutput($output_directory, $output_name, $overwrite_mode);
-    $result = $this->transcoder->setOutput(drupal_realpath($output_directory) . '/', $output_name);
+    $this->realoutputdir = $output_directory;
+    $this->realoutputname = $output_name;
+
+    $tmpoutput = video_utility::createTempFile(video_utility::getExtension($output_name));
+    $tmpoutputdir = dirname($tmpoutput);
+    $tmpoutputname = basename($tmpoutput);
+
+    parent::setOutput($tmpoutputdir, $tmpoutputname, $overwrite_mode);
+
+    $result = $this->transcoder->setOutput($tmpoutputdir . '/', $tmpoutputname);
     if ($result !== PHPVideoToolkit::RESULT_OK) {
       watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
       $this->errors['output'] = $this->transcoder->getLastError();
       $this->transcoder->reset(true);
       return FALSE;
     }
+
+    return TRUE;
   }
 
-  public function extractFrames() {
-    global $user;
+  public function extractFrames($destinationScheme) {
+    // When $job is null, we are viewing the thumbnails before the form has been submitted.
+    $job = $this->loadJob();
+    $fid = intval($this->settings['input']['fid']);
+    $type = 'png'; // @todo: make this configurable
+
     // Get the file system directory.
-    $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
-    file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
+    $dsturibase = $destinationScheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $fid . '/';
+    file_prepare_directory($dsturibase, FILE_CREATE_DIRECTORY);
+    $dstwrapper = file_stream_wrapper_get_instance_by_scheme($destinationScheme);
+
     // get the video file informations
     $file_info = $this->getFileInfo();
-    // video duration
     $duration = floor($file_info['duration']['seconds']);
-    // Total thumbs to generate
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
-    $files = NULL;
 
     // Precaution for very short videos
     if ((2 * $no_of_thumbnails) > $duration) {
       $no_of_thumbnails = floor($duration / 2);
     }
 
-    $debugline = 'Video ' . $this->settings['input']['uri'] . ': duration = ' . $duration . ', frames = ';
-
+    $thumbs = array();
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
       $seek = ceil($duration / ($no_of_thumbnails + 1) * $i);
-      $debugline .= $seek . ', ';
-      $filename = file_munge_filename('thumbnail-' . $this->settings['input']['fid'] . '_' . sprintf("%04d", $i) . '.png', '', TRUE);
-      $thumbnail_path = $schema_thumb_path . '/' . $filename;
-      $thumbnail_real_path = drupal_realpath($thumbnail_path);
-      // Skip files already exists, this will save ffmpeg traffic
-      if (!is_file($thumbnail_real_path)) {
-        // if FFmpeg-php library installed use it
+      $filename = file_munge_filename('thumbnail-' . $fid . '_' . sprintf('%04d', $i) . '.' . $type, '', FALSE);
+      $dsturi = $dsturibase . $filename;
+
+      if (!file_exists($dsturi)) {
+        // Create a temporary file that will be moved to the final URI later
+        $dstpath = video_utility::createTempFile($type);
+
+        $error = NULL;
         if (class_exists('ffmpeg_movie')) {
-          $movie = new ffmpeg_movie(drupal_realpath($this->settings['input']['uri']));
+          $movie = new ffmpeg_movie($this->transcoder->getInputFile());
           $frames = $movie->getFrameCount();
           $fps = $movie->getFrameRate();
-          // Get the right frame number
-          $framenumber = (int) $seek * $fps;
-          if ($framenumber > $frames) {
-            $framenumber = $frames;
-          }
-          // Get the frame and create thumb file
-          $frame = $movie->getFrame($framenumber);
+          $frame = $movie->getFrame(min($frames, (int) $seek * $fps));
           $thumb = $frame->toGDImage();
-          // @todo use image_save() function for this.
-          imagejpeg($thumb, $thumbnail_real_path);
+          $result = video_utility::imageSave($thumb, $dstpath, $type);
+          if (!$result) {
+            $error = t('Unknown FFmpeg-php error');
+          }
         }
         else {
-          // create thuumbnail file
           $this->transcoder->extractFrame($seek);
-
-          $result = $this->transcoder->setOutput(drupal_realpath($schema_thumb_path) . '/', $filename, PHPVideoToolkit::OVERWRITE_EXISTING);
-          if (!$result) {
-            // If there was an error then get it
-            watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
-            $this->transcoder->reset(true);
-            continue;
+          $result = $this->transcoder->setOutput(dirname($dstpath) . '/', basename($dstpath), PHPVideoToolkit::OVERWRITE_EXISTING);
+          if ($result === PHPVideoToolkit::RESULT_OK) {
+            $result = $this->transcoder->execute() === PHPVideoToolkit::RESULT_OK;
           }
-          // @todo think about how to move execute() method to parent class
-          $result = $this->transcoder->execute();
-          if ($result !== PHPVideoToolkit::RESULT_OK) {
-            watchdog('transcoder', $this->transcoder->getLastError(), array(), WATCHDOG_ERROR);
+
+          if (!$result) {
+            $error = $this->transcoder->getLastError();
             $this->transcoder->reset(true);
-            continue;
           }
         }
 
-        if (!file_exists($thumbnail_real_path)) {
-          watchdog('transcoder', 'Error generating thumbnail for video: generated file %file does not exist.', array('%file' => $thumbnail_path), WATCHDOG_ERROR);
+        // Check if the extraction was successfull
+        if ($error === NULL) {
+          if (!file_exists($dstpath)) {
+            $error = t('generated file %file does not exist', array('%file' => $dstpath));
+          }
+          elseif (filesize($dstpath) == 0) {
+            $error = t('generated file %file is empty', array('%file' => $dstpath));
+            drupal_unlink($dstpath);
+          }
+        }
+        if ($error !== NULL) {
+          form_set_error(NULL, t('Error generating thumbnail for video %videofilename: !error.', array('%videofilename' => $this->settings['input']['filename'], '!error' => $error)));
+          watchdog('transcoder', 'Error generating thumbnail for video %videofilename: !error.', array('%videofilename' => $this->settings['input']['filename'], '!error' => $error), WATCHDOG_ERROR);
           continue;
         }
+
+        // Move the file to the final URI
+        copy($dstpath, $dsturi);
       }
-      if (file_exists($thumbnail_real_path)) {
-        // Begin building the file object.
-        $file = new stdClass();
-        $file->uid = $user->uid;
-        $file->status = 0;
-        $file->filename = $filename;
-        $file->uri = $thumbnail_path;
-        $file->filemime = 'image/png';
-        $file->filesize = filesize($thumbnail_real_path);
-        $file->timestamp = time();
-        $files[] = $file;
-      }
+
+      // Begin building the file object.
+      $thumb = new stdClass();
+      $thumb->status = 0;
+      $thumb->filename = basename($dsturi);
+      $thumb->uri = $dsturi;
+      $thumb->filemime = $dstwrapper->getMimeType($dsturi);
+      $thumbs[] = $thumb;
     }
-    watchdog('video', $debugline, array(), WATCHDOG_DEBUG);
-    return !empty($files) ? $files : FALSE;
+
+    return !empty($thumbs) ? $thumbs : FALSE;
   }
 
   public function execute() {
+    $tmpoutputpath = $this->settings['base_url'] . '/' . $this->settings['filename'];
     $result = $this->transcoder->execute();
-    if ($result !== PHPVideoToolkit::RESULT_OK) {
+
+    if ($result !== PHPVideoToolkit::RESULT_OK || !file_exists($tmpoutputpath) || ($filesize = filesize($tmpoutputpath)) == 0) {
       $errorlist = $this->transcoder->getErrors();
       $_commandoutput = $this->transcoder->getCommandOutput();
       $commandoutput = array();
@@ -221,26 +249,21 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       return FALSE;
     }
 
-    $command_output = $this->transcoder->getLastOutput();
-    $output_file = $this->settings['base_url'] . '/' . $this->settings['filename'];
-    $output_file_rp = drupal_realpath($output_file);
-    if (!file_exists($output_file_rp) || ($filesize = filesize($output_file_rp)) == 0) {
-      watchdog('transcoder', 'Video conversion has failed! FFmpeg reported the following output: !output', array('!output' => $command_output), WATCHDOG_ERROR);
-      return FALSE;
-    }
-
     // Work-around for missing WebM support in file_get_mimetype().
     // See http://drupal.org/node/1347624 .
-    $iswebm = substr($this->settings['filename'], -5) === '.webm';
+    $iswebm = substr($this->realoutputname, -5) === '.webm';
 
     $file_info = $this->getFileInfo();
+    $realoutputuri = $this->realoutputdir . '/' . $this->realoutputname;
+    copy($tmpoutputpath, $realoutputuri);
+    drupal_unlink($tmpoutputpath);
 
     $output = new stdClass();
-    $output->filename = $this->settings['filename'];
-    $output->uri = $output_file;
-    $output->filemime = $iswebm ? 'video/webm' : file_get_mimetype($output_file);
+    $output->filename = $this->realoutputname;
+    $output->uri = $realoutputuri;
+    $output->filemime = $iswebm ? 'video/webm' : file_get_mimetype($realoutputuri);
     $output->filesize = $filesize;
-    $output->timestamp = time();
+    $output->timestamp = REQUEST_TIME;
     $output->jobid = NULL;
     $output->duration = floor($file_info['duration']['seconds']);
 
@@ -248,25 +271,22 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function getFileInfo() {
-    // @todo Add to cache
     $file = $this->settings['input']['uri'];
     $cid = 'video:file:' . md5($file);
     $cache = cache_get($cid);
     if (!empty($cache->data)) {
       return $cache->data;
     }
-    else {
-      $data = $this->transcoder->getFileInfo(drupal_realpath($file));
-      cache_set($cid, $data);
-      return $data;
-    }
+
+    $data = $this->transcoder->getFileInfo();
+    cache_set($cid, $data, self::INFO_CACHE, time() + 7 * 24 * 3600);
+    return $data;
   }
 
   public function getCodecs() {
     $info = $this->getCachedFFmpegInfo();
-    $available_codecs = $info['codecs'];
     $codecs = array('decode' => array(), 'encode' => array());
-    foreach ($available_codecs as $key => $value) {
+    foreach ($info['codecs'] as $key => $value) {
       $codecs['encode'][$key] = array();
       $codecs['decode'][$key] = array();
       foreach ($value as $codec_key => $codec) {
@@ -321,7 +341,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function getVersion() {
     $info = $this->getCachedFFmpegInfo();
-    if ($info['ffmpeg-found'] == TRUE) {
+    if ($info['ffmpeg-found']) {
       return self::getVersionFromOutput($info['raw']);
     }
 
@@ -336,17 +356,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     return 'TranscoderAbstractionFactoryFfmpeg';
   }
 
-  public function getDimensions() {
-    $video_info = $this->getFileInfo();
-    $res = array('width' => 0, 'height' => 0);
-    // Get dimensions
-    $res['width'] = $video_info['video']['dimensions']['width'] ? $video_info['video']['dimensions']['width'] : NULL;
-    $res['height'] = $video_info['video']['dimensions']['height'] ? $video_info['video']['dimensions']['height'] : NULL;
-    return $res;
-  }
-
   public function adminSettings() {
-    $form = array();
     $form = array();
     $form['video_ffmpeg_start'] = array(
       '#type' => 'markup',
@@ -357,7 +367,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       '#type' => 'fieldset',
       '#title' => t('Path to FFmpeg executable'),
       '#collapsible' => FALSE,
-      '#collapsed' => FALSE
+      '#collapsed' => FALSE,
     );
     $form['ffmpeg']['ffmpeg']['video_ffmpeg_path'] = array(
       '#type' => 'textfield',
@@ -383,12 +393,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       '#title' => t('Number of thumbnails'),
       '#description' => t('Number of thumbnails to extract from video.'),
       '#default_value' => variable_get('video_thumbnail_count', 5),
-    );
-    $form['ffmpeg']['thumbnail']['video_thumb_save_all'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Save all thumbnails in {file_managed} table'),
-      '#description' => t('Save all auto-created thumbnails to the {file_managed} table. Change file status as PERMANENT'),
-      '#default_value' => variable_get('video_thumb_save_all', FALSE),
+      '#size' => 5,
     );
     $form['video_ffmpeg_end'] = array(
       '#type' => 'markup',
@@ -430,11 +435,10 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     if (!empty($cache->data)) {
       return $cache->data;
     }
-    else {
-      $info = $this->transcoder->getFFmpegInfo(FALSE);
-      cache_set(self::INFO_CID, $info, self::INFO_CACHE);
-      return $info;
-    }
+
+    $info = $this->transcoder->getFFmpegInfo(FALSE);
+    cache_set(self::INFO_CID, $info, self::INFO_CACHE);
+    return $info;
   }
 
   /**

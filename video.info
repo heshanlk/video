@@ -5,7 +5,7 @@ core = 7.x
 dependencies[] = file
 dependencies[] = image
 
-# Including class files to lazyload
+files[] = video.utility.inc
 files[] = includes/Conversion.inc
 files[] = includes/Metadata.inc
 files[] = includes/Preset.inc
@@ -17,3 +17,5 @@ files[] = transcoders/TranscoderAbstractionFactoryZencoder.inc
 files[] = views/video_handler_field_video_duration.inc
 files[] = tests/TranscoderAbstractionFactoryFfmpeg.test
 files[] = tests/TranscoderAbstractionFactoryZencoder.test
+files[] = libraries/phpvideotoolkit/phpvideotoolkit.php5.php
+files[] = tests/VideoUtility.test

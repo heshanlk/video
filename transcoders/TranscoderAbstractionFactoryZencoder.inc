@@ -26,120 +26,131 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
   }
 
-  public function setOptions($options = NULL) {
-    global $base_url;
-    if (is_array($options)) {
-      foreach ($options as $key => $value) {
-        if (empty($value) || $value === 'none')
-          continue;
-        switch ($key) {
-          case 'video_extension':
-            $this->options['output']['format'] = $value;
-            break;
-          case 'video_preset':
-          case 'default':
-            break;
-          case 'wxh':
-            $this->options['output']['size'] = $value;
-            break;
-          case 'video_quality':
-            $this->options['output']['quality'] = $value;
-            break;
-          case 'video_speed':
-            $this->options['output']['speed'] = $value;
-            break;
-          case 'video_upscale':
-            $this->options['output']['upscale'] = $value;
-            break;
-          case 'one_pass':
-            $this->options['output']['one_pass'] = ($value == 1 ) ? TRUE : FALSE;
-            break;
-          default :
-            $this->options['output'][$key] = $value;
-        }
+  public function setOptions(array $options) {
+    foreach ($options as $key => $value) {
+      if (empty($value) || $value === 'none') {
+        continue;
       }
-      // set notifications
-      $this->options['output']['notifications']['format'] = 'json';
-      $this->options['output']['notifications']['url'] = $this->postbackurl;
-      // thumbnails
-      $this->options['output']['thumbnails']['number'] = variable_get('video_thumbnail_count', 5);
-      $this->options['output']['thumbnails']['thumb_size'] = variable_get('video_thumbnail_size', '320x240');
-      $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
-      $final_path = (variable_get('video_zencoder_use_full_path', FALSE)) ? drupal_realpath($schema_thumb_path) : '/' . file_uri_target($schema_thumb_path);
-      $this->options['output']['thumbnails']['base_url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path;
-      $this->options['output']['thumbnails']['prefix'] = 'thumbnail-' . $this->settings['input']['fid'];
+
+      switch ($key) {
+        case 'video_extension':
+          $this->options['output']['format'] = $value;
+          break;
+        case 'video_preset':
+        case 'default':
+          break;
+        case 'wxh':
+          $this->options['output']['size'] = $value;
+          break;
+        case 'video_quality':
+          $this->options['output']['quality'] = $value;
+          break;
+        case 'video_speed':
+          $this->options['output']['speed'] = $value;
+          break;
+        case 'video_upscale':
+          $this->options['output']['upscale'] = $value;
+          break;
+        case 'one_pass':
+          $this->options['output']['one_pass'] = $value == 1;
+          break;
+        default :
+          $this->options['output'][$key] = $value;
+      }
     }
+
+    // set notifications
+    $this->options['output']['notifications']['format'] = 'json';
+    $this->options['output']['notifications']['url'] = $this->postbackurl;
+
+    // thumbnails
+    $this->options['output']['thumbnails'] = array(
+      'format' => 'png', // @todo: make this configurable
+      'number' => intval(variable_get('video_thumbnail_count', 5)),
+      'thumb_size' => variable_get('video_thumbnail_size', '320x240'),
+      'prefix' => 'thumbnail-' . $this->settings['input']['fid'],
+    );
+
+    return TRUE;
   }
 
   public function setOutput($output_directory, $output_name, $overwrite_mode = FILE_EXISTS_REPLACE) {
     parent::setOutput($output_directory, $output_name, $overwrite_mode);
     $this->options['output']['label'] = 'video-' . $this->settings['input']['fid'];
-    // show full path is not secure as its visible in file path
-    $final_path = (variable_get('video_zencoder_use_full_path', FALSE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
-    $this->options['output']['url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path . '/' . $this->settings['filename'];
-    $this->options['output']['base_url'] = variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]') . $final_path;
     $this->options['output']['filename'] = $this->settings['filename'];
-    // set all video to public, there is no way to handle private videos
     $this->options['output']['public'] = 1;
   }
 
-  public function extractFrames() {
-    global $user;
-
-    // Get the file system directory.
-    $thumb_path = variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'];
-    $schema_thumb_path = file_uri_scheme($this->settings['input']['uri']) . '://' . $thumb_path;
-    file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
-
-    // Check if S3 should be loaded.
-    $s3 = NULL;
-    if (module_exists('amazons3') && self::isS3Url(variable_get('video_zencoder_base_url'))) {
-      $s3 = self::createS3Client();
-      $bucket = variable_get('amazons3_bucket');
+  /**
+   * For new videos, this function is never called, because all thumbnails are
+   * extracted and saved to the databases during the post back handler in
+   * TranscoderAbstractionFactoryZencoder::processPostback().
+   *
+   * @see TranscoderFactoryInterface::extractFrames()
+   */
+  public function extractFrames($destinationScheme) {
+    // Check if the job has been completed.
+    // If the job has not been completed, don't bother checking for
+    // thumbnails
+    $job = $this->loadJob();
+    if (empty($job)) {
+      return FALSE;
+    }
+    // No thumbnails available yet
+    if($job->video_status != VIDEO_RENDERING_COMPLETE) {
+      return array();
     }
 
-    $files = array();
+    $fid = $this->settings['input']['fid'];
+    $path = variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $fid;
+
+    // Get the file system directory.
+    $dsturibase = $destinationScheme . '://' . $path . '/';
+    file_prepare_directory($dsturibase, FILE_CREATE_DIRECTORY);
+    $dstwrapper = file_stream_wrapper_get_instance_by_scheme($destinationScheme);
+
+    // Where to copy the thumbnails from.
+    $final_path = variable_get('video_zencoder_use_full_path', FALSE) ? drupal_realpath(file_uri_scheme($this->settings['input']['uri']) . '://' . $path) : '/' . $path;
+    $srcuribase = variable_get('video_zencoder_base_url') . $final_path . '/';
+
+    $thumbs = array();
     // Total thumbs to generate
     $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
     for ($i = 0; $i < $no_of_thumbnails; $i++) {
-      $filename = file_munge_filename('thumbnail-' . $this->settings['input']['fid'] . '_' . sprintf('%04d', $i) . '.png', '', TRUE);
-      $filepath = drupal_realpath($schema_thumb_path . '/' . $filename);
+      $filename = file_munge_filename('thumbnail-' . $fid . '_' . sprintf('%04d', $i) . '.png', '', TRUE);
+      $dsturi = $dsturibase . $filename;
 
       // Download file from S3, if available
-      if (!file_exists($filepath) && $s3 != NULL) {
-        $s3_get_object = NULL;
-        if ($s3->get_object_metadata($bucket, $thumb_path . '/' . $filename)) {
-          $s3_get_object = $s3->get_object($bucket, $thumb_path . '/' . $filename, array('fileDownload' => $filepath));
-          if (variable_get('video_zencoder_testing_mode', FALSE)) {
-            db_update('video_queue')
-              ->fields(array('status' => VIDEO_RENDERING_COMPLETE))
-              ->condition('fid', $this->settings['input']['fid'])->execute();
-          }
-        }
-        if (!file_exists($filepath) && $s3_get_object) {
+      if (!file_exists($dsturi)) {
+        $srcuri = $srcuribase . $filename;
+        if (!file_exists($srcuri)) {
           watchdog('zencoder',
-            'Error downloading thumbnail for video %filepath: generated file %thumbpath does not exist.<br />S3 Output:<br />%out',
-            array('%filepath' => $this->settings['input']['filepath'], '%thumbpath' => $filepath, '%out' => $s3_get_object),
+            'Error downloading thumbnail for video %filename: %thumbpath does not exist.',
+            array('%filename' => $this->settings['input']['filename'], '%thumbpath' => $srcuri),
             WATCHDOG_ERROR);
-          continue;
+          break;
         }
+
+        copy($srcuri, $dsturi);
+        if (variable_get('video_zencoder_testing_mode', FALSE)) {
+          db_update('video_queue')
+            ->fields(array('status' => VIDEO_RENDERING_COMPLETE))
+            ->condition('fid', $fid)->execute();
+        }
+
+        // Delete the source, it is no longer needed
+        drupal_unlink($srcuri);
       }
 
-      // Create file object only file is exists
-      if (file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
-        $file = new stdClass();
-        $file->uid = $user->uid;
-        $file->status = 0;
-        $file->filename = $filename;
-        $file->uri = $schema_thumb_path . '/' . $filename;
-        $file->filemime = 'image/png';
-        $file->filesize = filesize(drupal_realpath($schema_thumb_path . '/' . $filename));
-        $file->timestamp = time();
-        $files[] = $file;
-      }
+      $thumb = new stdClass();
+      $thumb->status = 0;
+      $thumb->filename = $filename;
+      $thumb->uri = $dsturi;
+      $thumb->filemime = $dstwrapper->getMimeType($dsturi);
+      $thumbs[] = $thumb;
     }
 
-    return !empty($files) ? $files : FALSE;
+    return !empty($thumbs) ? $thumbs : FALSE;
   }
 
   public function execute() {
@@ -148,30 +159,15 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     try {
       $encoding_job = $zencoder->jobs->create($this->options);
-
-      // Setup our converted video object
-      // for the outout uri we should change ftp://, sftp:// -> public:// or private://
-      $output_uri = $this->options['output']['base_url'] . '/' . $this->settings['filename'];
-
-      switch (file_uri_scheme($output_uri)) {
-        case 'ftp':
-        case 'sftp':
-          // thanks to D7 stream wrappers
-          $output_uri = file_uri_scheme($this->settings['input']['uri']) . '://' . file_uri_target($this->settings['base_url']) . '/' . $this->settings['filename'];
-          break;
-        case 's3':
-          $final_path = (variable_get('video_zencoder_use_full_path', FALSE)) ? drupal_realpath($this->settings['base_url']) : '/' . file_uri_target($this->settings['base_url']);
-          $output_uri = 's3:/' . $final_path . '/' . $this->settings['filename'];
-          break;
-      }
+      $output_uri = $this->settings['base_url'] . '/' . $this->settings['filename'];
 
       $output = new stdClass();
       $output->filename = $this->settings['filename'];
       $output->uri = $output_uri;
       $output->filemime = file_get_mimetype($output_uri);
-      $output->filesize = filesize(drupal_realpath($this->settings['input']['uri']));
+      $output->filesize = 0;
       $output->timestamp = time();
-      $output->jobid = $encoding_job->id;
+      $output->jobid = intval($encoding_job->id);
       $output->duration = 0;
 
       return $output;
@@ -212,8 +208,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function adminSettings() {
-    global $user, $base_url;
-
     $t = get_t();
 
     $form = array();
@@ -262,41 +256,21 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#title' => t('Number of thumbnails'),
         '#description' => t('Number of thumbnails to display from video.'),
         '#default_value' => variable_get('video_thumbnail_count', 5),
-        '#size' => 5
+        '#size' => 5,
       );
       $form['zencoder_info']['video_thumbnail_size'] = array(
         '#type' => 'select',
         '#title' => t('Dimension of thumbnails'),
         '#default_value' => variable_get('video_thumbnail_size', '320x240'),
-        '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions()))
+        '#options' => video_utility::getDimensions(),
       );
       $form['zencoder_info']['video_zencoder_postback'] = array(
         '#type' => 'textfield',
         '#title' => t('Postback URL for Zencoder'),
-        '#description' => t('Important : Don\'t change this if you don\'t know what you\'re doing. This postback URL will receive video data as video transcodings are completed.'),
+        '#description' =>
+          t('Important : Don\'t change this if you don\'t know what you\'re doing. This postback URL will receive video data as video transcodings are completed.') . '<br/>' .
+          t('Default: %value', array('%value' => url('postback/jobs', array('absolute' => TRUE)))),
         '#default_value' => $this->postbackurl,
-      );
-      $form['zencoder_info']['video_zencoder_base_url'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Output file base'),
-        '#description' => t('A base S3, Cloud Files, FTP, FTPS, or SFTP directory URL where we\'ll put the transcoded file. If you\'re using ftp://, sftp://, etc.
-          then you must <b>mount sites/default/files folder as the FTP base folder</b> before
-          creating videos.<br/> You can use the <em>mount</em> command (mount --bind /source_dir /dest_dir_01):
-          <br/> Eg : <br/><code>1. mkdir /home/USERNAME/videos</code><br/>
-          <code>2. mount --bind /var/www/html/DRUPAL/sites/default/files/videos/ /home/USERNAME/files/videos</code><br/>
-          <code>3. cd /home/USERNAME/videos</code><br/>
-          <code>4. ls -l</code><br/>
-          <code><b>It should display </b><br/>converted<br/>original<br/>thumbnails</code><br/>
-          <code>5. chown -R USERNAME:USERNAME videos/</code>
-          <br/><br/>Example URL patterns: <code>s3://my-output-bucket, cf://username:api_key@container/,
-          ftp://user:password@ftp.example.com</code>', array('!more' => l(t('More info'), 'https://app.zencoder.com/docs/api/encoding/general-output-settings/base-url'))),
-        '#default_value' => variable_get('video_zencoder_base_url', 'ftp://[user]:[password]@[ftp.url]'),
-      );
-      $form['zencoder_info']['video_zencoder_use_full_path'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Use full path'),
-        '#default_value' => variable_get('video_zencoder_use_full_path', FALSE),
-        '#description' => t('If enabled the full dir path to the file will show up in the filepath of the outputfile.<br/><b>Disable</b> this to reduce the security risk. We discourage enabling this option.')
       );
       // testing
       $form['zencoder_info']['testing'] = array(
@@ -331,17 +305,28 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $v = $form_state['values'];
 
     if (variable_get('video_zencoder_api_key', FALSE)) {
-      // Check S3 settings
-      if (!empty($v['video_zencoder_base_url'])) {
-        if (self::isS3Url($v['video_zencoder_base_url'])) {
-          $s3compat = self::checkS3Compatibility();
-          if (!empty($s3compat)) {
-            form_error($form['zencoder_info']['video_zencoder_base_url'],
-              t('Using Amazon S3 base URLs is not possible because of the following errors:') .
-              theme('item_list', array('items' => $s3compat))
-            );
-          }
-        }
+      // Check the postback URL
+      $testurl = $v['video_zencoder_postback'];
+      $testcode = md5(mt_rand(0, REQUEST_TIME));
+      if (strpos($testurl, '?') === FALSE) {
+        $testurl .= '?test=1';
+      }
+      else {
+        $testurl .= '&test=1';
+      }
+      variable_set('video_postback_test', $testcode);
+      $result = drupal_http_request($testurl);
+      variable_del('video_postback_test');
+
+      if ($result->code != 200) {
+        form_error(
+          $form['zencoder_info']['video_zencoder_postback'],
+          t('The postback URL cannot be retrieved: @error (@code).',
+          array('@code' => $result->code, '@error' => empty($result->error) ? t('unknown error') : $result->error))
+        );
+      }
+      elseif (empty($result->data) || $result->data != $testcode) {
+        form_error($form['zencoder_info']['video_zencoder_postback'], t('The postback URL is not valid: returned data contains unexpected value &quot;@value&quot;.', array('@value' => $result->data)));
       }
     }
     else {
@@ -410,12 +395,19 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     libraries_load('zencoder');
     $zencoder = new Services_Zencoder();
 
-    $notification = $zencoder->notifications->parseIncoming();
+    try {
+      $notification = $zencoder->notifications->parseIncoming();
+    } catch (Services_Zencoder_Exception $e) {
+      watchdog('transcoder', 'Zencoder: Postback received from the Zencoder Transcoding could not be decoded: @errormsg', array('@errormsg' => $e->getMessage()));
+      echo 'Bad request';
+      return;
+    }
 
     // Check output/job state
     $jobid = intval($notification->job->id);
     $video_output = db_query('SELECT vid, original_fid, output_fid FROM {video_output} WHERE job_id = :job_id', array(':job_id' => $jobid))->fetch();
-    if (!$video_output) {
+    if (empty($video_output)) {
+      echo 'Not found';
       return;
     }
     $vid = intval($video_output->vid);
@@ -423,69 +415,18 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // get JSON post data
     watchdog('transcoder', 'Zencoder: Postback received from the Zencoder Transcoding servers for vid: @vid, Zencoder job id: @jobid.', array('@vid' => $vid, '@jobid' => $jobid));
 
-    if ($notification->output->state == 'finished') {
-      if ($notification->job->state != 'finished') {
-        return;
-      }
-
-      $durationms = round($notification->output->duration_in_ms / 1000);
-      db_update('video_queue')
-        ->fields(array('duration' => $durationms, 'status' => VIDEO_RENDERING_COMPLETE))
-        ->condition('vid', $vid)->execute();
-
-      // Replace thumbnail
-      $video_queue = db_query('SELECT entity_id, entity_type FROM {video_queue} WHERE vid = :vid', array(':vid' => $vid))->fetch();
-      $entities = entity_load($video_queue->entity_type, array($video_queue->entity_id));
-      $entity = reset($entities);
-
-      // Get field name
-      $field_name = NULL;
-      $bundle = !empty($entity->type) ? $entity->type : $entity->node_type;
-      foreach (field_info_instances($video_queue->entity_type, $bundle) as $key => $field) {
-        if ($field['widget']['type'] == 'video_upload') {
-          $field_name = $key;
-        }
-      }
-
-      // download thumbnails
-      $schema_thumb_path = file_uri_scheme($entity->{$field_name}['und'][0]['uri']) . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $video_output->original_fid;
-      file_prepare_directory($schema_thumb_path, FILE_CREATE_DIRECTORY);
-      $no_of_thumbnails = variable_get('video_thumbnail_count', 5);
-      $thumbnail_id = rand(1, $no_of_thumbnails);
-      $filename = 'thumbnail-' . $video_output->original_fid . '_' . sprintf('%04d', $thumbnail_id) . '.png';
-
-      $bucket = variable_get('amazons3_bucket');
-
-      $s3 = self::createS3Client();
-      if ($s3->get_object_metadata($bucket, file_uri_target($schema_thumb_path) . '/' . $filename) && !file_exists(drupal_realpath($schema_thumb_path . '/' . $filename))) {
-        $s3_get_object = $s3->get_object($bucket, file_uri_target($schema_thumb_path) . '/' . $filename, array('fileDownload' => drupal_realpath($schema_thumb_path . '/' . $filename)));
-
-        $file = new stdClass();
-        $file->uid = $entity->uid;
-        $file->status = 0;
-        $file->filename = $filename;
-        $file->uri = $schema_thumb_path . '/' . $filename;
-        $file->filemime = 'image/png';
-        $file->filesize = filesize(drupal_realpath($schema_thumb_path . '/' . $filename));
-        $file->timestamp = time();
-        $file = file_save($file);
-        $entity->{$field_name}['und'][0]['thumbnail'] = $file->fid;
-
-        switch ($video_queue->entity_type) {
-          case 'node':
-            node_save($entity);
-            break;
-          case 'comment':
-            comment_save($entity);
-            break;
-        }
-      }
-    }
-    elseif ($notification->output->state == 'cancelled') {
+    // Find all error situations
+    if ($notification->output->state == 'cancelled') {
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('vid', $vid)->execute();
-      echo "Cancelled!\n";
+      echo 'Cancelled';
+      return;
     }
-    else {
+
+    if ($notification->job->state != 'finished') {
+      return;
+    }
+
+    if ($notification->output->state != 'finished') {
       $errorlink = t('no specific information given');
       if (!empty($notification->output->error_message)) {
         if (!empty($notification->output->error_link)) {
@@ -500,51 +441,127 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       watchdog('transcoder', 'Zencoder reports errors for postback: !errordetail', array('!errordetail' => $errordetail), WATCHDOG_ERROR);
       echo "Failure!\n";
     }
-  }
 
-  /**
-   * Creates a new Amazon S3 client object.
-   *
-   * @return
-   *   AmazonS3 instance.
-   */
-  private static function createS3Client($key = NULL, $secret = NULL) {
-    $info = libraries_load('awssdk');
-    if (!$info['installed']) {
-      return NULL;
+    $video = $this->loadJob($vid, 'vid');
+    if (empty($video)) {
+      echo 'Not found';
+      return;
     }
 
-    $key = $key == NULL ? variable_get('aws_key', '') : $key;
-
-    if (version_compare($info['version'], '1.5', '>=')) {
-      $secret = $secret == NULL ? variable_get('aws_secret', '') : $secret;
-      return new AmazonS3(array('key' => $key, 'secret' => $secret));
+    // Move the converted video to its final destination
+    $outputfile = file_load($video_output->output_fid);
+    if (empty($outputfile)) {
+      echo 'Output file not found in database';
+      return;
     }
-    else {
-      $secret = $secret == NULL ? variable_get('aws_secret_key', '') : $secret;
-      return new AmazonS3($key, $secret);
-    }
-  }
+    copy($notification->output->url, $outputfile->uri);
+    $outputfile->filesize = $notification->output->file_size_in_bytes;
+    drupal_write_record('file_managed', $outputfile, 'fid');
 
-  public static function checkS3Compatibility() {
-    $errors = array();
-
-    if (!module_exists('amazons3')) {
-      $errors[] = t('You need to install and enable the <a href="@amazons3-url">Amazon S3</a> module.', array('@amazons3-url' => url('http://drupal.org/project/amazons3')));
+    // Zencoder creates multiple jobs for the same vid if multiple presets are active.
+    // If a previous job has put this video in complete state, bail out now.
+    if ($video->video_status == VIDEO_RENDERING_COMPLETE) {
+      return;
     }
 
-    if (variable_get('aws_key', NULL) === NULL) {
-      $errors[] = t('You need to setup the <a href="@awssdk-config-page">Amazon Web Services access keys</a>.', array('@awssdk-config-page' => url('admin/config/media/awssdk')));
+    // Actual processing of the response
+    $video->duration = round($notification->output->duration_in_ms / 1000);
+    $video->status = VIDEO_RENDERING_COMPLETE;
+    drupal_write_record('video_queue', $video, 'vid');
+
+    // Find the entity to which the file belongs
+    $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
+    if (empty($entity)) {
+      watchdog('transcoder', 'The entity to which the transcoded video belongs can\'t be found anymore. Entity type: @entity-type, entity id: @entity-id.', array('@entity-type' => $video->entity_type, '@entity-id' => $video->entity_id), WATCHDOG_ERROR);
+      return;
     }
 
-    if (variable_get('amazons3_bucket', NULL) === NULL) {
-      $errors[] = t('You need to setup the default <a href="@amazons3-config-page">Amazon S3 bucket name</a>.', array('@amazons3-config-page' => url('admin/config/media/amazons3')));
+    // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
+    cache_clear_all('field:' . $video->entity_type . $video->entity_id, 'cache_field');
+
+    // Retrieve the thumbnails from the notification structure
+    $thumbnails = $notification->output->thumbnails[0]['images'];
+    if (empty($thumbnails)) {
+      // If there are no thumbnails, quit now.
+      return;
     }
 
-    return $errors;
-  }
+    // The following information was saved in TranscoderFactory::createJob()
+    $fieldname = $video->data['field_name'];
+    $field = field_info_field($fieldname);
+    $langcode = $video->data['langcode'];
+    $delta = $video->data['delta'];
 
-  public static function isS3Url($url) {
-    return file_uri_scheme($url) == 's3';
+    // Insanity checks
+    if (empty($entity->{$fieldname}[$langcode][$delta])) {
+      // The field can't be found anymore. This may be a problem.
+      watchdog('transcoder', 'The field to which video @filename was uploaded doesn\'t seem to exist anymore. Entity type: @entity-type, entity id: @entity-id, field name: @fieldname, field language: @langcode, delta: @delta.', array('@filename' => $video->filename, '@entity-type' => $video->entity_type, '@entity-id' => $video->entity_id, '@fieldname' => $fieldname, '@langcode' => $langcode, '@delta' => $delta), WATCHDOG_WARNING);
+      return;
+    }
+    if ($entity->{$fieldname}[$langcode][$delta]['fid'] != $video->fid) {
+      // The field does not contain the file we uploaded.
+      watchdog('transcoder', 'The field to which video @filename was uploaded doesn\'t seem to contain this video anymore. Entity type: @entity-type, entity id: @entity-id, field name: @fieldname, field language: @langcode, delta: @delta.', array('@filename' => $video->filename, '@entity-type' => $video->entity_type, '@entity-id' => $video->entity_id, '@fieldname' => $fieldname, '@langcode' => $langcode, '@delta' => $delta), WATCHDOG_WARNING);
+      return;
+    }
+
+    // Destination of thumbnails
+    $thumbscheme = !empty($field['settings']['uri_scheme_thumbnails']) ? $field['settings']['uri_scheme_thumbnails'] : 'public';
+    $thumburibase =  $thumbscheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $video->fid . '/';
+    file_prepare_directory($thumburibase, FILE_CREATE_DIRECTORY);
+    $thumbwrapper = file_stream_wrapper_get_instance_by_scheme($thumbscheme);
+
+    // Turn the thumbnails into managed files
+    $thumbs = array();
+    $tnid = 0;
+    foreach ($thumbnails as $thumbnail) {
+      $ext = video_utility::getExtension($thumbnail['url']);
+      $thumb = new stdClass();
+      $thumb->uid = $entity->uid;
+      $thumb->status = FILE_STATUS_PERMANENT;
+      $thumb->filename = 'thumbnail-' . $video->fid . '_' . sprintf('%04d', $tnid++) . '.' . $ext;
+      $thumb->uri = $thumburibase . $thumb->filename;
+      $thumb->filemime = $thumbwrapper->getMimeType($thumb->uri);
+      $thumb->type = 'image'; // For the media module
+
+      // The file may already have been created by a previous preset
+      if (!file_exists($thumb->uri)) {
+        if (!copy($thumbnail['url'], $thumb->uri)) {
+          watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail['url'], '@$thumburi' => $thumb->uri), WATCHDOG_ERROR);
+          continue;
+        }
+      }
+
+      file_save($thumb);
+      db_insert('video_thumbnails')->fields(array('videofid' => $video->fid, 'thumbnailfid' => $thumb->fid))->execute();
+
+      file_usage_add($thumb, 'file', $video->entity_type, $video->entity_id);
+
+      $thumbs[$thumb->fid] = $thumb;
+    }
+
+    // Save the amount of thumbnails downloaded
+    drupal_write_record('video_queue', $video, 'vid');
+
+    if (empty($thumbs)) {
+      return;
+    }
+
+    // Set a random thumbnail fid on the entity and save the entity
+    $entity->{$fieldname}[$langcode][$delta]['thumbnail'] = array_rand($thumbs);
+
+    switch ($video->entity_type) {
+      case 'node':
+        node_save($entity);
+        break;
+      case 'comment':
+        comment_save($entity);
+        break;
+      default:
+        // entity_save() is supplied by the entity module
+        if (function_exists('entity_save')) {
+          entity_save($entity);
+        }
+        break;
+    }
   }
 }

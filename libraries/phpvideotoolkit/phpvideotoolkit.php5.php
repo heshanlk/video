@@ -46,7 +46,6 @@ if (!defined('PHPVIDEOTOOLKIT_MENCODER_BINARY')) {
 }
 
 class PHPVideoToolkit {
-
   public $version = '0.1.9';
 
   /**
@@ -3592,6 +3591,10 @@ class PHPVideoToolkit {
    */
   public function unique($prefix='') {
     return uniqid($prefix . time() . '-');
+  }
+
+  public function getInputFile() {
+    return $this->_input_file;
   }
 
   /**

@@ -10,61 +10,44 @@ class Transcoder {
    * only the database and it will save all the thumbnail file reference in to
    * the database.
    *
+   * @todo Maybe load from video_thumbnails if available
+   *
    * @param $video
    * @return
    *   array of file objects, or false on failure
    */
-  public function extractFrames($video) {
-    // Save thiumnails to the vide_thumbnails table
-    $thumbnails = array();
-    $vid = $video['fid'];
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    $transcoder->setInput($video);
-    $thumbnails = $transcoder->extractFrames();
+  public function extractFrames(array $video, array $field) {
+    global $user;
+
+    $thumbnails = db_query('SELECT f.* FROM {file_managed} f INNER JOIN {video_thumbnails} tn ON tn.thumbnailfid = f.fid WHERE tn.videofid = :fid ORDER BY f.fid', array(':fid' => $video['fid']))->fetchAllAssoc('fid');
     if (!empty($thumbnails)) {
-      $files = array();
-      foreach ($thumbnails as $file) {
-        // if media module exists add type as an image
-        if (module_exists('media')) {
-          $file->type = 'image';
-        }
-        if (variable_get('video_thumb_save_all', FALSE)) {
-          $file->status = FILE_STATUS_PERMANENT;
-        }
-        $existing_file = file_load_multiple(array(), array('uri' => $file->uri));
-        if ($existing_file)  { // check thumbnail file exists
-          $file = (array) $existing_file;
-        }
-        else { // create new file entries for thumbnails
-          drupal_write_record('file_managed', $file);
-          $file = file_load_multiple(array(), array('uri' => $file->uri));
-        }
-        if (!empty($file)) {
-          $files[] = array_shift($file);
-        }
-      }
-      $exists = db_query('SELECT 1 FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField();
-      if ($exists == FALSE) { // returns TRUE is there is a record.
-        $insertquery = db_insert('video_thumbnails') // Table name no longer needs {}
-            ->fields(array(
-              'vid' => $vid,
-              'thumbnails' => serialize($files),
-            ))
-            ->execute();
-      }
-      else {
-        $updatequery = db_update('video_thumbnails')
-            ->fields(array(
-              'thumbnails' => serialize($files),
-            ))
-            ->condition('vid', $vid)
-            ->execute();
-      }
-      return unserialize(db_query('SELECT thumbnails FROM {video_thumbnails} WHERE vid = :vid', array(':vid' => $vid))->fetchField());
+      return $thumbnails;
     }
 
-    return FALSE;
+    $scheme = !empty($field['settings']['uri_scheme_thumbnails']) ? $field['settings']['uri_scheme_thumbnails'] : 'public';
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();var_dump($video);
+    $transcoder->setInput($video);
+    $thumbnails = $transcoder->extractFrames($scheme);
+
+    if ($thumbnails === FALSE) {
+      return FALSE;
+    }
+
+    foreach ($thumbnails as $thumb) {
+      // Determine whether there is an existing thumbnail
+      $thumb->fid = $origfid = (int)db_query('SELECT fid FROM {file_managed} WHERE uri = :uri', array(':uri' => $thumb->uri))->fetchField(0);
+      $thumb->uid = (int)$user->uid;
+      // For the media module
+      $thumb->type = 'image';
+      file_save($thumb);
+
+      if (empty($origfid)) {
+        db_insert('video_thumbnails')->fields(array('videofid' => $video['fid'], 'thumbnailfid' => $thumb->fid))->execute();
+      }
+    }
+
+    return $thumbnails;
   }
 
   /**
@@ -76,7 +59,7 @@ class Transcoder {
    * @return
    *   array of converted file objects
    */
-  public function executeConvertion($video) {
+  public function executeConversion(stdClass $video) {
     global $user;
 
     // load the presets
@@ -93,22 +76,37 @@ class Transcoder {
       return FALSE;
     }
 
+    // Find the scheme for the converted videos
+    $converted_scheme = file_uri_scheme($video->uri);
+    if (!empty($video->data['field_name'])) {
+      $field = field_info_field($video->data['field_name']);
+      if (!empty($field['settings']['uri_scheme_converted'])) {
+        $converted_scheme = $field['settings']['uri_scheme_converted'];
+      }
+    }
+
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
     $transcoder->setInput((array) $video);
     $output = array();
     $transcodingsuccess = TRUE;
     $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
+    $output_directory = $converted_scheme . '://' . file_uri_target($output_directory);
+
+    if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
+      watchdog('transcoder', 'Video conversion failed. Could not create the directory: %dir', array('%dir' => $output_directory), WATCHDOG_ERROR);
+      return FALSE;
+    }
 
     foreach ($presets as $name => $preset) {
       // override the widthXheight if enabled
       $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
+
       // set transcoder options
-      $transcoder->setOptions($preset['settings']);
-      
-      if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
-        watchdog('transcoder', 'Video conversion failed.  Could not create the directory: %dir', array('%dir' => $output_directory), WATCHDOG_ERROR);
-        return FALSE;
+      if (!$transcoder->setOptions($preset['settings'])) {
+        // setOptions should write to the watchdog log.
+        $transcodingsuccess = FALSE;
+        break;
       }
 
       $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
@@ -143,7 +141,7 @@ class Transcoder {
           'vid' => $video->vid,
           'original_fid' => $video->fid,
           'output_fid' => $file->fid,
-          'job_id' => $file->jobid
+          'job_id' => $file->jobid,
         );
         drupal_write_record('video_output', $output_vid);
 
@@ -153,7 +151,7 @@ class Transcoder {
         // Change the status if the file exists.
         // this happens for ffmpeg and other transcoders that transcoder
         // directly. For Zencoder, the status is changed later.
-        if (file_exists(drupal_realpath($file->uri))) {
+        if (file_exists($file->uri)) {
           $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
         }
       }

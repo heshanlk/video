@@ -4,19 +4,13 @@
  * All module hooks implementation can be found in this file.
  */
 
-defined('VIDEO_RENDERING_PENDING') ||
-    define('VIDEO_RENDERING_PENDING', 1);
-defined('VIDEO_RENDERING_INQUEUE') ||
-    define('VIDEO_RENDERING_INQUEUE', 2);
-defined('VIDEO_RENDERING_ACTIVE') ||
-    define('VIDEO_RENDERING_ACTIVE', 5);
-defined('VIDEO_RENDERING_COMPLETE') ||
-    define('VIDEO_RENDERING_COMPLETE', 10);
-defined('VIDEO_RENDERING_FAILED') ||
-    define('VIDEO_RENDERING_FAILED', 20);
+define('VIDEO_RENDERING_PENDING', 1);
+define('VIDEO_RENDERING_INQUEUE', 2);
+define('VIDEO_RENDERING_ACTIVE', 5);
+define('VIDEO_RENDERING_COMPLETE', 10);
+define('VIDEO_RENDERING_FAILED', 20);
 
 // include the field element
-module_load_include('inc', 'video', 'video.utility');
 module_load_include('inc', 'video', 'video.field');
 module_load_include('inc', 'video', 'video.features');
 module_load_include('inc', 'video', 'video.filters');
@@ -35,18 +29,21 @@ function video_init() {
 function video_menu() {
   $items = array();
   $items['postback/jobs'] = array(
-    'page callback' => '_video_transcoder_postback_jobs',
+    'page callback' => 'video_transcoder_postback_jobs',
+    'file' => 'video.pages.inc',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
   $items['video/browser'] = array(
     'page callback' => 'video_file_browser',
+    'file' => 'video.pages.inc',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
-  $items['video/embed/%video/%/%'] = array(
+  $items['video/embed/%node/%/%'] = array(
     'page callback' => 'video_file_embed',
-    'page arguments' => array(2),
+    'file' => 'video.pages.inc',
+    'page arguments' => array(2, 3, 4),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
@@ -57,7 +54,7 @@ function video_menu() {
  * Implements hook_permission().
  */
 function video_permission() {
-  $perms = array(
+  return array(
     'bypass conversion video' => array(
       'title' => t('Bypass video conversion'),
       'description' => t('Warning: Give to trusted roles only; this permission has security implications.'),
@@ -83,7 +80,6 @@ function video_permission() {
       'description' => t('Perform administration tasks for the video presets.'),
     ),
   );
-  return $perms;
 }
 
 /**
@@ -114,7 +110,7 @@ function video_theme() {
 
   $path = drupal_get_path('module', 'video') . '/theme';
   // Lets setup our themes for our players
-  $players = video_video_players();
+  $players = video_utility::getVideoPlayers();
   foreach ($players as $tpl => $value) {
     $theme[$tpl] = array(
       'variables' => array('video' => NULL, 'themed_output' => NULL),
@@ -145,15 +141,16 @@ function video_theme() {
  * Implements hook_cron().
  */
 function video_cron() {
-  if (variable_get('video_cron', TRUE)) {
-    module_load_include('inc', 'video', 'includes/Conversion');
-    $video_conversion = new Conversion;
-    if ($videos = $video_conversion->loadJobQueue()) {
-      $queue = DrupalQueue::get('video_queue');
-      foreach ($videos as $video) {
-        if ($queue->createItem($video)) {
-          $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_INQUEUE);
-        }
+  if (!variable_get('video_cron', TRUE)) {
+    return;
+  }
+
+  $video_conversion = new Conversion();
+  if ($videos = $video_conversion->loadJobQueue()) {
+    $queue = DrupalQueue::get('video_queue');
+    foreach ($videos as $video) {
+      if ($queue->createItem($video)) {
+        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_INQUEUE);
       }
     }
   }
@@ -174,18 +171,17 @@ function video_cron_queue_info() {
  * Process video transcoding queue
  */
 function video_queue_process($video) {
-  module_load_include('inc', 'video', 'includes/Conversion');
-  $video_conversion = new Conversion;
+  $video_conversion = new Conversion();
   $video_conversion->process($video);
 }
 
 /**
  * Implements hook_file_delete().
+ *
+ * @todo: delete more
  */
-function video_file_delete($file) {
-  db_delete('video_queue')
-      ->condition('fid', $file->fid)
-      ->execute();
+function video_file_delete(stdClass $file) {
+  db_delete('video_queue')->condition('fid', $file->fid)->execute();
 }
 
 /**
@@ -233,25 +229,69 @@ function video_views_handlers() {
  * Control the access to files underneath the styles directory.
  */
 function video_file_download($uri) {
-  $path = file_uri_target($uri);
+  // Check if the file is a transcoded or thumbnail file and determine access by evaluating access to the original file
+  $fileinfo = NULL;
 
-  // Looks like we have a transcoded file
+  // Check for transcoded files
   if (strpos($uri, '/converted/') !== FALSE) {
-    // Get the original FID and URI using the video_output table
-    $video_fids = db_query('SELECT file_managed.fid output_fid, original_fid, file_original.uri original_uri FROM {file_managed} JOIN {video_output} ON file_managed.fid = video_output.output_fid JOIN {file_managed} file_original ON file_original.fid = video_output.original_fid WHERE file_managed.uri = :uri', array(':uri' => $uri))->fetchObject();
+    $fileinfo = db_query('SELECT video.uri videouri, converted.* FROM {file_managed} video JOIN {video_output} op ON video.fid = op.original_fid JOIN {file_managed} converted ON converted.fid = op.output_fid WHERE output.uri = :uri', array(':uri' => $uri))->fetchObject();
+  }
 
-    // Check permissions of original file to grant access to the converted file
-    $original_file_headers = module_invoke_all('file_download', $video_fids->original_uri);
-    if (in_array(-1, $original_file_headers)) {
-      return drupal_access_denied();
-    }
-    // Get the headers of the converted file and return them if they are valid
-    $file = file_load($video_fids->output_fid);
-    $headers = file_get_content_headers($file);
-    if (!in_array(-1, $headers)) {
-      return $headers;
+  // Check for thumbnails (new style, files uploaded after upgrade to 2.6)
+  if (strpos($uri, '/thumbnails/') !== FALSE) {
+    $fileinfo = db_query('SELECT video.uri videouri, thumb.* FROM {file_managed} video JOIN {video_thumbnails} tn ON video.fid = tn.videofid JOIN {file_managed} thumb ON thumb.fid = tn.thumbnailfid WHERE thumb.uri = :uri', array(':uri' => $uri))->fetchObject();
+  }
+
+  // Check for thumbnails (old style, only works for selected thumbnail)
+  if ($fileinfo == NULL && strpos($uri, '/thumbnails/') !== FALSE) {
+    $thumbfile = db_query('SELECT thumb.* FROM {file_managed} thumb WHERE thumb.uri = :uri', array(':uri' => $uri))->fetchObject();
+    if ($thumbfile != NULL && strncmp($thumbfile->filemime, 'image/', 6) === 0) {
+      // The following code is derived from file_file_download() and tries to find the original video URI for this thumbnail
+      $fields = field_info_fields();
+      foreach ($fields as $field_name => $file_field) {
+        if ($file_field['type'] != 'video') continue;
+
+        $query = new EntityFieldQuery();
+        $references = $query->fieldCondition($file_field, 'thumbnail', $thumbfile->fid)->age(FIELD_LOAD_CURRENT)->execute();
+
+        foreach ($references as $entity_type => $type_references) {
+          foreach ($type_references as $id => $reference) {
+            $entity = video_utility::loadEntity($entity_type, $id);
+            if ($entity) {
+              // Load all field items for that entity.
+              $field_items = field_get_items($entity_type, $entity, $field_name);
+
+              // Find the field item with the matching URI.
+              foreach ($field_items as $item) {
+                if ($item['thumbnail'] == $thumbfile->fid) {
+                  $thumbfile->videouri = $item['uri'];
+                  break 4;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (isset($thumbfile->videouri)) {
+        $fileinfo = $thumbfile;
+      }
     }
   }
+
+  // If $uri is a converted file or thumbnail, $fileinfo contains the file object for that file and the URI of the original video
+  if ($fileinfo != NULL) {
+    $original_headers = file_file_download($fileinfo->videouri, 'video');
+    if ($original_headers === -1 || $original_headers === NULL) {
+      return drupal_access_denied();
+    }
+
+    // Get the headers of the converted file of thumbnail and return
+    return file_get_content_headers($fileinfo);
+  }
+
+  // Next code derived from function image_file_download()
+  $path = file_uri_target($uri);
 
   // Private file access for image style derivatives.
   if (strpos($path, 'styles/') === 0) {
@@ -300,15 +340,6 @@ function video_file_download($uri) {
 }
 
 /**
- * Menu callback for postback/jobs
- */
-function _video_transcoder_postback_jobs() {
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
-  return $transcoder->processPostback();
-}
-
-/**
  * Implements hook_page_alter().
  *
  * This is used to use our alternate template when ?render=media-popup is passed
@@ -339,97 +370,4 @@ function video_page_alter(&$page) {
       }
     }
   }
-}
-
-/**
- * video browser menu callback
- */
-function video_file_browser() {
-  global $user;
-  $output = array();
-  // width and height of the player
-  $output['video']['wxh'] = array(
-    '#title' => t('Player dimensions'),
-    '#type' => 'select',
-    '#default_value' => '352x288',
-    '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l(t('video metadata settings'), 'admin/config/media/video/metadata'))),
-    '#options' => video_explode("\n", variable_get("video_metadata_dimensions", video_default_dimensions())),
-    '#attributes' => array('class' => array('video-file-browser-dimensions'))
-  );
-  // field get instances
-  $fields = field_info_instances();
-  $node_field = array();
-  foreach ($fields['node'] as $content_type => $fields) {
-    foreach ($fields as $field_name => $field) {
-      if ($field['widget']['type'] == 'video_upload')
-        $node_field[$content_type][$field_name] = $field;
-    }
-  }
-  foreach ($node_field as $content_type => $field) {
-    $result = db_select('node', 'n')
-        ->fields('n', array('nid'))
-        ->condition('status', 0, '>')
-        ->condition('type', $content_type) // @todo place dynamic node types
-        ->condition('uid', $user->uid) // @todo add permissions and full access to admin #1
-        ->execute()
-        ->fetchAll();
-    foreach ($result as $value) {
-      $node = node_load($value->nid);
-      $node_view = node_view($node);
-      foreach ($field as $field_name => $field_settings) {
-        $item = $node_view[$field_settings['field_name']];
-        $item[0]['#theme'] = 'video_formatter_thumbnail';
-        $item[0]['#image_style'] = 'thumbnail';
-        $item[0]['#path'] = '';
-        $form = array();
-        $form['video_browser']['image'] = array(
-          '#prefix' => '<div class="video-item"><a href="#" ref="' . $node->nid . '">',
-          '#markup' => '<div class="video-image">' . render($item[0]) . '</div>',
-        );
-        $form['video_browser']['title'] = array(
-          '#markup' => '<div class="video-title">' . $node->title . '</div>',
-        );
-        $form['video_browser']['nid'] = array(
-          '#type' => 'hidden',
-          '#value' => $node->nid,
-          '#suffix' => '</a></div>'
-        );
-        $output['video'][] = $form;
-      }
-    }
-  }
-  return render($output);
-}
-
-/**
- * Video load menu callbacl
- */
-function video_load($nid) {
-  $node = node_load($nid);
-  return $node;
-}
-
-/**
- * Menu callback : video/embed
- */
-function video_file_embed($node) {
-//  dsm($node);
-  $fields = field_info_instances('node', $node->type);
-  $node_field = array();
-  foreach ($fields as $field_type => $field) {
-    if ($field['widget']['type'] == 'video_upload') {
-      $video_field = $field;
-    }
-  }
-//  dsm($video_field);
-//  echo 'oki';
-  $element = array(
-    '#theme' => 'video_formatter_player',
-    '#item' => $node->{$video_field['field_name']}['und'][0],
-    '#entity' => $node,
-    '#field' => $video_field,
-    '#instance' => $video_field,
-    '#player_dimensions' => arg(3) . 'x' . arg(4)
-  );
-  return drupal_render($element);
 }

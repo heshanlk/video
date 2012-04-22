@@ -10,6 +10,13 @@
  * Inherits from DrupalWebTestCase to provide a clean environment.
  */
 class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
+  /**
+   * @var TranscoderAbstractionFactoryZencoder
+   */
+  private $transcoder;
+  private $user;
+  private $node;
+
   public static function getInfo() {
     return array(
       'name' => 'Video Zencoder tests',
@@ -19,35 +26,274 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    drupal_load('module', 'video');
-    require_once dirname(__FILE__) . '/../includes/TranscoderFactory.inc';
-    require_once dirname(__FILE__) . '/../transcoders/TranscoderAbstractionFactoryZencoder.inc';
-    parent::setUp();
+    parent::setUp(array('video', 'zencoderapi', 'node'));
+
+    // Test subject
+    $this->transcoder = $transcoder = new TranscoderAbstractionFactoryZencoder();
+
+    // Build test job
+    db_insert('file_managed')->fields(array(
+      'fid' => 1,
+      'filemime' => 'video/mp4',
+      'uri' => 'public://videos/original/file.mp4',
+      'filename' => 'file.mp4',
+      'filesize' => 134,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    db_insert('file_managed')->fields(array(
+      'fid' => 2,
+      'filemime' => 'video/mp4',
+      'uri' => 'public://videos/converted/1/file.mp4',
+      'filename' => 'file.mp4',
+      'filesize' => 0,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    db_insert('file_managed')->fields(array(
+      'fid' => 3,
+      'filemime' => 'video/flv',
+      'uri' => 'public://videos/converted/1/file.flv',
+      'filename' => 'file.flv',
+      'filesize' => 0,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    $transcoder->createJob(1, '320x240', 1, 'node', 'videofield', LANGUAGE_NONE, 0);
+    db_insert('video_output')->fields(array(
+      'vid' => 1,
+      'original_fid' => 1,
+      'output_fid' => 2,
+      'job_id' => 1,
+    ))->execute();
+    db_insert('video_output')->fields(array(
+      'vid' => 1,
+      'original_fid' => 1,
+      'output_fid' => 3,
+      'job_id' => 2,
+    ))->execute();
+
+    $dir = 'public://videos/converted/1';
+    file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+
+    // Build test entity type
+    field_create_field(array('field_name' => 'videofield', 'type' => 'video'));
+    field_create_instance(array('field_name' => 'videofield', 'entity_type' => 'node', 'bundle' => 'page'));
+
+    // Build test entity
+    $this->user = $user = $this->drupalCreateUser();
+    $node = new stdClass();
+    $node->uid = $user->uid;
+    $node->type = 'page';
+    $node->title = 'Test node';
+    $node->videofield['und'][0] = array('fid' => 1);
+    node_save($node);
+    $this->node = node_load($node->nid);
+  }
+
+  public function testExtractFrames() {
+    $this->transcoder->setInput(array(
+      'fid' => 1,
+      'uri' => 'public://test.mp4',
+      'filename' => 'test.mp4',
+    ));
+
+    // No job, should return FALSE
+    $out = $this->transcoder->extractFrames('public');
+    $this->assertFalse($out);
+
+    // Set state of job
+    db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE))->condition('vid', 1)->execute();
+
+    // No files, should return FALSE
+    // A watchdog message is expected at this point
+    $out = $this->transcoder->extractFrames('public');
+    $this->assertFalse($out);
+
+    // Make some files
+    variable_set('video_zencoder_base_url', 'public://incoming');
+    variable_set('video_thumbnail_count', 5);
+    $dir = 'public://incoming/videos/thumbnails/1/';
+    file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+
+    for ($i = 0; $i < 5; $i++) {
+      file_put_contents($dir . 'thumbnail-1_000' . $i . '.png', $i . '');
+    }
+
+    // Test generation of items array
+    $out = $this->transcoder->extractFrames('public');
+    $this->assertTrue(is_array($out), 'extractFrames should return array');
+    $this->assertEqual(5, count($out), '5 items should be returned');
+
+    // Test whether the original files have been deleted
+    for ($i = 0; $i < 5; $i++) {
+      $filename = 'thumbnail-1_000' . $i . '.png';
+
+      $this->assertEqual($filename, $out[$i]->filename);
+      $this->assertEqual('image/png', $out[$i]->filemime);
+      $this->assertEqual(0, $out[$i]->status);
+
+      $this->assertFalse(file_exists($dir . $filename), 'Thumbnail ' . $i . ' should be deleted from original directory');
+      $this->assertTrue(file_exists('public://videos/thumbnails/1/' . $filename), 'Thumbnail ' . $i . ' should exist in target directory');
+    }
+
+    // Calling the method again should return same files
+    $out = $this->transcoder->extractFrames('public');
+    $this->assertTrue(is_array($out), 'extractFrames should return array');
+    $this->assertEqual(5, count($out), '5 items should be returned');
   }
 
   /**
-   * Test of TranscoderAbstractionFactoryZencoder::checkS3Compatibility()
+   * Test of TranscoderAbstractionFactoryZencoder::processPostback()
+   *
+   * Run this test as the www-data / apache user.
    */
-  public function testCheckS3Compatibility() {
-    $errors = TranscoderAbstractionFactoryZencoder::checkS3Compatibility();
-    $count = count($errors);
-    $this->assertEqual(3, $count, t('There should be three errors when Amazon S3 has not been enabled and set up.'));
-
-    // Check if the test server has the amazons3 module, because it is
-    // an optional dependency.
-    $hasmodule = FALSE && module_enable(array('amazons3'));
-    $errorcountbase = 3;
-    if ($hasmodule) {
-      $errorcountbase--;
-      $errors = TranscoderAbstractionFactoryZencoder::checkS3Compatibility();
-      $count = count($errors);
-      $this->assertEqual($errorcountbase, $count, t('There should be two errors when Amazon S3 has not been set up.'));
+  public function testProcessPostback() {
+    // Only test this if the library is installed
+    $load = libraries_load('zencoder');
+    if (!$load['loaded'] || !$load['installed']) {
+      $this->verbose('Not starting testProcessPostback() because Zencoder API can\'t be loaded.');
+      return;
     }
 
-    variable_set('aws_key', 'somekey');
-    variable_set('amazons3_bucket', 'somebucket');
-    $errors = TranscoderAbstractionFactoryZencoder::checkS3Compatibility();
-    $count = count($errors);
-    $this->assertEqual($errorcountbase - 2, $count, t('There should be no errors when Amazon S3 has been set up.'));
+    $this->transcoder = new TranscoderAbstractionFactoryZencoder();
+
+    // Make sure the Zencoder transcoder is set.
+    variable_set('video_convertor', 'TranscoderAbstractionFactoryZencoder');
+
+    // Set state of job
+    db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_PENDING))->condition('vid', 1)->execute();
+
+    // Test invalid postback request
+    $out = $this->doPostback('{ }');
+    $this->assertEqual('Bad request', $out);
+
+    // Test postback for non-existent job
+    $out = $this->doPostback('{
+   "output":{
+      "state":"finished"
+   },
+   "job":{
+      "state":"finished",
+      "id":3
+   }
+}');
+    $this->assertEqual('Not found', $out);
+
+    // Test cancelled job
+    $out = $this->doPostback('{
+       "output":{
+          "state":"cancelled"
+       },
+       "job":{
+          "state":"cancelled",
+          "id":1
+       }
+    }');
+    $this->assertEqual('Cancelled', $out);
+
+    // Check state and restore state
+    $video = db_query('SELECT * FROM {video_queue} WHERE vid = 1')->fetch();
+    $this->assertEqual(VIDEO_RENDERING_FAILED, $video->status);
+    db_query('UPDATE {video_queue} SET status = 1 WHERE vid = 1')->execute();
+
+    // Test non-finished job
+    $out = $this->doPostback('{
+       "output":{
+          "state":"test"
+       },
+       "job":{
+          "state":"test",
+          "id":1
+       }
+    }');
+    $this->assertEqual('', $out);
+
+    // Test finished job
+    $thumb1 = 'public://thumbnail-1_0000.png';
+    $thumb2 = 'public://thumbnail-1_0001.jpg';
+    file_put_contents($thumb1, '123');
+    file_put_contents($thumb2, '456');
+
+    $outputfile = 'public://file.mp4';
+    file_put_contents($outputfile, 'abcde');
+
+    $out = $this->doPostback('{
+       "output":{
+          "state":"finished",
+          "duration_in_ms":5000,
+          "url":"' . file_create_url($outputfile) . '",
+          "file_size_in_bytes":5,
+          "thumbnails":[
+             {
+                "images":[
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb1) . '",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    },
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb2) . '",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    }
+                ],
+                "label" : null
+             }
+          ]
+       },
+       "job":{
+          "state":"finished",
+          "id":1
+       }
+    }');
+
+    $this->assertEqual('', $out);
+
+    // Test whether the duration and status have been saved
+    $video = $this->transcoder->loadJob(1, 'vid');
+
+    $this->assertEqual(5, $video->duration);
+    $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
+
+    // Check properties of the converted file
+    $fileconv = file_load(2);
+    $this->assertNotNull($fileconv);
+    $this->assertTrue(file_exists($fileconv->uri), 'Converted file must be moved to new location (' . $fileconv->uri . ')');
+    $this->assertEqual(5, $fileconv->filesize, 'Converted file must have file size 5');
+
+    // Check if a thumbnail has been downloaded
+    $node = node_load(1, NULL, TRUE);
+    $this->assertNotNull($node->videofield['und'][0]['thumbnail']);
+
+    // Check if thumbs have been registered
+    $usages = db_query('SELECT thumbnailfid FROM {video_thumbnails} WHERE videofid = 1')->fetchCol(0);
+    $files = array_values(file_load_multiple($usages));
+    $this->assertEqual(2, count($files), 'There should be two related files');
+
+    // Check the values of the $files array
+    if (count($files) == 2) {
+      $this->assertTrue(file_exists($files[0]->uri));
+      $this->assertEqual('thumbnail-1_0000.png', $files[0]->filename);
+      $this->assertEqual('public://videos/thumbnails/1/thumbnail-1_0000.png', $files[0]->uri);
+      $this->assertEqual('image/png', $files[0]->filemime);
+      $this->assertTrue(file_exists($files[1]->uri));
+      $this->assertEqual('thumbnail-1_0001.jpg', $files[1]->filename);
+      $this->assertEqual('public://videos/thumbnails/1/thumbnail-1_0001.jpg', $files[1]->uri);
+      $this->assertEqual('image/jpeg', $files[1]->filemime);
+    }
+  }
+
+  private function doPostback($data) {
+    $out = $this->curlExec(array(CURLOPT_URL => url('postback/jobs', array('absolute' => TRUE)), CURLOPT_POST => TRUE, CURLOPT_POSTFIELDS => $data));
+    // Ensure that any changes to variables in the other thread are picked up.
+    $this->refreshVariables();
+
+    return $out;
   }
 }
