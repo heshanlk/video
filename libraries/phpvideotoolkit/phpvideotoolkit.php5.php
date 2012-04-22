@@ -597,12 +597,21 @@ class PHPVideoToolkit {
       return $data;
     }
 
-    $formats = implode("\n", $formats);
-    $codecs = implode("\n", $codecs);
-    $filters = implode("\n", $filters);
-    $protocols = implode("\n", $protocols);
-
-    $data['raw'] = $formats . "\n" . $codecs . "\n" . $filters . "\n" . $protocols;
+    // FFmpeg 0.5 and lower don't support -codecs, -bsfs or -protocols, but the info is in -formats
+    if (strpos(end($codecs), 'missing argument for option')) {
+      $formats = implode("\n", $formats);
+      $codecs = $formats;
+      $filters = $formats;
+      $protocols = $formats;
+      $data['raw'] = $formats;
+    }
+    else {
+      $formats = implode("\n", $formats);
+      $codecs = implode("\n", $codecs);
+      $filters = implode("\n", $filters);
+      $protocols = implode("\n", $protocols);
+      $data['raw'] = $formats . "\n" . $codecs . "\n" . $filters . "\n" . $protocols;
+    }
 
     // grab the versions
     $data['binary']['versions'] = self::getVersion($data['raw']);
@@ -642,7 +651,7 @@ class PHPVideoToolkit {
     // grab the codecs available
     $codecsmatches = array();
     $data['codecs'] = array('video' => array(), 'audio' => array(), 'subtitle' => array());
-    if (preg_match_all('/ ([DEVAST ]{0,6}) ([A-Za-z0-9\_]*) (.*)/', $codecs, $codecsmatches)) {
+    if (preg_match_all('/ ([DEVAST ]{6}) ([A-Za-z0-9\_]*) (.*)/', $codecs, $codecsmatches)) {
     // Codecs:
 //  D..... = Decoding supported
 //  .E.... = Encoding supported

@@ -404,12 +404,14 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       $toolkit = new PHPVideoToolkit($ffmpeg_path);
       PHPVideoToolkit::$ffmpeg_info = FALSE;
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
-
-      if ($ffmpeg['ffmpeg-found'] && ($version = self::getVersionFromOutput($ffmpeg['raw'])) != NULL) {
-        drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
+      if (!$ffmpeg['ffmpeg-found'] || ($version = self::getVersionFromOutput($ffmpeg['raw'])) == NULL) {
+        form_set_error('video_ffmpeg_path', t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $ffmpeg_path, '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+      }
+      elseif (empty($ffmpeg['codecs']['video']) || empty($ffmpeg['codecs']['audio'])) {
+        form_set_error('video_ffmpeg_path', t('FFmpeg version %version was found, but no supported codecs could be found. Please check whether FFmpeg and all support libraries have been installed correctly.', array('%version' => $version)));
       }
       else {
-        form_set_error('video_ffmpeg_path', t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $ffmpeg_path, '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+        drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
       }
 
       // Clear FFmpeg information when the path has changed.
