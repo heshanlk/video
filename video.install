@@ -182,6 +182,9 @@ function video_schema() {
         'default' => NULL,
       ),
     ),
+    'indexes' => array(
+      'original_fid' => array('original_fid'),
+    ),
     'primary key' => array('vid', 'original_fid', 'output_fid')
   );
 
@@ -484,4 +487,11 @@ function video_update_7207(&$sandbox) {
       ),
     ),
   ));
+}
+
+/**
+ * Add index on video_output.original_fid
+ */
+function video_update_7208(&$sandbox) {
+  db_add_index('video_output', 'original_fid', array('original_fid'));
 }
