@@ -97,7 +97,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       return FALSE;
     }
     // No thumbnails available yet
-    if($job->video_status != VIDEO_RENDERING_COMPLETE) {
+    if ($job->video_status != VIDEO_RENDERING_COMPLETE) {
       return array();
     }
 
@@ -514,7 +514,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $thumbs = array();
     $tnid = 0;
     foreach ($thumbnails as $thumbnail) {
-      $ext = video_utility::getExtension($thumbnail['url']);
+      $urlpath = parse_url($thumbnail['url'], PHP_URL_PATH);
+      $ext = video_utility::getExtension($urlpath);
       $thumb = new stdClass();
       $thumb->uid = $entity->uid;
       $thumb->status = FILE_STATUS_PERMANENT;

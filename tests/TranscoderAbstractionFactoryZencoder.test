@@ -232,13 +232,13 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
                 "images":[
                     {
                        "dimensions":"320x240",
-                       "url":"' . file_create_url($thumb1) . '",
+                       "url":"' . file_create_url($thumb1) . '?accesskey=232432",
                        "format":"PNG",
                        "file_size_bytes":3
                     },
                     {
                        "dimensions":"320x240",
-                       "url":"' . file_create_url($thumb2) . '",
+                       "url":"' . file_create_url($thumb2) . '?accesskey=45093232",
                        "format":"PNG",
                        "file_size_bytes":3
                     }

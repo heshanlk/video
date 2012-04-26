@@ -149,8 +149,8 @@ class video_utility {
     elseif (is_dir($uri)) {
       $contents = scandir($uri);
       foreach ($objs as $obj) {
-        if ($obj != '.' && $obj != '...') {
-          self::unlink($uri .'/' . $obj);
+        if ($obj != '.' && $obj != '..') {
+          self::unlink($uri . '/' . $obj);
         }
       }
       drupal_rmdir($uri);
@@ -171,9 +171,9 @@ class video_utility {
   public static function validateDimensionList($str) {
     return preg_match('#^([1-9]\d{0,3}x[1-9]\d{0,3})(\n[1-9]\d{0,3}x[1-9]\d{0,3})*$#', $str) > 0;
   }
-  
+
   public static function getDimensions() {
-    $dims = explode("\n", variable_get('video_metadata_dimensions', self::getDefaultDimensions()));
+    $dims = explode("\n", str_replace("\r", '', variable_get('video_metadata_dimensions', self::getDefaultDimensions())));
     return array_combine($dims, $dims);
   }
 

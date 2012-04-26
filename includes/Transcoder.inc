@@ -6,11 +6,9 @@
 
 class Transcoder {
   /**
-   * Extract frames from the video file. This helper function will intract with
+   * Extract frames from the video file. This helper function will interact with
    * only the database and it will save all the thumbnail file reference in to
    * the database.
-   *
-   * @todo Maybe load from video_thumbnails if available
    *
    * @param $video
    * @return
@@ -26,7 +24,7 @@ class Transcoder {
 
     $scheme = !empty($field['settings']['uri_scheme_thumbnails']) ? $field['settings']['uri_scheme_thumbnails'] : 'public';
     $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();var_dump($video);
+    $transcoder = $factory->getProduct();
     $transcoder->setInput($video);
     $thumbnails = $transcoder->extractFrames($scheme);
 

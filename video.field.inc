@@ -413,8 +413,8 @@ function video_field_widget_process($element, &$form_state, $form) {
 }
 
 /**
-* Adds a preview of thumbnails for you to select when uploading videos.
-*/
+ * Adds a preview of thumbnails for you to select when uploading videos.
+ */
 function video_thumb_process(&$element, &$form_state) {
   $file = $element['#value'];
   $fid = intval($file['fid']);
