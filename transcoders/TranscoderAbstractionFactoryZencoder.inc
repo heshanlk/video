@@ -511,6 +511,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $thumbwrapper = file_stream_wrapper_get_instance_by_scheme($thumbscheme);
 
     // Turn the thumbnails into managed files
+    $existingthumbs = db_query('SELECT f.uri, f.fid FROM {file_managed} f INNER JOIN {video_thumbnails} t ON (f.fid = t.thumbnailfid) WHERE t.videofid = :fid', array(':fid' => $video->fid))->fetchAllKeyed();
     $thumbs = array();
     $tnid = 0;
     foreach ($thumbnails as $thumbnail) {
@@ -529,15 +530,24 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         continue;
       }
 
-      file_save($thumb);
-      db_insert('video_thumbnails')->fields(array('videofid' => $video->fid, 'thumbnailfid' => $thumb->fid))->execute();
+      if (isset($existingthumbs[$thumb->uri])) {
+        $thumb->fid = intval($existingthumbs[$thumb->uri]);
+      }
 
-      file_usage_add($thumb, 'file', $video->entity_type, $video->entity_id);
+      file_save($thumb);
+
+      // Saving to video_thumbnails and file_usage is only necessary when this is a new thumbnail
+      if (!isset($existingthumbs[$thumb->uri])) {
+        db_insert('video_thumbnails')->fields(array('videofid' => $video->fid, 'thumbnailfid' => $thumb->fid))->execute();
+        file_usage_add($thumb, 'file', $video->entity_type, $video->entity_id);
+      }
 
       $thumbs[$thumb->fid] = $thumb;
     }
 
-    if (empty($thumbs)) {
+    // Skip setting the thumbnail if there are no thumbnails or when the current value is already valid
+    $currentthumb = isset($entity->{$fieldname}[$langcode][$delta]['thumbnail']) ? intval($entity->{$fieldname}[$langcode][$delta]['thumbnail']) : 0;
+    if (empty($thumbs) || isset($thumbs[$currentthumb])) {
       return;
     }
 
