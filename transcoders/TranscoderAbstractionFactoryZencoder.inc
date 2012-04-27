@@ -525,11 +525,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $thumb->type = 'image'; // For the media module
 
       // The file may already have been created by a previous preset
-      if (!file_exists($thumb->uri)) {
-        if (!copy($thumbnail['url'], $thumb->uri)) {
-          watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail['url'], '@$thumburi' => $thumb->uri), WATCHDOG_ERROR);
-          continue;
-        }
+      if (file_exists($thumb->uri)) {
+        continue;
+      }
+      if (!copy($thumbnail['url'], $thumb->uri)) {
+        watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail['url'], '@$thumburi' => $thumb->uri), WATCHDOG_ERROR);
+        continue;
       }
 
       file_save($thumb);
@@ -539,9 +540,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
       $thumbs[$thumb->fid] = $thumb;
     }
-
-    // Save the amount of thumbnails downloaded
-    drupal_write_record('video_queue', $video, 'vid');
 
     if (empty($thumbs)) {
       return;

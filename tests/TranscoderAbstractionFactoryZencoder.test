@@ -287,6 +287,45 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
       $this->assertEqual('public://videos/thumbnails/1/thumbnail-1_0001.jpg', $files[1]->uri);
       $this->assertEqual('image/jpeg', $files[1]->filemime);
     }
+    
+    // Simulate a reencode of the same video
+    db_query('UPDATE {video_queue} SET status = 1 WHERE vid = 1')->execute();
+    
+    $out = $this->doPostback('{
+       "output":{
+          "state":"finished",
+          "duration_in_ms":5000,
+          "url":"' . file_create_url($outputfile) . '",
+          "file_size_in_bytes":5,
+          "thumbnails":[
+             {
+                "images":[
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb1) . '?accesskey=232432",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    },
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb2) . '?accesskey=45093232",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    }
+                ],
+                "label" : null
+             }
+          ]
+       },
+       "job":{
+          "state":"finished",
+          "id":2
+       }
+    }');
+
+    $this->assertEqual('', $out);
+    $video = $this->transcoder->loadJob(1, 'vid');
+    $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
   }
 
   private function doPostback($data) {
