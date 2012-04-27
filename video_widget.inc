@@ -438,7 +438,7 @@ function video_widget_settings_file_path_validate($element, &$form_state) {
 function video_web_extensions($ext) {
   $extensions = array_filter(explode(' ', $ext));
   $web_extensions = array(
-    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', // quicktime
+    'mov', 'mp4', '3gp', '3g2', 'mpg', 'mpeg', 'm4v', // quicktime
     'divx', 'mkv', //divx
     'rm', // realplayer
     'flv', 'f4v', //flash player
