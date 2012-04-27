@@ -110,6 +110,8 @@ function video_theme() {
 
   $path = drupal_get_path('module', 'video') . '/theme';
   // Lets setup our themes for our players
+  // We include video.utility.inc here, because when upgrading the autoload cache is not updated yet.
+  module_load_include('utility.inc', 'video');
   $players = video_utility::getVideoPlayers();
   foreach ($players as $tpl => $value) {
     $theme[$tpl] = array(
