@@ -94,7 +94,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // thumbnails
     $job = $this->loadJob();
     if (empty($job)) {
-      return FALSE;
+      return array();
     }
     // No thumbnails available yet
     if ($job->video_status != VIDEO_RENDERING_COMPLETE) {
@@ -524,10 +524,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $thumb->filemime = $thumbwrapper->getMimeType($thumb->uri);
       $thumb->type = 'image'; // For the media module
 
-      // The file may already have been created by a previous preset
-      if (file_exists($thumb->uri)) {
-        continue;
-      }
       if (!copy($thumbnail['url'], $thumb->uri)) {
         watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail['url'], '@$thumburi' => $thumb->uri), WATCHDOG_ERROR);
         continue;

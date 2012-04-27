@@ -15,8 +15,8 @@
  */
 function theme_video_widget(array $variables) {
   $element = $variables['element'];
-  $output = '';
-  $output .= '<div class="video-widget form-managed-file clearfix">';
+
+  $output = '<div class="video-widget form-managed-file clearfix">';
 
   if (isset($element['preview'])) {
     $output .= '<div class="video-preview">';

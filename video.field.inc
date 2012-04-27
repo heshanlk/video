@@ -369,6 +369,7 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
     // Add thumbnail stub to prevent errors in file_ajax_upload().
     $elements[$delta]['thumbnail'] = array(
       '#type' => 'value',
+      '#value' => NULL,
     );
   }
 
@@ -391,7 +392,6 @@ function video_field_widget_process($element, &$form_state, $form) {
   $item = $element['#value'];
   $item['fid'] = $element['fid']['#value'];
   $field = field_widget_field($element, $form_state);
-  $settings = $field['settings'];
 
   $element['#theme'] = 'video_widget';
   $element['preview'] = array();
@@ -406,8 +406,8 @@ function video_field_widget_process($element, &$form_state, $form) {
     return $element;
   }
 
-  video_widget_element_settings($element, $form_state);
-  video_thumb_process($element, $form_state);
+  video_widget_element_settings($element, $form_state, $field);
+  video_thumb_process($element, $form_state, $field);
 
   return $element;
 }
@@ -415,11 +415,11 @@ function video_field_widget_process($element, &$form_state, $form) {
 /**
  * Adds a preview of thumbnails for you to select when uploading videos.
  */
-function video_thumb_process(&$element, &$form_state) {
+function video_thumb_process(array &$element, array &$form_state, array $field) {
   $file = $element['#value'];
   $fid = intval($file['fid']);
-  $field = field_widget_field($element, $form_state);
   $defaultthumbfid = isset($field['settings']['default_video_thumbnail']) ? intval($field['settings']['default_video_thumbnail']['fid']) : 0;
+  $thumbnailfid = !isset($file['thumbnail']) ? 0 : (isset($file['thumbnail']['fid']) ? intval($file['thumbnail']['fid']) : intval($file['thumbnail']));
 
   if (isset($element['preview']) && $fid != 0) {
     $gen_fail = FALSE;
@@ -434,8 +434,8 @@ function video_thumb_process(&$element, &$form_state) {
           $thumbss[$img->fid] = theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $img->uri));
         }
 
-        if (!empty($file['thumbnail']) && isset($thumbss[$file['thumbnail']])) {
-          $currentthumb = $file['thumbnail'];
+        if ($thumbnailfid > 0 && isset($thumbss[$thumbnailfid])) {
+          $currentthumb = $thumbnailfid;
         }
         else {
           $currentthumb = array_rand($thumbss);
@@ -450,7 +450,7 @@ function video_thumb_process(&$element, &$form_state) {
           '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'Drupal.behaviors.videoEdit()', 'rel' => 'video_large_thumbnail-' . $fid),
         );
       }
-      else {
+      elseif($thumbs === FALSE) {
         $gen_fail = TRUE;
       }
     }
@@ -468,9 +468,9 @@ function video_thumb_process(&$element, &$form_state) {
       );
 
       // Set the current thumbnail fid, if it is not the default one
-      if (!empty($file['thumbnail'])) {
-        if ($defaultthumbfid == 0 || $file['thumbnail'] != $defaultthumbfid) {
-          $element['thumbnail']['#default_value'] = $file['thumbnail'];
+      if ($thumbnailfid > 0) {
+        if ($defaultthumbfid == 0 || $thumbnailfid != $defaultthumbfid) {
+          $element['thumbnail']['#default_value'] = $thumbnailfid;
         }
         else {
           // Unset the form_state value for the thumbnail field if it is the default thumbnail.
@@ -480,21 +480,13 @@ function video_thumb_process(&$element, &$form_state) {
       }
     }
 
-    // if no thumbnail creation
-    if ($field['settings']['autothumbnail'] == 'no') {
-      $element['thumbnail'] = array(
-        '#type' => 'value',
-        '#value' => NULL,
-      );
-    }
-
     // Setup our large thumbnail that is on the left.
     $large_thumb = NULL;
     if (!empty($currentthumb)) {
       $large_thumb = file_load($currentthumb);
     }
-    elseif (!empty($file['thumbnail']) && $file['thumbnail'] > 0) {
-      $large_thumb = file_load($file['thumbnail']);
+    elseif ($thumbnailfid > 0) {
+      $large_thumb = file_load($thumbnailfid);
     }
     elseif ($defaultthumbfid > 0) {
       $large_thumb = file_load($defaultthumbfid);
@@ -509,18 +501,14 @@ function video_thumb_process(&$element, &$form_state) {
 /**
  * Process elements loads on settings
  */
-function video_widget_element_settings(&$element, &$form_state) {
+function video_widget_element_settings(array &$element, array &$form_state, array $field) {
   $file = $element['#value'];
   $delta = $element['#delta'];
 
-  $field = field_widget_field($element, $form_state);
   $instance = field_widget_instance($element, $form_state);
-  $settings = $instance['settings'];
-  // Check if using the default width and replace tokens.
+  $dimensions = $instance['settings']['default_dimensions'];
   $default_dimensions = user_access('override player dimensions');
-  $description = t('Set your video dimensions.  This will create your player with these dimensions.');
-  // Setup our default dimensions.
-  $dimensions = $settings['default_dimensions'];
+  $description = t('Set your video dimensions. This will create your player with these dimensions.');
 
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_utility::getDimensions();
