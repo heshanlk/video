@@ -10,7 +10,6 @@ class Transcoder {
    * only the database and it will save all the thumbnail file reference in to
    * the database.
    *
-   * @param $video
    * @return
    *   array of file objects, or false on failure
    */
@@ -23,10 +22,11 @@ class Transcoder {
     }
 
     $scheme = !empty($field['settings']['uri_scheme_thumbnails']) ? $field['settings']['uri_scheme_thumbnails'] : 'public';
+    $format = !empty($field['settings']['thumbnail_format']) ? $field['settings']['thumbnail_format'] : 'png';
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
     $transcoder->setInput($video);
-    $thumbnails = $transcoder->extractFrames($scheme);
+    $thumbnails = $transcoder->extractFrames($scheme, $format);
 
     if ($thumbnails === FALSE) {
       return FALSE;
@@ -74,12 +74,16 @@ class Transcoder {
       return FALSE;
     }
 
-    // Find the scheme for the converted videos
+    // Find the scheme and thumbnail format for the converted videos
     $converted_scheme = file_uri_scheme($video->uri);
+    $thumbnail_format = 'png';
     if (!empty($video->data['field_name'])) {
       $field = field_info_field($video->data['field_name']);
       if (!empty($field['settings']['uri_scheme_converted'])) {
         $converted_scheme = $field['settings']['uri_scheme_converted'];
+      }
+      if (!empty($field['settings']['thumbnail_format'])) {
+        $thumbnail_format = $field['settings']['thumbnail_format'];
       }
     }
 
@@ -99,6 +103,7 @@ class Transcoder {
     foreach ($presets as $name => $preset) {
       // override the widthXheight if enabled
       $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
+      $preset['settings']['thumbnails']['format'] = $thumbnail_format;
 
       // set transcoder options
       if (!$transcoder->setOptions($preset['settings'])) {

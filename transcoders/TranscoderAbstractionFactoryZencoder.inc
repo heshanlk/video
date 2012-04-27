@@ -65,7 +65,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     // thumbnails
     $this->options['output']['thumbnails'] = array(
-      'format' => 'png', // @todo: make this configurable
+      'format' => $this->options['output']['thumbnails']['format'],
       'number' => intval(variable_get('video_thumbnail_count', 5)),
       'thumb_size' => variable_get('video_thumbnail_size', '320x240'),
       'prefix' => 'thumbnail-' . $this->settings['input']['fid'],
@@ -88,7 +88,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
    *
    * @see TranscoderFactoryInterface::extractFrames()
    */
-  public function extractFrames($destinationScheme) {
+  public function extractFrames($destinationScheme, $format) {
     // Check if the job has been completed.
     // If the job has not been completed, don't bother checking for
     // thumbnails

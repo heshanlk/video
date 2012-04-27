@@ -11,15 +11,19 @@ interface TranscoderFactoryInterface {
   /**
    * Extract frames from the current video.
    *
-   * The thumbnails should be saved to the given scheme. The files should not
+   * The thumbnails are be saved to the given scheme. The files are not
    * be saved to the database, this will be done by the caller.
-   * The uid, filesize and timestamp properties does not need to be set by this
-   * method.
+   * The uid, filesize and timestamp properties are not set by this method.
+   *
+   * @param $destinationScheme
+   *   A valid stream wrapper scheme
+   * @param $format
+   *   png or jpg
    *
    * @return
    *   array of file objects, FALSE on error
    */
-  public function extractFrames($destinationScheme);
+  public function extractFrames($destinationScheme, $format);
 
   public function execute();
 

@@ -139,11 +139,10 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     return TRUE;
   }
 
-  public function extractFrames($destinationScheme) {
+  public function extractFrames($destinationScheme, $format) {
     // When $job is null, we are viewing the thumbnails before the form has been submitted.
     $job = $this->loadJob();
     $fid = intval($this->settings['input']['fid']);
-    $type = 'png'; // @todo: make this configurable
 
     // Get the file system directory.
     $dsturibase = $destinationScheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $fid . '/';
@@ -163,12 +162,12 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $thumbs = array();
     for ($i = 1; $i <= $no_of_thumbnails; $i++) {
       $seek = ceil($duration / ($no_of_thumbnails + 1) * $i);
-      $filename = file_munge_filename('thumbnail-' . $fid . '_' . sprintf('%04d', $i) . '.' . $type, '', FALSE);
+      $filename = file_munge_filename('thumbnail-' . $fid . '_' . sprintf('%04d', $i) . '.' . $format, '', FALSE);
       $dsturi = $dsturibase . $filename;
 
       if (!file_exists($dsturi)) {
         // Create a temporary file that will be moved to the final URI later
-        $dstpath = video_utility::createTempFile($type);
+        $dstpath = video_utility::createTempFile($format);
 
         $error = NULL;
         if (class_exists('ffmpeg_movie')) {
@@ -177,7 +176,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $fps = $movie->getFrameRate();
           $frame = $movie->getFrame(min($frames, (int) $seek * $fps));
           $thumb = $frame->toGDImage();
-          $result = video_utility::imageSave($thumb, $dstpath, $type);
+          $result = video_utility::imageSave($thumb, $dstpath, $format);
           if (!$result) {
             $error = t('Unknown FFmpeg-php error');
           }
