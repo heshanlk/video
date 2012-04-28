@@ -180,6 +180,11 @@ function video_widget_process(&$element, &$form_state) {
   $field = content_fields($element['#field_name'], $element['#type_name']);
   switch ($form_state['clicked_button']['#submit'][0]) {
     case 'node_form_submit':
+    // Multistep module support
+    case 'multistep_save':
+    case 'multistep_next':
+    case 'multistep_previous':
+    case 'multistep_done':
       // Auto convert our video file
       if ($field['widget']['autoconversion']) {
         video_convert_process($element);
