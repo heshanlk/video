@@ -694,6 +694,11 @@ function _video_process_video(stdClass $video, video_transcoder $transcoder, vid
   if ($video->status != VIDEO_RENDERING_PENDING) {
     return NULL;
   }
+  if (!file_exists($video->filepath)) {
+    $transcoder->change_status($video, VIDEO_RENDERING_FAILED);
+    watchdog('video', 'The video module tried to transcode %filepath, but the file can\'t be found.', array('%filepath' => $video->filepath), WATCHDOG_ERROR);
+    return FALSE;
+  }
 
   $video->presets = $presets;
 
