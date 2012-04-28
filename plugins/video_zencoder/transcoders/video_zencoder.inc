@@ -527,4 +527,14 @@ watermark:
   public function requirements() {
     return array();
   }
+
+  /**
+   * Implementation of get_original_path_by_converted_path().
+   *
+   * All Zencoder files are stored on S3, so video_file_download will never
+   * have to call this method.
+   */
+  public function get_original_path_by_converted_path($filepath) {
+    return NULL;
+  }
 }

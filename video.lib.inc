@@ -89,6 +89,20 @@ interface video_transcoder extends video_plugin {
    *   the width and height can't be determined.
    */
   public function get_dimensions($filepath);
+
+  /**
+   * Helper method for video_file_download()
+   *
+   * Returns the path to the original video file based on the path of the
+   * converted video file.
+   *
+   * @param $filepath
+   *   The path to the converted file, this path must have been processed by
+   *   file_create_path().
+   * @return
+   *   Path to the original video, NULL if not found.
+   */
+  public function get_original_path_by_converted_path($filepath);
 }
 
 class video_preset {

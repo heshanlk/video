@@ -390,6 +390,42 @@ function video_views_api() {
 }
 
 /**
+ * Implementation of hook_file_download().
+ */
+function video_file_download($filepath) {
+  $full_path = file_create_path($filepath);
+
+  // Video thumbnails
+  if (strpos($filepath, 'video_thumbs/') !== FALSE) {
+    return array(
+      'Content-Type: ' . file_get_mimetype($full_path),
+      'Content-Length: ' . filesize($full_path),
+    );
+  }
+
+  // Converted videos
+  if (strpos($filepath, '/converted/') === FALSE) {
+    return NULL;
+  }
+
+  // The get_video_by_converted_path() call is expensive, avoid it if the requested file is not a video
+  $extensions = array_keys(video_video_extensions());
+  $extension = pathinfo($filepath, PATHINFO_EXTENSION);
+  if (!in_array($extension, $extensions)) {
+    return NULL;
+  }
+
+  $transcoder = video_get_transcoder();
+  $video = $transcoder->get_original_path_by_converted_path($full_path);
+
+  if ($video == NULL) {
+    return NULL;
+  }
+
+  return filefield_file_download($video->filepath);
+}
+
+/**
  * Returns the aspect ratio for the given width and height.
  */
 function _video_aspect_ratio($width, $height) {

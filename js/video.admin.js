@@ -53,11 +53,11 @@ function video_hide_all_options() {
 
 function videoftp_thumbnail_change() {
   // Add handlers for the video thumbnail radio buttons to update the large thumbnail onchange.
-  $(".video-thumbnails input").each(function() {
-    var path = $(this).val();
+  $('.video-thumbnails input').each(function() {
+    var path = $(this).nextAll('img').attr('src');
     if($(this).is(':checked')) {
       var holder = $(this).attr('rel');
-      $('.'+holder+' img').attr('src', Drupal.settings.basePath + path);
+      $('.'+holder+' img').attr('src', path);
     }
   });
 }

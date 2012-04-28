@@ -135,6 +135,18 @@ class video_localcommand implements video_transcoder {
 
     $converteddir = dirname(dirname($video->filepath)) .'/converted';
 
+    // Check if $converteddir is an absolute path, we need this later
+    $converteddirabsolute = FALSE;
+    if ($converteddir[0] == '/') {
+      $converteddirabsolute = TRUE;
+    }
+    elseif (substr($converteddir, 1, 2) == ':\\') {
+      $converteddirabsolute = TRUE;
+    }
+    else {
+      $converteddirabsolute = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PRIVATE;
+    }
+
     if (!field_file_check_directory($converteddir, FILE_CREATE_DIRECTORY)) {
       watchdog('video_command', 'Video conversion could not be started: Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
       return FALSE;
@@ -182,7 +194,7 @@ class video_localcommand implements video_transcoder {
 
       // Update our filename after the move to maintain filename uniqueness.
       $outputfile = file_create_filename(str_replace(' ', '_', pathinfo($video->filepath, PATHINFO_FILENAME)) . $preset->filenamesuffix .'.'. $preset->extension, $converteddir);
-      $outputfilefull = $drupaldir .'/'. $outputfile;
+      $outputfilefull = $converteddirabsolute ? $outputfile : $drupaldir .'/'. $outputfile;
       $parameters['!convertfile'] = escapeshellarg($outputfilefull);
 
       $command_output = '';
@@ -679,5 +691,28 @@ class video_localcommand implements video_transcoder {
     }
 
     return $requirements;
+  }
+
+  /**
+   * Implementation of get_original_path_by_converted_path().
+   */
+  public function get_original_path_by_converted_path($filepath) {
+    // This is ugly, but there is no other way
+    $videos = db_query('SELECT fid, data FROM {video_files} WHERE status = %d AND data LIKE "%%%s%%"', VIDEO_RENDERING_COMPLETE, $filepath);
+    $fid = NULL;
+    while ($video = db_fetch_object($videos)) {
+      foreach (unserialize($video->data) as $file) {
+        if ($file->filepath == $filepath) {
+          $fid = $video->fid;
+          break 2;
+        }
+      }
+    }
+
+    if ($fid == NULL) {
+      return NULL;
+    }
+
+    return $this->load_job($fid);
   }
 }

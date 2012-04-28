@@ -56,22 +56,6 @@ function uploadfield_elements() {
 }
 
 /**
- * Implementation of hook_file_download().
- */
-function uploadfield_file_download($filepath) {
-  // Return headers for default images.
-  if (strpos($filepath, 'video_thumbs') !== FALSE) {
-    $full_path = file_create_path($filepath);
-    if ($info = getimagesize($full_path)) {
-      return array(
-      'Content-Type: ' . $info['mime'],
-      'Content-Length: ' . filesize($full_path)
-      );
-    }
-  }
-}
-
-/**
  * Implementation of CCK's hook_widget_settings().
  */
 function uploadfield_widget_settings($op, $widget) {

@@ -6,7 +6,6 @@
 
 function theme_video_thumbnails($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   $file = (array)$file;
-  //  return $file['filepath'];
   if (!is_file($file['filepath'])) {
     return '<!-- File not found: '. $file['filepath'] .' -->';
   }
