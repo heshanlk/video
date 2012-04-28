@@ -391,15 +391,13 @@ class video_localcommand implements video_transcoder {
     db_query('UPDATE {video_files} SET status = %d WHERE vid = %d', $status, $video->vid);
   }
 
-  /*
+  /**
    * Function determines the dimensions you want and compares with the actual wxh of the video.
    *
    * If they are not exact or the aspect ratio does not match, we then figure out how much padding
    * we should add.  We will either add a black bar on the top/bottom or on the left/right.
    *
-   * @TODO I need to look more at this function.  I don't really like the guess work here.  Need to implement
-   * a better way to check the end WxH.  Maybe compare the final resolution to our defaults?  I don't think
-   * that just checking to make sure the final number is even is accurate enough.
+   * The output width and height are divisible by two
    */
   public function getDimensionParameters(stdClass $video, array $sourcedimensions) {
     $wxh = explode('x', $video->dimensions, 2);
@@ -412,10 +410,10 @@ class video_localcommand implements video_transcoder {
     $options->paddingright = 0;
     $options->paddingtop = 0;
     $options->paddingbottom = 0;
-    $options->paddingwidth = $outputwidth;
-    $options->paddingheight = $outputheight;
-    $options->width = $outputwidth;
-    $options->height = $outputheight;
+    $options->width = intval(round($outputwidth / 2) * 2);
+    $options->height = intval(round($outputheight / 2) * 2);
+    $options->paddingwidth = $options->width;
+    $options->paddingheight = $options->height;
 
     $filewidth = $sourcedimensions['width'];
     $fileheight = $sourcedimensions['height'];
@@ -426,7 +424,7 @@ class video_localcommand implements video_transcoder {
       if ($fileratio < $outputratio) {
         // The input file is narrower than the output file
         // Change the output width proportionally
-        $options->width = intval(round($filewidth * $outputheight / $fileheight));
+        $options->width = intval(round($filewidth * $outputheight / $fileheight / 2) * 2);
 
         // Determine left and right padding
         $padding = $outputwidth - $options->width;
@@ -436,7 +434,7 @@ class video_localcommand implements video_transcoder {
       else {
         // The input file is wider than the output file
         // Change the output height proportionally
-        $options->height = intval(round($fileheight * $outputwidth / $filewidth));
+        $options->height = intval(round($fileheight * $outputwidth / $filewidth / 2) * 2);
 
         // Determine top and bottom padding
         $padding = $outputheight - $options->height;

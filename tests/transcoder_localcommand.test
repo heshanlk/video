@@ -64,11 +64,11 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
     $options = $transcoder->getDimensionParameters($video, $fileinfo);
 
     $this->assertIdentical($options->width, 400, 'width');
-    $this->assertIdentical($options->height, 225, 'height');
+    $this->assertIdentical($options->height, 226, 'height');
     $this->assertIdentical($options->paddingwidth, 400, 'paddingwidth');
     $this->assertIdentical($options->paddingheight, 300, 'paddingheight');
     $this->assertIdentical($options->paddingtop, 37, 'paddingtop');
-    $this->assertIdentical($options->paddingbottom, 38, 'paddingbottom');
+    $this->assertIdentical($options->paddingbottom, 37, 'paddingbottom');
     $this->assertIdentical($options->paddingleft, 0, 'paddingleft');
     $this->assertIdentical($options->paddingright, 0, 'paddingright');
   }
@@ -96,5 +96,29 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
     $this->assertIdentical($options->paddingbottom, 0, 'paddingbottom');
     $this->assertIdentical($options->paddingleft, 100, 'paddingleft');
     $this->assertIdentical($options->paddingright, 100, 'paddingright');
+  }
+
+  function testShouldReturnWidthAndHeightDivisibleByTwo() {
+    module_load_include('lib.inc', 'video');
+    module_load_include('inc', 'video', 'transcoders/video_localcommand');
+    $transcoder = new video_localcommand();
+
+    $video = new stdClass();
+    $video->dimensions = '360x202';
+
+    $fileinfo = array(
+      'width' => 1280,
+      'height' => 720,
+    );
+
+    $options = $transcoder->getDimensionParameters($video, $fileinfo);
+    $this->assertIdentical($options->width, 360, 'width');
+    $this->assertIdentical($options->height, 202, 'height');
+    $this->assertIdentical($options->paddingwidth, 360, 'paddingwidth');
+    $this->assertIdentical($options->paddingheight, 202, 'paddingheight');
+    $this->assertIdentical($options->paddingtop, 0, 'paddingtop');
+    $this->assertIdentical($options->paddingbottom, 0, 'paddingbottom');
+    $this->assertIdentical($options->paddingleft, 0, 'paddingleft');
+    $this->assertIdentical($options->paddingright, 0, 'paddingright');
   }
 }
