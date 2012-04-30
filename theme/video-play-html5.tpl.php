@@ -40,7 +40,7 @@ foreach ($video->files as $filetype => $file) {
   }
 
   // Find the right flash fallback, prefer flv over mp4
-  if ($filetype != 'flv' && ($mimetype == 'video/mp4' || $mimetype == 'video/flv')) {
+  if ($flashtype != 'flv' && ($mimetype == 'video/mp4' || $mimetype == 'video/flv')) {
     $flashtype = $filetype;
   }
 ?>
