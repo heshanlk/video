@@ -218,14 +218,18 @@ function theme_video_flv($variables) {
       $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->fid, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
       break;
     case 'jwplayer':
-      foreach ($video->files as $ext => $file) {
-        $item = (array) $file;
-        $item += array('image' => (array) $video->thumbnail);
+      $item = $video->files->{$video->player};
+      $options = array(
+        'width' => $video->player_width,
+        'height' => $video->player_height,
+        'autoplay' => $video->autoplay,
+      );
+      $config = array();
+      if (!empty($video->thumbnail)) {
+        $config['image'] = file_create_url($video->thumbnail->uri);
       }
-      $attributes = array();
-      $attributes['width'] = $video->player_width;
-      $attributes['height'] = $video->player_height;
-      return theme('jw_player', array('file_object' => (object) $item, 'options' => $attributes));
+      $themed_output = theme('jw_player', array('file_object' => $item, 'options' => $options, 'config' => $config));
+      break;
 
     default:
       $themed_output = t('No flash player has been set up. ' . l(t('Please select a player to play Flash videos.'), 'admin/config/media/video/players'));
