@@ -10,7 +10,6 @@ files[] = includes/Conversion.inc
 files[] = includes/Metadata.inc
 files[] = includes/Preset.inc
 files[] = includes/Transcoder.inc
-files[] = includes/VideoHelper.inc
 files[] = includes/TranscoderFactory.inc
 files[] = transcoders/TranscoderAbstractionFactoryFfmpeg.inc
 files[] = transcoders/TranscoderAbstractionFactoryZencoder.inc

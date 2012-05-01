@@ -43,39 +43,43 @@ function theme_video_widget(array $variables) {
  * player for the specific video type for output.
  */
 function theme_video_formatter_player(array $variables) {
-  if (empty($variables['item']['fid'])) {
+  $item = $variables['item'];
+  if (empty($item['fid'])) {
     return '';
   }
 
-  $field_settings = $variables['field']['settings'];
   // Only needs to be ran if they are converting videos
-  if (!empty($field_settings['autoconversion'])) {
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    if ($video = $transcoder->loadJob($variables['item']['fid'], 'fid')) {
-      if ($video->video_status == VIDEO_RENDERING_ACTIVE || $video->video_status == VIDEO_RENDERING_PENDING) {
+  if ($item['autoconversion'] && !$item['conversioncompleted']) {
+    switch ($item['conversionstatus']) {
+      case VIDEO_RENDERING_ACTIVE:
+      case VIDEO_RENDERING_PENDING:
         return theme('video_inprogress');
-      }
-      elseif ($video->video_status == VIDEO_RENDERING_FAILED) {
+      case VIDEO_RENDERING_FAILED:
         return theme('video_conversion_failed');
-      }
     }
   }
-
-  // Setup our video object
-  $video_helper = new VideoHelper();
-  $video = $video_helper->video_object($variables);
 
   // override player dimensions
   if (!empty($variables['player_dimensions'])) {
     $player_dimensions = explode('x', $variables['player_dimensions'], 2);
-    $video->player_width = trim($player_dimensions[0]);
-    $video->player_height = trim($player_dimensions[1]);
+    $player_width = intval(trim($player_dimensions[0]));
+    $player_height = intval(trim($player_dimensions[1]));
+  }
+  else {
+    $player_width = 640;
+    $player_height = 360;
+  }
+
+  if ($item['autoconversion']) {
+    $extension = video_utility::getExtension($item['converted'][0]->filename);
+  }
+  else {
+    $extension = video_utility::getExtension($item['filename']);
   }
 
   // Lets spit out our theme based on the extension
   $defaults = video_utility::getVideoExtensions();
-  $theme_function = variable_get('video_extension_' . $video->player, $defaults[$video->player]);
+  $theme_function = variable_get('video_extension_' . $extension, $defaults[$extension]);
 
   if ($theme_function == 'video_play_flv') {
     $theme_function = 'video_flv';
@@ -84,32 +88,31 @@ function theme_video_formatter_player(array $variables) {
     $theme_function = 'video_html5';
   }
 
-  return theme($theme_function, array('video' => $video, 'themed_output' => ''));
+  return theme($theme_function, array('item' => $item, 'width' => $player_width, 'height' => $player_height));
 }
 
 /**
  * Renders the video thumbnail as a link to the node page.
  */
 function theme_video_formatter_thumbnail($variables) {
+  $item = $variables['item'];
+
   // Inside a view $variables may contain null data. In that case, just return.
-  if (empty($variables['item']['fid'])) {
-    return '<!-- File not found: ' . $variables['item']['fid'] . ' -->';
+  if (empty($item['fid']) || empty($item['thumbnailfile'])) {
+    return '';
   }
 
-  $video_helper = new VideoHelper();
-  $thumbnail = $video_helper->thumbnail_object($variables);
-  if (empty($thumbnail) || empty($thumbnail->filepath)) {
-    return '<!-- Thumbnail not found: -->';
-  }
+  $thumbnail = $item['thumbnailfile'];
+  $title = isset($variables['entity']->title) ? $variables['entity']->title : '';
 
   $image = array(
-    'path' => $thumbnail->filepath,
-    'alt' => $thumbnail->alt,
+    'path' => $thumbnail->uri,
+    'alt' => $title,
   );
 
   // Do not output an empty 'title' attribute.
-  if (!empty($thumbnail->title)) {
-    $image['title'] = $thumbnail->title;
+  if (!empty($title)) {
+    $image['title'] = $title;
   }
 
   if (!empty($variables['image_style'])) {
@@ -178,27 +181,37 @@ function theme_video_conversion_failed() {
   return '<div class="video-conversion-failed">' . t('The video conversion process has failed. You might want to submit a simpler video format like <em>mpeg</em> or <em>divx avi</em>.<br />If the problem persists contact your website administrator. Please check logs for further debugging.') . '</div>';
 }
 
-/*
- * Theme wraper on Flahs play on 3rd party
+/**
+ * Theme wraper on Flash play on 3rd party
  */
-
 function theme_video_flv($variables) {
-  $video = $variables['video'];
+  $item = $variables['item'];
 
-// set the video flash player
-// Moved to last to recheck incase we changed our extension above.
-  $video->flash_player = variable_get('video_extension_' . $video->player . '_flash_player', '');
-  switch ($video->flash_player) {
+  $video = NULL;
+  foreach ($item['playablefiles'] as $file) {
+    if ($file->filemime == 'video/mp4' || $file->filemime == 'video/flv' || $file->filemime == 'video/x-flv') {
+      $video = $file;
+      break;
+    }
+  }
+
+  if ($video == NULL) {
+    return '';
+  }
+
+  $extension = strtolower(video_utility::getExtension($video->filename));
+  $flash_player = variable_get('video_extension_' . $extension . '_flash_player', '');
+  switch ($flash_player) {
     case 'flowplayer':
       // kjh: use a playlist to display the thumbnail if not auto playing
-      if (isset($video->autoplay) && !empty($video->thumbnail->url)) {
+      if (!$variables['autoplay'] && !empty($item['thumbnailfile'])) {
         $options = array(
           'playlist' => array(
-            $video->thumbnail->url,
+            file_create_url($item['thumbnailfile']->uri),
             array(
-              'url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
-              'autoPlay' => $video->autoplay,
-              'autoBuffering' => $video->autobuffering,
+              'url' => file_create_url($video->uri),
+              'autoPlay' => $variables['autoplay'],
+              'autoBuffering' => $variables['autobuffering'],
             ),
           ),
         );
@@ -206,33 +219,34 @@ function theme_video_flv($variables) {
       else {
         $options = array(
           'clip' => array(
-            'url' => urlencode(file_create_url($video->files->{$video->player}->uri)),
-            'autoPlay' => $video->autoplay,
-            'autoBuffering' => $video->autobuffering,
+            'url' => file_create_url($video->uri),
+            'autoPlay' => $variables['autoplay'],
+            'autoBuffering' => $variables['autobuffering'],
           ),
         );
       }
-      $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $video->fid, 'attributes' => array('style' => 'width:' . $video->player_width . 'px;height:' . ($video->player_height + 24) . 'px;')));
+      $themed_output = theme('flowplayer', array('config' => $options, 'id' => 'flowplayer-' . $item['fid'], 'attributes' => array('style' => 'width:' . $variables['width'] . 'px;height:' . ($variables['height'] + 24) . 'px;')));
       break;
+
     case 'jwplayer':
-      $item = $video->files->{$video->player};
       $options = array(
-        'width' => $video->player_width,
-        'height' => $video->player_height,
-        'autoplay' => $video->autoplay,
+        'width' => $variables['width'],
+        'height' => $variables['height'],
+        'autoplay' => $variables['autoplay'],
       );
       $config = array();
-      if (!empty($video->thumbnail)) {
-        $config['image'] = file_create_url($video->thumbnail->uri);
+      if (!empty($item['thumbnailfile'])) {
+        $config['image'] = file_create_url($item['thumbnailfile']->uri);
       }
-      $themed_output = theme('jw_player', array('file_object' => $item, 'options' => $options, 'config' => $config));
+      $themed_output = theme('jw_player', array('file_object' => $video, 'options' => $options, 'config' => $config));
       break;
 
     default:
-      $themed_output = t('No flash player has been set up. ' . l(t('Please select a player to play Flash videos.'), 'admin/config/media/video/players'));
+      $themed_output = t('No flash player has been set up.') . ' ' . l(t('Please select a player to play Flash videos.'), 'admin/config/media/video/players');
       break;
   }
-  return theme('video_play_flv', array('video' => $video, 'themed_output' => $themed_output));
+
+  return theme('video_play_flv', array('item' => $item, 'themed_output' => $themed_output));
 }
 
 /**
@@ -240,22 +254,28 @@ function theme_video_flv($variables) {
  */
 function theme_video_html5($variables) {
   $themed_output = NULL;
-  $video = $variables['video'];
-  $video->html5_player = variable_get('video_extension_' . $video->player . '_html5_player', '');
-  switch ($video->html5_player) {
+  $item = $variables['item'];
+
+  $files = $item['playablefiles'];
+  $extension = strtolower(video_utility::getExtension($files[0]->filename));
+
+  $html5_player = variable_get('video_extension_' . $extension . '_html5_player', 'video');
+  switch ($html5_player) {
     case 'video':
-      return theme('video_play_html5', array('video' => $video, 'themed_output' => $themed_output));
+      $variables['files'] = $files;
+      return theme('video_play_html5', $variables);
 
     case 'videojs':
-      $items = video_utility::objectToArray($video->files);
-      if (!empty($video->thumbnail) && isset($video->thumbnail->uri)) {
-        $items['thumbnail'] = video_utility::objectToArray($video->thumbnail);
+      $items = video_utility::objectToArray($files);
+      if (!empty($item['thumbnailfile'])) {
+        $items[] = video_utility::objectToArray($item['thumbnailfile']);
       }
 
-      $attributes = array();
-      $attributes['width'] = $video->player_width;
-      $attributes['height'] = $video->player_height;
-      return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $video->fid, 'attributes' => $attributes));
+      $attributes = array(
+        'width' => $variables['width'],
+        'height' => $variables['height'],
+      );
+      return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $item['fid'], 'attributes' => $attributes));
   }
 }
 

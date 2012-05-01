@@ -195,6 +195,79 @@ function video_field_instance_settings_form(array $field, array $instance) {
  */
 function video_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
   file_field_load($entity_type, $entities, $field, $instances, $langcode, $items, $age);
+
+  // Load all files we need for these entities
+  $videofids = array();
+  $fids = array();
+  foreach ($entities as $id => $entity) {
+    // Load the files from the files table.
+    foreach ($items[$id] as $delta => $item) {
+      if (empty($item) || empty($item['fid'])) {
+        continue;
+      }
+      $videofids[] = $item['fid'];
+      if (!empty($item['thumbnail'])) {
+        $fids[] = $item['thumbnail'];
+      }
+    }
+  }
+
+  if (empty($videofids)) {
+    return;
+  }
+
+  // Load the queues
+  $queues = db_select('video_queue', 'q')
+    ->fields('q')
+    ->condition('q.fid', $videofids, 'IN')->execute()->fetchAllAssoc('fid');
+
+  // Load the derived files
+  $outputs = db_select('video_output', 'vo')
+    ->fields('vo')
+    ->condition('vo.original_fid', $videofids, 'IN')->execute()->fetchAllAssoc('output_fid');
+
+  $fids = array_merge($fids, array_keys($outputs));
+  if (empty($fids)) {
+    return;
+  }
+  $files = file_load_multiple($fids);
+
+  // Apply the found information to all files for all entities
+  foreach ($entities as $id => $entity) {
+    foreach ($items[$id] as $delta => $item) {
+      if (empty($item) || empty($item['fid'])) {
+        continue;
+      }
+
+      // Check whether transcoding is enabled for this file
+      if (isset($queues[$item['fid']])) {
+        $items[$id][$delta]['autoconversion'] = TRUE;
+        $items[$id][$delta]['conversioncompleted'] = $queues[$item['fid']]->status == VIDEO_RENDERING_COMPLETE;
+        $items[$id][$delta]['conversionstatus'] = $queues[$item['fid']]->status;
+        // Load converted files
+        $items[$id][$delta]['playablefiles'] = array();
+        foreach ($outputs as $outputfid => $output) {
+          if ($output->original_fid == $items[$id][$delta]['fid'] && isset($files[$outputfid])) {
+            $conv = (array)$files[$outputfid] + (array)$output;
+            $items[$id][$delta]['playablefiles'][] = (object)$conv;
+          }
+        }
+      }
+      else {
+        $items[$id][$delta]['playablefiles'] = array((object)$items[$id][$delta]);
+        $items[$id][$delta]['autoconversion'] = FALSE;
+      }
+
+      // Load thumbnail
+      if (empty($item['thumbnail']) || !isset($files[$item['thumbnail']])) {
+        $items[$id][$delta]['thumbnail'] = NULL;
+        $items[$id][$delta]['thumbnailfile'] = NULL;
+      }
+      else {
+        $items[$id][$delta]['thumbnailfile'] = $files[$item['thumbnail']];
+      }
+    }
+  }
 }
 
 /**
@@ -748,10 +821,10 @@ function _video_aspect_ratio($video) {
  */
 
 /**
- * Implements CCK's hook_field_formatter_info().
+ * Implements hook_field_formatter_info().
  */
 function video_field_formatter_info() {
-  $formatters = array(
+  return array(
     'video_formatter_player' => array(
       'label' => t('Video player'),
       'field types' => array('video'),
@@ -764,11 +837,10 @@ function video_field_formatter_info() {
       'field types' => array('video'),
       'settings' => array(
         'image_style' => '',
-        'image_link' => ''
+        'image_link' => '',
       ),
     ),
   );
-  return $formatters;
 }
 
 /**
@@ -793,7 +865,7 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
       'file' => t('File'),
     );
     $element['image_link'] = array(
-      '#title' => t('Link video or video thumbanil to'),
+      '#title' => t('Link video or video thumbnail to'),
       '#type' => 'select',
       '#default_value' => $settings['image_link'],
       '#empty_option' => t('Nothing'),

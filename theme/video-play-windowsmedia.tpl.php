@@ -3,16 +3,21 @@
  * @file
  * Theme file to handle windows media output.
  *
- * Variables passed.
- * $video is the video object.
- * $node is the node object.
+ * Variables passed:
+ * $item
+ * $width
+ * $height
+ * $autoplay
+ * $autobuffering
  */
+
+$url = check_plain(file_create_url($item['playablefiles'][0]->uri));
 ?>
-<object type="video/x-ms-wmv" data="<?php print file_create_url($video->files->{$video->player}->uri); ?>" width="<?php print $video->player_width; ?>" height="<?php print $video->player_height; ?>">
-  <param name="src" value="<?php print file_create_url($video->files->{$video->player}->uri); ?>" valuetype="ref" type="<?php print file_create_url($video->files->{$video->player}->uri); ?>">
+<object type="video/x-ms-wmv" data="<?php print $url; ?>" width="<?php print $width; ?>" height="<?php print $height; ?>">
+  <param name="src" value="<?php print $url; ?>" valuetype="ref" type="<?php print $url; ?>">
   <param name="animationatStart" value="true">
   <param name="transparentatStart" value="true">
-  <param name="autostart" value="<?php print $video->autoplay; ?>">
+  <param name="autostart" value="<?php print $autoplay ? 'true' : 'false'; ?>">
   <param name="controller" value="1">
-  <?php print t('No video?  Get the Windows Media !plugin', array('!plugin' => l(t('Plugin'), 'http://www.microsoft.com/windows/windowsmedia/player/download/'))); ?>
+  <?php print t('No video? Get the !plugin', array('!plugin' => l(t('Windows Media plugin'), url('http://www.microsoft.com/windows/windowsmedia/player/download/')))); ?>
 </object>

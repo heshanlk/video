@@ -115,7 +115,7 @@ function video_theme() {
   $players = video_utility::getVideoPlayers();
   foreach ($players as $tpl => $value) {
     $theme[$tpl] = array(
-      'variables' => array('video' => NULL, 'themed_output' => NULL),
+      'variables' => array('item' => NULL, 'width' => NULL, 'height' => NULL),
       'template' => str_replace('_', '-', $tpl),
       'path' => $path,
     );
@@ -123,12 +123,12 @@ function video_theme() {
   // We need to add an flv theme buffer to allow users to override in their own module to add in extra parameters before
   // calling our flv template file.
   $theme['video_flv'] = array(
-    'variables' => array('video' => NULL),
-    'file' => 'video.theme.inc'
+    'variables' => array('item' => NULL, 'themed_output' => NULL),
+    'file' => 'video.theme.inc',
   );
   $theme['video_html5'] = array(
-    'variables' => array('video' => NULL),
-    'file' => 'video.theme.inc'
+    'variables' => array('item' => NULL, 'width' => NULL, 'height' => NULL, 'files' => NULL),
+    'file' => 'video.theme.inc',
   );
   // Dialog page.
   $theme['video_dialog_page'] = array(
@@ -137,6 +137,45 @@ function video_theme() {
     'file' => 'video.theme.inc',
   );
   return $theme;
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Add a generic preprocess function to all video theme methods.
+ */
+function video_theme_registry_alter(&$registry) {
+  $players = video_utility::getVideoPlayers();
+  $templates = array_keys($players);
+  $templates[] = 'video_flv';
+  $templates[] = 'video_html5';
+
+  foreach ($templates as $template) {
+    if(!isset($registry[$template])) {
+      continue;
+    }
+
+    if (!isset($registry[$template]['preprocess functions'])) {
+      $registry[$template]['preprocess functions'] = array();
+    }
+
+    $registry[$template]['preprocess functions'][] = 'video_preprocess_video_formatter_player';
+  }
+}
+
+/**
+ * Implements hook_preprocess_video_formatter_player().
+ *
+ * Generic preprocess function for all video theme functions to load some
+ * variables.
+ */
+function video_preprocess_video_formatter_player(array &$variables) {
+  if (!isset($variables['autoplay'])) {
+    $variables['autoplay'] = (bool)variable_get('video_autoplay', FALSE);
+  }
+  if (!isset($variables['autobuffering'])) {
+    $variables['autobuffering'] = (bool)variable_get('video_autobuffering', TRUE);
+  }
 }
 
 /**

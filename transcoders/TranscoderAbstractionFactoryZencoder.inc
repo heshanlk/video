@@ -17,8 +17,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $this->postbackurl = variable_get('video_zencoder_postback', url('postback/jobs', array('absolute' => TRUE)));
   }
 
-  public function setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE) {
-    parent::setInput($file, $input_frame_rate, $validate_decode_codecs);
+  public function setInput(array $file) {
+    parent::setInput($file);
     $this->options['input'] = file_create_url($this->settings['input']['uri']);
 
     if (variable_get('video_zencoder_testing_mode', FALSE)) {

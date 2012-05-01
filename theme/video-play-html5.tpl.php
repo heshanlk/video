@@ -3,30 +3,54 @@
  * @file
  * Theme file to handle HTML5 output.
  *
- * Variables passed.
- * $video is the video object.
- * $node is the node object.
- *
- * @TODO : Fallback to flash should be done nicely
+ * Variables passed:
+ * $width
+ * $height
+ * $files
+ * $item
+ * $autoplay
+ * $autobuffering
  */
+
+$poster = '';
+if (!empty($item['thumbnailfile'])) {
+  $poster = file_create_url($item['thumbnailfile']->uri);
+}
+
+$autoplayattr = $autoplay ? ' autoplay="autoplay"' : '';
+$preload = $autobuffering ? 'auto' : 'metadata';
+
+$codecs = array(
+  'video/mp4' => 'avc1.42E01E, mp4a.40.2',
+  'video/webm' => 'vp8, vorbis',
+  'video/ogg' => 'theora, vorbis',
+  'application/ogg' => 'theora, vorbis',
+  'video/ogv' => 'theora, vorbis',
+  'video/quicktime' => 'avc1.42E01E, mp4a.40.2',
+);
 ?>
-<video width="<?php echo $video->player_width; ?>" autobuffer="<?php print $video->autobuffering; ?>" height="<?php echo $video->player_height; ?>" controls="controls" preload="<?php print $video->autobuffering ? 'auto' : 'metadata'; ?>" poster="<?php echo !empty($video->thumbnail) ? $video->thumbnail->url : '' ?>">
-  <?php $flash = ''; ?>
-  <?php static $videojs_sources; ?>
-  <?php $codecs = array('video/mp4' => 'avc1.42E01E, mp4a.40.2', 'video/webm' => 'vp8, vorbis', 'video/ogg' => 'theora, vorbis', 'application/ogg' => 'theora, vorbis', 'video/ogv' => 'theora, vorbis', 'video/quicktime' => 'avc1.42E01E, mp4a.40.2'); ?>
-  <?php foreach ($video->files as $filetype => $file): ?>
-    <?php $filepath = file_create_url($file->uri); ?>
-    <?php $mimetype = $file->filemime; ?>
-    <?php if (array_key_exists($mimetype, $codecs)): ?>
-      <?php $mimetype = ($mimetype == 'video/quicktime') ? 'video/mp4' : $mimetype; ?>
-      <?php if ($mimetype == 'video/mp4' || $mimetype == 'video/flv')
-        $flash = $filepath; ?>
-      <?php $videojs_sources .= "<source src=\"$filepath\" type='$mimetype; codecs=\"" . $codecs[$mimetype] . "\"' />"; ?>
-    <?php endif; ?>
-  <?php endforeach; ?>
-  <?php print $videojs_sources; ?>
-  <!-- Flash Fallback. Use any flash video player here. Make sure to keep the vjs-flash-fallback class. -->
-  <?php $video->player = 'flv'; ?>
-  <?php $video->files->flv->uri = $flash; ?>
-  <?php echo theme('video_flv', array('video' => $video)); ?>
+<video width="<?php echo $width; ?>" height="<?php echo $height; ?>" preload="<?php echo $preload; ?>" controls="controls" poster="<?php echo $poster; ?>"<?php echo $autoplayattr; ?>>
+<?php
+foreach ($files as $index => $file) {
+  if (strncmp($file->filemime, 'video/', 6) !== 0) {
+    continue;
+  }
+
+  $filepath = check_plain(file_create_url($file->uri));
+
+  if ($file->filemime == 'video/quicktime') {
+    $file->filemime = 'video/mp4';
+  }
+
+  $codecs = '';
+  if (isset($codecs[$file->filemime])) {
+    $codecs = '; codecs=&quot;' . $codecs[$file->filemime] . '&quot;';
+  }
+?>
+  <source src="<?php echo $filepath; ?>" type="<?php echo $file->filemime . $codecs; ?>" />
+<?php
+}
+
+echo theme('video_flv', array('item' => $item, 'width' => $width, 'height' => $height));
+?>
 </video>

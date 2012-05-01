@@ -24,9 +24,8 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     parent::__construct();
   }
 
-  public function setInput($file, $input_frame_rate=0, $validate_decode_codecs = TRUE) {
-    parent::setInput($file, $input_frame_rate = 0, $validate_decode_codecs = TRUE);
-
+  public function setInput(array $file) {
+    parent::setInput($file);
     $srcuri = $this->settings['input']['uri'];
     $srcpath = drupal_realpath($srcuri);
     if (empty($srcpath)) {
