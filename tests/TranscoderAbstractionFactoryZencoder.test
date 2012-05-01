@@ -287,10 +287,10 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
       $this->assertEqual('public://videos/thumbnails/1/thumbnail-1_0001.jpg', $files[1]->uri);
       $this->assertEqual('image/jpeg', $files[1]->filemime);
     }
-    
+
     // Simulate a reencode of the same video
     db_query('UPDATE {video_queue} SET status = 1 WHERE vid = 1')->execute();
-    
+
     $out = $this->doPostback('{
        "output":{
           "state":"finished",

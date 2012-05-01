@@ -1,8 +1,6 @@
-
 /**
  * @file
  * Adds some show/hide to the admin form to make the UXP easier.
- *
  */
 (function($){
   Drupal.behaviors.video = {
@@ -21,29 +19,6 @@
       video_hide_all__metadata_options();
       $("input[name='video_metadata']").change(function() {
         video_hide_all__metadata_options();
-      });
-
-      $('.video_select').each(function() {
-        var ext = $(this).attr('rel');
-        $('select', this).change(function() {
-          if($(this).val() == 'video_play_flv') {
-            $('#flv_player_'+ext).show();
-          } else {
-            $('#flv_player_'+ext).hide();
-          }
-          if($(this).val() == 'video_play_html5') {
-            $('#html5_player_'+ext).show();
-          } else {
-            $('#html5_player_'+ext).hide();
-          }
-        });
-        if($('select', this).val() == 'video_play_flv')
-          $('#flv_player_'+ext).show();
-        
-        if($('select', this).val() == 'video_play_html5')
-          $('#html5_player_'+ext).show();
-        else
-          $('#html5_player_'+ext).hide();
       });
 	
       if(settings.video) {
