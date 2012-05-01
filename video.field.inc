@@ -849,46 +849,56 @@ function video_filefield_sources_widgets() {
  * Video file save to the video_queue table for conversions
  */
 function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  // Create entry for video conversion if auto conversion is enabled
-  if ($field['settings']['autoconversion'] == 1) {
-    // Find the entity id
-    list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  if (empty($field['settings']['autoconversion'])) {
+    return;
+  }
 
-    // conversion class
-    $video_conversion = new Conversion();
-    // transcoder factory
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    foreach ($items as $delta => $item) {
-      // set input file
-      $transcoder->setInput($item);
-      // skip adding entry if bypass conversion is checked
-      if (isset($item['bypass_autoconversion']) && ($item['bypass_autoconversion'] == 1 || variable_get('video_bypass_conversion', FALSE))) {
-        // delete the conversion job if any
-        $transcoder->deleteJob();
+  // Find the entity id
+  list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
+
+  $video_conversion = new Conversion();
+  $factory = new TranscoderAbstractionAbstractFactory();
+  $transcoder = $factory->getProduct();
+
+  foreach ($items as $delta => &$item) {
+    // set input file
+    $transcoder->setInput($item);
+    // skip adding entry if bypass conversion is checked
+    if (!empty($item['bypass_autoconversion'])) {
+      // delete the conversion job if any
+      $transcoder->deleteJob();
+      return;
+    }
+
+    // Try to load the job
+    $video = $transcoder->loadJob();
+
+    // Create the job if it doesn't exist
+    if (!$video) {
+      if (!($transcoder->createJob($item['fid'], $item['dimensions'], $entity_id, $entity_type, $field['field_name'], $langcode, $delta))) {
+        drupal_set_message(t('Something went wrong with your video job creation. Please check your recent log entries for further debugging.'), 'error');
         return;
       }
-      // re queue for video conversion
-      if (isset($item['re_convert_video']) && $item['re_convert_video'] == 1) {
-        $video = $transcoder->loadJob();
-        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_PENDING);
+      // Load a fresh copy of the job
+      $video = $transcoder->loadJob();
+    }
+
+    // re queue for video conversion
+    if (!empty($item['re_convert_video'])) {
+      $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_PENDING);
+      $video->video_status = VIDEO_RENDERING_PENDING;
+    }
+
+    // Convert on save if the job is pending and if it is requested
+    // If $item['converted'] is set, it means that this video was already converted in this page view. This can happen when filefield_paths is installed (#1458138).
+    if (!empty($item['convert_video_on_save']) && $video->video_status == VIDEO_RENDERING_PENDING && empty($item['converted'])) {
+      $item['converted'] = TRUE;
+      if ($video_conversion->process($video)) {
+        drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
       }
-      // Lets verify that we haven't added this video already.  Multiple validation fails will cause this to be ran more than once
-      if (!$video = $transcoder->loadJob()) {
-        if (!($transcoder->createJob($item['fid'], $item['dimensions'], $entity_id, $entity_type, $field['field_name'], $langcode, $delta))) {
-          drupal_set_message(t('Something went wrong with your video job creation. Please check your recent log entries for further debugging.'), 'error');
-        }
-      }
-      // if convert on save is checked
-      if (isset($item['convert_video_on_save']) && $item['convert_video_on_save'] == 1) {
-        if ($video_conversion->process($item['fid'])) {
-          drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
-        }
-        else {
-          $video = $transcoder->loadJob();
-          $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
-          drupal_set_message(t('Something went wrong with your video transcoding. Please check your recent log entries for further debugging.'), 'error');
-        }
+      else {
+        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
+        drupal_set_message(t('Something went wrong with your video transcoding. Please check your recent log entries for further debugging.'), 'error');
       }
     }
   }
