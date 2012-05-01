@@ -427,7 +427,7 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
   $file = $element['#value'];
   $fid = intval($file['fid']);
   $defaultthumbfid = isset($field['settings']['default_video_thumbnail']) ? intval($field['settings']['default_video_thumbnail']['fid']) : 0;
-  $thumbnailfid = !isset($file['thumbnail']) ? 0 : (isset($file['thumbnail']['fid']) ? intval($file['thumbnail']['fid']) : intval($file['thumbnail']));
+  $thumbnailfid = !isset($file['thumbnail']) ? 0 : (is_array($file['thumbnail']) ? intval($file['thumbnail']['fid']) : intval($file['thumbnail']));
 
   if (isset($element['preview']) && $fid != 0) {
     $gen_fail = FALSE;
