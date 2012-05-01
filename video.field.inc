@@ -856,11 +856,21 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
   // Find the entity id
   list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
 
+  $hasfilefieldpaths = module_exists('filefield_paths') && !empty($instance['settings']['filefield_paths']);
+
   $video_conversion = new Conversion();
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct();
 
   foreach ($items as $delta => &$item) {
+    // When filefield_paths is active, _video_field_file_autoconversion is invoked twice:
+    // the first time before filefield_paths has changed the path,
+    // the second time after the file has been moved (or not)
+    // We only process the item in the second round of processing.
+    if ($hasfilefieldpaths && !isset($item['origname'])) {
+      continue;
+    }
+
     // set input file
     $transcoder->setInput($item);
     // skip adding entry if bypass conversion is checked
@@ -890,9 +900,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
     }
 
     // Convert on save if the job is pending and if it is requested
-    // If $item['converted'] is set, it means that this video was already converted in this page view. This can happen when filefield_paths is installed (#1458138).
-    if (!empty($item['convert_video_on_save']) && $video->video_status == VIDEO_RENDERING_PENDING && empty($item['converted'])) {
-      $item['converted'] = TRUE;
+    if (!empty($item['convert_video_on_save']) && $video->video_status == VIDEO_RENDERING_PENDING) {
       if ($video_conversion->process($video)) {
         drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
       }
