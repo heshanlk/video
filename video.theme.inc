@@ -87,35 +87,32 @@ function theme_video_formatter_player(array $variables) {
   return theme($theme_function, array('video' => $video, 'themed_output' => ''));
 }
 
-/*
+/**
  * Renders the video thumbnail as a link to the node page.
  */
-
 function theme_video_formatter_thumbnail($variables) {
-// Inside a view $variables may contain null data. In that case, just return.
+  // Inside a view $variables may contain null data. In that case, just return.
   if (empty($variables['item']['fid'])) {
     return '<!-- File not found: ' . $variables['item']['fid'] . ' -->';
   }
 
-// setup our thumbnail object
   $video_helper = new VideoHelper();
-// @TODO : change the object to an array
-  $thumbnail = (array) $video_helper->thumbnail_object($variables);
-// return if no file path found for the video thumbnails and add log message
-  if (empty($thumbnail['filepath'])) {
-    watchdog('video', 'Unable to find the video thumbnail for the %node.', array('%node' => $variables['entity']->title), WATCHDOG_ERROR);
-    return '<!-- File not found: -->';
-  }
-  $image = array(
-    'path' => $thumbnail['filepath'],
-    'alt' => $thumbnail['alt'],
-  );
-// Do not output an empty 'title' attribute.
-  if (drupal_strlen($thumbnail['title']) > 0) {
-    $image['title'] = $thumbnail['title'];
+  $thumbnail = $video_helper->thumbnail_object($variables);
+  if (empty($thumbnail) || empty($thumbnail->filepath)) {
+    return '<!-- Thumbnail not found: -->';
   }
 
-  if ($variables['image_style']) {
+  $image = array(
+    'path' => $thumbnail->filepath,
+    'alt' => $thumbnail->alt,
+  );
+
+  // Do not output an empty 'title' attribute.
+  if (!empty($thumbnail->title)) {
+    $image['title'] = $thumbnail->title;
+  }
+
+  if (!empty($variables['image_style'])) {
     $image['style_name'] = $variables['image_style'];
     $output = theme('image_style', $image);
   }
