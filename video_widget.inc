@@ -269,6 +269,7 @@ function video_convert_process(&$element) {
       // Update our filepath since we moved it
       $file->filepath = $filepath;
       drupal_write_record('files', $file, 'fid');
+      $element['#value']['filepath'] = $filepath;
 
       // Video has not been added to the queue yet so lets add it.
       $file->dimensions = $dimensions;
