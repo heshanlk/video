@@ -153,7 +153,7 @@ function video_install() {
 
   drupal_install_schema('video');
 
-  $paddingtext = '-vf "pad:!paddingwidth:!paddingheight:!paddingleft:!paddingtop:000000"';
+  $paddingtext = '-vf "pad=!paddingwidth:!paddingheight:!paddingleft:!paddingtop:000000"';
 
   $presetids = array();
 
