@@ -454,13 +454,6 @@ function video_admin_preset_configure_submit($form, &$form_state) {
  * File system admin settings
  */
 function video_filesystem_admin_settings($form_state) {
-  $fs = variable_get('vid_filesystem', 'drupal');
-  $downloads = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
-
-  if ($downloads == FILE_DOWNLOADS_PRIVATE && empty($_POST['vid_filesystem'])) {
-    drupal_set_message(t('Storing videos in the Drupal file system is not supported when using <a href="@filesystem">private downloads</a>.', array('@filesystem' => url('admin/settings/file-system'))), $fs == 'drupal' ? 'error' : 'warn');
-  }
-
   $form = array();
 
   $filesystemplugins = video_get_filesystem_plugins();
