@@ -23,9 +23,7 @@ class Preset {
     $presets = video_preset_get_presets();
     if (count($presets) == 0) {
       $form['video_preset'] = array(
-        '#markup' => t('No presets were found. Please use the !create_link link to create a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
-        '#prefix' => '<div id="preset-checkboxes">',
-        '#suffix' => '</div>',
+        '#markup' => t('No presets were found. Please use the !create_link link to create a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Add Preset'), 'admin/config/media/video/presets/add'))),
       );
       return $form;
     }
@@ -36,23 +34,17 @@ class Preset {
     }
     $form['video_use_preset_wxh'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Use preset WxH for video conversion.'),
+      '#title' => t('Use preset dimensions for video conversion.'),
       '#default_value' => variable_get('video_use_preset_wxh', FALSE),
-      '#description' => t('Override the user selected WxH with the preset values (Recommended).')
+      '#description' => t('Override the user selected dimensions with the value from the presets (recommended).')
     );
     $form['video_preset'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Video transcode presets'),
       '#options' => $preset,
       '#default_value' => variable_get('video_preset', array('FLV')),
-      '#description' => t('Use the !manage_link link to manage
-       Video Presets. Use the !create_link link to create
-       a new Video Preset, or upload an existing Feature to your modules directory.', array('!manage_link' => l(t('Manage Video Preset'), 'admin/config/media/video/presets'),
-        '!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add'))),
-      '#prefix' => '<div id="preset-checkboxes">',
-      '#suffix' => '</div>',
+      '#required' => TRUE,
     );
-//    $form = $form + $options['admin_settings'];
     return $form;
   }
 
