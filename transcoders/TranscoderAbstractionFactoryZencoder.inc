@@ -510,7 +510,15 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     file_prepare_directory($thumburibase, FILE_CREATE_DIRECTORY);
     $thumbwrapper = file_stream_wrapper_get_instance_by_scheme($thumbscheme);
 
-    // Turn the thumbnails into managed files
+    // Turn the thumbnails into managed files.
+    // Because two jobs for the same video may finish simultaneously, lock here so
+    // there are no errors when inserting the files.
+    if (!lock_acquire('video_zencoder_thumbnails:' . $video->fid, count($thumbnails) * 30)) {
+      if (lock_wait('video_zencoder_thumbnails:' . $video->fid, count($thumbnails) * 30)) {
+        watchdog('transcoder', 'Failed to acquire lock to download thumbnails for @video-filename.', array('@video-filename' => $video->filename), WATCHDOG_ERROR);
+        return;
+      }
+    }
     $existingthumbs = db_query('SELECT f.uri, f.fid FROM {file_managed} f INNER JOIN {video_thumbnails} t ON (f.fid = t.thumbnailfid) WHERE t.videofid = :fid', array(':fid' => $video->fid))->fetchAllKeyed();
     $thumbs = array();
     $tnid = 0;
@@ -524,14 +532,13 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $thumb->uri = $thumburibase . $thumb->filename;
       $thumb->filemime = $thumbwrapper->getMimeType($thumb->uri);
       $thumb->type = 'image'; // For the media module
-
-      if (!copy($thumbnail['url'], $thumb->uri)) {
-        watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail['url'], '@$thumburi' => $thumb->uri), WATCHDOG_ERROR);
-        continue;
-      }
-
       if (isset($existingthumbs[$thumb->uri])) {
         $thumb->fid = intval($existingthumbs[$thumb->uri]);
+      }
+
+      if (!copy($thumbnail['url'], $thumb->uri)) {
+        watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail['url'], '@thumbdest' => $thumb->uri), WATCHDOG_ERROR);
+        continue;
       }
 
       file_save($thumb);
@@ -544,6 +551,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
       $thumbs[$thumb->fid] = $thumb;
     }
+    lock_release('video_zencoder_thumbnails:' . $video->fid);
 
     // Skip setting the thumbnail if there are no thumbnails or when the current value is already valid
     $currentthumb = isset($entity->{$fieldname}[$langcode][$delta]['thumbnail']) ? intval($entity->{$fieldname}[$langcode][$delta]['thumbnail']) : 0;
