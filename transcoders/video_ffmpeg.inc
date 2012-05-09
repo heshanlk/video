@@ -427,7 +427,7 @@ class video_ffmpeg implements transcoder_interface {
       '#default_value' => variable_get('video_ffmpeg_pad_method', 0),
       '#options' => array(
         0 => t('Use -padtop, -padbottom, -padleft, -padright for padding'),
-        1 => t('Use -vf "pad:w:h:x:y:c" for padding'),
+        1 => t('Use -vf "pad=w:h:x:y:c" for padding'),
       ),
     );
 
