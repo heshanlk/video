@@ -130,9 +130,6 @@ class Transcoder {
     if (!empty($output) && $transcodingsuccess) {
       $this->cleanConverted($video->vid);
       foreach ($output as $file) {
-        if (!isset($file->jobid)) {
-          $file->jobid = $video->vid;
-        }
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $video->uid;
         // if media module exists add type as an image
@@ -140,11 +137,12 @@ class Transcoder {
           $file->type = 'video';
         }
         drupal_write_record('file_managed', $file);
+        file_usage_add($file, 'file', $video->entity_type, $video->entity_id);
         $output_vid = array(
           'vid' => $video->vid,
           'original_fid' => $video->fid,
           'output_fid' => $file->fid,
-          'job_id' => $file->jobid,
+          'job_id' => !empty($file->jobid) ? $file->jobid : NULL,
         );
         drupal_write_record('video_output', $output_vid);
 

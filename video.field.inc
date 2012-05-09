@@ -220,6 +220,12 @@ function video_field_insert($entity_type, $entity, $field, $instance, $langcode,
       ->condition('fid', array_keys($thumbnails), 'IN')->execute();
     file_field_insert($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
   }
+
+  // Update the thumbnails to be permanent and register with entity
+  $converted = _video_field_get_all_converted($items);
+  if (!empty($converted)) {
+    file_field_insert($entity_type, $entity, $field, $instance, $langcode, $converted);
+  }
 }
 
 /**
@@ -237,6 +243,10 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
       ->condition('fid', array_keys($thumbnails), 'IN')->execute();
   }
 
+  // Register the thumbnails in file_usage
+  $converted = _video_field_get_all_converted($items);
+  $derivedfiles = array_merge($converted, $thumbnails);
+
   // Modification of file_field_update().
   // That function can't be called because the logic for finding
   // existing fids is not the same.
@@ -245,7 +255,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
   // On new revisions, all files are considered to be a new usage and no
   // deletion of previous file usages are necessary.
   if (!empty($entity->revision)) {
-    foreach ($thumbnails as $item) {
+    foreach ($derivedfiles as $item) {
       $file = (object) $item;
       file_usage_add($file, 'file', $entity_type, $id);
     }
@@ -254,7 +264,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
 
   // Build a display of the current FIDs.
   $current_fids = array();
-  foreach ($thumbnails as $item) {
+  foreach ($derivedfiles as $item) {
     $current_fids[] = $item['fid'];
   }
 
@@ -267,18 +277,20 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
   $delete_fids = array();
   if (!empty($original->{$field['field_name']}[$langcode])) {
     $original_thumbs = _video_field_get_all_thumbnails($original->{$field['field_name']}[$langcode]);
-    foreach ($original_thumbs as $original_thumb) {
-      $original_fids[] = $original_thumb['fid'];
-      if (isset($original_thumb['fid']) && !in_array($original_thumb['fid'], $current_fids)) {
+    $original_converted = _video_field_get_all_converted($original->{$field['field_name']}[$langcode]);
+    $original_derivedfiles = array_merge($original_thumbs, $original_converted);
+    foreach ($original_derivedfiles as $original_derivedfile) {
+      $original_fids[] = $original_derivedfile['fid'];
+      if (isset($original_derivedfile['fid']) && !in_array($original_derivedfile['fid'], $current_fids)) {
         // Decrement the file usage count by 1 and delete the file if possible.
-        file_field_delete_file($original_thumb, $field, $entity_type, $id);
-        $delete_fids[] = $original_thumb['fid'];
+        file_field_delete_file($original_derivedfile, $field, $entity_type, $id);
+        $delete_fids[] = $original_derivedfile['fid'];
       }
     }
   }
 
   // Add new usage entries for newly added files.
-  foreach ($thumbnails as $item) {
+  foreach ($derivedfiles as $item) {
     if (!in_array($item['fid'], $original_fids)) {
       $file = (object) $item;
       file_usage_add($file, 'file', $entity_type, $id);
@@ -288,6 +300,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
   // Delete fids from video_thumbnails
   if (!empty($delete_fids)) {
     db_delete('video_thumbnails')->condition('thumbnailfid', $delete_fids, 'IN')->execute();
+    db_delete('video_output')->condition('output_fid', $delete_fids, 'IN')->execute();
   }
 }
 
@@ -299,9 +312,16 @@ function video_field_delete($entity_type, $entity, $field, $instance, $langcode,
 
   // Deregister the thumbnails in file_usage
   $thumbnails = _video_field_get_all_thumbnails($items);
-  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
   if (!empty($thumbnails)) {
+    file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
     db_delete('video_thumbnails')->condition('thumbnailfid', array_keys($thumbnails), 'IN')->execute();
+  }
+
+  // Deregister the converted files in file_usage
+  $converted = _video_field_get_all_converted($items);
+  if (!empty($converted)) {
+    file_field_delete($entity_type, $entity, $field, $instance, $langcode, $converted);
+    db_delete('video_output')->condition('output_fid', array_keys($converted), 'IN')->execute();
   }
 }
 
@@ -314,6 +334,10 @@ function video_field_delete_revision($entity_type, $entity, $field, $instance, $
   // Deregister the thumbnails in file_usage
   $thumbnails = _video_field_get_all_thumbnails($items);
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
+
+  // Deregister the converted files in file_usage
+  $converted = _video_field_get_all_converted($items);
+  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $converted);
 }
 
 /**
@@ -933,4 +957,27 @@ function _video_field_get_all_thumbnails(array $items) {
     ->execute()->fetchCol(0);
 
   return video_utility::objectToArray(file_load_multiple($thumbnailfids));
+}
+
+function _video_field_get_all_converted(array $items) {
+  if (empty($items)) {
+    return array();
+  }
+
+  $videofids = array();
+  foreach ($items as $item) {
+    if (!empty($item['fid'])) {
+      $videofids[] = intval($item['fid']);
+    }
+  }
+
+  if (empty($videofids)) {
+    return array();
+  }
+
+  $convertedfids = db_select('video_output', 't')
+    ->fields('t', array('output_fid'))->condition('original_fid', $videofids, 'IN')
+    ->execute()->fetchCol(0);
+
+  return video_utility::objectToArray(file_load_multiple($convertedfids));
 }
