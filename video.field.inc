@@ -298,7 +298,7 @@ function video_field_delete($entity_type, $entity, $field, $instance, $langcode,
   file_field_delete($entity_type, $entity, $field, $instance, $langcode, $items);
 
   // Deregister the thumbnails in file_usage
-  $thumbnails = _video_field_get_all_thumbnails($field, $items);
+  $thumbnails = _video_field_get_all_thumbnails($items);
   file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
   if (!empty($thumbnails)) {
     db_delete('video_thumbnails')->condition('thumbnailfid', array_keys($thumbnails), 'IN')->execute();
@@ -312,7 +312,7 @@ function video_field_delete_revision($entity_type, $entity, $field, $instance, $
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $items);
 
   // Deregister the thumbnails in file_usage
-  $thumbnails = _video_field_get_all_thumbnails($field, $items);
+  $thumbnails = _video_field_get_all_thumbnails($items);
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
 }
 
