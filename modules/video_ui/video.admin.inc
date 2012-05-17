@@ -82,11 +82,13 @@ function video_general_admin_settings() {
  * Video player admin settings
  */
 function video_players_admin_settings() {
-  $form = array();
+  $form = array(
+    '#submit' => array('video_players_admin_settings_submit'),
+  );
   $form['extensions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Video extensions'),
-    '#description' => t('Here you can map specific players to each video extension type.'),
+    '#description' => t('Here you can map specific players to each video extension type.') . ' ' . t('This player will be selected when you choose the !formatter formatter for a Video field.', array('!formatter' => t('Video player'))),
   );
   // lets get all our supported extensions and players.
   $extensions = video_utility::getVideoExtensions();
@@ -102,7 +104,8 @@ function video_players_admin_settings() {
       '#options' => $players,
       '#required' => TRUE,
     );
-    // For flash
+
+    // For Flash
     if (!empty($flv_players)) {
       $value = variable_get('video_extension_' . $ext . '_flash_player', '');
       if (empty($value) || !isset($flv_players[$value])) {
@@ -124,7 +127,7 @@ function video_players_admin_settings() {
     else {
       $form['extensions']['video_extension_' . $ext . '_flash_player']['type'] = array(
         '#type' => 'markup',
-        '#markup' => t('No flash players detected.<br />You need to install !flowplayer or !jwplayer.', array('!flowplayer' => l(t('Flowplayer API'), 'http://www.drupal.org/project/flowplayer'), '!jwplayer' => l(t('JW Player'), 'http://www.drupal.org/project/jw_player'))),
+        '#markup' => t('No Flash players detected.<br />You need to install !flowplayer or !jwplayer.', array('!flowplayer' => l(t('Flowplayer API'), 'http://www.drupal.org/project/flowplayer'), '!jwplayer' => l(t('JW Player'), 'http://www.drupal.org/project/jw_player'))),
         '#states' => array(
           'visible' => array(
             ':input[id=edit-video-extension-' . $ext . ']' => array('value' => 'video_play_flv'),
@@ -132,6 +135,7 @@ function video_players_admin_settings() {
         ),
       );
     }
+
     // for HTML5
     if (!empty($html5_players)) {
       $value = variable_get('video_extension_' . $ext . '_html5_player', '');
@@ -153,7 +157,28 @@ function video_players_admin_settings() {
       );
     }
   }
+
   return system_settings_form($form);
+}
+
+/**
+ * Submit helper to remove unneeded variables before they are saved.
+ */
+function video_players_admin_settings_submit($form, &$form_state) {
+  // Clear all existing variables
+  db_query('DELETE FROM {variable} WHERE name LIKE \'video_extension_%\'');
+
+  // Remove flv player or html5 player when that player hasn't been selected
+  $extensions = video_utility::getVideoExtensions();
+  foreach (array_keys($extensions) as $ext) {
+    $selected = $form_state['values']['video_extension_' . $ext];
+    if ($selected != 'video_play_flv') {
+      unset($form_state['values']['video_extension_' . $ext . '_flash_player']);
+    }
+    if ($selected != 'video_play_html5') {
+      unset($form_state['values']['video_extension_' . $ext . '_html5_player']);
+    }
+  }
 }
 
 /**
