@@ -217,6 +217,10 @@ abstract class TranscoderAbstractionFactory {
     return drupal_write_record('video_queue', $video) === SAVED_NEW ? $video : FALSE;
   }
 
+  public function updateJob(stdClass $video) {
+    return drupal_write_record('video_queue', $video, 'fid') === SAVED_UPDATED;
+  }
+
   /**
    * Delete transcoder job and its details from database.
    *

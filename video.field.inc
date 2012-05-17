@@ -403,6 +403,9 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
       '#type' => 'value',
       '#value' => NULL,
     );
+
+    // Override value loader
+    $elements[$delta]['#value_callback'] = 'video_field_widget_value';
   }
 
   if ($field['cardinality'] == 1) {
@@ -415,6 +418,29 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
     $elements['#file_upload_description'] = theme('file_upload_help', array('upload_validators' => $elements[0]['#upload_validators']));
   }
   return $elements;
+}
+
+/**
+ * The #value_callback for the video field element.
+ *
+ * This function loads additional information related to the video to be used in
+ * video_widget_element_settings().
+ */
+function video_field_widget_value($element, $input = FALSE, $form_state) {
+  $value = file_field_widget_value($element, $input, $form_state);
+
+  if ($value['fid'] > 0) {
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    $video = $transcoder->loadJob($value['fid']);
+
+    if ($video) {
+      $value['dimensions'] = $video->dimensions;
+      $value['conversionstatus'] = $video->video_status;
+    }
+  }
+
+  return $value;
 }
 
 /**
@@ -548,16 +574,8 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
     $file_object = file_load($file['fid']);
     $video_info = _video_dimensions_options($options, $file_object);
     if (!empty($video_info['width']) && !empty($video_info['height'])) {
-      $description .= ' ' . t('Your video size is <b>!size</b>, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] . 'x' . $video_info['height']));
-    }
-
-    // setup our default display of dimensions.
-    // lets go through our options looking for a matching resolution
-    foreach ($options as $key => $value) {
-      if (stristr($value, t('(Matches Resolution)'))) {
-        $dimensions = $key;
-        break;
-      }
+      $dimensions = $video_info['width'] . 'x' . $video_info['height'];
+      $description .= ' ' . t('Your video size is %size, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('%size' => $dimensions));
     }
   }
   // Override our dimensions to the user selected.
@@ -584,17 +602,13 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
   // only in preview mode and then create thumbnails
   if ($field['settings']['autoconversion']) {
     // check if already converted or failed
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    $transcoder->setInput($file);
-    $video = $transcoder->loadJob();
-    if (user_access('re convert video') && isset($video->video_status) && ($video->video_status == VIDEO_RENDERING_COMPLETE || $video->video_status == VIDEO_RENDERING_FAILED)) {
-      $status = array(VIDEO_RENDERING_COMPLETE => 'completed', VIDEO_RENDERING_FAILED => 'failed');
+    if (user_access('re convert video') && isset($file['conversionstatus']) && ($file['conversionstatus'] == VIDEO_RENDERING_COMPLETE || $file['conversionstatus'] == VIDEO_RENDERING_FAILED)) {
+      $status = array(VIDEO_RENDERING_COMPLETE => 'been completed', VIDEO_RENDERING_FAILED => 'failed');
       $element['re_convert_video'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Video conversion has been <b>' . $status[$video->video_status] . '!</b>. Re-queue video?.'),
-        '#description' => t('This will re-convert your video to output formats when you save, or schedule it for cron.'),
-        '#attributes' => array('class' => array('video-re-convert', 'video-' . $video->video_status)),
+        '#title' => t('Video conversion has ' . $status[$file['conversionstatus']] . '. Re-queue video?'),
+        '#description' => t('This will re-convert your video to output formats when you save or schedule it for cron.'),
+        '#attributes' => array('class' => array('video-re-convert', 'video-' . $file['conversionstatus'])),
       );
     }
     if (user_access('bypass conversion video')) {
@@ -674,13 +688,13 @@ function _video_dimensions_options(&$options, $video) {
     $wxh = explode('x', $value);
     // Lets check our width and height first
     if ($aspect_ratio['width'] == $wxh[0] && $aspect_ratio['height'] == $wxh[1]) {
-      $options[$key] = $value . ' ' . t('(Matches Resolution)');
+      $options[$key] = $value . ' (' . t('Matches resolution of original file') . ')';
     }
     else {
       // Now lets check our ratio's
       $ratio = number_format($wxh[0] / $wxh[1], 4);
       if ($ratio == $aspect_ratio['ratio']) {
-        $options[$key] = $value . ' ' . t('(Matches Ratio)');
+        $options[$key] = $value . ' (' . t('Matches ratio of original file') . ')';
       }
     }
   }
@@ -919,8 +933,9 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
 
     // re queue for video conversion
     if (!empty($item['re_convert_video'])) {
-      $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_PENDING);
       $video->video_status = VIDEO_RENDERING_PENDING;
+      $video->dimensions = $item['dimensions'];
+      $transcoder->updateJob($video);
     }
 
     // Convert on save if the job is pending and if it is requested
