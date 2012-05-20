@@ -508,7 +508,7 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
           '#attributes' => array('class' => array('video-thumbnails'), 'onchange' => 'Drupal.behaviors.videoEdit()', 'rel' => 'video_large_thumbnail-' . $fid),
         );
       }
-      elseif($thumbs === FALSE) {
+      elseif ($thumbs === FALSE) {
         $gen_fail = TRUE;
       }
     }
