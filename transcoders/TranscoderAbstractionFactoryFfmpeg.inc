@@ -105,6 +105,12 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $dimension = explode('x', trim($value));
           $result = $this->transcoder->setVideoDimensions($dimension[0], $dimension[1]);
           break;
+        case 'pixel_format':
+          $result = $this->transcoder->setPixelFormat($value);
+          break;
+        case 'h264_profile':
+          $result = $this->transcoder->addCommand('-vprofile', $value);
+          break;
       }
 
       if ($result !== PHPVideoToolkit::RESULT_OK) {
@@ -336,6 +342,11 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     }
 
     return $formats;
+  }
+
+  public function getPixelFormats() {
+    $info = $this->getCachedFFmpegInfo();
+    return array_keys($info['pixelformats']);
   }
 
   public function getVersion() {

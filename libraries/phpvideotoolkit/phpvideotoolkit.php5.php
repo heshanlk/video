@@ -517,14 +517,29 @@ class PHPVideoToolkit {
     $this->__destruct();
   }
 
-  private function _captureExecBuffer($command, $tmp_dir=FALSE) {
+  private function _captureExecBufferFallback() {
+    $commands = func_get_args();
+
+    foreach ($commands as $command) {
+      $buffer = array();
+      $err = 0;
+      exec($command . ' 2>&1', $buffer, $err);
+      if ($err === 0) {
+        return $buffer;
+      }
+    }
+
+    return NULL;
+  }
+  
+  private function _captureExecBuffer($command) {
     $buffer = array();
     $err = 0;
     exec($command . ' 2>&1', $buffer, $err);
 
     if ($err !== 127) {
       if (isset($buffer[0]) === FALSE) {
-        $tmp_file = ($tmp_dir === FALSE ? $this->_tmp_directory : $tmp_dir) . '_temp_' . uniqid(time() . '-') . '.txt';
+        $tmp_file = $this->_tmp_directory . '_temp_' . uniqid(time() . '-') . '.txt';
         exec($command . ' &>' . $tmp_file, $buffer, $err);
         if ($handle = fopen($tmp_file, 'r')) {
           $buffer = array();
@@ -581,10 +596,13 @@ class PHPVideoToolkit {
     $format = '';
     $data = array('reading_from_cache' => FALSE);
 
-    $formats = self::_captureExecBuffer($this->_ffmpeg_binary . ' -formats', $tmp_dir);
-    $codecs = self::_captureExecBuffer($this->_ffmpeg_binary . ' -codecs', $tmp_dir);
-    $filters = self::_captureExecBuffer($this->_ffmpeg_binary . ' -bsfs', $tmp_dir);
-    $protocols = self::_captureExecBuffer($this->_ffmpeg_binary . ' -protocols', $tmp_dir);
+    $formats = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -formats');
+    $codecs = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -codecs');
+    $filters = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -bsfs');
+    $protocols = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -protocols');
+    $protocols = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -protocols');
+    $pixformats = $this->_captureExecBufferFallback($this->_ffmpeg_binary . ' -pix_fmts', $this->_ffmpeg_binary . ' -pix_fmt list');
+    $help = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -h');
 
     self::$ffmpeg_found = $data['ffmpeg-found'] = !empty($formats) && strpos($formats[0], 'not found') === FALSE && strpos($formats[0], 'No such file or directory') === FALSE;
 
@@ -602,14 +620,18 @@ class PHPVideoToolkit {
       $codecs = $formats;
       $filters = $formats;
       $protocols = $formats;
-      $data['raw'] = $formats;
+      $pixformats = implode("\n", $pixformats);
+      $help = implode("\n", $help);
+      $data['raw'] = $formats . $pixformats;
     }
     else {
       $formats = implode("\n", $formats);
       $codecs = implode("\n", $codecs);
       $filters = implode("\n", $filters);
       $protocols = implode("\n", $protocols);
-      $data['raw'] = $formats . "\n" . $codecs . "\n" . $filters . "\n" . $protocols;
+      $pixformats = implode("\n", $pixformats);
+      $help = implode("\n", $help);
+      $data['raw'] = $formats . "\n" . $codecs . "\n" . $filters . "\n" . $protocols . "\n" . $pixformats;
     }
 
     // grab the versions
@@ -705,8 +727,61 @@ class PHPVideoToolkit {
     $locate = 'Supported file protocols:';
     if (!empty($protocols) && ($pos = strpos($protocols, $locate)) !== FALSE) {
       $protocols = trim(substr($filters, $pos + strlen($locate)));
-      $data['protocols'] = explode("\n", $filters);
+      $data['protocols'] = explode("\n", $protocols);
     }
+
+    // grab the pixel formats available to ffmpeg
+    $data['pixelformats'] = array();
+    // Separate code for FFmpeg 0.5
+    if (strpos($pixformats, 'Pixel formats') === FALSE) {
+      // Format:
+      // name       nb_channels depth is_alpha
+      // yuv420p         3         8      n
+      // yuyv422         1         8      n
+      $matches = array();
+      preg_match_all('#(\w+)\s+(\d+)\s+(\d+)\s+(y|n)#', $pixformats, $matches, PREG_SET_ORDER);
+      foreach ($matches as $match) {
+        $data['pixelformats'][$match[1]] = array(
+          'encode' => TRUE, // Assume true
+          'decode' => TRUE, // Assume true
+          'components' => intval($match[2]),
+          'bpp' => intval($match[3]),
+        );
+      }
+    }
+    else {
+      // Format:
+      // Pixel formats:
+      // I.... = Supported Input  format for conversion
+      // .O... = Supported Output format for conversion
+      // ..H.. = Hardware accelerated format
+      // ...P. = Paletted format
+      // ....B = Bitstream format
+      // FLAGS NAME            NB_COMPONENTS BITS_PER_PIXEL
+      // -----
+      // IO... yuv420p                3            12
+      $matches = array();
+      preg_match_all('#(I|\.)(O|\.)(H|\.)(P|\.)(B|\.)\s+(\w+)\s+(\d+)\s+(\d+)#', $pixformats, $matches, PREG_SET_ORDER);
+      foreach ($matches as $match) {
+        $data['pixelformats'][$match[6]] = array(
+          'encode' => $match[1] == 'I',
+          'decode' => $match[2] == 'O',
+          'components' => intval($match[7]),
+          'bpp' => intval($match[8]),
+        );
+      }
+    }
+    
+    // grab the command line options available to ffmpeg
+    $data['commandoptions'] = array();
+    $matches = array();
+    preg_match_all('#\n-(\w+)(?:\s+<(int|string|binary|flags|int64|float|rational)>)?#', $help, $matches, PREG_SET_ORDER);
+    foreach ($matches as $match) {
+      $data['commandoptions'][$match[1]] = array(
+        'datatype' => isset($match[2]) ? $match[2] : NULL,
+      );
+    }
+    dpm($data['commandoptions']);
 
     PHPVideoToolkit::$ffmpeg_info = $data;
 
@@ -845,7 +920,7 @@ class PHPVideoToolkit {
       return self::$_file_info[$hash];
     }
 // 			execute the ffmpeg lookup
-    $buffer = self::_captureExecBuffer($this->_ffmpeg_binary . ' -i ' . $file, $this->_tmp_directory);
+    $buffer = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -i ' . $file);
 // 			exec(PHPVIDEOTOOLKIT_FFMPEG_BINARY.' 2>&1', $buffer);
     $buffer = implode("\r\n", $buffer);
     $data = array();
@@ -1292,6 +1367,14 @@ class PHPVideoToolkit {
 // <-			exits
     }
     return $this->addCommand('-f', $format);
+  }
+
+  public function setPixelFormat($format) {
+    $formats = $this->getAvailablePixelFormats();
+    if (in_array($format, $formats)) {
+      return $this->addCommand('-pix_fmt', $format);
+    }
+    return FALSE;
   }
 
   /**
@@ -2728,6 +2811,27 @@ class PHPVideoToolkit {
   }
 
   /**
+   * Returns the available pixel formats.
+   *
+   * @return
+   *   array An array of pixel formats available to ffmpeg.
+   */
+  public function getAvailablePixelFormats() {
+    $info = $this->getFFmpegInfo(TRUE);
+
+    if (!isset($info['pixelformats'])) {
+      PHPVideoToolkit::$ffmpeg_info = FALSE;
+      $info = $this->getFFmpegInfo(FALSE);
+
+      if (!isset($info['pixelformats'])) {
+        return array();
+      }
+    }
+
+    return array_keys($info['pixelformats']);
+  }
+
+  /**
    * Commits all the commands and executes the ffmpeg procedure. This will also attempt to validate any outputted files in order to provide
    * some level of stop and check system.
    *
@@ -2896,7 +3000,7 @@ class PHPVideoToolkit {
 
 //			execute the command
 // 			$exec_string = $exec_string.' 2>&1';// &> '.$this->_log_file;
-    $buffer = self::_captureExecBuffer($exec_string, $this->_tmp_directory);
+    $buffer = $this->_captureExecBuffer($exec_string);
 // 			exec($exec_string, $buffer);
     if ($log) {
       $this->_addToLog($buffer, 'a+');
@@ -2931,7 +3035,7 @@ class PHPVideoToolkit {
 // 			create the multiple pass encode
     if ($multi_pass_encode) {
       $pass2_exc_string = str_replace('-pass ' . escapeshellarg(1), '-pass ' . escapeshellarg(2), $exec_string);
-      $buffer = self::_captureExecBuffer($pass2_exc_string, $this->_tmp_directory);
+      $buffer = $this->_captureExecBuffer($pass2_exc_string);
 // 				exec($pass2_exc_string, $buffer);
       if ($log) {
         $this->_addToLog($buffer, 'a+');

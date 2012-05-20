@@ -33,11 +33,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       }
 
       switch ($key) {
-        case 'video_extension':
-          $this->options['output']['format'] = $value;
-          break;
+        case 'pixel_format':
         case 'video_preset':
         case 'default':
+          break;
+        case 'video_extension':
+          $this->options['output']['format'] = $value;
           break;
         case 'wxh':
           $this->options['output']['size'] = $value;
@@ -54,7 +55,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         case 'one_pass':
           $this->options['output']['one_pass'] = $value == 1;
           break;
-        default :
+        default:
           $this->options['output'][$key] = $value;
       }
     }
@@ -576,5 +577,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
         break;
     }
+  }
+
+  public function getPixelFormats() {
+    // Zencoder doesn't support this
+    return array();
   }
 }

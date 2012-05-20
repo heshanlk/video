@@ -146,6 +146,13 @@ abstract class TranscoderAbstractionFactory {
   }
 
   /**
+   * Returns a list of all supported pixel formats.
+   *
+   * Returns NULL when pixel formats are not configurable for this transcoder.
+   */
+  public abstract function getPixelFormats();
+
+  /**
    * Get the installed transcoder version.
    */
   public function getVersion() {
