@@ -136,7 +136,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
       'pad' => t('Pad (letterbox) to fit output aspect ratio'),
       'stretch' => t('Stretch (distort) to output aspect ratio'),
     ),
-    '#default_value' => (!empty($preset['settings']['video_aspectmode'])) ? $preset['settings']['video_aspectmode'] : 'preserve'
+    '#default_value' => (!empty($preset['settings']['video_aspectmode'])) ? $preset['settings']['video_aspectmode'] : 'preserve',
   );
   $form['settings']['video']['video_upscale'] = array(
     '#type' => 'checkbox',

@@ -55,6 +55,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         case 'one_pass':
           $this->options['output']['one_pass'] = $value == 1;
           break;
+        case 'video_aspectmode':
+          $this->options['output']['aspect_mode'] = $value;
+          break;
         default:
           $this->options['output'][$key] = $value;
       }
