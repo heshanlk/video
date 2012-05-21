@@ -781,15 +781,13 @@ class PHPVideoToolkit {
         'datatype' => isset($match[2]) ? $match[2] : NULL,
       );
     }
-    dpm($data['commandoptions']);
 
     PHPVideoToolkit::$ffmpeg_info = $data;
 
-// cache the data
+    // cache the data
     if ($cache_file !== FALSE && $read_from_cache === TRUE) {
       $data['_cache_date'] = time();
-      file_put_contents($cache_file, '<?php
-	$info = ' . var_export($data, TRUE) . ';');
+      file_put_contents($cache_file, '<?php $info = ' . var_export($data, TRUE) . ';');
     }
 
     return $data;
