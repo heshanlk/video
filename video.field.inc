@@ -440,6 +440,10 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
     }
   }
 
+  if ($input && !empty($input['dimensions'])) {
+    $value['dimensions'] = $input['dimensions'];
+  }
+
   return $value;
 }
 
