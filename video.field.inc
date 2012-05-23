@@ -213,7 +213,7 @@ function video_field_insert($entity_type, $entity, $field, $instance, $langcode,
   _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
 
   // Update the thumbnails to be permanent and register with entity
-  $thumbnails = _video_field_get_all_thumbnails($items);
+  $thumbnails = _video_field_get_all_thumbnails($field, $items);
   if (!empty($thumbnails)) {
     db_update('file_managed')
       ->fields(array('status' => FILE_STATUS_PERMANENT))
@@ -236,7 +236,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
   _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
 
   // Register the thumbnails in file_usage
-  $thumbnails = _video_field_get_all_thumbnails($items);
+  $thumbnails = _video_field_get_all_thumbnails($field, $items);
   if (!empty($thumbnails)) {
     db_update('file_managed')
       ->fields(array('status' => FILE_STATUS_PERMANENT))
@@ -276,7 +276,7 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
   $original_fids = array();
   $delete_fids = array();
   if (!empty($original->{$field['field_name']}[$langcode])) {
-    $original_thumbs = _video_field_get_all_thumbnails($original->{$field['field_name']}[$langcode]);
+    $original_thumbs = _video_field_get_all_thumbnails($field, $original->{$field['field_name']}[$langcode]);
     $original_converted = _video_field_get_all_converted($original->{$field['field_name']}[$langcode]);
     $original_derivedfiles = array_merge($original_thumbs, $original_converted);
     foreach ($original_derivedfiles as $original_derivedfile) {
@@ -311,7 +311,7 @@ function video_field_delete($entity_type, $entity, $field, $instance, $langcode,
   file_field_delete($entity_type, $entity, $field, $instance, $langcode, $items);
 
   // Deregister the thumbnails in file_usage
-  $thumbnails = _video_field_get_all_thumbnails($items);
+  $thumbnails = _video_field_get_all_thumbnails($field, $items);
   if (!empty($thumbnails)) {
     file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
     db_delete('video_thumbnails')->condition('thumbnailfid', array_keys($thumbnails), 'IN')->execute();
@@ -332,7 +332,7 @@ function video_field_delete_revision($entity_type, $entity, $field, $instance, $
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $items);
 
   // Deregister the thumbnails in file_usage
-  $thumbnails = _video_field_get_all_thumbnails($items);
+  $thumbnails = _video_field_get_all_thumbnails($field, $items);
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
 
   // Deregister the converted files in file_usage
@@ -955,15 +955,22 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
   }
 }
 
-function _video_field_get_all_thumbnails(array $items) {
+function _video_field_get_all_thumbnails(array $field, array $items) {
   if (empty($items)) {
     return array();
   }
 
+  $defaultthumbnailfid = !empty($field['settings']['default_video_thumbnail']) ? $field['settings']['default_video_thumbnail']['fid'] : 0;
   $videofids = array();
+  $thumbnailfids = array();
   foreach ($items as $item) {
     if (!empty($item['fid'])) {
       $videofids[] = intval($item['fid']);
+
+      // Add the selected thumbnail if it is not the default thumbnail for the field
+      if (!empty($item['thumbnail']) && $item['thumbnail'] != $defaultthumbnailfid) {
+        $thumbnailfids[] = intval($item['thumbnail']);
+      }
     }
   }
 
@@ -971,9 +978,11 @@ function _video_field_get_all_thumbnails(array $items) {
     return array();
   }
 
-  $thumbnailfids = db_select('video_thumbnails', 't')
+  // Add the automatically extracted thumbnails
+  $thumbnailfidsdb = db_select('video_thumbnails', 't')
     ->fields('t', array('thumbnailfid'))->condition('videofid', $videofids, 'IN')
     ->execute()->fetchCol(0);
+  $thumbnailfids = array_merge($thumbnailfids, $thumbnailfidsdb);
 
   return video_utility::objectToArray(file_load_multiple($thumbnailfids));
 }
