@@ -20,7 +20,7 @@ function zencoderapi_requirements($phase) {
   if (!$loadresult['installed'] || !class_exists('Services_Zencoder')) {
     $requirements['zencoder_library'] = array(
       'title' => $t('Zencoder library'),
-      'description' => $t('The <a href="@zencoder-library-url">Zencoder API library</a> is not installed. Download the library and install it to a library path such as %libpath.', array('@zencoder-library-url' => 'https://github.com/zencoder/zencoder-php', '%libpath' => $path)),
+      'description' => $t('The <a href="@zencoder-library-url">Zencoder API library</a> is not installed. Download the library and install it to a directory called %dirname in a library path such as %libpath.', array('@zencoder-library-url' => url('https://github.com/zencoder/zencoder-php'), '%libpath' => $path, '%dirname' => 'zencoder')),
       'value' => NULL,
       'severity' => REQUIREMENT_ERROR,
     );
