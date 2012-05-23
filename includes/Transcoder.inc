@@ -202,7 +202,7 @@ class Transcoder {
     $form['video_convertor'] = array(
       '#type' => 'radios',
       '#title' => t('Video transcoder'),
-      '#default_value' => variable_get('video_convertor', 'TranscoderAbstractionFactoryZencoder'),
+      '#default_value' => variable_get('video_convertor', 'TranscoderAbstractionFactoryFfmpeg'),
       '#options' => $options['radios'],
       '#description' => '<p>' . t('Select a video transcoder will help you convert videos and generate thumbnails.') . '</p>' . theme('item_list', array('items' => $options['help'])),
       '#prefix' => '<div id="transcoder-radios">',
