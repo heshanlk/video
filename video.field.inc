@@ -21,6 +21,7 @@ function video_field_info() {
         'autothumbnail' => 'auto',
         'default_video_thumbnail' => 0,
         'preview_video_thumb_style' => 'thumbnail',
+        'presets' => array(),
       ),
       'instance_settings' => array(
         'file_extensions' => 'mp4 ogg avi mov wmv flv ogv webm',
@@ -131,6 +132,21 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#empty_option' => '<' . t('no preview') . '>',
     '#default_value' => !empty($settings['preview_video_thumb_style']) ? $settings['preview_video_thumb_style'] : '',
     '#description' => t('This image style will be used to show extracted video thumbnails on video node edit. Extracted thumbnail preview will also use this style.'),
+  );
+
+  module_load_include('inc', 'video_ui', 'video.preset');
+  $presets = video_preset_get_presets();
+  $presetnames = array();
+  foreach ($presets as $preset) {
+    $presetnames[$preset['name']] = $preset['name'];
+  }
+
+  $form['presets'] = array(
+    '#title' => t('Presets'),
+    '#type' => 'checkboxes',
+    '#options' => $presetnames,
+    '#default_value' => !empty($settings['presets']) ? $settings['presets'] : array(),
+    '#description' => t('If any presets are selected, these presets will be used for this field instead of the default presets.'),
   );
 
   return $form;

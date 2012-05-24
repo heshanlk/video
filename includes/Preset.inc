@@ -56,13 +56,12 @@ class Preset {
     // adding modules/video_ui to load this file even if UI module is disabled
     module_load_include('inc', 'video', 'modules/video_ui/video.preset');
     $presets = array();
-    $preset = $this->preset;
-    foreach ($preset as $preset_name) {
+    foreach ($this->preset as $preset_name) {
       // skip selecting disabled presets 0=>0
-      if (!empty($preset_name))
+      if (!empty($preset_name)) {
         $presets[$preset_name] = video_get_preset($preset_name);
+      }
     }
     return $presets;
   }
-
 }

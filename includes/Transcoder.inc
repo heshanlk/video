@@ -68,15 +68,11 @@ class Transcoder {
 
     $video_preset = new Preset();
     $presets = $video_preset->properties();
-    // if no presets enabled then write an error log
-    if (empty($presets)) {
-      watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l(t('enable or create new preset'), 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
-      return FALSE;
-    }
-
     $converted_scheme = file_uri_scheme($video->uri);
     $thumbnail_format = 'png';
     $thumbnail_number = intval(variable_get('video_thumbnail_count', 5));
+
+    // Apply field-specific settings 
     if (!empty($video->data['field_name'])) {
       $field = field_info_field($video->data['field_name']);
       // Find the scheme and thumbnail format for the converted videos
@@ -90,6 +86,16 @@ class Transcoder {
       if ($field['settings']['autothumbnail'] != 'auto') {
         $thumbnail_number = 0;
       }
+      // Limit the presets to the selected presets for this field.
+      // If the selection is no longer valid, ignore it.
+      if (!empty($field['settings']['presets'])) {
+        $video_preset = new Preset($field['settings']['presets']);
+        $fieldpresets = $video_preset->properties();
+        dpm($fieldpresets);
+        if (!empty($fieldpresets)) {
+          $presets = $fieldpresets;
+        }
+      }
     }
 
     $factory = new TranscoderAbstractionAbstractFactory();
@@ -102,6 +108,12 @@ class Transcoder {
 
     if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
       watchdog('transcoder', 'Video conversion failed. Could not create the directory: %dir', array('%dir' => $output_directory), WATCHDOG_ERROR);
+      return FALSE;
+    }
+
+    // if no presets enabled then write an error log
+    if (empty($presets)) {
+      watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l(t('enable or create new preset'), 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
       return FALSE;
     }
 
