@@ -72,12 +72,17 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $this->options['output']['notifications']['url'] = $this->postbackurl;
 
     // thumbnails
-    $this->options['output']['thumbnails'] = array(
-      'format' => $this->options['output']['thumbnails']['format'],
-      'number' => intval(variable_get('video_thumbnail_count', 5)),
-      'thumb_size' => variable_get('video_thumbnail_size', '320x240'),
-      'prefix' => 'thumbnail-' . $this->settings['input']['fid'],
-    );
+    if ($this->options['output']['thumbnails']['number'] > 0) {
+      $this->options['output']['thumbnails'] = array(
+        'format' => $this->options['output']['thumbnails']['format'],
+        'number' => $this->options['output']['thumbnails']['number'],
+        'size' => variable_get('video_thumbnail_size', '320x240'),
+        'prefix' => 'thumbnail-' . $this->settings['input']['fid'],
+      );
+    }
+    else {
+      unset($this->options['output']['thumbnails']);
+    }
 
     // watermark
     if (!empty($options['video_watermark_enabled']) && !empty($options['video_watermark_fid'])) {
@@ -490,16 +495,18 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $outputfile->filesize = $notification->output->file_size_in_bytes;
     drupal_write_record('file_managed', $outputfile, 'fid');
 
-    // Zencoder creates multiple jobs for the same vid if multiple presets are active.
-    // If a previous job has put this video in complete state, bail out now.
-    if ($video->video_status == VIDEO_RENDERING_COMPLETE) {
-      return;
-    }
-
     // Actual processing of the response
     $video->duration = round($notification->output->duration_in_ms / 1000);
     $video->status = VIDEO_RENDERING_COMPLETE;
     drupal_write_record('video_queue', $video, 'vid');
+
+    // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
+    cache_clear_all('field:' . $video->entity_type . $video->entity_id, 'cache_field');
+
+    // If there are no thumbnails, quit now.
+    if (empty($notification->output->thumbnails) || empty($notification->output->thumbnails[0]['images'])) {
+      return;
+    }
 
     // Find the entity to which the file belongs
     $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
@@ -508,15 +515,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       return;
     }
 
-    // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
-    cache_clear_all('field:' . $video->entity_type . $video->entity_id, 'cache_field');
-
     // Retrieve the thumbnails from the notification structure
     $thumbnails = $notification->output->thumbnails[0]['images'];
-    if (empty($thumbnails)) {
-      // If there are no thumbnails, quit now.
-      return;
-    }
 
     // The following information was saved in TranscoderFactory::createJob()
     $fieldname = $video->data['field_name'];
@@ -608,6 +608,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
         break;
     }
+
+    // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
+    cache_clear_all('field:' . $video->entity_type . $video->entity_id, 'cache_field');
   }
 
   public function getPixelFormats() {

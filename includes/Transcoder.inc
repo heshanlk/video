@@ -74,16 +74,21 @@ class Transcoder {
       return FALSE;
     }
 
-    // Find the scheme and thumbnail format for the converted videos
     $converted_scheme = file_uri_scheme($video->uri);
     $thumbnail_format = 'png';
+    $thumbnail_number = intval(variable_get('video_thumbnail_count', 5));
     if (!empty($video->data['field_name'])) {
       $field = field_info_field($video->data['field_name']);
+      // Find the scheme and thumbnail format for the converted videos
       if (!empty($field['settings']['uri_scheme_converted'])) {
         $converted_scheme = $field['settings']['uri_scheme_converted'];
       }
       if (!empty($field['settings']['thumbnail_format'])) {
         $thumbnail_format = $field['settings']['thumbnail_format'];
+      }
+      // If no automatic thumbnail generation, set thumbnail number to 0
+      if ($field['settings']['autothumbnail'] != 'auto') {
+        $thumbnail_number = 0;
       }
     }
 
@@ -104,6 +109,9 @@ class Transcoder {
       // override the widthXheight if enabled
       $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
       $preset['settings']['thumbnails']['format'] = $thumbnail_format;
+      $preset['settings']['thumbnails']['number'] = $thumbnail_number;
+      // Only create thumbnails for the first preset
+      $thumbnail_number = 0;
 
       // set transcoder options
       if (!$transcoder->setOptions($preset['settings'])) {

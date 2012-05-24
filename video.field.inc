@@ -18,7 +18,7 @@ function video_field_info() {
         'uri_scheme_thumbnails' => variable_get('file_default_scheme', 'public'),
         'thumbnail_format' => 'png',
         'autoconversion' => 0,
-        'autothumbnail' => 'no',
+        'autothumbnail' => 'auto',
         'default_video_thumbnail' => 0,
         'preview_video_thumb_style' => 'thumbnail',
       ),
@@ -94,17 +94,17 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#default_value' => isset($settings['autoconversion']) ? $settings['autoconversion'] : '',
   );
 
-  $thumb_options = array(
-    'auto' => 'Automatically extract thumbnails from video (with fallback to manual upload)',
-    'manual_upload' => 'Manually upload a thumbnail',
-    'no' => 'Don\'t create thumbnail',
-  );
-
   $form['thumbnail_format'] = array(
     '#title' => t('Thumbnail format'),
     '#type' => 'radios',
     '#options' => array('png' => 'PNG', 'jpg' => 'JPEG'),
     '#default_value' => !empty($settings['thumbnail_format']) ? $settings['thumbnail_format'] : 'png',
+  );
+
+  $thumb_options = array(
+    'auto' => 'Automatically extract thumbnails from video (with fallback to manual upload)',
+    'manual_upload' => 'Manually upload a thumbnail',
+    'no' => 'Don\'t create thumbnail',
   );
 
   $form['autothumbnail'] = array(
