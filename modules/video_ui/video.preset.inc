@@ -308,58 +308,120 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#description' => t('The audio track will be omitted from the output. You must specify a video format and no audio track will be present in the resulting file.'),
     '#default_value' => !empty($preset['settings']['skip_audio']) ? $preset['settings']['skip_audio'] : ''
   );
+
   // Watermark
-  //  $form['settings']['warermark'] = array(
-  //    '#type' => 'fieldset',
-  //    '#title' => t('Video watermark'),
-  //    '#collapsible' => TRUE,
-  //    '#collapsed' => ($preset['settings']['video_enable_watermark'] == TRUE) ? FALSE : TRUE,
-  //  );
-  //  $form['settings']['warermark']['video_enable_watermark'] = array(
-  //    '#type' => 'checkbox',
-  //    '#title' => t('<b>Enable watermark video</b>'),
-  //    '#default_value' => !empty($preset['settings']['video_enable_watermark']) ? $preset['settings']['video_enable_watermark'] : FALSE,
-  //    '#description' => t('In visible digital watermarking, the information is
-  //        visible in the video. Typically, the information is text or a
-  //        logo, which identifies the owner of the media. When a television broadcaster adds its logo to the
-  //        corner of transmitted video, this also is a visible watermark.')
-  //  );
-  //  $form['settings']['warermark']['video_watermark_fid'] = array(
-  //    '#type' => 'managed_file',
-  //    '#title' => t('Upload watermark image'),
-  //    '#description' => t('Watermark image should be a PNG or JPG image.'),
-  //    '#default_value' => !empty($preset['settings']['video_watermark_fid']) ? $preset['settings']['video_watermark_fid'] : 'http://heidisoft.com/watermark_drupal_40x40.png',
-  //    '#upload_location' => 'public://videos/warermark',
-  //  );
-  //  $form['settings']['warermark']['video_warermarkx'] = array(
-  //    '#type' => 'textfield',
-  //    '#title' => t('X-axis'),
-  //    '#description' => t('Where to place the watermark, on the x axis..'),
-  //    '#default_value' => !empty($preset['settings']['video_warermarkx']) ? $preset['settings']['video_warermarkx'] : 5,
-  //  );
-  //  $form['settings']['warermark']['video_warermarky'] = array(
-  //    '#type' => 'textfield',
-  //    '#title' => t('Y-axis'),
-  //    '#description' => t('Where to place the watermark, on the y axis.'),
-  //    '#default_value' => !empty($preset['settings']['video_warermarky']) ? $preset['settings']['video_warermarky'] : 5,
-  //  );
-  //  $form['settings']['warermark']['video_warermark_position'] = array(
-  //    '#title' => t('Position'),
-  //    '#type' => 'select',
-  //    '#options' => array(
-  //      'top-left' => 'top-left',
-  //      'top-middle' => 'top-middle',
-  //      'top-right' => 'top-right',
-  //      'center-left' => 'center-left',
-  //      'center-middle' => 'center-middle',
-  //      'center-right' => 'center-right',
-  //      'bottom-left' => 'bottom-left',
-  //      'bottom-middle' => 'bottom-middle',
-  //      'bottom-right' => 'bottom-right'
-  //    ),
-  //    '#default_value' => !empty($preset['settings']['video_warermark_position']) ? $preset['settings']['video_warermark_position'] : 'bottom-right',
-  //    '#weight' => 20,
-  //  );
+  $form['settings']['watermark'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Video watermark'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('At this moment this only works when using the Zencoder transcoder.'),
+  );
+  $form['settings']['watermark']['video_watermark_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable watermark video'),
+    '#default_value' => !empty($preset['settings']['video_watermark_enabled']) ? $preset['settings']['video_watermark_enabled'] : FALSE,
+  );
+  $destination = file_default_scheme() . '://videos/watermark';
+  $form['settings']['watermark']['video_watermark_fid'] = array(
+    '#type' => 'managed_file',
+    '#title' => t('Upload watermark image'),
+    '#description' => t('Watermark image should be a PNG or JPG image. The file will be uploaded to %destination.', array('%destination' => $destination)),
+    '#default_value' => !empty($preset['settings']['video_watermark_fid']) ? $preset['settings']['video_watermark_fid'] : 0,
+    '#upload_location' => $destination,
+    '#upload_validators' => array('file_validate_extensions' => array('jpg png'), 'file_validate_is_image' => array()),
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+      'required' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['settings']['watermark']['video_watermark_x'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Left position'),
+    '#description' => t('Where to place the watermark relative to the left of the video. Use a negative number to place the watermark relative to the right of the video.'),
+    '#default_value' => isset($preset['settings']['video_watermark_x']) ? $preset['settings']['video_watermark_x'] : 5,
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#field_suffix' => 'px',
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['settings']['watermark']['video_watermark_y'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Top position'),
+    '#description' => t('Where to place the watermark relative to the top of the video. Use a negative number to place the watermark relative to the bottom of the video.'),
+    '#default_value' => isset($preset['settings']['video_watermark_y']) ? $preset['settings']['video_watermark_y'] : 5,
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#field_suffix' => 'px',
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['settings']['watermark']['video_watermark_width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Width'),
+    '#description' => t('The width of the watermark. Use pixels or append a % sign to indicate a percentage relative to the width of the video. If left empty, the width will be the original width maximized by the video width.'),
+    '#default_value' => isset($preset['settings']['video_watermark_width']) ? $preset['settings']['video_watermark_width'] : '',
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['settings']['watermark']['video_watermark_height'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Height'),
+    '#description' => t('The height of the watermark. Use pixels or append a % sign to indicate a percentage relative to the height of the video. If left empty, the width will be the original height maximized by the video height.'),
+    '#default_value' => isset($preset['settings']['video_watermark_width']) ? $preset['settings']['video_watermark_width'] : '',
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['settings']['watermark']['video_watermark_origin'] = array(
+    '#title' => t('Origin'),
+    '#type' => 'select',
+    '#options' => array(
+      'content' => t('content: visible video area') . ' (' . t('default') . ')',
+      'frame' => t('frame: video area including padding'),
+    ),
+    '#default_value' => isset($preset['settings']['video_watermark_origin']) ? $preset['settings']['video_watermark_origin'] : 'content',
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  /*
+  Not supported by Zencoder anyway
+  $form['settings']['watermark']['video_watermark_onlyforaudio'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Only add watermark for audio files'),
+    '#description' => t('Use this function to create video files using an audio input file and a static image.'),
+    '#default_value' => !empty($preset['settings']['video_watermark_onlyforaudio']) ? $preset['settings']['video_watermark_onlyforaudio'] : FALSE,
+    '#states' => array(
+      'visible' => array(
+        ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  */
+
   // video optimizations
   $form['settings']['vid_optimization'] = array(
     '#type' => 'fieldset',
@@ -392,6 +454,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     ),
     '#default_value' => (!empty($preset['settings']['denoise'])) ? $preset['settings']['denoise'] : 2
   );
+
   // Create clip
   $form['settings']['create_clip'] = array(
     '#type' => 'fieldset',
@@ -411,6 +474,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#description' => t('The length of the subclip (in timecode or number of seconds).'),
     '#default_value' => !empty($preset['settings']['clip_length']) ? $preset['settings']['clip_length'] : ''
   );
+
   return $form;
 }
 
@@ -448,24 +512,14 @@ function video_presets_overview() {
  */
 function video_preset_form($form, &$form_state, $preset = FALSE) {
   $form = array();
+  $form_state['preset'] = $preset;
+
   // basic preset details
   $form['preset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Preset information'),
     '#weight' => -10,
   );
-  if (isset($preset['pid'])) {
-    $form['preset']['pid'] = array(
-      '#type' => 'value',
-      '#value' => $preset['pid'],
-    );
-  }
-  elseif (video_is_default_preset($preset['name'])) {
-    $form['preset']['default'] = array(
-      '#type' => 'value',
-      '#value' => TRUE,
-    );
-  }
   $form['preset']['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Preset name'),
@@ -476,7 +530,6 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#element_validate' => array('_video_preset_name_validate'),
     '#default_value' => !empty($preset['name']) ? $preset['name'] : ''
   );
-
   $form['preset']['description'] = array(
     '#type' => 'textfield',
     '#title' => t('Description'),
@@ -512,6 +565,56 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
  * Validation for the preset form.
  */
 function video_preset_validate($form, &$form_state) {
+  $v =& $form_state['values'];
+
+  // Silently uncheck the checkbox if there is no watermark file
+  if (!empty($v['video_watermark_enabled']) && empty($v['video_watermark_fid'])) {
+    $v['video_watermark_enabled'] = 0;
+  }
+}
+
+/**
+ * Submit handler for the preset form.
+ */
+function video_preset_submit($form, &$form_state) {
+  $old = isset($form_state['preset']) ? $form_state['preset'] : NULL;
+
+  $preset = array();
+  if ($old) {
+    $preset['pid'] = $form_state['preset']['pid'];
+  }
+
+  $preset['name'] = $form_state['values']['name'];
+  $preset['description'] = $form_state['values']['description'];
+  // unset unwanted values saved to database
+  unset($form_state['values']['pid'], $form_state['values']['name'], $form_state['values']['description'], $form_state['values']['submit'], $form_state['values']['delete'], $form_state['values']['form_build_id'], $form_state['values']['form_token'], $form_state['values']['form_id'], $form_state['values']['op']);
+  $preset['settings'] = video_preset_array_flatten($form_state['values']);
+
+  // Save this preset.
+  $preset = video_preset_save($preset);
+
+  // Save new watermark image if exists
+  if (!empty($form_state['values']['video_watermark_fid'])) {
+    $file = file_load($form_state['values']['video_watermark_fid']);
+    if ($file->status != FILE_STATUS_PERMANENT) {
+      $file->status = FILE_STATUS_PERMANENT;
+      file_save($file);
+      file_usage_add($file, 'video', 'preset', $preset['pid']);
+    }
+  }
+
+  // Remove the old watermark if different
+  if ($old && !empty($old['settings']['video_watermark_fid']) && $old['settings']['video_watermark_fid'] != $form_state['values']['video_watermark_fid']) {
+    $oldfile = file_load($old['settings']['video_watermark_fid']);
+    if (!empty($oldfile)) {
+      file_usage_delete($oldfile, 'video');
+      $oldfile->status = 0;
+      file_save($oldfile);
+    }
+  }
+
+  drupal_set_message(t('Preset %preset successfully saved.', array('%preset' => $preset['name'])));
+  $form_state['redirect'] = 'admin/config/media/video/presets';
 }
 
 /**
@@ -530,40 +633,11 @@ function video_preset_array_flatten($array, $return=array()) {
 }
 
 /**
- * Submit handler for the preset form.
- */
-function video_preset_submit($form, &$form_state) {
-  $preset = array();
-  if (isset($form_state['values']['pid'])) {
-    $preset['pid'] = $form_state['values']['pid'];
-  }
-  // save watermark image if exists
-  // Load the file via file.fid.
-  if (!empty($form_state['values']['video_watermark_fid'])) {
-    $file = file_load($form_state['values']['video_watermark_fid']);
-    // Change status to permanent.
-    $file->status = FILE_STATUS_PERMANENT;
-    // Save.
-    file_save($file);
-  }
-  $preset['name'] = $form_state['values']['name'];
-  $preset['description'] = $form_state['values']['description'];
-  // unset unwanted values saved to database
-  unset($form_state['values']['pid'], $form_state['values']['name'], $form_state['values']['description'], $form_state['values']['submit'], $form_state['values']['delete'], $form_state['values']['form_build_id'], $form_state['values']['form_token'], $form_state['values']['form_id'], $form_state['values']['op']);
-  $preset['settings'] = video_preset_array_flatten($form_state['values']);
-
-  // Save this preset.
-  video_preset_save($preset);
-  drupal_set_message(t('Preset %preset successfully saved.', array('%preset' => $preset['name'])));
-  $form_state['redirect'] = 'admin/config/media/video/presets';
-}
-
-/**
- * Button sumit function: handle the 'Delete' button on the preset form.
+ * Button submit function: handle the 'Delete' button on the preset form.
  */
 function video_preset_delete_submit($form, &$form_state) {
   $preset['name'] = $form_state['values']['name'];
-  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete';
+  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . rawurlencode($preset['name']) . '/delete';
 }
 
 /**
@@ -590,7 +664,7 @@ function video_preset_delete_confirm_submit($form, &$form_state) {
  */
 function _video_preset_name_validate($element, &$form_state) {
   $error = video_validate_preset_name($form_state['values']['name']);
-  if ($error && !isset($form_state['values']['pid']) && !isset($form_state['values']['default'])) {
+  if ($error && !isset($form_state['preset'])) {
     form_set_error('name', $error);
   }
 }
@@ -604,6 +678,7 @@ function video_preset_import_form($form, &$form_state) {
     '#type' => 'textarea',
     '#rows' => 10,
     '#description' => t('Copy the export text and paste it into this text field to import a new preset.'),
+    '#wysiwyg' => FALSE,
   );
 
   $form['submit'] = array(
@@ -659,6 +734,13 @@ function video_preset_export_form($form, &$form_state, $preset) {
   unset($preset['pid']);
   unset($preset['default']);
 
+  // @todo: support watermarks for export
+  if (!empty($preset['settings']['video_watermark_fid'])) {
+    unset($preset['settings']['video_watermark_fid']);
+    $preset['settings']['video_watermark_enabled'] = 0;
+    drupal_set_message(t('Unfortunately, exporting the watermark is not yet possible. After importing the preset you should upload your watermark file again.'), 'warning');
+  }
+
   // Get the code string representation.
   $code = var_export($preset, TRUE);
 
@@ -675,6 +757,7 @@ function video_preset_export_form($form, &$form_state, $preset) {
     '#value' => $code,
     '#rows' => $lines,
     '#description' => t('Copy the export text and paste it into another preset using the import function.'),
+    '#wysiwyg' => FALSE,
   );
 
   // Return the form.
@@ -705,9 +788,14 @@ function video_preset_page_title($preset) {
 function video_preset_save($preset) {
   // If they provide the pid, then this needs to be an update.
   $pid = (isset($preset['pid']) && $preset['pid']) ? array('pid') : array();
+  $object = (object)$preset;
 
   // Save or update a preset.
-  drupal_write_record('video_preset', $preset, $pid);
+  drupal_write_record('video_preset', $object, $pid);
+
+  $preset['pid'] = $object->pid;
+
+  return $preset;
 }
 
 /**
@@ -784,6 +872,16 @@ function video_get_preset($preset_name) {
  * Deletes a preset
  */
 function video_preset_delete($preset_name) {
+  $preset = video_get_preset($preset_name);
+  if (!empty($preset['settings']['video_watermark_fid'])) {
+    $file = file_load($preset['settings']['video_watermark_fid']);
+    if (!empty($file)) {
+      file_usage_delete($file, 'video');
+      $file->status = 0;
+      file_save($file);
+    }
+  }
+
   // Delete the preset.
   db_delete('video_preset')
     ->condition('name', $preset_name)
@@ -797,7 +895,6 @@ function video_preset_delete($preset_name) {
  * Checks to see if another preset is already taken.
  */
 function video_preset_name_exists($preset_name) {
-
   // Get the default presets.
   $default_presets = video_preset_get_default_presets();
 

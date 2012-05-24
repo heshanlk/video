@@ -59,7 +59,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           $this->options['output']['aspect_mode'] = $value;
           break;
         default:
+          if (strncmp('video_watermark_', $key, 16) === 0) {
+            break;
+          }
           $this->options['output'][$key] = $value;
+          break;
       }
     }
 
@@ -74,6 +78,30 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       'thumb_size' => variable_get('video_thumbnail_size', '320x240'),
       'prefix' => 'thumbnail-' . $this->settings['input']['fid'],
     );
+
+    // watermark
+    if (!empty($options['video_watermark_enabled']) && !empty($options['video_watermark_fid'])) {
+      $file = file_load($options['video_watermark_fid']);
+      $audioonly = !empty($options['video_watermark_onlyforaudio']);
+      $isaudio = strncmp($this->settings['input']['filemime'], 'audio/', 6) === 0;
+
+      if (!empty($file) && (!$audioonly || $isaudio)) {
+        $wm = array('url' => file_create_url($file->uri));
+        if (isset($options['video_watermark_y']) && $options['video_watermark_y'] !== '') {
+          $wm['y'] = $options['video_watermark_y'];
+        }
+        if (isset($options['video_watermark_x']) && $options['video_watermark_x'] !== '') {
+          $wm['x'] = $options['video_watermark_x'];
+        }
+        if (isset($options['video_watermark_height']) && $options['video_watermark_height'] !== '') {
+          $wm['height'] = $options['video_watermark_height'];
+        }
+        if (isset($options['video_watermark_width']) && $options['video_watermark_width'] !== '') {
+          $wm['width'] = $options['video_watermark_width'];
+        }
+        $this->options['output']['watermarks'][] = $wm;
+      }
+    }
 
     return TRUE;
   }
