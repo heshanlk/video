@@ -228,9 +228,6 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
     ->execute()->fetchAllAssoc('output_fid');
 
   $fids = array_merge($fids, array_keys($outputs));
-  if (empty($fids)) {
-    return;
-  }
   $files = file_load_multiple($fids);
 
   // Apply the found information to all files for all entities
@@ -239,7 +236,6 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
       if (empty($item) || empty($item['fid'])) {
         continue;
       }
-
       // Check whether transcoding is enabled for this file
       if (isset($queues[$item['fid']])) {
         $items[$id][$delta]['autoconversion'] = TRUE;
