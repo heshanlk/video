@@ -225,7 +225,6 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
   $outputs = db_select('video_output', 'vo')
     ->fields('vo')
     ->condition('vo.original_fid', $videofids, 'IN')
-    ->condition('vo.job_id', Transcoder::JOB_ID_SEGMENT, '<>')
     ->execute()->fetchAllAssoc('output_fid');
 
   $fids = array_merge($fids, array_keys($outputs));

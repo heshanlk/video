@@ -71,7 +71,7 @@ function theme_video_formatter_player(array $variables) {
   }
 
   if ($item['autoconversion']) {
-    $extension = video_utility::getExtension($item['converted'][0]->filename);
+    $extension = video_utility::getExtension($item['playablefiles'][0]->filename);
   }
   else {
     $extension = video_utility::getExtension($item['filename']);
