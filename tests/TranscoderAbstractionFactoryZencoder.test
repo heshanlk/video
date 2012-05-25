@@ -102,7 +102,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     ));
 
     // No job, should return FALSE
-    $out = $this->transcoder->extractFrames('public');
+    $out = $this->transcoder->extractFrames('public', 'png');
     $this->assertFalse($out);
 
     // Set state of job
@@ -110,7 +110,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
 
     // No files, should return FALSE
     // A watchdog message is expected at this point
-    $out = $this->transcoder->extractFrames('public');
+    $out = $this->transcoder->extractFrames('public', 'png');
     $this->assertFalse($out);
 
     // Make some files
@@ -124,7 +124,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     }
 
     // Test generation of items array
-    $out = $this->transcoder->extractFrames('public');
+    $out = $this->transcoder->extractFrames('public', 'png');
     $this->assertTrue(is_array($out), 'extractFrames should return array');
     $this->assertEqual(5, count($out), '5 items should be returned');
 
@@ -141,7 +141,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     }
 
     // Calling the method again should return same files
-    $out = $this->transcoder->extractFrames('public');
+    $out = $this->transcoder->extractFrames('public', 'png');
     $this->assertTrue(is_array($out), 'extractFrames should return array');
     $this->assertEqual(5, count($out), '5 items should be returned');
   }

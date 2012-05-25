@@ -91,7 +91,6 @@ class Transcoder {
       if (!empty($field['settings']['presets'])) {
         $video_preset = new Preset($field['settings']['presets']);
         $fieldpresets = $video_preset->properties();
-        dpm($fieldpresets);
         if (!empty($fieldpresets)) {
           $presets = $fieldpresets;
         }

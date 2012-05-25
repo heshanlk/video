@@ -44,10 +44,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           $this->options['output']['size'] = $value;
           break;
         case 'video_quality':
-          $this->options['output']['quality'] = $value;
+          $this->options['output']['quality'] = intval($value);
           break;
         case 'video_speed':
-          $this->options['output']['speed'] = $value;
+          $this->options['output']['speed'] = intval($value);
           break;
         case 'video_upscale':
           $this->options['output']['upscale'] = $value;
@@ -57,6 +57,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           break;
         case 'video_aspectmode':
           $this->options['output']['aspect_mode'] = $value;
+          break;
+        case 'bitrate_cap':
+          $this->options['output']['decoder_bitrate_cap'] = intval($value);
+          break;
+        case 'buffer_size':
+          $this->options['output']['decoder_buffer_size'] = intval($value);
           break;
         default:
           if (strncmp('video_watermark_', $key, 16) === 0) {
@@ -104,8 +110,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         if (isset($options['video_watermark_width']) && $options['video_watermark_width'] !== '') {
           $wm['width'] = $options['video_watermark_width'];
         }
-        $this->options['output']['watermarks'][] = $wm;
+        $this->options['output']['watermarks'] = array($wm);
       }
+    }
+    else {
+      unset($this->options['output']['watermarks']);
     }
 
     return TRUE;
