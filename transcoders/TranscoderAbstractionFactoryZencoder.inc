@@ -514,7 +514,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     drupal_write_record('video_queue', $video, 'vid');
 
     // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
-    cache_clear_all('field:' . $video->entity_type . $video->entity_id, 'cache_field');
+    cache_clear_all('field:' . $video->entity_type . ':' . $video->entity_id, 'cache_field');
 
     // If there are no thumbnails, quit now.
     if (empty($notification->output->thumbnails) || empty($notification->output->thumbnails[0]['images'])) {
@@ -623,7 +623,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
 
     // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
-    cache_clear_all('field:' . $video->entity_type . $video->entity_id, 'cache_field');
+    cache_clear_all('field:' . $video->entity_type . ':' . $video->entity_id, 'cache_field');
   }
 
   public function getPixelFormats() {
