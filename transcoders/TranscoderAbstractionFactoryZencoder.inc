@@ -423,6 +423,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       return TRUE;
     }
     catch (Services_Zencoder_Exception $e) {
+      if ($e->getErrors() == null) {
+        return $e->getMessage();
+      }
+
       $errors = '';
       foreach ($e->getErrors() as $error) {
         if ($error == 'Email has already been taken') {
