@@ -479,35 +479,6 @@ function video_preset_default_form($form, &$form_state, $preset) {
 }
 
 /**
- * Menu callback: video Module administration.
- */
-function video_presets_overview() {
-  $presets = video_preset_get_presets();
-
-  if (count($presets) > 0) {
-    $header = array(t('Preset Name'), t('Description'), array('data' => t('Operations'), 'colspan' => '3'));
-    $rows = array();
-    foreach ($presets as $pid => $preset) {
-      $row = array();
-      $row[] = check_plain($preset['name']);
-      $row[] = array('data' => filter_xss_admin($preset['description']), 'class' => 'description');
-      $row[] = array('data' => l(t('edit'), 'admin/config/media/video/presets/preset/' . $preset['name']));
-
-      if (!isset($preset['default'])) {
-        $row[] = array('data' => l(t('delete'), 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete'));
-      }
-
-      $row[] = array('data' => l(t('export'), 'admin/config/media/video/presets/preset/' . $preset['name'] . '/export'));
-      $rows[] = $row;
-    }
-    return theme('table', array('header' => $header, 'rows' => $rows));
-  }
-  else {
-    return t('No presets were found. Please use the !create_link link to create a new video preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Create Video Preset'), 'admin/config/media/video/presets/add')));
-  }
-}
-
-/**
  * Preset form
  */
 function video_preset_form($form, &$form_state, $preset = FALSE) {
@@ -542,18 +513,30 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
   $form += video_preset_default_form($form, $form_state, $preset);
 
   // Buttons
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save preset'),
-    '#weight' => 30,
+  $form['actions'] = array(
+      '#type' => 'actions',
+      '#weight' => 40,
   );
 
-  $form['delete'] = array(
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Delete'),
-    '#weight' => 40,
-    '#submit' => array('video_preset_delete_submit'),
+    '#value' => t('Save preset'),
   );
+
+  if ($preset) { 
+    $form['actions']['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete'),
+      '#submit' => array('video_preset_delete_submit'),
+    );
+  }
+  else {
+    $form['actions']['cancel'] = array(
+      '#type' => 'link',
+      '#title' => t('Cancel'),
+      '#href' => 'admin/config/media/video/presets',
+    );
+  }
 
   // Add the form submit handler.
   $form['#submit'][] = 'video_preset_submit';
@@ -670,7 +653,7 @@ function _video_preset_name_validate($element, &$form_state) {
 }
 
 /**
- * Import's a preset.
+ * Imports a preset.
  */
 function video_preset_import_form($form, &$form_state) {
   $form['preset'] = array(
@@ -681,10 +664,19 @@ function video_preset_import_form($form, &$form_state) {
     '#wysiwyg' => FALSE,
   );
 
-  $form['submit'] = array(
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Import preset'),
-    '#weight' => 30,
+  );
+
+  $form['actions']['cancel'] = array(
+    '#type' => 'link',
+    '#title' => t('Cancel'),
+    '#href' => 'admin/config/media/video/presets',
   );
 
   $form['#submit'][] = 'video_preset_import_submit';
@@ -823,6 +815,7 @@ function video_preset_get_presets() {
   // Iterate through all the presets and structure them in an array.
   foreach ($result as $preset) {
     $preset = (array) $preset;
+    $preset['default'] = FALSE;
     $preset['settings'] = $preset['settings'] ? unserialize($preset['settings']) : array();
     $presets[$preset['pid']] = $preset;
     $normal_presets[$preset['name']] = $preset['pid'];

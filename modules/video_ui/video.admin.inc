@@ -27,10 +27,126 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
 /**
  * Video preset admin settings
  */
-function video_preset_admin_settings() {
-  $preset = new Preset();
-  $form = $preset->adminSettings();
+function video_preset_admin_settings($form_state) {
+  $form = array(
+    '#theme' => 'video_preset_admin_settings',
+    '#submit' => array('video_preset_admin_settings_submit'),
+  );
+
+  module_load_include('inc', 'video_ui', 'video.preset');
+  $presets = video_preset_get_presets();
+
+  if (empty($presets)) {
+    drupal_set_message(t('No presets were found. Please use the !create_link link to create a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Add Preset'), 'admin/config/media/video/presets/add'))), 'warning'); 
+  }
+
+  $form['video_use_preset_wxh'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use preset dimensions for video conversion.'),
+    '#default_value' => variable_get('video_use_preset_wxh', FALSE),
+    '#description' => t('Override the user selected dimensions with the value from the presets (recommended).')
+  );
+
+  if (!empty($presets)) {
+    $selected = array_filter(variable_get('video_preset', array()));
+
+    $form['video_preset'] = array(
+      '#tree' => TRUE,
+    );
+
+    foreach ($presets as $preset) {
+      $form['video_preset'][$preset['name']] = array(
+        'description' => array('#markup' => check_plain($preset['description'])),
+        'edit' => array('#type' => 'link', '#title' => t('edit'), '#href' => 'admin/config/media/video/presets/preset/' .   $preset['name']),
+        'delete' => $preset['default'] ? '' : array('#type' => 'link', '#title' => t('delete'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete'),
+        'export' => array('#type' => 'link', '#title' => t('export'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/export'),
+        /*
+        'weight' => array(
+          '#type' => 'weight',
+          '#title' => t('Weight for @title', array('@title' => $preset['name'])),
+          '#title_display' => 'invisible',
+          '#default_value' => mt_rand(1, 14),
+        ),
+        */
+        'status' => array(
+          '#type' => 'checkbox',
+          '#title' => $preset['name'],
+          '#default_value' => in_array($preset['name'], $selected),
+        ),
+      );
+    }
+  }
+
   return system_settings_form($form);
+}
+
+function video_preset_admin_settings_validate($form, $form_state) {
+  if (isset($form['video_preset'])) {
+    $hasany = FALSE;
+
+    foreach ($form_state['values']['video_preset'] as $name => $values) {
+      if ($values['status'] == 1) {
+        $hasany = TRUE;
+        break;
+      }
+    }
+
+    if (!$hasany) {
+      form_error($form['video_preset'], t('You must enable at least one preset.'));
+    }
+  }
+}
+
+function video_preset_admin_settings_submit($form, &$form_state) {
+  $form_state['values']['video_use_preset_wxh'] = (bool)$form_state['values']['video_use_preset_wxh'];
+
+  $selected = array();
+
+  if (isset($form['video_preset'])) {
+    foreach ($form_state['values']['video_preset'] as $name => $values) {
+      if ($values['status'] == 1) {
+        $selected[] = $name;
+      }
+    }
+  }
+
+  $form_state['values']['video_preset'] = $selected;
+}
+
+function theme_video_preset_admin_settings($variables) {
+  $form = $variables['form'];
+
+  $header = array(
+    array('data' => t('Name')),
+    array('data' => t('Description')),
+//    array('data' => t('Weight')),
+    array('data' => t('Operations'), 'colspan' => 3),
+   );
+
+  $rows = array();
+  foreach (element_children($form['video_preset']) as $id) {
+    //$form['video_preset'][$id]['weight']['#attributes']['class'] = array('video-preset-weight');
+    $rows[] = array(
+      'data' => array(
+        drupal_render($form['video_preset'][$id]['status']),
+        drupal_render($form['video_preset'][$id]['description']),
+//        drupal_render($form['video_preset'][$id]['weight']),
+        drupal_render($form['video_preset'][$id]['edit']),
+        drupal_render($form['video_preset'][$id]['delete']),
+        drupal_render($form['video_preset'][$id]['export']),
+      ),
+//      'class' => array('draggable'),
+    );
+  }
+
+  $actions = drupal_render_children($form['actions']);
+  $output = drupal_render_children($form);
+  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'video-preset')));
+  $output .= $actions;
+
+  //drupal_add_tabledrag('video-preset', 'order', 'sibling', 'video-preset-weight');
+
+  return $output;
 }
 
 /**
