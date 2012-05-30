@@ -496,4 +496,12 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     return NULL;
   }
+
+  /**
+   * Reset internal variables to their initial state.
+   */
+  public function reset($keepinput = FALSE) {
+    parent::reset($keepinput);
+    $this->transcoder->reset($keepinput);
+  }
 }

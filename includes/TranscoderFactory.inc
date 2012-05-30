@@ -302,6 +302,19 @@ abstract class TranscoderAbstractionFactory {
    */
   public function processPostback() {
   }
+
+  /**
+   * Reset internal variables to their initial state.
+   */
+  public function reset($keepinput = FALSE) {
+    if (!$keepinput) {
+      unset($this->settings['input']);
+    }
+
+    unset($this->settings['options']);
+    unset($this->settings['output']);
+    $this->errors = array();
+  }
 }
 
 interface TranscoderAbstractFactoryInterface {

@@ -140,6 +140,8 @@ class Transcoder {
         $transcodingsuccess = FALSE;
         break;
       }
+
+      $transcoder->reset(TRUE);
     }
 
     // update the video conversion completed time

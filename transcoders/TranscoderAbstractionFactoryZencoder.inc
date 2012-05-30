@@ -86,9 +86,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         'prefix' => 'thumbnail-' . $this->settings['input']['fid'],
       );
     }
-    else {
-      unset($this->options['output']['thumbnails']);
-    }
 
     // watermark
     if (!empty($options['video_watermark_enabled']) && !empty($options['video_watermark_fid'])) {
@@ -112,9 +109,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
         $this->options['output']['watermarks'] = array($wm);
       }
-    }
-    else {
-      unset($this->options['output']['watermarks']);
     }
 
     return TRUE;
@@ -629,5 +623,17 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   public function getPixelFormats() {
     // Zencoder doesn't support this
     return array();
+  }
+
+  /**
+   * Reset internal variables to their initial state.
+   */
+  public function reset($keepinput = FALSE) {
+    parent::reset($keepinput);
+
+    if (!$keepinput) {
+      unset($this->options['input']);
+    }
+    unset($this->options['output']);
   }
 }
