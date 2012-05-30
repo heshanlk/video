@@ -241,10 +241,11 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
         $items[$id][$delta]['autoconversion'] = TRUE;
         $items[$id][$delta]['conversioncompleted'] = $queues[$item['fid']]->status == VIDEO_RENDERING_COMPLETE;
         $items[$id][$delta]['conversionstatus'] = $queues[$item['fid']]->status;
+
         // Load converted files
         $items[$id][$delta]['playablefiles'] = array();
         foreach ($outputs as $outputfid => $output) {
-          if ($output->original_fid == $items[$id][$delta]['fid'] && isset($files[$outputfid])) {
+          if ($output->original_fid == $items[$id][$delta]['fid'] && isset($files[$outputfid]) && $files[$outputfid]->filesize > 0) {
             $conv = (array)$files[$outputfid] + (array)$output;
             $items[$id][$delta]['playablefiles'][] = (object)$conv;
           }
