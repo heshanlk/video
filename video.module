@@ -151,7 +151,7 @@ function video_theme_registry_alter(&$registry) {
   $templates[] = 'video_html5';
 
   foreach ($templates as $template) {
-    if(!isset($registry[$template])) {
+    if (!isset($registry[$template])) {
       continue;
     }
 

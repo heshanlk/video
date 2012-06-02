@@ -522,7 +522,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#value' => t('Save preset'),
   );
 
-  if ($preset) { 
+  if ($preset) {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete'),

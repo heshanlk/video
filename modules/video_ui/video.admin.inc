@@ -37,7 +37,7 @@ function video_preset_admin_settings($form_state) {
   $presets = video_preset_get_presets();
 
   if (empty($presets)) {
-    drupal_set_message(t('No presets were found. Please use the !create_link link to create a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Add Preset'), 'admin/config/media/video/presets/add'))), 'warning'); 
+    drupal_set_message(t('No presets were found. Please use the !create_link link to create a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Add Preset'), 'admin/config/media/video/presets/add'))), 'warning');
   }
 
   $form['video_use_preset_wxh'] = array(
@@ -57,7 +57,7 @@ function video_preset_admin_settings($form_state) {
     foreach ($presets as $preset) {
       $form['video_preset'][$preset['name']] = array(
         'description' => array('#markup' => check_plain($preset['description'])),
-        'edit' => array('#type' => 'link', '#title' => t('edit'), '#href' => 'admin/config/media/video/presets/preset/' .   $preset['name']),
+        'edit' => array('#type' => 'link', '#title' => t('edit'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name']),
         'delete' => $preset['default'] ? '' : array('#type' => 'link', '#title' => t('delete'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete'),
         'export' => array('#type' => 'link', '#title' => t('export'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/export'),
         /*
@@ -121,11 +121,11 @@ function theme_video_preset_admin_settings($variables) {
     array('data' => t('Description')),
 //    array('data' => t('Weight')),
     array('data' => t('Operations'), 'colspan' => 3),
-   );
+  );
 
   $rows = array();
   foreach (element_children($form['video_preset']) as $id) {
-    //$form['video_preset'][$id]['weight']['#attributes']['class'] = array('video-preset-weight');
+//    $form['video_preset'][$id]['weight']['#attributes']['class'] = array('video-preset-weight');
     $rows[] = array(
       'data' => array(
         drupal_render($form['video_preset'][$id]['status']),
@@ -144,7 +144,7 @@ function theme_video_preset_admin_settings($variables) {
   $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'video-preset')));
   $output .= $actions;
 
-  //drupal_add_tabledrag('video-preset', 'order', 'sibling', 'video-preset-weight');
+//  drupal_add_tabledrag('video-preset', 'order', 'sibling', 'video-preset-weight');
 
   return $output;
 }

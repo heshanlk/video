@@ -72,7 +72,7 @@ class Transcoder {
     $thumbnail_format = 'png';
     $thumbnail_number = intval(variable_get('video_thumbnail_count', 5));
 
-    // Apply field-specific settings 
+    // Apply field-specific settings
     if (!empty($video->data['field_name'])) {
       $field = field_info_field($video->data['field_name']);
       // Find the scheme and thumbnail format for the converted videos

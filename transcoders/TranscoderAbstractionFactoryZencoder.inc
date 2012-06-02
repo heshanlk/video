@@ -419,7 +419,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       return TRUE;
     }
     catch (Services_Zencoder_Exception $e) {
-      if ($e->getErrors() == null) {
+      if ($e->getErrors() == NULL) {
         return $e->getMessage();
       }
 
