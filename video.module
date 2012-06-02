@@ -271,20 +271,23 @@ function video_views_handlers() {
  */
 function video_file_download($uri) {
   // Check if the file is a transcoded or thumbnail file and determine access by evaluating access to the original file
-  $fileinfo = NULL;
+  $fileinfo = FALSE;
+  $extension = video_utility::getExtension($uri);
+  $isimage = $extension == 'png' || $extension == 'jpg';
 
   // Check for transcoded files
-  if (strpos($uri, '/converted/') !== FALSE) {
+  // @todo only execute the query if the file name seems to be a video
+  if (!$isimage) {
     $fileinfo = db_query('SELECT video.uri videouri, converted.* FROM {file_managed} video JOIN {video_output} op ON video.fid = op.original_fid JOIN {file_managed} converted ON converted.fid = op.output_fid WHERE converted.uri = :uri', array(':uri' => $uri))->fetchObject();
   }
 
   // Check for thumbnails (new style, files uploaded after upgrade to 2.6)
-  if (strpos($uri, '/thumbnails/') !== FALSE) {
+  if ($fileinfo === FALSE && $isimage) {
     $fileinfo = db_query('SELECT video.uri videouri, thumb.* FROM {file_managed} video JOIN {video_thumbnails} tn ON video.fid = tn.videofid JOIN {file_managed} thumb ON thumb.fid = tn.thumbnailfid WHERE thumb.uri = :uri', array(':uri' => $uri))->fetchObject();
   }
 
   // Check for thumbnails (old style, only works for selected thumbnail)
-  if ($fileinfo == NULL && strpos($uri, '/thumbnails/') !== FALSE) {
+  if ($fileinfo === FALSE && strpos($uri, '/thumbnails/') !== FALSE) {
     $thumbfile = db_query('SELECT thumb.* FROM {file_managed} thumb WHERE thumb.uri = :uri', array(':uri' => $uri))->fetchObject();
     if ($thumbfile != NULL && strncmp($thumbfile->filemime, 'image/', 6) === 0) {
       // The following code is derived from file_file_download() and tries to find the original video URI for this thumbnail
