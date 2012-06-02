@@ -17,6 +17,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   protected $transcoder = NULL;
   protected $realoutputdir = NULL;
   protected $realoutputname = NULL;
+  protected $multipass = NULL;
 
   public function __construct() {
     $this->transcoder = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), file_directory_temp() . '/');
@@ -53,6 +54,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $this->transcoder->reset(TRUE);
 
     $video_info = $this->getFileInfo();
+    $this->multipass = TRUE;
     foreach ($options as $key => $value) {
       if (empty($value) || $value === 'none') {
         continue;
@@ -109,6 +111,11 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           break;
         case 'h264_profile':
           $result = $this->transcoder->addCommand('-vprofile', $value);
+          break;
+        case 'one_pass':
+          if ($value == 1) {
+            $this->multipass = FALSE;
+          }
           break;
       }
 
@@ -232,9 +239,19 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   }
 
   public function execute() {
-    $tmpoutputpath = $this->settings['base_url'] . '/' . $this->settings['filename'];
-    $result = $this->transcoder->execute();
+    // Execute the command in a temporary directory
+    $drupaldir = getcwd();
+    $tmpdir = video_utility::createTempDir();
+    chmod($tmpdir, 0777);
+    chdir($tmpdir);
 
+    // Execute the command
+    $result = $this->transcoder->execute($this->multipass);
+
+    // Restore the directory
+    chdir($drupaldir);
+
+    $tmpoutputpath = $this->settings['base_url'] . '/' . $this->settings['filename'];
     if ($result !== PHPVideoToolkit::RESULT_OK || !file_exists($tmpoutputpath) || ($filesize = filesize($tmpoutputpath)) == 0) {
       $errorlist = $this->transcoder->getErrors();
       $_commandoutput = $this->transcoder->getCommandOutput();
@@ -503,5 +520,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   public function reset($keepinput = FALSE) {
     parent::reset($keepinput);
     $this->transcoder->reset($keepinput);
+    $this->multipass = NULL;
   }
 }

@@ -233,8 +233,7 @@ function video_preset_default_form($form, &$form_state, $preset) {
   );
   $form['settings']['adv_video']['one_pass'] = array(
     '#type' => 'checkbox',
-    '#title' => t('One pass'),
-    '#description' => t('Force one-pass encoding when targeting a specific video_bitrate. TRUE or FALSE.'),
+    '#title' => t('Force one-pass encoding'),
     '#default_value' => !empty($preset['settings']['one_pass']) ? $preset['settings']['one_pass'] : ''
   );
   $form['settings']['adv_video']['skip_video'] = array(
