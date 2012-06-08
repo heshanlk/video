@@ -39,6 +39,10 @@ function video_field_info() {
  * Implements hook_field_settings_form().
  */
 function video_field_settings_form($field, $instance, $has_data) {
+  $factory = new TranscoderAbstractionAbstractFactory();
+  $transcoder = $factory->getProduct();
+  $hastranscoder = $transcoder != NULL;
+
   $defaults = field_info_field_settings($field['type']);
   $settings = array_merge($defaults, $field['settings']);
 
@@ -60,6 +64,7 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#options' => $scheme_options,
     '#default_value' => $settings['uri_scheme_converted'],
     '#description' => t('Select where the converted video files should be stored. Private file storage has significantly more overhead than public files, but allows restricted access to files within this field.'),
+    '#access' => $hastranscoder,
   );
   $form['uri_scheme_thumbnails'] = array(
     '#type' => 'radios',
@@ -67,12 +72,11 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#options' => $scheme_options,
     '#default_value' => $settings['uri_scheme_thumbnails'],
     '#description' => t('Select where the generated thumbnails should be stored. Private file storage has significantly more overhead than public files, but allows restricted access to files within this field.'),
+    '#access' => $hastranscoder,
   );
 
   // Add warnings for S3
-  if (isset($scheme_options['s3'])) {
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
+  if ($hastranscoder && isset($scheme_options['s3'])) {
     $value = $transcoder->getValue();
 
     if ($value == 'TranscoderAbstractionFactoryFfmpeg') {
@@ -93,6 +97,7 @@ function video_field_settings_form($field, $instance, $has_data) {
       '!preset' => l(t('preset settings'), 'admin/config/media/video/presets'),
     )),
     '#default_value' => isset($settings['autoconversion']) ? $settings['autoconversion'] : '',
+    '#access' => $hastranscoder,
   );
 
   $form['thumbnail_format'] = array(
@@ -100,6 +105,7 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#type' => 'radios',
     '#options' => array('png' => 'PNG', 'jpg' => 'JPEG'),
     '#default_value' => !empty($settings['thumbnail_format']) ? $settings['thumbnail_format'] : 'png',
+    '#access' => $hastranscoder,
   );
 
   $thumb_options = array(
@@ -107,6 +113,10 @@ function video_field_settings_form($field, $instance, $has_data) {
     'manual_upload' => 'Manually upload a thumbnail',
     'no' => 'Don\'t create thumbnail',
   );
+
+  if (!$hastranscoder) {
+    unset($thumb_options['auto']);
+  }
 
   $form['autothumbnail'] = array(
     '#type' => 'radios',
@@ -147,6 +157,7 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#options' => $presetnames,
     '#default_value' => !empty($settings['presets']) ? $settings['presets'] : array(),
     '#description' => t('If any presets are selected, these presets will be used for this field instead of the default presets.'),
+    '#access' => $hastranscoder,
   );
 
   return $form;
@@ -587,11 +598,14 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
   if ($value['fid'] > 0) {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
-    $video = $transcoder->loadJob($value['fid']);
 
-    if ($video) {
-      $value['dimensions'] = $video->dimensions;
-      $value['conversionstatus'] = $video->video_status;
+    if ($transcoder != NULL) {
+      $video = $transcoder->loadJob($value['fid']);
+
+      if ($video) {
+        $value['dimensions'] = $video->dimensions;
+        $value['conversionstatus'] = $video->video_status;
+      }
     }
   }
 
@@ -719,17 +733,20 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
  * Process elements loads on settings
  */
 function video_widget_element_settings(array &$element, array &$form_state, array $field) {
+  $factory = new TranscoderAbstractionAbstractFactory();
+  $transcoder = $factory->getProduct();
+
   $file = $element['#value'];
   $delta = $element['#delta'];
 
   $instance = field_widget_instance($element, $form_state);
   $dimensions = $instance['settings']['default_dimensions'];
   $default_dimensions = user_access('override player dimensions');
-  $description = t('Set your video dimensions. This will create your player with these dimensions.');
+  $autoconversion = !empty($field['settings']['autoconversion']) && $transcoder != NULL;
 
-  // Lets figure out our dimensions for our video and add astericks next to our options.
+  $description = t('Set your video dimensions. This will create your player with these dimensions.');
   $options = video_utility::getDimensions();
-  if ($field['settings']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
+  if ($autoconversion && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
     $file_object = file_load($file['fid']);
     $video_info = _video_dimensions_options($options, $file_object);
     if (!empty($video_info['width']) && !empty($video_info['height'])) {
@@ -737,13 +754,14 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
       $description .= ' ' . t('Your video size is %size, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('%size' => $dimensions));
     }
   }
+
   // Override our dimensions to the user selected.
   if (!empty($file['dimensions'])) {
     $dimensions = $file['dimensions'];
   }
 
   // show only enabled the autoconversion
-  if ($field['settings']['autoconversion']) {
+  if ($autoconversion) {
     $element['dimensions'] = array(
       '#type' => 'select',
       '#title' => t('Output video dimensions'),
@@ -759,7 +777,7 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
   }
 
   // only in preview mode and then create thumbnails
-  if ($field['settings']['autoconversion']) {
+  if ($autoconversion) {
     // check if already converted or failed
     if (user_access('re convert video') && isset($file['conversionstatus']) && ($file['conversionstatus'] == VIDEO_RENDERING_COMPLETE || $file['conversionstatus'] == VIDEO_RENDERING_FAILED)) {
       $status = array(VIDEO_RENDERING_COMPLETE => 'been completed', VIDEO_RENDERING_FAILED => 'failed');
@@ -1045,7 +1063,10 @@ function video_filefield_sources_widgets() {
  * Video file save to the video_queue table for conversions
  */
 function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  if (empty($field['settings']['autoconversion'])) {
+  $factory = new TranscoderAbstractionAbstractFactory();
+  $transcoder = $factory->getProduct();
+
+  if (empty($field['settings']['autoconversion']) || $transcoder == NULL) {
     return;
   }
 
@@ -1055,8 +1076,6 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
   $hasfilefieldpaths = module_exists('filefield_paths') && !empty($instance['settings']['filefield_paths']);
 
   $video_conversion = new Conversion();
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
 
   foreach ($items as $delta => &$item) {
     // When filefield_paths is active, _video_field_file_autoconversion is invoked twice:

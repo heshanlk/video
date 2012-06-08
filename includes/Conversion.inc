@@ -31,6 +31,9 @@ class Conversion {
   public function loadJobQueue() {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
+    if ($transcoder == NULL) {
+      return array();
+    }
     return $transcoder->loadJobQueue();
   }
 

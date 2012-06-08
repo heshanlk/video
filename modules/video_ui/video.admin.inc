@@ -17,8 +17,11 @@ function video_transcoder_admin_settings() {
  * Form API callback to validate the upload settings form.
  */
 function video_transcoder_admin_settings_validate($form, &$form_state) {
-  // add validations by transcoder interface
   $transcoder = $form_state['values']['video_convertor'];
+  if ($transcoder == '') {
+    return;
+  }
+  
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct($transcoder);
   $transcoder->adminSettingsValidate($form, $form_state);
@@ -153,43 +156,49 @@ function theme_video_preset_admin_settings($variables) {
  * Video general admin settings
  */
 function video_general_admin_settings() {
+  $hastranscoder = variable_get('video_convertor') !== '';
+
   $form = array();
   $form['video_autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Automatically start video on page load'),
     '#default_value' => variable_get('video_autoplay', FALSE),
-    '#description' => t('Start the video when the page and video loads')
+    '#description' => t('Start the video when the page and video loads'),
   );
   $form['video_autobuffering'] = array(
     '#type' => 'checkbox',
     '#title' => t('Automatically start video buffering'),
     '#default_value' => variable_get('video_autobuffering', TRUE),
-    '#description' => t('Start buffering video when the page and video loads')
+    '#description' => t('Start buffering video when the page and video loads'),
   );
   $form['video_bypass_conversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('Bypass video conversion'),
     '#default_value' => variable_get('video_bypass_conversion', FALSE),
-    '#description' => t('Bypass video conversion when creating videos.')
+    '#description' => t('Bypass video conversion when creating videos.'),
+    '#access' => $hastranscoder,
   );
   $form['video_convert_on_save'] = array(
     '#type' => 'checkbox',
     '#title' => t('Video convert on node submit'),
     '#default_value' => variable_get('video_convert_on_save', FALSE),
-    '#description' => t('Convert videos on node submit will enable by default for all users.')
+    '#description' => t('Convert videos on node submit will enable by default for all users.'),
+    '#access' => $hastranscoder,
   );
   $form['video_use_default_thumb'] = array(
     '#type' => 'checkbox',
     '#title' => t('Override video thumbnails with default thumbnail'),
     '#default_value' => variable_get('video_use_default_thumb', FALSE),
-    '#description' => t('Override auto thumbnails with default thumbnail.')
+    '#description' => t('Override auto thumbnails with default thumbnail.'),
+    '#access' => $hastranscoder,
   );
   $form['video_publish_on_complete'] = array(
     '#type' => 'checkbox',
     '#title' => t('Publish when conversion complete'),
     '#default_value' => variable_get('video_publish_on_complete', FALSE),
     '#description' => t('This feature is now fully controlled by !rules module. Download the module and configure rules to take effect when video conversions have completed or failed.', array('!rules' => l(t('Rules'), 'http://drupal.org/project/rules'))),
-    '#disabled' => TRUE
+    '#disabled' => TRUE,
+    '#access' => $hastranscoder,
   );
   return system_settings_form($form);
 }

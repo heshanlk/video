@@ -251,10 +251,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $t = get_t();
 
     $form = array();
-    $form['video_zencoder_start'] = array(
-      '#type' => 'markup',
-      '#markup' => '<div id="' . $this->getValue() . '">',
-    );
     $zencoder_api = variable_get('video_zencoder_api_key', NULL);
     if (empty($zencoder_api)) {
       $form['zencoder_user'] = array(
@@ -262,7 +258,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#title' => $t('Zencoder setup'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
-        '#description' => $t('Add your email address, password and <em>save configurations</em> to create your Zencoder account. It will help you to transcode and manage your videos using Zencode website. Once you save your configurations then this will automatically create an account on the Zencoder.com and password and all ther other relevent details will be emailed to you.', array('!link' => l($t('Zencoder.com'), 'http://zencoder.com')))
+        '#description' => $t('Add your email address, password and <em>save configurations</em> to create your Zencoder account. It will help you to transcode and manage your videos using Zencode website. Once you save your configurations then this will automatically create an account on the Zencoder.com and password and all ther other relevent details will be emailed to you.', array('!link' => l($t('Zencoder.com'), 'http://zencoder.com'))),
+        '#states' => array(
+          'visible' => array(
+            ':input[name=video_convertor]' => array('value' => 'TranscoderAbstractionFactoryZencoder'),
+          ),
+        ),
       );
       $form['zencoder_user']['zencoder_username'] = array(
         '#type' => 'textfield',
@@ -284,6 +285,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#title' => t('Zencoder'),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
+        '#states' => array(
+          'visible' => array(
+            ':input[name=video_convertor]' => array('value' => 'TranscoderAbstractionFactoryZencoder'),
+          ),
+        ),
       );
       $form['zencoder_info']['video_zencoder_api_key'] = array(
         '#type' => 'textfield',
@@ -334,12 +340,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#default_value' => variable_get('video_zencoder_test_file_path', 'http://example.com/video.mp4'),
       );
     }
-
-    $form['video_zencoder_end'] = array(
-      '#type' => 'markup',
-      '#markup' => '</div>',
-    );
-
     return $form;
   }
 

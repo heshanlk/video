@@ -384,16 +384,17 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function adminSettings() {
     $form = array();
-    $form['video_ffmpeg_start'] = array(
-      '#type' => 'markup',
-      '#markup' => '<div id="' . $this->getValue() . '">',
-    );
     // FFMPEG
     $form['ffmpeg']['ffmpeg'] = array(
       '#type' => 'fieldset',
       '#title' => t('Path to FFmpeg executable'),
       '#collapsible' => FALSE,
       '#collapsed' => FALSE,
+      '#states' => array(
+        'visible' => array(
+          ':input[name=video_convertor]' => array('value' => 'TranscoderAbstractionFactoryFfmpeg'),
+        ),
+      ),
     );
     $form['ffmpeg']['ffmpeg']['video_ffmpeg_path'] = array(
       '#type' => 'textfield',
@@ -407,6 +408,11 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       '#title' => t('Video thumbnails'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
+      '#states' => array(
+        'visible' => array(
+          ':input[name=video_convertor]' => array('value' => 'TranscoderAbstractionFactoryFfmpeg'),
+        ),
+      ),
     );
     $form['ffmpeg']['thumbnail']['video_thumbnail_path'] = array(
       '#type' => 'textfield',
@@ -420,10 +426,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       '#description' => t('Number of thumbnails to extract from video.'),
       '#default_value' => variable_get('video_thumbnail_count', 5),
       '#size' => 5,
-    );
-    $form['video_ffmpeg_end'] = array(
-      '#type' => 'markup',
-      '#markup' => '</div>',
     );
     return $form;
   }

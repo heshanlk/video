@@ -328,8 +328,13 @@ class TranscoderAbstractionAbstractFactory implements TranscoderAbstractFactoryI
    */
   public static function getProduct($transcoder = NULL) {
     // get our configured transcoder.
-    if (!isset($transcoder))
+    if (!isset($transcoder)) {
       $transcoder = variable_get('video_convertor', 'TranscoderAbstractionFactoryFfmpeg');
+    }
+    if ($transcoder == '') {
+      return NULL;
+    }
+
     if (!module_load_include('inc', 'video', '/transcoders/' . $transcoder)) {
       $modules = module_list();
       $files = array();

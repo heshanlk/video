@@ -25,6 +25,9 @@ class Transcoder {
     $format = !empty($field['settings']['thumbnail_format']) ? $field['settings']['thumbnail_format'] : 'png';
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
+    if ($transcoder == NULL) {
+      return array();
+    }
     $transcoder->setInput($video);
     $thumbnails = $transcoder->extractFrames($scheme, $format);
 
@@ -241,7 +244,13 @@ class Transcoder {
     $files = array();
     // Lets find our transcoder classes and build our radio options
     // We do this by scanning our transcoders folder
-    $form = array('radios' => array(), 'help' => array(), 'admin_settings' => array());
+    $form = array(
+      'radios' => array(
+        '' => t('No transcoder'),
+      ),
+      'help' => array(),
+      'admin_settings' => array(),
+    );
     // check inside sub modules
     $modules = module_list();
     $files = array();
