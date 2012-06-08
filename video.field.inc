@@ -269,6 +269,81 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
 }
 
 /**
+ * Implements hook_field_validate().
+ *
+ * This allows field validation even when the file is added programmatically to
+ * the entity. The function only validates new files, not files that have been
+ * added to the entity before.
+ */
+function video_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  $current_fids = array();
+
+  // Get the video fids
+  foreach ($items as $delta => $item) {
+    if (empty($item['fid'])) {
+      continue;
+    }
+    $current_fids[$item['fid']] = $item['fid'];
+  }
+
+  if (empty($current_fids)) {
+    return;
+  }
+
+  // Create a bare-bones entity so that we can load its previous values.
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  $original = entity_create_stub_entity($entity_type, array($id, $vid, $bundle));
+  field_attach_load($entity_type, array($id => $original), FIELD_LOAD_CURRENT, array('field_id' => $field['id']));
+
+  // Remove the entries from $current_fids that are already present in the database,
+  // leaving the ones that are new during this save operation.
+  if (!empty($original->{$field['field_name']}[$langcode])) {
+    foreach ($original->{$field['field_name']}[$langcode] as $originalitem) {
+      if (isset($originalitem['fid']) && isset($current_fids[$originalitem['fid']])) {
+        unset($current_fids[$originalitem['fid']]);
+      }
+    }
+  }
+
+  if (empty($current_fids)) {
+    // No new files have been added, only new files are checked
+    return;
+  }
+
+  $current_files = file_load_multiple($current_fids);
+  $validators = file_field_widget_upload_validators($field, $instance);
+  if (empty($validators)) {
+    // No validation rules
+    return;
+  }
+
+  // Validate the new entries
+  foreach ($items as $delta => $item) {
+    if (empty($item['fid']) || !isset($current_files[$item['fid']])) {
+      continue;
+    }
+
+    $fileerrors = file_validate($current_files[$item['fid']], $validators);
+
+    foreach ($fileerrors as $fileerror) {
+      $errors[$field['field_name']][$langcode][$delta][] = array(
+        'error' => 'video_upload',
+        'message' => $fileerror,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_field_widget_error().
+ *
+ * Work-around for Drupal bug http://drupal.org/node/1432732
+ */
+function video_field_widget_error($element, $error, $form, &$form_state) {
+  form_error($element, $error['message']);
+}
+
+/**
  * Implements hook_field_presave().
  */
 function video_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
