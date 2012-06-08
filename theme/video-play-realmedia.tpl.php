@@ -14,7 +14,7 @@
 $url = check_plain(file_create_url($item['playablefiles'][0]->uri));
 $tnurl = '';
 if (!empty($item['thumbnailfile'])) {
-  $tnurl = check_plain(file_create_url($item['thumbnailfile']->uri));
+  $tnurl = check_plain($item['thumbnailfile']->url);
 }
 ?>
 <object classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" width="<?php print $width; ?>" height="<?php print $height; ?>">

@@ -17,7 +17,7 @@
 $url = check_plain(file_create_url($item['playablefiles'][0]->uri));
 $tnurl = '';
 if (!empty($item['thumbnailfile'])) {
-  $tnurl = check_plain(file_create_url($item['thumbnailfile']->uri));
+  $tnurl = check_plain($item['thumbnailfile']->url);
 }
 ?>
 <object classid="clsid:67DABFBF-D0AB-41fa-9C46-CC0F21721616" width="<?php print $width; ?>" height="<?php print $height; ?>" codebase="http://go.divx.com/plugin/DivXBrowserPlugin.cab">

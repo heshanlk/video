@@ -70,14 +70,17 @@ function theme_video_formatter_player(array $variables) {
     $player_height = 360;
   }
 
-  if ($item['autoconversion']) {
-    $extension = video_utility::getExtension($item['playablefiles'][0]->filename);
-  }
-  else {
-    $extension = video_utility::getExtension($item['filename']);
+  // Poster image style
+  if (!empty($item['thumbnailfile'])) {
+    if (empty($variables['poster_image_style'])) {
+      $item['thumbnailfile']->url = file_create_url($item['thumbnailfile']->uri);
+    }
+    else {
+      $item['thumbnailfile']->url = image_style_url($variables['poster_image_style'], $item['thumbnailfile']->uri);
+    }
   }
 
-  // Lets spit out our theme based on the extension
+  $extension = video_utility::getExtension($item['playablefiles'][0]->filename);
   $defaults = video_utility::getVideoExtensions();
   $theme_function = variable_get('video_extension_' . $extension, $defaults[$extension]);
 
@@ -207,7 +210,7 @@ function theme_video_flv($variables) {
       if (!$variables['autoplay'] && !empty($item['thumbnailfile'])) {
         $options = array(
           'playlist' => array(
-            file_create_url($item['thumbnailfile']->uri),
+            $item['thumbnailfile']->url,
             array(
               'url' => file_create_url($video->uri),
               'autoPlay' => $variables['autoplay'],
@@ -236,7 +239,7 @@ function theme_video_flv($variables) {
       );
       $config = array();
       if (!empty($item['thumbnailfile'])) {
-        $config['image'] = file_create_url($item['thumbnailfile']->uri);
+        $config['image'] = $item['thumbnailfile']->url;
       }
       $themed_output = theme('jw_player', array('file_object' => $video, 'options' => $options, 'config' => $config));
       break;
@@ -268,7 +271,9 @@ function theme_video_html5($variables) {
     case 'videojs':
       $items = video_utility::objectToArray($files);
       if (!empty($item['thumbnailfile'])) {
-        $items[] = video_utility::objectToArray($item['thumbnailfile']);
+        $thumbnail = video_utility::objectToArray($item['thumbnailfile']);
+        $thumbnail['uri'] = $thumbnail['url'];
+        $items[] = $thumbnail;
       }
 
       $attributes = array(

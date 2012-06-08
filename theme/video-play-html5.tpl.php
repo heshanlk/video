@@ -14,7 +14,7 @@
 
 $poster = '';
 if (!empty($item['thumbnailfile'])) {
-  $poster = file_create_url($item['thumbnailfile']->uri);
+  $poster = check_plain($item['thumbnailfile']->url);
 }
 
 $autoplayattr = $autoplay ? ' autoplay="autoplay"' : '';

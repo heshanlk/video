@@ -914,6 +914,7 @@ function video_field_formatter_info() {
       'field types' => array('video'),
       'settings' => array(
         'widthxheight' => '640x360',
+        'poster_image_style' => '',
       ),
     ),
     'video_formatter_thumbnail' => array(
@@ -933,39 +934,49 @@ function video_field_formatter_info() {
 function video_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
+  $image_styles = image_style_options(FALSE);
 
-  if ($display['type'] == 'video_formatter_thumbnail') {
-    $image_styles = image_style_options(FALSE);
-    $element['image_style'] = array(
-      '#title' => t('Video thumbnail style'),
-      '#type' => 'select',
-      '#default_value' => $settings['image_style'],
-      '#empty_option' => t('None (original video thumbnail)'),
-      '#options' => $image_styles,
-    );
+  switch ($display['type']) {
+    case 'video_formatter_thumbnail':
+      $element['image_style'] = array(
+        '#title' => t('Video thumbnail style'),
+        '#type' => 'select',
+        '#default_value' => $settings['image_style'],
+        '#empty_option' => t('None (original video thumbnail)'),
+        '#options' => $image_styles,
+      );
 
-    $link_types = array(
-      'content' => t('Content'),
-      'file' => t('File'),
-    );
-    $element['image_link'] = array(
-      '#title' => t('Link video or video thumbnail to'),
-      '#type' => 'select',
-      '#default_value' => $settings['image_link'],
-      '#empty_option' => t('Nothing'),
-      '#options' => $link_types,
-    );
+      $element['image_link'] = array(
+        '#title' => t('Link video or video thumbnail to'),
+        '#type' => 'select',
+        '#default_value' => $settings['image_link'],
+        '#empty_option' => t('Nothing'),
+        '#options' => array(
+          'content' => t('Content'),
+          'file' => t('File'),
+        ),
+      );
+      break;
+
+    case 'video_formatter_player':
+      $element['widthxheight'] = array(
+        '#title' => t('Dimensions'),
+        '#type' => 'select',
+        '#default_value' => $settings['widthxheight'],
+        '#description' => t('Select the desired dimensions of the video player. You can add your own dimensions at !settings.', array('!settings' => l(t('video metadata settings'), 'admin/config/media/video/metadata'))),
+        '#options' => video_utility::getDimensions(),
+      );
+
+      $element['poster_image_style'] = array(
+        '#title' => t('Poster image style'),
+        '#type' => 'select',
+        '#default_value' => $settings['poster_image_style'],
+        '#empty_option' => t('None (original image)'),
+        '#options' => $image_styles,
+      );
+      break;
   }
-  // set the player wxh
-  if ($display['type'] == 'video_formatter_player') {
-    $element['widthxheight'] = array(
-      '#title' => t('Dimensions'),
-      '#type' => 'select',
-      '#default_value' => $settings['widthxheight'],
-      '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l(t('video metadata settings'), 'admin/config/media/video/metadata'))),
-      '#options' => video_utility::getDimensions(),
-    );
-  }
+
   return $element;
 }
 
@@ -979,27 +990,34 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
   $image_styles = image_style_options(FALSE);
   // Unset possible 'No defined styles' option.
   unset($image_styles['']);
+
   // Styles could be lost because of enabled/disabled modules that defines
   // their styles in code.
-  if ($display['type'] == 'video_formatter_thumbnail') {
-    if (isset($image_styles[$settings['image_style']])) {
-      $summary[] = t('Video thumbnail style: @style', array('@style' => $image_styles[$settings['image_style']]));
-    }
-    else {
-      $summary[] = t('Original video thumbnail');
-    }
+  switch ($display['type']) {
+    case 'video_formatter_thumbnail':
+      if (isset($image_styles[$settings['image_style']])) {
+        $summary[] = t('Video thumbnail style: @style', array('@style' => $image_styles[$settings['image_style']]));
+      }
+      else {
+        $summary[] = t('Original video thumbnail');
+      }
 
-    $link_types = array(
-      'content' => t('Linked to content'),
-      'file' => t('Linked to video file'),
-    );
-    // Display this setting only if image is linked.
-    if (isset($link_types[$settings['image_link']])) {
-      $summary[] = $link_types[$settings['image_link']];
-    }
-  }
-  if ($display['type'] == 'video_formatter_player') {
-    $summary[] = t('WidthxHeight of the player: @widthxheight', array('@widthxheight' => $settings['widthxheight']));
+      $link_types = array(
+        'content' => t('Linked to content'),
+        'file' => t('Linked to video file'),
+      );
+      // Display this setting only if image is linked.
+      if (isset($link_types[$settings['image_link']])) {
+        $summary[] = $link_types[$settings['image_link']];
+      }
+      break;
+
+    case 'video_formatter_player':
+      $summary[] = t('Player dimensions: @widthxheight', array('@widthxheight' => $settings['widthxheight']));
+      if (isset($image_styles[$settings['poster_image_style']])) {
+        $summary[] = t('Poster image style: @style', array('@style' => $image_styles[$settings['poster_image_style']]));
+      }
+      break;
   }
 
   return implode('<br />', $summary);
@@ -1011,44 +1029,48 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
 function video_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
   $settings = $display['settings'];
-  // set the display
-  $theme = $display['type'];
+
   foreach ($items as $delta => $item) {
-    if ($display['type'] == 'video_formatter_thumbnail') {
-      // Check if the formatter involves a link.
-      if ($settings['image_link'] == 'content') {
-        $uri = entity_uri($entity_type, $entity);
-      }
-      elseif ($settings['image_link'] == 'file') {
-        $link_file = TRUE;
-      }
-      if (isset($link_file)) {
-        $uri = array(
-          'path' => file_create_url($item['uri']),
-          'options' => array(),
+    switch ($display['type']) {
+      case 'video_formatter_thumbnail':
+        // Check if the formatter involves a link.
+        if ($settings['image_link'] == 'content') {
+          $uri = entity_uri($entity_type, $entity);
+        }
+        elseif ($settings['image_link'] == 'file') {
+          $link_file = TRUE;
+        }
+        if (isset($link_file)) {
+          $uri = array(
+            'path' => file_create_url($item['uri']),
+            'options' => array(),
+          );
+        }
+        $element[$delta] = array(
+          '#theme' => 'video_formatter_thumbnail',
+          '#item' => $item,
+          '#image_style' => $settings['image_style'],
+          '#path' => isset($uri) ? $uri : '',
+          '#entity' => $entity,
+          '#field' => $field,
+          '#instance' => $instance
         );
-      }
-      $element[$delta] = array(
-        '#theme' => $theme,
-        '#item' => $item,
-        '#image_style' => $settings['image_style'],
-        '#path' => isset($uri) ? $uri : '',
-        '#entity' => $entity,
-        '#field' => $field,
-        '#instance' => $instance
-      );
-    }
-    if ($display['type'] == 'video_formatter_player') {
-      $element[$delta] = array(
-        '#theme' => $theme,
-        '#item' => $item,
-        '#entity' => $entity,
-        '#field' => $field,
-        '#instance' => $instance,
-        '#player_dimensions' => $settings['widthxheight']
-      );
+        break;
+
+      case 'video_formatter_player':
+        $element[$delta] = array(
+          '#theme' => 'video_formatter_player',
+          '#item' => $item,
+          '#entity' => $entity,
+          '#field' => $field,
+          '#instance' => $instance,
+          '#player_dimensions' => $settings['widthxheight'],
+          '#poster_image_style' => $settings['poster_image_style'],
+        );
+        break;
     }
   }
+
   return $element;
 }
 

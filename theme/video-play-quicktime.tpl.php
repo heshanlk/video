@@ -14,7 +14,7 @@
 $url = check_plain(file_create_url($item['playablefiles'][0]->uri));
 $tnurl = '';
 if (!empty($item['thumbnailfile'])) {
-  $tnurl = check_plain(file_create_url($item['thumbnailfile']->uri));
+  $tnurl = check_plain($item['thumbnailfile']->url);
 }
 ?>
 <object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab#version=7,3,0,0"  width="<?php print $width; ?>" height="<?php print $height; ?>">

@@ -14,7 +14,7 @@
 $url = check_plain(file_create_url($item['playablefiles'][0]->uri));
 $tnurl = '';
 if (!empty($item['thumbnailfile'])) {
-  $tnurl = check_plain(file_create_url($item['thumbnailfile']->uri));
+  $tnurl = check_plain($item['thumbnailfile']->url);
 }
 ?>
 <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="<?php print $width; ?>" height="<?php print $height; ?>" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0">
