@@ -251,15 +251,23 @@ function video_requirements($phase) {
   if ($phase == 'runtime') {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
+    $errormsg = '';
+
+    if ($transcoder == NULL) {
+      $name = t('None');
+      $version = t('None');
+      $available = TRUE;
+    }
+    else {
+      $name = $transcoder->getName();
+      $version = $transcoder->getVersion();
+      $available = $transcoder->isAvailable($errormsg);
+    }
 
     $requirements['video'] = array(
-      'title' => t('Video transcoder: @transcoder', array('@transcoder' => $transcoder->getName())),
+      'title' => t('Video transcoder: @transcoder', array('@transcoder' => $name)),
       'value' => NULL,
     );
-
-    $errormsg = '';
-    $version = $transcoder->getVersion();
-    $available = $transcoder->isAvailable($errormsg);
 
     if (!$version) {
       $requirements['video']['description'] = t('Missing the transcoder library. Please <a href="@url">install FFmpeg</a> in to your server if you intend to transcode or to auto create thumbnails.', array('@url' => url('http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts')));
