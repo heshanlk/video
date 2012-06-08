@@ -147,8 +147,7 @@ class video_utility {
       drupal_unlink($uri);
     }
     elseif (is_dir($uri)) {
-      $contents = scandir($uri);
-      foreach ($objs as $obj) {
+      foreach (scandir($uri) as $obj) {
         if ($obj != '.' && $obj != '..') {
           self::unlink($uri . '/' . $obj);
         }
