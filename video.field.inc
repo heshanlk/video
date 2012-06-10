@@ -514,6 +514,24 @@ function video_field_is_empty($item, $field) {
 }
 
 /**
+ * Implements hook_entity_insert().
+ *
+ * Processes newly uploaded files that should be converted on save.
+ */
+function video_entity_insert($entity, $type) {
+  _video_field_convert_on_save($entity, $type);
+}
+
+/**
+ * Implements hook_entity_updated().
+ *
+ * Processes newly uploaded files that should be converted on save.
+ */
+function video_entity_update($entity, $type) {
+  _video_field_convert_on_save($entity, $type);
+}
+
+/**
  * Widget
  */
 
@@ -1092,22 +1110,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
     return;
   }
 
-  // Find the entity id
-  list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
-
-  $hasfilefieldpaths = module_exists('filefield_paths') && !empty($instance['settings']['filefield_paths']);
-
-  $video_conversion = new Conversion();
-
   foreach ($items as $delta => &$item) {
-    // When filefield_paths is active, _video_field_file_autoconversion is invoked twice:
-    // the first time before filefield_paths has changed the path,
-    // the second time after the file has been moved (or not)
-    // We only process the item in the second round of processing.
-    if ($hasfilefieldpaths && !isset($item['origname'])) {
-      continue;
-    }
-
     // set input file
     $transcoder->setInput($item);
     // skip adding entry if bypass conversion is checked
@@ -1122,6 +1125,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
 
     // Create the job if it doesn't exist
     if (!$video) {
+      list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
       if (!($transcoder->createJob($item['fid'], $item['dimensions'], $entity_id, $entity_type, $field['field_name'], $langcode, $delta))) {
         drupal_set_message(t('Something went wrong with your video job creation. Please check your recent log entries for further debugging.'), 'error');
         return;
@@ -1138,7 +1142,34 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
     }
 
     // Convert on save if the job is pending and if it is requested
+    // The automatic conversions of files is handled in _video_field_convert_on_save(),
+    // which is called from hook_entity_insert/hook_entity_update.
     if (!empty($item['convert_video_on_save']) && $video->video_status == VIDEO_RENDERING_PENDING) {
+      // Only save the fid, because the location of the file may change
+      // between now and _video_field_convert_on_save().
+      $entity->video_convert_on_save[$video->fid] = $video->fid;
+    }
+  }
+}
+
+/**
+ * Processes video fields that should convert on save.
+ *
+ * This is not performed in _video_field_file_autoconversion() because
+ * of incompatibilities with Rules and File(field) Paths.
+ *
+ * When hook_entity_insert/update are called, all field related operations
+ * are complete and the entity is fully saved to the database. This
+ * allows Rules to supply a proper entity to the event handlers.
+ * 
+ * The $entity->video_convert_on_save property is set in
+ * _video_field_file_autoconversion().
+ */
+function _video_field_convert_on_save($entity, $type) {
+  if (!empty($entity->video_convert_on_save)) {
+    $video_conversion = new Conversion();
+
+    foreach ($entity->video_convert_on_save as $video) {
       if ($video_conversion->process($video)) {
         drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
       }
@@ -1147,6 +1178,8 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
         drupal_set_message(t('Something went wrong with your video transcoding. Please check your recent log entries for further debugging.'), 'error');
       }
     }
+
+    unset($entity->video_convert_on_save);
   }
 }
 
