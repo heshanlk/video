@@ -529,7 +529,7 @@ class PHPVideoToolkit {
       }
     }
 
-    return NULL;
+    return array();
   }
   
   private function _captureExecBuffer($command) {
@@ -599,7 +599,6 @@ class PHPVideoToolkit {
     $formats = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -formats');
     $codecs = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -codecs');
     $filters = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -bsfs');
-    $protocols = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -protocols');
     $protocols = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -protocols');
     $pixformats = $this->_captureExecBufferFallback($this->_ffmpeg_binary . ' -pix_fmts', $this->_ffmpeg_binary . ' -pix_fmt list');
     $help = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -h');
