@@ -18,3 +18,4 @@ files[] = tests/TranscoderAbstractionFactoryFfmpeg.test
 files[] = tests/TranscoderAbstractionFactoryZencoder.test
 files[] = libraries/phpvideotoolkit/phpvideotoolkit.php5.php
 files[] = tests/VideoUtility.test
+files[] = tests/VideoField.test
