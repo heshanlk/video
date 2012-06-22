@@ -55,10 +55,10 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     $queues = $this->getQueues($file->fid);
     $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
     $queue = array_shift($queues);
-    $this->assertEqual($file->fid, $queue->fid, 'video_queue entry should have fid '.$file->fid);
+    $this->assertEqual($file->fid, $queue->fid, 'video_queue entry should have fid ' . $file->fid);
     $this->assertEqual('node', $queue->entity_type, 'video_queue entry should entity_type node');
-    $this->assertEqual($node->nid, $queue->entity_id, 'video_queue entry should entity_id '.$node->nid);
-    $this->assertEqual(VIDEO_RENDERING_PENDING, $queue->status, 'video_queue entry should have status '.VIDEO_RENDERING_PENDING);
+    $this->assertEqual($node->nid, $queue->entity_id, 'video_queue entry should entity_id ' . $node->nid);
+    $this->assertEqual(VIDEO_RENDERING_PENDING, $queue->status, 'video_queue entry should have status ' . VIDEO_RENDERING_PENDING);
     $this->assertEqual('100x60', $queue->dimensions, 'video_queue entry should have dimensions 100x60');
     $this->assertNull($queue->duration, 'video_queue entry should have empty duration');
     $this->assertEqual(0, $queue->started, 'video_queue entry should have started 0');
@@ -78,7 +78,7 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     $queues = $this->getQueues($file->fid);
     $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
     $queue = array_shift($queues);
-    $this->assertEqual(VIDEO_RENDERING_COMPLETE, $queue->status, 'video_queue entry should have status '.VIDEO_RENDERING_COMPLETE);
+    $this->assertEqual(VIDEO_RENDERING_COMPLETE, $queue->status, 'video_queue entry should have status ' . VIDEO_RENDERING_COMPLETE);
 
     // One converted video
     $conv = $this->getConvertedFiles($file->fid);
@@ -91,19 +91,19 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     // One usage entry for the video
     $u = $this->getFileUsage($file->fid);
     $this->assertEqual(1, count($u), 'There should be one usage entry immediately after saving');
-    $this->assertEqual($file->fid, $u[0]->fid, 'usage entry should have fid '.$file->fid);
+    $this->assertEqual($file->fid, $u[0]->fid, 'usage entry should have fid ' . $file->fid);
     $this->assertEqual('file', $u[0]->module, 'usage entry should have module file');
     $this->assertEqual('node', $u[0]->type, 'usage entry should have type node');
-    $this->assertEqual($node->nid, $u[0]->id, 'usage entry should have id '.$node->nid);
+    $this->assertEqual($node->nid, $u[0]->id, 'usage entry should have id ' . $node->nid);
     $this->assertEqual(1, $u[0]->count, 'usage entry should have count 1');
 
     // Check usage for converted video and thumbnails
     foreach ($conv + $tn as $df) {
       $u = $this->getFileUsage($df->fid);
-      $this->assertEqual(1, count($u), 'There should be one usage entry for derived file '.$df->fid.' immediately after saving');
+      $this->assertEqual(1, count($u), 'There should be one usage entry for derived file ' . $df->fid . ' immediately after saving');
       if (count($u) == 0) continue;
-      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file '.$df->fid.' should have type node');
-      $this->assertEqual($node->nid, $u[0]->id, 'usage entry for derived file '.$df->fid.' should have id '.$node->nid);
+      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node->nid, $u[0]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node->nid);
     }
   }
 
@@ -145,7 +145,7 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     // Check usage for converted video and thumbnails
     foreach ($conv + $tn as $df) {
       $u = $this->getFileUsage($df->fid);
-      $this->assertEqual(0, count($u), 'There should be no usage entries for derived file '.$df->fid.' immediately after saving');
+      $this->assertEqual(0, count($u), 'There should be no usage entries for derived file ' . $df->fid . ' immediately after saving');
     }
   }
 
@@ -182,24 +182,24 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     $node2 = node_load($node2->nid);
 
     // @todo the video module should not reference the entity itself because one fid can be associated with multiple entities
-    $this->assertEqual($node1->nid, $queue->entity_id, 'video_queue entry should entity_id '.$node1->nid);
+    $this->assertEqual($node1->nid, $queue->entity_id, 'video_queue entry should entity_id ' . $node1->nid);
 
     // Two usage entries for the video
     $u = $this->getFileUsage($file->fid);
     $this->assertEqual(2, count($u), 'There should be two usage entries immediately after saving');
 
     // First usage row
-    $this->assertEqual($file->fid, $u[0]->fid, 'usage entry should have fid '.$file->fid);
+    $this->assertEqual($file->fid, $u[0]->fid, 'usage entry should have fid ' . $file->fid);
     $this->assertEqual('file', $u[0]->module, 'usage entry should have module file');
     $this->assertEqual('node', $u[0]->type, 'usage entry should have type node');
-    $this->assertEqual($node1->nid, $u[0]->id, 'usage entry should have id '.$node1->nid);
+    $this->assertEqual($node1->nid, $u[0]->id, 'usage entry should have id ' . $node1->nid);
     $this->assertEqual(1, $u[0]->count, 'usage entry should have count 1');
 
     // Second usage row
-    $this->assertEqual($file->fid, $u[1]->fid, 'usage entry should have fid '.$file->fid);
+    $this->assertEqual($file->fid, $u[1]->fid, 'usage entry should have fid ' . $file->fid);
     $this->assertEqual('file', $u[1]->module, 'usage entry should have module file');
     $this->assertEqual('node', $u[1]->type, 'usage entry should have type node');
-    $this->assertEqual($node2->nid, $u[1]->id, 'usage entry should have id '.$node2->nid);
+    $this->assertEqual($node2->nid, $u[1]->id, 'usage entry should have id ' . $node2->nid);
     $this->assertEqual(1, $u[1]->count, 'usage entry should have count 1');
   }
 
@@ -245,12 +245,12 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     // Check usage of derived files: 2 usages should be registered
     foreach ($conv + $tn as $df) {
       $u = $this->getFileUsage($df->fid);
-      $this->assertEqual(2, count($u), 'There should be one usage entry for derived file '.$df->fid.' after saving both nodes');
+      $this->assertEqual(2, count($u), 'There should be one usage entry for derived file ' . $df->fid . ' after saving both nodes');
       if (count($u) == 0) continue;
-      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file '.$df->fid.' should have type node');
-      $this->assertEqual($node1->nid, $u[0]->id, 'usage entry for derived file '.$df->fid.' should have id '.$node1->nid);
-      $this->assertEqual('node', $u[1]->type, 'usage entry for derived file '.$df->fid.' should have type node');
-      $this->assertEqual($node2->nid, $u[1]->id, 'usage entry for derived file '.$df->fid.' should have id '.$node2->nid);
+      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node1->nid, $u[0]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node1->nid);
+      $this->assertEqual('node', $u[1]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node2->nid, $u[1]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node2->nid);
     }
 
     // Delete the video from node 1
@@ -260,10 +260,10 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     // Check usage of derived files: 1 usages should be registered
     foreach ($conv + $tn as $df) {
       $u = $this->getFileUsage($df->fid);
-      $this->assertEqual(1, count($u), 'There should be one usage entry for derived file '.$df->fid.' after deleting the video from one node');
+      $this->assertEqual(1, count($u), 'There should be one usage entry for derived file ' . $df->fid . ' after deleting the video from one node');
       if (count($u) == 0) continue;
-      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file '.$df->fid.' should have type node');
-      $this->assertEqual($node2->nid, $u[0]->id, 'usage entry for derived file '.$df->fid.' should have id '.$node2->nid);
+      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node2->nid, $u[0]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node2->nid);
     }
 
     // Queue entry should still be there, one usage should remain
@@ -287,7 +287,7 @@ class VideoFieldTestCase extends DrupalWebTestCase {
     // Check usage of derived files: 0 usages should be registered
     foreach ($conv + $tn as $df) {
       $u = $this->getFileUsage($df->fid);
-      $this->assertEqual(0, count($u), 'There should be no usage entry for derived file '.$df->fid.' after saving both nodes');
+      $this->assertEqual(0, count($u), 'There should be no usage entry for derived file ' . $df->fid . ' after saving both nodes');
     }
   }
 

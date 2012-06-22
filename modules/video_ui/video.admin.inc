@@ -21,7 +21,7 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
   if ($transcoder == '') {
     return;
   }
-  
+
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct($transcoder);
   $transcoder->adminSettingsValidate($form, $form_state);
