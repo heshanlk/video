@@ -559,13 +559,14 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         return;
       }
     }
+
     $existingthumbs = db_query('SELECT f.uri, f.fid FROM {file_managed} f INNER JOIN {video_thumbnails} t ON (f.fid = t.thumbnailfid) WHERE t.videofid = :fid', array(':fid' => $video->fid))->fetchAllKeyed();
     $thumbs = array();
     $tnid = 0;
     foreach ($thumbnails as $thumbnail) {
       $urlpath = parse_url($thumbnail['url'], PHP_URL_PATH);
       $ext = video_utility::getExtension($urlpath);
-      $update = '';
+      $update = array();
       $thumb = new stdClass();
       $thumb->uid = $entity->uid;
       $thumb->status = FILE_STATUS_PERMANENT;
@@ -577,7 +578,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $thumb->timestamp = REQUEST_TIME;
       if (isset($existingthumbs[$thumb->uri])) {
         $thumb->fid = intval($existingthumbs[$thumb->uri]);
-        $update = 'fid';
+        $update = array('fid');
       }
 
       if (!copy($thumbnail['url'], $thumb->uri)) {
