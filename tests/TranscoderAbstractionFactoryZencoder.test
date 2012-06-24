@@ -30,6 +30,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
 
     // Test subject
     $this->transcoder = $transcoder = new TranscoderAbstractionFactoryZencoder();
+    variable_set('video_convertor', 'TranscoderAbstractionFactoryZencoder');
 
     // Build test job
     db_insert('file_managed')->fields(array(
@@ -263,18 +264,18 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
 
     // Check properties of the converted file
     $fileconv = file_load(2);
-    $this->assertNotNull($fileconv);
+    $this->assertNotNull($fileconv, 'Converted file with fid 2 should exist');
     $this->assertTrue(file_exists($fileconv->uri), 'Converted file must be moved to new location (' . $fileconv->uri . ')');
     $this->assertEqual(5, $fileconv->filesize, 'Converted file must have file size 5');
 
     // Check if a thumbnail has been downloaded
     $node = node_load(1, NULL, TRUE);
-    $this->assertNotNull($node->videofield['und'][0]['thumbnail']);
+    $this->assertNotNull($node->videofield['und'][0]['thumbnail'], 'Thumbnail should exist for videofield for node 1');
 
     // Check if thumbs have been registered
     $usages = db_query('SELECT thumbnailfid FROM {video_thumbnails} WHERE videofid = 1')->fetchCol(0);
     $files = array_values(file_load_multiple($usages));
-    $this->assertEqual(2, count($files), 'There should be two related files');
+    $this->assertEqual(2, count($files), 'There should be two related thumbnails to fid 1');
 
     // Check the values of the $files array
     if (count($files) == 2) {

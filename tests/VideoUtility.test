@@ -24,20 +24,20 @@ class VideoUtilityTestCase extends DrupalUnitTestCase {
 
   public function testValidateDimensionList() {
     $result = video_utility::validateDimensionList('123x456');
-    $this->assertTrue($result);
+    $this->assertTrue($result, '"123x456" is valid');
 
     $result = video_utility::validateDimensionList('123x456 ');
-    $this->assertFalse($result);
+    $this->assertFalse($result, '"123x456 " is invalid');
 
     $result = video_utility::validateDimensionList('123x456
 456x789');
-    $this->assertTrue($result);
+    $this->assertTrue($result, '"123x456\n456x789" is valid');
 
     $result = video_utility::validateDimensionList('023x456
 456x789');
-    $this->assertFalse($result);
+    $this->assertFalse($result, '"023x456\n456x789" is invalid');
 
     $result = video_utility::validateDimensionList(video_utility::getDefaultDimensions());
-    $this->assertTrue($result);
+    $this->assertTrue($result, 'The default dimensions list must be valid');
   }
 }

@@ -3,7 +3,7 @@
  * @file
  * Tests for the TranscoderAbstractionFactoryFfmpeg class
  */
-class TranscoderAbstractionFactoryFfmpegTestCase extends DrupalUnitTestCase {
+class TranscoderAbstractionFactoryFfmpegTestCase extends DrupalWebTestCase {
 
   public static function getInfo() {
     return array(
@@ -14,7 +14,6 @@ class TranscoderAbstractionFactoryFfmpegTestCase extends DrupalUnitTestCase {
   }
 
   function setUp() {
-    drupal_load('module', 'video');
     require_once dirname(__FILE__) . '/../includes/TranscoderFactory.inc';
     require_once dirname(__FILE__) . '/../transcoders/TranscoderAbstractionFactoryFfmpeg.inc';
     parent::setUp();
@@ -26,30 +25,30 @@ class TranscoderAbstractionFactoryFfmpegTestCase extends DrupalUnitTestCase {
   public function testVersionInfo() {
     $versionstring = '';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
-    $this->assertEqual(NULL, $result, t('An empty string should return NULL.'));
+    $this->assertEqual(NULL, $result, 'An empty string should return NULL.');
 
     $versionstring = 'ffmpeg version N-38044-g6e6bdeb Copyright (c) 2000-2012 the FFmpeg developers';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
-    $this->assertEqual('git: 6e6bdeb', $result, t('Should detect git checkout build properly.'));
+    $this->assertEqual('git: 6e6bdeb', $result, 'Should detect git checkout build properly.');
 
     $versionstring = 'FFmpeg version 0.6.4-4:0.6.4-0ubuntu0.11.04.1, Copyright (c) 2000-2010 the Libav developers';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
-    $this->assertEqual('0.6.4', $result, t('Should detect normal version build properly.'));
+    $this->assertEqual('0.6.4', $result, 'Should detect normal version build properly.');
 
     $versionstring = 'ffmpeg version git-2012-01-26-ee0cab7';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
-    $this->assertEqual('git: 2012-01-26-ee0cab7', $result, t('Should detect shallow git checkouts.'));
+    $this->assertEqual('git: 2012-01-26-ee0cab7', $result, 'Should detect shallow git checkouts.');
 
     $versionstring = 'ffmpeg version abcdefg';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
-    $this->assertEqual('unrecognized: abcdefg', $result, t('Should return unrecognized version.'));
+    $this->assertEqual('unrecognized: abcdefg', $result, 'Should return unrecognized version.');
 
     $versionstring = 'ffmpeg version abcdefg Copyright (c) 2000-2012 the FFmpeg developers';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
-    $this->assertEqual('unrecognized: abcdefg', $result, t('Should leave off copyright string from unrecognized version.'));
+    $this->assertEqual('unrecognized: abcdefg', $result, 'Should leave off copyright string from unrecognized version.');
 
     $versionstring = 'ffmpeg version 0.10.2';
     $result = TranscoderAbstractionFactoryFfmpeg::getVersionFromOutput($versionstring);
-    $this->assertEqual('0.10.2', $result, t('0.10.x should also be recognized.'));
+    $this->assertEqual('0.10.2', $result, '0.10.x should also be recognized.');
   }
 }
