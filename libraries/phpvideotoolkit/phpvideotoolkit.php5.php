@@ -471,7 +471,7 @@ class PHPVideoToolkit {
    * @var array
    */
 // 		protected $_cmds_before_input		= array();
-  protected $_cmds_before_input = array('-inputr');
+  protected $_cmds_before_input = array('-inputr', '-ss');
 // 		protected $_cmds_before_input		= array('-r', '-f');
   // Stores the FFMPEG Binary Path
   protected $_ffmpeg_binary;
