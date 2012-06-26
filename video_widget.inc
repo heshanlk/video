@@ -11,47 +11,55 @@ function video_widget_element_settings(&$element) {
   $file = $element['#value'];
   $delta = $element['#delta'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
+
   // Check if using the default width and replace tokens.
-  $default_dimensions = user_access('override player dimensions');
-  $description = t('Set your video dimensions.  This will create your player with these dimensions.');
+  $override_dimensions = user_access('override player dimensions');
+  $allow_autoconversion = !empty($field['widget']['autoconversion']);
+
   // Setup our default dimensions.
   $dimensions = $field['widget']['default_dimensions'];
   $player_dimensions = $field['widget']['default_player_dimensions'];
+
   // Lets figure out our dimensions for our video and add astericks next to our options.
   $options = video_explode("\n", variable_get('video_dimensions', video_default_dimensions()));
-  if ($field['widget']['autoconversion'] && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
-    $video_info = _video_dimensions_options($options, $file['filepath']);
-    $description = t('Set your video dimensions. This will create your player and transcode your video with these dimensions.');
-    if (!empty($video_info)) {
-      $description .= t('Your video size is !size, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] .'x'. $video_info['height']));
-    }
 
-    // Setup our default display of dimensions.
-    // Lets go through our options looking for a matching resolution
-    foreach ($options as $key => $value) {
-      if (stristr($value, t('(Matches Resolution)')) == TRUE) {
-        $dimensions = $key;
-        break;
+  if (isset($element['preview']) && $override_dimensions) {
+    if ($allow_autoconversion) {
+      $video_info = _video_dimensions_options($options, $file['filepath']);
+      $description = t('Set your video dimensions. This will ctranscode your video with these dimensions.');
+
+      if (!empty($video_info)) {
+        $description .= t('Your video size is !size, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('!size' => $video_info['width'] .'x'. $video_info['height']));
+        $dimensions = $video_info['width'] .'x'. $video_info['height'];
       }
+
+      // Override our dimensions to the user selected.
+      if (!empty($file['data']['dimensions'])) {
+        $dimensions = $file['data']['dimensions'];
+      }
+
+      $element['data']['dimensions'] = array(
+        '#type' => 'select',
+        '#title' => t('Dimensions transcoding'),
+        '#default_value' => $dimensions,
+        '#description' => $description,
+        '#options' => $options,
+      );
     }
-  }
-  // Override our dimensions to the user selected.
-  if (isset($file['data']['dimensions']) && !empty($file['data']['dimensions'])) {
-    $dimensions = $file['data']['dimensions'];
+    else {
+      $element['noautoconvert'] = array(
+        '#type' => 'markup',
+        '#value' => '<p><small>' . t('This video will not be transcoded because the setting @setting-name is off for this field.', array('@setting-name' => t('Enable video conversion'))) . '</small></p>',
+        '#weight' => 50,
+      );
+    }
   }
 
   // Override our player dimensions to the user selected.
-  if (isset($file['data']['player_dimensions']) && !empty($file['data']['player_dimensions'])) {
+  if (!empty($file['data']['player_dimensions'])) {
     $player_dimensions = $file['data']['player_dimensions'];
   }
 
-  $element['data']['dimensions'] = array(
-    '#type' => 'select',
-    '#title' => t('Dimensions transcoding'),
-    '#default_value' => $dimensions,
-    '#description' => $description,
-    '#options' => $options,
-  );
   $element['data']['player_dimensions'] = array(
     '#type' => 'select',
     '#title' => t('Dimensions for video player'),
@@ -59,8 +67,9 @@ function video_widget_element_settings(&$element) {
     '#description' => t('WxH of your video player.'),
     '#options' => $options,
   );
+
   // If users cannot change the default dimensions, lets change this to a value.
-  if (!$default_dimensions) {
+  if (!$override_dimensions) {
     $element['data']['dimensions']['#type'] = 'value';
     $element['data']['dimensions']['#value'] = $dimensions;
     $element['data']['player_dimensions']['#type'] = 'value';
@@ -68,7 +77,7 @@ function video_widget_element_settings(&$element) {
   }
 
   // only in preview mode and then create thumbnails
-  if ($field['widget']['autoconversion']) {
+  if ($allow_autoconversion) {
     $bypass = isset($file['data']['bypass_autoconversion']) ? $file['data']['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE);
     if (user_access('bypass conversion video')) {
       $element['data']['bypass_autoconversion'] = array(
@@ -378,6 +387,7 @@ function video_default_widget_settings($widget) {
   $form['plugins']['autoconversion'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable video conversion'),
+    '#default_value' => !empty($widget['autoconversion']) ? $widget['autoconversion'] : 0,
     '#description' =>
       t('Automatically convert videos to web compatible types such as FLV, Please make sure to configure your transcoder settings.') .
       '<br/><strong>' . t('If this option is not enabled, the input video will be used as it is uploaded.') . '</strong>',
