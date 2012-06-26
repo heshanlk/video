@@ -532,6 +532,15 @@ function video_entity_update($entity, $type) {
 }
 
 /**
+ * Implements hook_entity_translation_save().
+ *
+ * Process saving a "Entity Translation" save.
+ */
+function video_entity_translation_save($type, $entity, $language) {
+  _video_field_convert_on_save($entity, $type);
+}
+
+/**
  * Widget
  */
 
