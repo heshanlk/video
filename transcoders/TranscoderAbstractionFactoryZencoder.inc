@@ -300,7 +300,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#default_value' => variable_get('video_zencoder_api_key', NULL),
         '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add new account.')
       );
-      $form['zencoder_info']['video_thumbnail_count'] = array(
+      $form['zencoder_info']['video_thumbnail_count_zc'] = array(
         '#type' => 'textfield',
         '#title' => t('Number of thumbnails'),
         '#description' => t('Number of thumbnails to display from video.'),
@@ -350,6 +350,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $v = $form_state['values'];
 
     if (variable_get('video_zencoder_api_key', FALSE)) {
+      // Workaround for the use of the same variable in FFmpeg
+      $form_state['values']['video_thumbnail_count'] = $form_state['values']['video_thumbnail_count_zc'];
+      unset($form_state['values']['video_thumbnail_count_zc']);
+
       // Check the postback URL
       $testurl = $v['video_zencoder_postback'];
       $testcode = md5(mt_rand(0, REQUEST_TIME));
