@@ -1178,12 +1178,12 @@ function _video_field_convert_on_save($entity, $type) {
   if (!empty($entity->video_convert_on_save)) {
     $video_conversion = new Conversion();
 
-    foreach ($entity->video_convert_on_save as $video) {
-      if ($video_conversion->process($video)) {
+    foreach ($entity->video_convert_on_save as $videofid) {
+      if ($video_conversion->process($videofid)) {
         drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
       }
       else {
-        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
+        $video_conversion->changeStatus($videofid, VIDEO_RENDERING_FAILED);
         drupal_set_message(t('Something went wrong with your video transcoding. Please check your recent log entries for further debugging.'), 'error');
       }
     }

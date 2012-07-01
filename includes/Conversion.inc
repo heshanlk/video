@@ -88,9 +88,9 @@ class Conversion {
     }
   }
 
-  public function changeStatus($vid, $status) {
+  public function changeStatus($fid, $status) {
     $transcoder = new Transcoder();
-    return $transcoder->changeStatus($vid, $status);
+    return $transcoder->changeStatus($fid, $status);
   }
 
   /**

@@ -64,10 +64,10 @@ class Transcoder {
     global $user;
 
     // load the presets
-    $this->changeStatus($video->vid, VIDEO_RENDERING_ACTIVE);
+    $this->changeStatus($video->fid, VIDEO_RENDERING_ACTIVE);
 
     // update the video conversion start time
-    db_update('video_queue')->fields(array('started' => time()))->condition('vid', $video->vid)->execute();
+    db_update('video_queue')->fields(array('started' => time()))->condition('fid', $video->fid)->execute();
 
     $video_preset = new Preset();
     $presets = $video_preset->properties();
@@ -148,11 +148,11 @@ class Transcoder {
     }
 
     // update the video conversion completed time
-    db_update('video_queue')->fields(array('completed' => time()))->condition('vid', $video->vid)->execute();
+    db_update('video_queue')->fields(array('completed' => time()))->condition('fid', $video->fid)->execute();
 
     // add files to file_managed table and add reference to the file_usage table
     if (!empty($output) && $transcodingsuccess) {
-      $this->cleanConverted($video->vid);
+      $this->cleanConverted($video->fid);
       foreach ($output as $file) {
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $video->uid;
@@ -171,19 +171,19 @@ class Transcoder {
         drupal_write_record('video_output', $output_vid);
 
         // add duration to the video_queue table
-        db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('vid', $video->vid)->execute();
+        db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('fid', $video->fid)->execute();
 
         // Change the status if the file exists.
         // this happens for ffmpeg and other transcoders that transcoder
         // directly. For Zencoder, the status is changed later.
         if (file_exists($file->uri)) {
-          $this->changeStatus($video->vid, VIDEO_RENDERING_COMPLETE);
+          $this->changeStatus($video->fid, VIDEO_RENDERING_COMPLETE);
         }
       }
     }
 
     if (!$transcodingsuccess) {
-      $this->changeStatus($video->vid, VIDEO_RENDERING_FAILED);
+      $this->changeStatus($video->fid, VIDEO_RENDERING_FAILED);
       return FALSE;
     }
 
@@ -193,11 +193,11 @@ class Transcoder {
   /**
    * This helper function clean the database records if exist for current job.
    */
-  protected function cleanConverted($vid) {
+  protected function cleanConverted($fid) {
     // @todo : if this impact on performance then think about other way
     $result = db_select('video_output', 'vo')
         ->fields('vo', array('original_fid', 'output_fid'))
-        ->condition('vid', $vid)
+        ->condition('original_fid', $fid)
         ->execute();
     foreach ($result as $file) {
       // delete from file_managed
@@ -283,10 +283,10 @@ class Transcoder {
    * Change the status of the job, this will effect in database and use when
    * represent a job data.
    */
-  public function changeStatus($vid, $status) {
+  public function changeStatus($fid, $status) {
     db_update('video_queue')
       ->fields(array('status' => $status))
-      ->condition('vid', $vid)
+      ->condition('fid', $fid)
       ->execute();
   }
 }

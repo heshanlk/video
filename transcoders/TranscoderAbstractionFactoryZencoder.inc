@@ -86,6 +86,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         'prefix' => 'thumbnail-' . $this->settings['input']['fid'],
       );
     }
+    else {
+      unset($this->options['output']['thumbnails']);
+    }
 
     // watermark
     if (!empty($options['video_watermark_enabled']) && !empty($options['video_watermark_fid'])) {

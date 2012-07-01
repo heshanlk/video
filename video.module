@@ -191,7 +191,7 @@ function video_cron() {
     $queue = DrupalQueue::get('video_queue');
     foreach ($videos as $video) {
       if ($queue->createItem($video)) {
-        $video_conversion->changeStatus($video->vid, VIDEO_RENDERING_INQUEUE);
+        $video_conversion->changeStatus($video->fid, VIDEO_RENDERING_INQUEUE);
       }
     }
   }
