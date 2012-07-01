@@ -266,6 +266,12 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
             $items[$id][$delta]['playablefiles'][] = (object)$conv;
           }
         }
+
+        // If for some reason there are no playable files, mark the status as failed
+        if (empty($items[$id][$delta]['playablefiles'])) {
+          $items[$id][$delta]['conversioncompleted'] = FALSE;
+          $items[$id][$delta]['conversionstatus'] = VIDEO_RENDERING_FAILED;
+        }
       }
       else {
         $items[$id][$delta]['playablefiles'] = array((object)$items[$id][$delta]);
