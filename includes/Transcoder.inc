@@ -37,15 +37,13 @@ class Transcoder {
 
     foreach ($thumbnails as $thumb) {
       // Determine whether there is an existing thumbnail
-      $thumb->fid = $origfid = (int)db_query('SELECT fid FROM {file_managed} WHERE uri = :uri', array(':uri' => $thumb->uri))->fetchField(0);
+      $thumb->fid = (int)db_query('SELECT fid FROM {file_managed} WHERE uri = :uri', array(':uri' => $thumb->uri))->fetchField(0);
       $thumb->uid = (int)$user->uid;
       // For the media module
       $thumb->type = 'image';
       file_save($thumb);
 
-      if (empty($origfid)) {
-        db_insert('video_thumbnails')->fields(array('videofid' => $video['fid'], 'thumbnailfid' => $thumb->fid))->execute();
-      }
+      db_merge('video_thumbnails')->key(array('videofid' => $video['fid'], 'thumbnailfid' => $thumb->fid))->execute();
     }
 
     return $thumbnails;
