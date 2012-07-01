@@ -145,10 +145,15 @@ function video_field_settings_form($field, $instance, $has_data) {
   );
 
   module_load_include('inc', 'video_ui', 'video.preset');
+  $selectedpresets = array_filter(variable_get('video_preset', array()));
   $presets = video_preset_get_presets();
   $presetnames = array();
   foreach ($presets as $preset) {
     $presetnames[$preset['name']] = $preset['name'];
+
+    if (in_array($preset['name'], $selectedpresets)) {
+      $presetnames[$preset['name']] .= ' (' . t('default') . ')';
+    }
   }
 
   $form['presets'] = array(
