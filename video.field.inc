@@ -16,8 +16,8 @@ function video_field_info() {
         'uri_scheme' => variable_get('file_default_scheme', 'public'),
         'uri_scheme_converted' => variable_get('file_default_scheme', 'public'),
         'uri_scheme_thumbnails' => variable_get('file_default_scheme', 'public'),
-        'thumbnail_format' => 'png',
-        'autoconversion' => 0,
+        'thumbnail_format' => 'jpg',
+        'autoconversion' => 1,
         'autothumbnail' => 'auto',
         'default_video_thumbnail' => 0,
         'preview_video_thumb_style' => 'thumbnail',
@@ -103,8 +103,8 @@ function video_field_settings_form($field, $instance, $has_data) {
   $form['thumbnail_format'] = array(
     '#title' => t('Thumbnail format'),
     '#type' => 'radios',
-    '#options' => array('png' => 'PNG', 'jpg' => 'JPEG'),
-    '#default_value' => !empty($settings['thumbnail_format']) ? $settings['thumbnail_format'] : 'png',
+    '#options' => array('jpg' => 'JPEG', 'png' => 'PNG'),
+    '#default_value' => !empty($settings['thumbnail_format']) ? $settings['thumbnail_format'] : 'jpg',
     '#access' => $hastranscoder,
   );
 
