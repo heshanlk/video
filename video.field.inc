@@ -1181,7 +1181,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
  * When hook_entity_insert/update are called, all field related operations
  * are complete and the entity is fully saved to the database. This
  * allows Rules to supply a proper entity to the event handlers.
- * 
+ *
  * The $entity->video_convert_on_save property is set in
  * _video_field_file_autoconversion().
  */
