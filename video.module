@@ -222,7 +222,16 @@ function video_queue_process($video) {
  * @todo: delete more
  */
 function video_file_delete(stdClass $file) {
+  // Deregister the file in video_queue
   db_delete('video_queue')->condition('fid', $file->fid)->execute();
+
+  // Deregister the thumbnails in video_thumbnails
+  db_delete('video_thumbnails')->condition('thumbnailfid', $file->fid)->execute();
+  db_delete('video_thumbnails')->condition('videofid', $file->fid)->execute();
+
+  // Deregister the converted files in video_output
+  db_delete('video_output')->condition('output_fid', $file->fid)->execute();
+  db_delete('video_output')->condition('original_fid', $file->fid)->execute();
 }
 
 /**

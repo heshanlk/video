@@ -407,10 +407,17 @@ function video_field_insert($entity_type, $entity, $field, $instance, $langcode,
 
 /**
  * Implements hook_field_update().
+ *
+ * @todo handle new revisions
  */
 function video_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  file_field_update($entity_type, $entity, $field, $instance, $langcode, $items);
-  _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
+  // The derived files are handled first, because when the original file is deleted first,
+  // the derived files can not be looked up anymore.
+
+  // Modification of file_field_update().
+  // That function can't be called because the logic for finding
+  // existing fids is not the same.
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
 
   // Register the thumbnails in file_usage
   $thumbnails = _video_field_get_all_thumbnails($field, $items);
@@ -424,21 +431,6 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
   $converted = _video_field_get_all_converted($items);
   $derivedfiles = array_merge($converted, $thumbnails);
 
-  // Modification of file_field_update().
-  // That function can't be called because the logic for finding
-  // existing fids is not the same.
-  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
-
-  // On new revisions, all files are considered to be a new usage and no
-  // deletion of previous file usages are necessary.
-  if (!empty($entity->revision)) {
-    foreach ($derivedfiles as $item) {
-      $file = (object) $item;
-      file_usage_add($file, 'file', $entity_type, $id);
-    }
-    return;
-  }
-
   // Build a display of the current FIDs.
   $current_fids = array();
   foreach ($derivedfiles as $item) {
@@ -451,17 +443,15 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
 
   // Compare the original field values with the ones that are being saved.
   $original_fids = array();
-  $delete_fids = array();
   if (!empty($original->{$field['field_name']}[$langcode])) {
-    $original_thumbs = _video_field_get_all_thumbnails($field, $original->{$field['field_name']}[$langcode]);
-    $original_converted = _video_field_get_all_converted($original->{$field['field_name']}[$langcode]);
+    $original_thumbs = _video_field_get_all_thumbnails($field, $original->{$field['field_name']}[$langcode], $entity_type, $id);
+    $original_converted = _video_field_get_all_converted($original->{$field['field_name']}[$langcode], $entity_type, $id);
     $original_derivedfiles = array_merge($original_thumbs, $original_converted);
     foreach ($original_derivedfiles as $original_derivedfile) {
       $original_fids[] = $original_derivedfile['fid'];
       if (isset($original_derivedfile['fid']) && !in_array($original_derivedfile['fid'], $current_fids)) {
         // Decrement the file usage count by 1 and delete the file if possible.
         file_field_delete_file($original_derivedfile, $field, $entity_type, $id);
-        $delete_fids[] = $original_derivedfile['fid'];
       }
     }
   }
@@ -474,11 +464,9 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
     }
   }
 
-  // Delete fids from video_thumbnails
-  if (!empty($delete_fids)) {
-    db_delete('video_thumbnails')->condition('thumbnailfid', $delete_fids, 'IN')->execute();
-    db_delete('video_output')->condition('output_fid', $delete_fids, 'IN')->execute();
-  }
+  // Process the original file
+  file_field_update($entity_type, $entity, $field, $instance, $langcode, $items);
+  _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
@@ -489,17 +477,11 @@ function video_field_delete($entity_type, $entity, $field, $instance, $langcode,
 
   // Deregister the thumbnails in file_usage
   $thumbnails = _video_field_get_all_thumbnails($field, $items);
-  if (!empty($thumbnails)) {
-    file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
-    db_delete('video_thumbnails')->condition('thumbnailfid', array_keys($thumbnails), 'IN')->execute();
-  }
+  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
 
   // Deregister the converted files in file_usage
   $converted = _video_field_get_all_converted($items);
-  if (!empty($converted)) {
-    file_field_delete($entity_type, $entity, $field, $instance, $langcode, $converted);
-    db_delete('video_output')->condition('output_fid', array_keys($converted), 'IN')->execute();
-  }
+  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $converted);
 }
 
 /**
@@ -514,7 +496,7 @@ function video_field_delete_revision($entity_type, $entity, $field, $instance, $
 
   // Deregister the converted files in file_usage
   $converted = _video_field_get_all_converted($items);
-  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $converted);
+  file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $converted);
 }
 
 /**
@@ -1146,6 +1128,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
     // Create the job if it doesn't exist
     if (!$video) {
       list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
+      // @todo get the default dimension when not available in $item
       if (!($transcoder->createJob($item['fid'], $item['dimensions'], $entity_id, $entity_type, $field['field_name'], $langcode, $delta))) {
         drupal_set_message(t('Something went wrong with your video job creation. Please check your recent log entries for further debugging.'), 'error');
         return;
@@ -1203,7 +1186,7 @@ function _video_field_convert_on_save($entity, $type) {
   }
 }
 
-function _video_field_get_all_thumbnails(array $field, array $items) {
+function _video_field_get_all_thumbnails(array $field, array $items, $usage_entity_type = NULL, $usage_entity_id = NULL) {
   if (empty($items)) {
     return array();
   }
@@ -1227,15 +1210,24 @@ function _video_field_get_all_thumbnails(array $field, array $items) {
   }
 
   // Add the automatically extracted thumbnails
-  $thumbnailfidsdb = db_select('video_thumbnails', 't')
-    ->fields('t', array('thumbnailfid'))->condition('videofid', $videofids, 'IN')
-    ->execute()->fetchCol(0);
-  $thumbnailfids = array_merge($thumbnailfids, $thumbnailfidsdb);
+  $query = db_select('video_thumbnails', 't')
+    ->fields('t', array('thumbnailfid'))
+    ->condition('videofid', $videofids, 'IN');
+
+  // Only return files with usage when requested
+  if ($usage_entity_type != NULL && $usage_entity_id != NULL) {
+    $query->innerJoin('file_usage', 'u', 'u.fid = t.thumbnailfid AND u.type = :type AND u.id = :id', array(
+        ':type' => $usage_entity_type,
+        ':id' => $usage_entity_id,
+    ));
+  }
+
+  $thumbnailfids = array_merge($thumbnailfids, $query->execute()->fetchCol(0));
 
   return video_utility::objectToArray(file_load_multiple($thumbnailfids));
 }
 
-function _video_field_get_all_converted(array $items) {
+function _video_field_get_all_converted(array $items, $usage_entity_type = NULL, $usage_entity_id = NULL) {
   if (empty($items)) {
     return array();
   }
@@ -1251,9 +1243,19 @@ function _video_field_get_all_converted(array $items) {
     return array();
   }
 
-  $convertedfids = db_select('video_output', 't')
-    ->fields('t', array('output_fid'))->condition('original_fid', $videofids, 'IN')
-    ->execute()->fetchCol(0);
+  $query = db_select('video_output', 't')
+    ->fields('t', array('output_fid'))
+    ->condition('original_fid', $videofids, 'IN');
+
+  // Only return files with usage when requested
+  if ($usage_entity_type != NULL && $usage_entity_id != NULL) {
+    $query->innerJoin('file_usage', 'u', 'u.fid = t.output_fid AND u.type = :type AND u.id = :id', array(
+      ':type' => $usage_entity_type,
+      ':id' => $usage_entity_id,
+    ));
+  }
+
+  $convertedfids = $query->execute()->fetchCol(0);
 
   return video_utility::objectToArray(file_load_multiple($convertedfids));
 }
