@@ -268,7 +268,7 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
         }
 
         // If for some reason there are no playable files, mark the status as failed
-        if (empty($items[$id][$delta]['playablefiles'])) {
+        if (empty($items[$id][$delta]['playablefiles']) && $items[$id][$delta]['conversioncompleted']) {
           $items[$id][$delta]['conversioncompleted'] = FALSE;
           $items[$id][$delta]['conversionstatus'] = VIDEO_RENDERING_FAILED;
         }
