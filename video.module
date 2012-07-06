@@ -583,7 +583,7 @@ function video_get_presets($all = FALSE) {
       $result = db_query('SELECT * FROM {video_preset} WHERE id IN ('. db_placeholders($current) .')', $current);
     }
     else {
-      $result = db_query_range('SELECT * FROM {video_preset} ORDER BY id ASC LIMIT', 0, 2);
+      $result = db_query_range('SELECT * FROM {video_preset} ORDER BY id ASC', 0, 2);
     }
   }
 
