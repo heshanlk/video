@@ -633,6 +633,37 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     cache_clear_all('field:' . $video->entity_type . ':' . $video->entity_id, 'cache_field');
   }
 
+  /**
+   * Get enabled and supporting codecs by Zencoder.
+   */
+  public function getCodecs() {
+    $auto = t('Default for this extension');
+
+    $codecs = array(
+      'encode' => array(
+        'video' => array(
+          '' => $auto,
+          'h264' => 'H.264',
+          'vp8' => 'VP8',
+          'theora' => 'Theora',
+          'vp6' => 'VP6',
+          'mpeg4' => 'MPEG-4',
+          'wmv' => 'WMV',
+        ),
+        'audio' => array(
+          '' => $auto,
+          'aac' => 'AAC',
+          'mp3' => 'MP3',
+          'vorbis' => 'Vorbis',
+          'wma' => 'WMA',
+        )
+      ),
+      'decode' => array(),
+    );
+
+    return $codecs;
+  }
+
   public function getPixelFormats() {
     // Zencoder doesn't support this
     return array();

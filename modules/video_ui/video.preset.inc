@@ -44,13 +44,11 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#required' => TRUE,
   );
 
-  $codecoptions = array('' => t('Let transcoder decide based on extension') . ' (' . t('default') . ')');
-  $codecoptions = array_merge($codecoptions, $codecs['encode']['video']);
   $form['settings']['video']['video_codec'] = array(
     '#type' => 'select',
     '#title' => t('Video codec'),
-    '#description' => t('The video codec used in the video file can affect the ability to play the video on certain devices. The default codec used is H.264.'),
-    '#options' => $codecoptions,
+    '#description' => t('The video codec used in the video file can affect the ability to play the video on certain devices.'),
+    '#options' => $codecs['encode']['video'],
     '#default_value' => (!empty($preset['settings']['video_codec'])) ? $preset['settings']['video_codec'] : '',
   );
 
@@ -153,13 +151,11 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#collapsed' => FALSE,
   );
 
-  $codecoptions = array('' => t('Let transcoder decide based on extension') . ' (' . t('default') . ')');
-  $codecoptions = array_merge($codecoptions, $codecs['encode']['audio']);
   $form['settings']['audio']['audio_codec'] = array(
     '#type' => 'select',
     '#title' => t('Audio codec'),
     '#description' => t('The audio codec to be used.'),
-    '#options' => $codecoptions,
+    '#options' => $codecs['encode']['audio'],
     '#default_value' => (!empty($preset['settings']['audio_codec'])) ? $preset['settings']['audio_codec'] : '',
   );
   $form['settings']['audio']['audio_quality'] = array(

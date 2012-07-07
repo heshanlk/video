@@ -93,28 +93,7 @@ abstract class TranscoderAbstractionFactory {
   /**
    * Get enabled and supporting codecs by the transcoder.
    */
-  public function getCodecs() {
-    $codecs = array(
-      'encode' => array(
-        'video' => array(
-          'h264' => 'H.264 (default)',
-          'vp8' => 'VP8',
-          'theora' => 'Theora',
-          'vp6' => 'VP6',
-          'mpeg4' => 'MPEG-4',
-          'wmv' => 'WMV'
-        ),
-        'audio' => array(
-          'aac' => 'AAC (default for most cases)',
-          'mp3' => 'MP3',
-          'vorbis' => 'Vorbis (default for VP8 and Theora)',
-          'wma' => 'WMA'
-        )
-      ),
-      'decoding' => array()
-    );
-    return $codecs;
-  }
+  abstract public function getCodecs();
 
   /**
    * Get available output file formats from the transcoder.

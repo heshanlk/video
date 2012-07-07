@@ -17,14 +17,19 @@ function video_transcoder_admin_settings() {
  * Form API callback to validate the upload settings form.
  */
 function video_transcoder_admin_settings_validate($form, &$form_state) {
-  $transcoder = $form_state['values']['video_convertor'];
-  if ($transcoder == '') {
+  $transcodername = $form_state['values']['video_convertor'];
+  if ($transcodername == '') {
     return;
   }
 
   $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct($transcoder);
+  $transcoder = $factory->getProduct($transcodername);
   $transcoder->adminSettingsValidate($form, $form_state);
+
+  if(!form_get_errors() && $transcodername != variable_get('video_convertor')) {
+    drupal_set_message(t('Because the selected transcoder was changed, you need to update the codec settings for your presets.'), 'warning');
+    drupal_goto('admin/config/media/video/presets');
+  }
 }
 
 /**
