@@ -168,9 +168,13 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     // Set state of job
     db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_PENDING))->condition('vid', 1)->execute();
 
-    // Test invalid postback request
-    $out = $this->doPostback('{ }');
-    $this->assertEqual('Bad request', $out);
+    // Test invalid JSON in postback request
+    $out = $this->doPostback('4 d234234');
+    $this->assertEqual('Bad request', $out, 'Postback with invalid JSON should receive output "Bad request", got "' . $out . '"');
+
+    // Test invalid data in postback request
+    $out = $this->doPostback('{ "hi" : "hi" }');
+    $this->assertEqual('Invalid data', $out, 'Postback for job with no useful data should receive output "Invalid data", got "' . $out . '"');
 
     // Test postback for non-existent job
     $out = $this->doPostback('{
@@ -182,7 +186,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
       "id":3
    }
 }');
-    $this->assertEqual('Not found', $out);
+    $this->assertEqual('Not found', $out, 'Postback for non-existent job should receive output "Not found", got "' . $out . '"');
 
     // Test cancelled job
     $out = $this->doPostback('{
@@ -195,6 +199,65 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
        }
     }');
     $this->assertEqual('Cancelled', $out);
+
+    // Check state and restore state
+    $video = db_query('SELECT * FROM {video_queue} WHERE vid = 1')->fetch();
+    $this->assertEqual(VIDEO_RENDERING_FAILED, $video->status);
+    db_query('UPDATE {video_queue} SET status = 1 WHERE vid = 1')->execute();
+
+    // Test error job
+    $out = $this->doPostback('{
+   "output":{
+      "total_bitrate_in_kbps":null,
+      "frame_rate":null,
+      "md5_checksum":null,
+      "channels":null,
+      "audio_codec":null,
+      "error_link":"https://app.zencoder.com/docs/errors/InvalidFormatCodecError",
+      "video_codec":null,
+      "state":"failed",
+      "video_bitrate_in_kbps":null,
+      "width":null,
+      "format":null,
+      "url":"http://test/test.webm",
+      "height":null,
+      "audio_sample_rate":null,
+      "label":"video-416",
+      "audio_bitrate_in_kbps":null,
+      "duration_in_ms":null,
+      "file_size_in_bytes":null,
+      "id":37300501,
+      "error_message":"The requested codec \'h264\' is not compatible with the format \'webm\'."
+   },
+   "input":{
+      "total_bitrate_in_kbps":763,
+      "frame_rate":29.97,
+      "md5_checksum":null,
+      "channels":"2",
+      "audio_codec":"aac",
+      "state":"finished",
+      "video_codec":"h264",
+      "video_bitrate_in_kbps":662,
+      "width":312,
+      "format":"mpeg4",
+      "height":240,
+      "audio_sample_rate":44100,
+      "audio_bitrate_in_kbps":101,
+      "duration_in_ms":5038,
+      "file_size_in_bytes":483248,
+      "id":21749675
+   },
+   "job":{
+      "created_at":"2012-07-07T13:19:21Z",
+      "test":true,
+      "pass_through":null,
+      "updated_at":"2012-07-07T13:19:35Z",
+      "submitted_at":"2012-07-07T13:19:21Z",
+      "state":"processing",
+      "id":1
+   }
+}');
+    $this->assertEqual('Failure', $out, 'Postback for job with output state "failure" should receive output "Not found", got "' . $out . '"');
 
     // Check state and restore state
     $video = db_query('SELECT * FROM {video_queue} WHERE vid = 1')->fetch();

@@ -152,6 +152,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     file_prepare_directory($dsturibase, FILE_CREATE_DIRECTORY);
     $dstwrapper = file_stream_wrapper_get_instance_by_scheme($destinationScheme);
 
+    // Find the old base url setting. If it is not present, don't check for legacy thumbnails
+    $base_url = variable_get('video_zencoder_base_url');
+    if (empty($base_url)) {
+      return array();
+    }
+
     // Where to copy the thumbnails from.
     $final_path = variable_get('video_zencoder_use_full_path', FALSE) ? drupal_realpath(file_uri_scheme($this->settings['input']['uri']) . '://' . $path) : '/' . $path;
     $srcuribase = variable_get('video_zencoder_base_url') . $final_path . '/';
@@ -451,8 +457,14 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     try {
       $notification = $zencoder->notifications->parseIncoming();
     } catch (Services_Zencoder_Exception $e) {
-      watchdog('transcoder', 'Zencoder: Postback received from the Zencoder Transcoding could not be decoded: @errormsg', array('@errormsg' => $e->getMessage()));
+      watchdog('transcoder', 'Postback received from Zencoder could not be decoded: @errormsg', array('@errormsg' => $e->getMessage()));
       echo 'Bad request';
+      return;
+    }
+
+    if (!isset($notification->job->id)) {
+      watchdog('transcoder', 'Postback received from Zencoder is missing the job-id parameter');
+      echo 'Invalid data';
       return;
     }
 
@@ -465,32 +477,36 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
 
     $fid = intval($video_output->original_fid);
-    watchdog('transcoder', 'Zencoder: Postback received from the Zencoder Transcoding servers for fid: @fid, Zencoder job id: @jobid.', array('@fid' => $fid, '@jobid' => $jobid));
+    watchdog('transcoder', 'Postback received from Zencoder for fid: @fid, Zencoder job id: @jobid.', array('@fid' => $fid, '@jobid' => $jobid));
+
+    // Zencoder API 2.1.0 and above use $notification->job->outputs.
+    // For now, only one output is supported.
+    $output = isset($notification->output) ? $notification->output :  current($notification->job->outputs);
 
     // Find all error situations
-    if ($notification->output->state == 'cancelled') {
+    if ($output->state === 'cancelled') {
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('fid', $fid)->execute();
       echo 'Cancelled';
       return;
     }
 
-    if ($notification->output->state == 'failed') {
+    if ($output->state === 'failed') {
       $errorlink = t('no specific information given');
-      if (!empty($notification->output->error_message)) {
-        if (!empty($notification->output->error_link)) {
-          $errordetail = l(t($notification->output->error_message), $notification->output->error_link);
+      if (!empty($output->error_message)) {
+        if (!empty($output->error_link)) {
+          $errordetail = l(t($output->error_message), $output->error_link);
         }
         else {
-          $errordetail = t($notification->output->error_message);
+          $errordetail = t($output->error_message);
         }
       }
 
       db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('fid', $fid)->execute();
       watchdog('transcoder', 'Zencoder reports errors in postback for fid @fid, job id @jobid: !errordetail', array('@fid' => $fid, '@jobid' => $jobid, '!errordetail' => $errordetail), WATCHDOG_ERROR);
-      echo "Failure!\n";
+      echo 'Failure';
     }
 
-    if ($notification->job->state != 'finished') {
+    if ($notification->job->state !== 'finished') {
       return;
     }
 
@@ -506,12 +522,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       echo 'Output file not found in database';
       return;
     }
-    copy($notification->output->url, $outputfile->uri);
-    $outputfile->filesize = $notification->output->file_size_in_bytes;
+    copy($output->url, $outputfile->uri);
+    $outputfile->filesize = $output->file_size_in_bytes;
     drupal_write_record('file_managed', $outputfile, 'fid');
 
     // Actual processing of the response
-    $video->duration = round($notification->output->duration_in_ms / 1000);
+    $video->duration = round($output->duration_in_ms / 1000);
     $video->status = VIDEO_RENDERING_COMPLETE;
     drupal_write_record('video_queue', $video, 'vid');
 
@@ -519,7 +535,14 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     cache_clear_all('field:' . $video->entity_type . ':' . $video->entity_id, 'cache_field');
 
     // If there are no thumbnails, quit now.
-    if (empty($notification->output->thumbnails) || empty($notification->output->thumbnails[0]['images'])) {
+    if (empty($output->thumbnails)) {
+      return;
+    }
+
+    // Retrieve the thumbnails from the notification structure
+    // Pre-2.1.0, each thumbnail list was an array, now it is an object
+    $thumbnails = is_array($output->thumbnails[0]) ? $output->thumbnails[0]['images'] : $output->thumbnails[0]->images;
+    if (empty($thumbnails)) {
       return;
     }
 
@@ -529,9 +552,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       watchdog('transcoder', 'The entity to which the transcoded video belongs can\'t be found anymore. Entity type: @entity-type, entity id: @entity-id.', array('@entity-type' => $video->entity_type, '@entity-id' => $video->entity_id), WATCHDOG_ERROR);
       return;
     }
-
-    // Retrieve the thumbnails from the notification structure
-    $thumbnails = $notification->output->thumbnails[0]['images'];
 
     // The following information was saved in TranscoderFactory::createJob()
     $fieldname = $video->data['field_name'];
@@ -571,7 +591,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $thumbs = array();
     $tnid = 0;
     foreach ($thumbnails as $thumbnail) {
-      $urlpath = parse_url($thumbnail['url'], PHP_URL_PATH);
+      // Pre-2.1.0, each thumbnail was an array
+      $thumbnail = (object)$thumbnail;
+      $urlpath = parse_url($thumbnail->url, PHP_URL_PATH);
       $ext = video_utility::getExtension($urlpath);
       $update = array();
       $thumb = new stdClass();
@@ -581,15 +603,15 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $thumb->uri = $thumburibase . $thumb->filename;
       $thumb->filemime = $thumbwrapper->getMimeType($thumb->uri);
       $thumb->type = 'image'; // For the media module
-      $thumb->filesize = $thumbnail['file_size_bytes'];
+      $thumb->filesize = $thumbnail->file_size_bytes;
       $thumb->timestamp = REQUEST_TIME;
       if (isset($existingthumbs[$thumb->uri])) {
         $thumb->fid = intval($existingthumbs[$thumb->uri]);
         $update = array('fid');
       }
 
-      if (!copy($thumbnail['url'], $thumb->uri)) {
-        watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail['url'], '@thumbdest' => $thumb->uri), WATCHDOG_ERROR);
+      if (!copy($thumbnail->url, $thumb->uri)) {
+        watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail->url, '@thumbdest' => $thumb->uri), WATCHDOG_ERROR);
         continue;
       }
 
