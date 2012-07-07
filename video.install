@@ -274,7 +274,7 @@ function video_requirements($phase) {
       $requirements['video']['severity'] = REQUIREMENT_ERROR;
     }
     elseif (!$available) {
-      $requirements['video']['description'] = t('The selected transcoder can\'t be used: !reason. Select another transcoder or resolve the problem.', array('!reason' => $errormsg));
+      $requirements['video']['description'] = t('The selected transcoder can\'t be used: !reason. Select <a href="@transcoder-url">another transcoder</a> or resolve the problem.', array('!reason' => rtrim($errormsg, '.'), '@transcoder-url' => url('admin/config/media/video/transcoders')));
       $requirements['video']['severity'] = REQUIREMENT_ERROR;
     }
     else {
