@@ -1,5 +1,10 @@
 <?php
 /**
+ * @file
+ * Libary to access FFmpeg
+ */
+
+/**
  * @author Oliver Lillie (aka buggedcom) <publicmail@buggedcom.co.uk>
  *
  * @license GPL 2.0
@@ -531,7 +536,7 @@ class PHPVideoToolkit {
 
     return array();
   }
-  
+
   private function _captureExecBuffer($command) {
     $buffer = array();
     $err = 0;
@@ -770,7 +775,7 @@ class PHPVideoToolkit {
         );
       }
     }
-    
+
     // grab the command line options available to ffmpeg
     $data['commandoptions'] = array();
     $matches = array();
@@ -1223,9 +1228,7 @@ class PHPVideoToolkit {
   /**
    * Streams a FLV file from a given point. You can control bandwidth, cache and session options.
    * Inspired by xmoov-php
-   * @see xmoov-php,
-   * 		- @link http://xmoov.com/
-   * 		- @author Eric Lorenzo Benjamin jr
+   * @see http://xmoov.com/
    * @access public
    * @param integer $seek_pos The position in the file to seek to.
    * @param array|boolean $bandwidth_options If a boolean value, FALSE then no bandwidth limiting will take place.
@@ -1391,15 +1394,6 @@ class PHPVideoToolkit {
   }
 
   /**
-   * @access public
-   * @deprecated
-   * @see PHPVideoToolkit::setAudioCodec()
-   */
-  public function setAudioFormat($audio_codec, $validate_codec=TRUE) {
-    return $this->setAudioCodec($audio_codec, $validate_codec);
-  }
-
-  /**
    * Sets the audio format for audio outputs
    *
    * @access public
@@ -1429,15 +1423,6 @@ class PHPVideoToolkit {
       }
     }
     return $this->addCommand('-acodec', $audio_codec);
-  }
-
-  /**
-   * @access public
-   * @deprecated
-   * @see PHPVideoToolkit::setVideoCodec()
-   */
-  public function setVideoFormat($video_format, $validate_codec=TRUE) {
-    return $this->setVideoCodec($video_format);
   }
 
   /**
@@ -1606,15 +1591,6 @@ class PHPVideoToolkit {
     if ($loop_count !== FALSE) {
       $this->addCommand('-loop_output', $loop_count);
     }
-  }
-
-  /**
-   * @access public
-   * @deprecated
-   * @see PHPVideoToolkit::setVideoDimensions()
-   */
-  public function setVideoOutputDimensions($width, $height=NULL) {
-    return $this->setVideoDimensions($width, $height);
   }
 
   /**
@@ -2571,115 +2547,6 @@ class PHPVideoToolkit {
   }
 
   /**
-   * This is a protected function that joins multiple input sources into one source before
-   * the final processing takes place. All videos are temporarily converted into mpg for
-   * joining.
-   *
-   * PLEASE NOTE. This process is experimental an might not work on all systems.
-   *
-   * @access protected
-   * @param boolean $log
-   */
-  protected function _joinInput($log) {
-    exit('INPUT CANNOT YET BE JOINED.');
-// ---- ffmpeg works
-    /*
-      mkfifo /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/intermediate1.mpg
-      mkfifo /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/intermediate2.mpg
-      ffmpeg -i /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/MOV02820.MPG -sameq -y /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/intermediate1.mpg < /dev/null &
-      ffmpeg -i /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/MOV02832.MPG -sameq -y /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/intermediate2.mpg < /dev/null &
-      cat /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/intermediate1.mpg /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/intermediate2.mpg |\
-      ffmpeg -f mpeg -i - -sameq -vcodec flv -acodec mp3 -ar 22050 /Users/ollie/Sites/@Projects/ffmpeg/checkout/root/examples/tmp/output.flv
-     */
-// ---- mencoder works
-    /*
-      PHPVIDEOTOOLKIT_MENCODER_BINARY.' -oac copy -ovc copy -idx -o '.$temp_file.' '.implode(' ', $this->_input_file);
-     */
-// 			run a libmp3lame check as it require different mp3 codec
-    $audio_codec = 'mp3';
-    $info = $this->getFFmpegInfo(true);
-    if (isset($info['binary']['configuration']) === TRUE && in_array('--enable-libmp3lame', $info['binary']['configuration']) === TRUE) {
-// 				$audio_codec = 'liblamemp3';
-      $audio_codec = 'libmp3lame';
-    }
-
-// 			build commands
-    $temp_files = array();
-    $mkinfo_commands = array();
-    $ffmpeg_commands = array();
-    $cat_files = array();
-    $unique = $this->unique();
-    foreach ($this->_input_file as $key => $file) {
-      $unique_name = $this->_tmp_directory . $unique . '-' . $key . '-temp.mpg';
-      $unique_name_escaped = escapeshellarg($unique_name);
-
-      $logfile1 = $this->_tmp_directory . $unique . '-' . $key . '-log1.log';
-      $logfile2 = $this->_tmp_directory . $unique . '-' . $key . '-log2.log';
-
-      array_push($mkinfo_commands, array('cmd' => 'mkfifo ' . $unique_name_escaped . ($log ? ' &> ' . $logfile1 : ''), 'logfile' => $logfile1));
-      array_push($ffmpeg_commands, array('cmd' => $this->_ffmpeg_binary . ' -i ' . escapeshellarg($file) . ' -acodec ' . $audio_codec . ' -sameq ' . $unique_name_escaped . ' < /dev/null ' . ($log ? '&> ' . $logfile2 : '&'), 'logfile' => $logfile2));
-      array_push($cat_files, $unique_name_escaped);
-// 				array_push($this->_unlink_files, $unique_name);
-      if ($log) {
-// 					array_push($this->_unlink_files, $logfile1);
-// 					array_push($this->_unlink_files, $logfile2);
-      }
-    }
-// 			start log
-    if ($log) {
-      $log_lines = array();
-      array_unshift($log_lines, $this->_getMessage('ffmpeg_log_separator'), $this->_getMessage('ffmpeg_log_ffmpeg_join_gunk'), $this->_getMessage('ffmpeg_log_separator'));
-    }
-// 			mkinfo for temp files
-    foreach ($mkinfo_commands as $cmd) {
-// 				exec($cmd['cmd']);
-      echo($cmd['cmd'] . "\r\n");
-      if ($log) {
-        array_push($log_lines, '---------', trim(file_get_contents($cmd['logfile'])));
-      }
-    }
-// 			extract data
-    foreach ($ffmpeg_commands as $cmd) {
-// 				exec($cmd['cmd']);
-      echo($cmd['cmd'] . "\r\n");
-      if ($log) {
-        array_push($log_lines, trim(file_get_contents($cmd['logfile'])), '---------');
-      }
-    }
-
-// 			join command
-    $unique = $this->unique();
-    $temp_join_file = $this->_tmp_directory . $unique . '-combined-joined.mpg';
-    $temp_join_file_escaped = escapeshellarg($temp_join_file);
-    $temp_process_file = $this->_tmp_directory . $unique . '-combined-temp.mpg';
-    $temp_process_file_escaped = escapeshellarg($temp_process_file);
-    $logfile = $this->_tmp_directory . $unique . '.log';
-// 			command for use with cat mkinfo files
-// 			exec('cat '.implode(' ', $cat_files).' |\
-// '.PHPVIDEOTOOLKIT_FFMPEG_BINARY.' -f mpeg -i - -sameq -vcodec mpeg4 -acodec '.$audio_codec.'  '.escapeshellarg($temp_process_file).($log ? ' &> '.$logfile : ''));
-    echo('cat ' . implode(' ', $cat_files) . ' | ' . $this->_ffmpeg_binary . ' -f mpeg -i - -sameq -vcodec mpeg4 -acodec ' . $audio_codec . ' ' . escapeshellarg($temp_process_file) . ($log ? ' &> ' . $logfile : '') . "\r\n");
-// 			echo('cat '.implode(' ', $cat_files).' > '.$temp_join_file_escaped.'
-// '.PHPVIDEOTOOLKIT_FFMPEG_BINARY.' -i '.$temp_join_file_escaped.' -sameq -vcodec mpeg4 -acodec '.$audio_codec.' '.$temp_process_file_escaped.($log ? ' &> '.$logfile : ''));
-// 			exec('cat '.implode(' ', $cat_files).' > '.$temp_join_file_escaped.'
-// '.PHPVIDEOTOOLKIT_FFMPEG_BINARY.' -i '.$temp_join_file_escaped.' -sameq -vcodec mpeg4 -acodec '.$audio_codec.' '.$temp_process_file_escaped.($log ? ' &> '.$logfile : ''));
-    if ($log) {
-      array_push($log_lines, trim(file_get_contents($logfile)));
-      array_push($this->_unlink_files, $logfile);
-      $this->_addToLog($log_lines, 'a+');
-// 				print_r($log_lines);
-    }
-
-//			create a temp dir in the temp dir
-// 			$temp_file = $this->_tmp_directory.$this->unique().'.'.array_pop(explode('.', $this->_process_address));
-// 			print_r($temp_file);
-    $this->addCommand('-i', $temp_process_file);
-    // 	array_push($this->_unlink_files, $temp_process_file);
-
-
-    exit;
-  }
-
-  /**
    * Checks to see if a given codec can be encoded by the current ffmpeg binary.
    * @access public
    * @param $codec string The shortcode for the codec to check for.
@@ -2916,11 +2783,6 @@ class PHPVideoToolkit {
     }
 
     $this->_timer_start = self::microtimeFloat();
-
-// 			we have multiple inputs that require joining so convert them to a joinable format and join
-    if (is_array($this->_input_file)) {
-      $this->_joinInput($log);
-    }
 
 // 			check to see if the format has been set and if it hasn't been set and the extension is a gif
 // 			we need to add an extra argument to set the pix format.
@@ -3569,7 +3431,7 @@ class PHPVideoToolkit {
    * @return boolean Only returns FALSE if $toolkit->on_error_die is set to FALSE
    */
   protected function _raiseError($message, $replacements=FALSE) {
-    $msg = 'PHPVideoToolkit Error: ' . $this->_getMessage($message, $replacements);
+    $msg = 'PHPVideoToolkit error: ' . $this->_getMessage($message, $replacements);
 //			check what the error is supposed to do
     if ($this->on_error_die === TRUE) {
       exit($msg);

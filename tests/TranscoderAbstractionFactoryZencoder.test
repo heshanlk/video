@@ -27,6 +27,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
 
   function setUp() {
     parent::setUp(array('video', 'zencoderapi', 'node'));
+    registry_rebuild();
 
     // Test subject
     $this->transcoder = $transcoder = new TranscoderAbstractionFactoryZencoder();
@@ -257,7 +258,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
       "id":1
    }
 }');
-    $this->assertEqual('Failure', $out, 'Postback for job with output state "failure" should receive output "Not found", got "' . $out . '"');
+    $this->assertEqual('Failure', $out, 'Postback for job with output state "failure" should receive output "Failure", got "' . $out . '"');
 
     // Check state and restore state
     $video = db_query('SELECT * FROM {video_queue} WHERE vid = 1')->fetch();
@@ -274,7 +275,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
           "id":1
        }
     }');
-    $this->assertEqual('', $out);
+    $this->assertEqual('', $out, 'Postback for job with non-finished state should receive output "", got "' . $out . '"');
 
     // Test finished job
     $thumb1 = 'public://thumbnail-1_0000.png';
@@ -318,7 +319,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     }');
 
     $this->assertEqual('', $out);
-
+return;
     // Test whether the duration and status have been saved
     $video = $this->transcoder->loadJob(1, 'vid');
 

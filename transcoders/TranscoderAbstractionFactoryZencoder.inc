@@ -128,8 +128,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
    * For new videos, this function is never called, because all thumbnails are
    * extracted and saved to the databases during the post back handler in
    * TranscoderAbstractionFactoryZencoder::processPostback().
-   *
-   * @see TranscoderFactoryInterface::extractFrames()
    */
   public function extractFrames($destinationScheme, $format) {
     // Check if the job has been completed.

@@ -1,0 +1,34 @@
+<?php
+/**
+ * @file
+ * Tests for the TranscoderAbstractionFactoryZencoder class
+ */
+
+/**
+ * Temporary tests
+ */
+class VideoTestTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Video Test tests',
+      'description' => 'Temporary tests',
+      'group' => 'Video',
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('video', 'zencoderapi', 'node'));
+  }
+
+  public function testTest() {
+    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', true), 'Class should exist before registry_rebuild');
+
+    registry_rebuild();
+
+    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', true), 'Class should exist after registry_rebuild');
+    
+    require_once __DIR__ . '/../transcoders/TranscoderAbstractionFactoryZencoder.inc';
+
+    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', true), 'Class should exist after require');
+  }
+}

@@ -26,7 +26,7 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
   $transcoder = $factory->getProduct($transcodername);
   $transcoder->adminSettingsValidate($form, $form_state);
 
-  if(!form_get_errors() && $transcodername != variable_get('video_convertor')) {
+  if (!form_get_errors() && $transcodername != variable_get('video_convertor')) {
     drupal_set_message(t('Because the selected transcoder was changed, you need to update the codec settings for your presets.'), 'warning');
     $form_state['redirect'] = 'admin/config/media/video/presets';
   }
