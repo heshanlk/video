@@ -21,14 +21,15 @@ class VideoTestTestCase extends DrupalWebTestCase {
   }
 
   public function testTest() {
-    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', true), 'Class should exist before registry_rebuild');
+    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', TRUE), 'Class should exist before registry_rebuild');
 
     registry_rebuild();
 
-    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', true), 'Class should exist after registry_rebuild');
-    
+    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', TRUE), 'Class should exist after registry_rebuild');
+
+    require_once __DIR__ . '/../includes/TranscoderFactory.inc';
     require_once __DIR__ . '/../transcoders/TranscoderAbstractionFactoryZencoder.inc';
 
-    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', true), 'Class should exist after require');
+    $this->assertTrue(class_exists('TranscoderAbstractionFactoryZencoder', TRUE), 'Class should exist after require');
   }
 }
