@@ -25,12 +25,16 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     );
   }
 
-  function setUp() {
-    parent::setUp(array('video', 'zencoderapi', 'node'));
+  public function setUp() {
+    parent::setUp();
 
-    // For some reason, autoloading doesn't work on qa.drupal.org
-    require_once __DIR__ . '/../includes/TranscoderFactory.inc';
-    require_once __DIR__ . '/../transcoders/TranscoderAbstractionFactoryZencoder.inc';
+    $this->assertTrue(module_enable(array('video'), TRUE), t('Enabled modules: %modules', array('%modules' => 'video')));
+    $this->assertTrue(module_enable(array('zencoderapi'), TRUE), t('Enabled modules: %modules', array('%modules' => 'zencoderapi')));
+    $this->assertTrue(module_enable(array('node'), TRUE), t('Enabled modules: %modules', array('%modules' => 'node')));
+
+    field_info_cache_clear();
+    $this->resetAll();
+    drupal_cron_run();
 
     // Test subject
     $this->transcoder = $transcoder = new TranscoderAbstractionFactoryZencoder();
