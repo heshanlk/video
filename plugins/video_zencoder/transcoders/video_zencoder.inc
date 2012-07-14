@@ -344,7 +344,7 @@ It is usually not necessary to change these settings as Zencoder has sensible de
       '#description' => '<p>'. t('Enter any other <a href="@zencoder-api">Zencoder encoding settings</a> in this text area. Enter each setting on a separate line and separate the setting name (case sensitive) and the value with a colon. To create a nested structure, use two spaces. Malformed settings will be removed.', array('@zencoder-api' => 'https://app.zencoder.com/docs/api/encoding')) . '</p>' .
       '<p>'. t('Example:') .'</p>'.
       '<blockquote><pre>clip_length: 00:00:10.0
-watermark:
+watermarks:
   url: http://example.com/watermark.gif
   y: 10
   x: 10</pre></blockquote>',
