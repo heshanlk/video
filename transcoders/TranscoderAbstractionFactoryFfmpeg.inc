@@ -127,6 +127,11 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       }
     }
 
+    // Disable two-pass encoding for Ogg Theora
+    if ($options['video_extension'] == 'ogg' || $options['video_extension'] == 'ogv') {
+      $this->multipass = FALSE;
+    }
+
     return TRUE;
   }
 
