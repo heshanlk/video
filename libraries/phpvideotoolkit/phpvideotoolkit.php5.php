@@ -676,7 +676,7 @@ class PHPVideoToolkit {
     // grab the codecs available
     $codecsmatches = array();
     $data['codecs'] = array('video' => array(), 'audio' => array(), 'subtitle' => array());
-    if (preg_match_all('/ ([DEVAST ]{6}) ([A-Za-z0-9\_]*) (.*)/', $codecs, $codecsmatches)) {
+    if (preg_match_all('/ ((?:[DEVAST ]{6})|(?:[DEVASTFB ]{8})) ([A-Za-z0-9\_]+) (.+)/', $codecs, $codecsmatches)) {
     // Codecs:
 //  D..... = Decoding supported
 //  .E.... = Encoding supported
