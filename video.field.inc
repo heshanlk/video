@@ -645,7 +645,6 @@ function video_field_widget_process($element, &$form_state, $form) {
   $field = field_widget_field($element, $form_state);
 
   $element['#theme'] = 'video_widget';
-  $element['preview'] = array();
 
   // Title is not necessary for each individual field.
   if ($field['cardinality'] != 1) {
@@ -672,7 +671,7 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
   $defaultthumbfid = isset($field['settings']['default_video_thumbnail']) ? intval($field['settings']['default_video_thumbnail']['fid']) : 0;
   $thumbnailfid = !isset($file['thumbnail']) ? 0 : (is_array($file['thumbnail']) ? intval($file['thumbnail']['fid']) : intval($file['thumbnail']));
 
-  if (isset($element['preview']) && $fid != 0) {
+  if ($fid != 0) {
     $gen_fail = FALSE;
 
     if ($field['settings']['autothumbnail'] == 'auto') {
@@ -744,7 +743,7 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
     }
 
     if (!empty($large_thumb)) {
-      $element['preview']['#suffix'] = '<div class="video_large_thumbnail-' . $fid . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
+      $element['preview']['#markup'] = '<div class="video-preview video_large_thumbnail-' . $fid . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
     }
   }
 }
