@@ -449,6 +449,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function processPostback() {
+    @ignore_user_abort(TRUE);
     libraries_load('zencoder');
     $zencoder = new Services_Zencoder();
 
@@ -520,9 +521,15 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       echo 'Output file not found in database';
       return;
     }
-    copy($output->url, $outputfile->uri);
-    $outputfile->filesize = $output->file_size_in_bytes;
-    drupal_write_record('file_managed', $outputfile, 'fid');
+
+    // Sometimes the long duration of the copy() call causes Zencoder
+    // to timeout and retry the notification postback later.
+    // So we only copy the file when it doesn't exist or has a different file size.
+    if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes || $outputfile->filesize != $output->file_size_in_bytes) {
+      copy($output->url, $outputfile->uri);
+      $outputfile->filesize = $output->file_size_in_bytes;
+      drupal_write_record('file_managed', $outputfile, 'fid');
+    }
 
     // Actual processing of the response
     $video->duration = round($output->duration_in_ms / 1000);
@@ -585,7 +592,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       }
     }
 
-    $existingthumbs = db_query('SELECT f.uri, f.fid FROM {file_managed} f INNER JOIN {video_thumbnails} t ON (f.fid = t.thumbnailfid) WHERE t.videofid = :fid', array(':fid' => $video->fid))->fetchAllKeyed();
+    $existingthumbs = db_query('SELECT f.uri, f.fid, f.filesize FROM {file_managed} f INNER JOIN {video_thumbnails} t ON (f.fid = t.thumbnailfid) WHERE t.videofid = :fid', array(':fid' => $video->fid))->fetchAllAssoc('uri');
     $thumbs = array();
     $tnid = 0;
     foreach ($thumbnails as $thumbnail) {
@@ -603,12 +610,18 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $thumb->type = 'image'; // For the media module
       $thumb->filesize = $thumbnail->file_size_bytes;
       $thumb->timestamp = REQUEST_TIME;
+
+      $shouldcopy = TRUE;
       if (isset($existingthumbs[$thumb->uri])) {
-        $thumb->fid = intval($existingthumbs[$thumb->uri]);
+        // If the thumbnail has the same size in the database compared to the notification data, don't copy
+        if (file_exists($thumb->uri) && $existingthumbs[$thumb->uri]->filesize == $thumb->filesize) {
+          $shouldcopy = FALSE;
+        }
+        $thumb->fid = intval($existingthumbs[$thumb->uri]->fid);
         $update = array('fid');
       }
 
-      if (!copy($thumbnail->url, $thumb->uri)) {
+      if ($shouldcopy && !copy($thumbnail->url, $thumb->uri)) {
         watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail->url, '@thumbdest' => $thumb->uri), WATCHDOG_ERROR);
         continue;
       }
