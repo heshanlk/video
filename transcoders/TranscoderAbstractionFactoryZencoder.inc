@@ -449,7 +449,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function processPostback() {
-    @ignore_user_abort(TRUE);
+    ignore_user_abort(TRUE);
     libraries_load('zencoder');
     $zencoder = new Services_Zencoder();
 
@@ -525,11 +525,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Sometimes the long duration of the copy() call causes Zencoder
     // to timeout and retry the notification postback later.
     // So we only copy the file when it doesn't exist or has a different file size.
-    if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes || $outputfile->filesize != $output->file_size_in_bytes) {
+    if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes) {
       copy($output->url, $outputfile->uri);
-      $outputfile->filesize = $output->file_size_in_bytes;
-      drupal_write_record('file_managed', $outputfile, 'fid');
     }
+
+    $outputfile->filesize = $output->file_size_in_bytes;
+    drupal_write_record('file_managed', $outputfile, 'fid');
 
     // Actual processing of the response
     $video->duration = round($output->duration_in_ms / 1000);
