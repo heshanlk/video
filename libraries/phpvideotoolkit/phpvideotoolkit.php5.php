@@ -895,45 +895,65 @@ class PHPVideoToolkit {
    * as it consults the ffmpeg binary directly. This idea for this function has been borrowed from
    * a French ffmpeg class located: http://www.phpcs.com/codesource.aspx?ID=45279
    *
-   * @access public
-   * @param string $file The absolute path of the file that is required to be manipulated.
-   * @return mixed FALSE on error encountered, TRUE otherwise
-   * */
-  public function getFileInfo($file=FALSE) {
-// 			check to see if this is a static call
-    if ($file !== FALSE && isset($this) === FALSE) {
-      $toolkit = new PHPVideoToolkit();
-      return $toolkit->getFileInfo($file);
-    }
-// 			if the file has not been specified check to see if an input file has been specified
+   * @param $file
+   *   The absolute path of the file that is required to be manipulated.
+   * @return
+   *   FALSE on error encountered, TRUE otherwise
+   */
+  public function getFileInfo($file = FALSE) {
+    // if the file has not been specified check to see if an input file has been specified
     if ($file === FALSE) {
       if (!$this->_input_file) {
-//					input file not valid
         return $this->_raiseError('getFileInfo_no_input');
-// <-				exits
       }
       $file = $this->_input_file;
     }
     $file = escapeshellarg($file);
-// 			create a hash of the filename
+    // create a hash of the filename
     $hash = md5($file);
-// 			check to see if the info has already been generated
+    // check to see if the info has already been generated
     if (isset(self::$_file_info[$hash]) === TRUE) {
       return self::$_file_info[$hash];
     }
-// 			execute the ffmpeg lookup
-    $buffer = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -i ' . $file);
-// 			exec(PHPVIDEOTOOLKIT_FFMPEG_BINARY.' 2>&1', $buffer);
-    $buffer = implode("\r\n", $buffer);
-    $data = array();
-// 			grab the duration and bitrate data
-    preg_match_all('/Duration: (.*)/', $buffer, $matches);
 
-    if (count($matches) > 0) {
+    // execute the ffmpeg lookup
+    $buffer = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -i ' . $file);
+    $buffer = implode("\r\n", $buffer);
+
+    $data = $this->parseFileInfo($buffer);
+
+    // check that some data has been obtained
+    if (empty($data)) {
+      $data = FALSE;
+    }
+    else {
+      $data['_raw_info'] = $buffer;
+    }
+
+    // cache info and return
+    return self::$_file_info[$hash] = $data;
+  }
+
+  /**
+   * Parses file information returned by ffmpeg -i
+   *
+   * @param $raw
+   *   Return text of ffmpeg -i
+   * @return
+   *   Array containing various data about the file
+   */
+  public function parseFileInfo($raw) {
+    $data = array();
+    $matches = array();
+
+    // grab the duration and bitrate data
+    preg_match_all('/Duration: (.*)/', $raw, $matches);
+
+    if (!empty($matches)) {
       $line = trim($matches[0][0]);
-// 				capture any data
+      // capture any data
       preg_match_all('/(Duration|start|bitrate): ([^,]*)/', $line, $matches);
-// 				setup the default data
+      // setup the default data
       $data['duration'] = array(
         'timecode' => array(
           'seconds' => array(
@@ -943,7 +963,7 @@ class PHPVideoToolkit {
           'rounded' => -1,
         )
       );
-// 				get the data
+      // get the data
       foreach ($matches[1] as $key => $detail) {
         $value = $matches[2][$key];
         switch (strtolower($detail)) {
@@ -963,19 +983,19 @@ class PHPVideoToolkit {
       }
     }
 
-// 			match the video stream info
-    preg_match('/Stream(.*): Video: (.*)/', $buffer, $matches);
+    // match the video stream info
+    preg_match('/Stream(.*): Video: (.*)/', $raw, $matches);
     if (count($matches) > 0) {
       $data['video'] = array();
-// 				get the dimension parts
+      // get the dimension parts
       preg_match('/([1-9][0-9]*)x([1-9][0-9]*)/', $matches[2], $dimensions_matches);
-// 				print_r($dimensions_matches);
+
       $dimensions_value = $dimensions_matches[0];
       $data['video']['dimensions'] = array(
         'width' => floatval($dimensions_matches[1]),
         'height' => floatval($dimensions_matches[2])
       );
-// 				get the timebases
+      // get the timebases
       $data['video']['time_bases'] = array();
       preg_match_all('/([0-9\.k]+) (fps|tbr|tbc|tbn)/', $matches[0], $fps_matches);
       if (count($fps_matches[0]) > 0) {
@@ -983,31 +1003,33 @@ class PHPVideoToolkit {
           $data['video']['time_bases'][$abrv] = $fps_matches[1][$key];
         }
       }
-// 				get the video frames per second
+
+      // get the video frames per second
+      $data['duration']['timecode']['seconds']['total'] = $data['duration']['seconds'] = (float)$this->formatTimecode($data['duration']['timecode']['frames']['exact'], '%hh:%mm:%ss.%ms', '%ss.%ms');
       $fps = isset($data['video']['time_bases']['fps']) === TRUE ? $data['video']['time_bases']['fps'] : (isset($data['video']['time_bases']['tbr']) === TRUE ? $data['video']['time_bases']['tbr'] : FALSE);
       if ($fps !== FALSE) {
         $fps = floatval($fps);
         $data['duration']['timecode']['frames']['frame_rate'] = $data['video']['frame_rate'] = $fps;
-        $data['duration']['timecode']['seconds']['total'] = $data['duration']['seconds'] = $this->formatTimecode($data['duration']['timecode']['frames']['exact'], '%hh:%mm:%ss.%ms', '%ss.%ms', $data['video']['frame_rate']);
+        // set the total frame count for the video
+        $data['video']['frame_count'] = ceil($data['duration']['seconds'] * $data['video']['frame_rate']);
+        $data['duration']['timecode']['frames']['exact'] = $this->formatTimecode($data['video']['frame_count'], '%ft', '%hh:%mm:%ss.%fn', $fps);
+        $data['duration']['timecode']['frames']['total'] = $data['video']['frame_count'];
       }
+
       $fps_value = $fps_matches[0];
-// 				get the ratios
+      // get the ratios
       preg_match('/\[PAR ([0-9\:\.]+) DAR ([0-9\:\.]+)\]/', $matches[0], $ratio_matches);
       if (count($ratio_matches)) {
         $data['video']['pixel_aspect_ratio'] = $ratio_matches[1];
         $data['video']['display_aspect_ratio'] = $ratio_matches[2];
       }
-// 				work out the number of frames
+      // work out the number of frames
       if (isset($data['duration']) === TRUE && isset($data['video']) === TRUE) {
-// 					set the total frame count for the video
-        $data['video']['frame_count'] = ceil($data['duration']['seconds'] * $data['video']['frame_rate']);
-// 					set the framecode
+        // set the framecode
         $data['duration']['timecode']['seconds']['excess'] = floatval($data['duration']['seconds']) - floor($data['duration']['seconds']);
         $data['duration']['timecode']['seconds']['exact'] = $this->formatSeconds($data['duration']['seconds'], '%hh:%mm:%ss.%ms');
-        $data['duration']['timecode']['frames']['exact'] = $this->formatTimecode($data['video']['frame_count'], '%ft', '%hh:%mm:%ss.%fn', $fps);
-        $data['duration']['timecode']['frames']['total'] = $data['video']['frame_count'];
       }
-// 				formats should be anything left over, let me know if anything else exists
+      // formats should be anything left over, let me know if anything else exists
       $parts = explode(',', $matches[2]);
       $other_parts = array($dimensions_value, $fps_value);
       $formats = array();
@@ -1021,35 +1043,35 @@ class PHPVideoToolkit {
       $data['video']['codec'] = $formats[0];
     }
 
-// 			match the audio stream info
-    preg_match('/Stream(.*): Audio: (.*)/', $buffer, $matches);
+    // match the audio stream info
+    preg_match('/Stream(.*): Audio: (.*)/', $raw, $matches);
     if (count($matches) > 0) {
-// 				setup audio values
+      // setup audio values
       $data['audio'] = array(
         'stereo' => -1,
         'sample_rate' => -1,
         'sample_rate' => -1
       );
       $other_parts = array();
-// 				get the stereo value
+      // get the stereo value
       preg_match('/(stereo|mono)/i', $matches[0], $stereo_matches);
       if (count($stereo_matches)) {
         $data['audio']['stereo'] = $stereo_matches[0];
         array_push($other_parts, $stereo_matches[0]);
       }
-// 				get the sample_rate
+      // get the sample_rate
       preg_match('/([0-9]{3,6}) Hz/', $matches[0], $sample_matches);
       if (count($sample_matches)) {
         $data['audio']['sample_rate'] = count($sample_matches) ? floatval($sample_matches[1]) : -1;
         array_push($other_parts, $sample_matches[0]);
       }
-// 				get the bit rate
+      // get the bit rate
       preg_match('/([0-9]{1,3}) kb\/s/', $matches[0], $bitrate_matches);
       if (count($bitrate_matches)) {
         $data['audio']['bitrate'] = count($bitrate_matches) ? floatval($bitrate_matches[1]) : -1;
         array_push($other_parts, $bitrate_matches[0]);
       }
-// 				formats should be anything left over, let me know if anything else exists
+      // formats should be anything left over, let me know if anything else exists
       $parts = explode(',', $matches[2]);
       $formats = array();
       foreach ($parts as $key => $part) {
@@ -1059,7 +1081,7 @@ class PHPVideoToolkit {
         }
       }
       $data['audio']['codec'] = $formats[0];
-// 				if no video is set then no audio frame rate is set
+      // if no video is set then no audio frame rate is set
       if ($data['duration']['timecode']['seconds']['exact'] === -1) {
         $exact_timecode = $this->formatTimecode($data['duration']['timecode']['frames']['exact'], '%hh:%mm:%ss.%fn', '%hh:%mm:%ss.%ms', 1000);
         $data['duration']['timecode']['seconds'] = array(
@@ -1069,19 +1091,10 @@ class PHPVideoToolkit {
         );
         $data['duration']['timecode']['frames']['frame_rate'] = 1000;
         $data['duration']['seconds'] = $data['duration']['timecode']['seconds']['total'];
-        // $this->formatTimecode($data['duration']['timecode']['frames']['exact'], '%hh:%mm:%ss.%fn', '%st.%ms', $data['video']['frame_rate']);
       }
     }
 
-// 			check that some data has been obtained
-    if (!count($data)) {
-      $data = FALSE;
-    }
-    else {
-      $data['_raw_info'] = $buffer;
-    }
-// 			cache info and return
-    return self::$_file_info[$hash] = $data;
+    return $data;
   }
 
   /**
