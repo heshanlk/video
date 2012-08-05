@@ -321,10 +321,17 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#type' => 'textfield',
         '#title' => t('Postback URL for Zencoder'),
         '#description' =>
-          t('Important : Don\'t change this if you don\'t know what you\'re doing. This postback URL will receive video data as video transcodings are completed.') . '<br/>' .
+          t('Important: Don\'t change this if you don\'t know what you\'re doing. The Postback URL is used by Zencoder to send transcoding status notifications to Drupal.') . '<br/>' .
           t('Default: %value', array('%value' => url('postback/jobs', array('absolute' => TRUE)))),
         '#default_value' => $this->postbackurl,
       );
+      $form['zencoder_info']['video_zencoder_postback_donotvalidate'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Do not validate the Postback URL'),
+        '#description' => t('The Postback URL is validated by retrieving the URL from the local server. In some cases this fails while it works fine for the Zencoder notification sender. Use this checkbox to disable Postback URL validation.'),
+        '#default_value' => variable_get('video_zencoder_postback_donotvalidate', FALSE),
+      );
+
       // testing
       $form['zencoder_info']['testing'] = array(
         '#type' => 'fieldset',
@@ -358,28 +365,31 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $form_state['values']['video_thumbnail_count'] = $form_state['values']['video_thumbnail_count_zc'];
       unset($form_state['values']['video_thumbnail_count_zc']);
 
-      // Check the postback URL
-      $testurl = $v['video_zencoder_postback'];
-      $testcode = md5(mt_rand(0, REQUEST_TIME));
-      if (strpos($testurl, '?') === FALSE) {
-        $testurl .= '?test=1';
-      }
-      else {
-        $testurl .= '&test=1';
-      }
-      variable_set('video_postback_test', $testcode);
-      $result = drupal_http_request($testurl);
-      variable_del('video_postback_test');
+      // Check the postback URL if validation hasn't been disabled
+      if (empty($v['video_zencoder_postback_donotvalidate'])) {
+        $testurl = $v['video_zencoder_postback'];
+        $testcode = md5(mt_rand(0, REQUEST_TIME));
+        if (strpos($testurl, '?') === FALSE) {
+          $testurl .= '?test=1';
+        }
+        else {
+          $testurl .= '&test=1';
+        }
+        variable_set('video_postback_test', $testcode);
+        $result = drupal_http_request($testurl);
+        variable_del('video_postback_test');
 
-      if ($result->code != 200) {
-        form_error(
-          $form['zencoder_info']['video_zencoder_postback'],
-          t('The postback URL cannot be retrieved: @error (@code).',
-          array('@code' => $result->code, '@error' => empty($result->error) ? t('unknown error') : $result->error))
-        );
-      }
-      elseif (empty($result->data) || $result->data != $testcode) {
-        form_error($form['zencoder_info']['video_zencoder_postback'], t('The postback URL is not valid: returned data contains unexpected value &quot;@value&quot;.', array('@value' => $result->data)));
+        $error = NULL;
+        if ($result->code != 200) {
+          $error = t('The postback URL cannot be retrieved: @error (@code).', array('@code' => $result->code, '@error' => empty($result->error) ? t('unknown error') : $result->error));
+        }
+        elseif (empty($result->data) || $result->data != $testcode) {
+          $error = t('The postback URL is not valid: returned data contains unexpected value &quot;@value&quot;.', array('@value' => $result->data));
+        }
+
+        if ($error != NULL) {
+          form_error($form['zencoder_info']['video_zencoder_postback'], $error);
+        }
       }
     }
     else {
