@@ -449,6 +449,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   public function processPostback() {
+    if (strcasecmp($_SERVER['REQUEST_METHOD'], 'POST') !== 0) {
+      echo 'This is the Zencoder notification handler. It seems to work fine.';
+      return;
+    }
+
     ignore_user_abort(TRUE);
     libraries_load('zencoder');
     $zencoder = new Services_Zencoder();

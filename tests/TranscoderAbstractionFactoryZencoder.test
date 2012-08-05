@@ -176,6 +176,10 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     // Set state of job
     db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_PENDING))->condition('vid', 1)->execute();
 
+    // Test GET request to postback URL
+    $out = $this->curlExec(array(CURLOPT_URL => url('postback/jobs', array('absolute' => TRUE)), CURLOPT_POST => FALSE));
+    $this->assertEqual('This is the Zencoder notification handler. It seems to work fine.', $out, 'Postback with GET request output "This is the Zencoder notification handler. It seems to work fine.", got "' . $out . '"');
+
     // Test invalid JSON in postback request
     $out = $this->doPostback('4 d234234');
     $this->assertEqual('Bad request', $out, 'Postback with invalid JSON should receive output "Bad request", got "' . $out . '"');
