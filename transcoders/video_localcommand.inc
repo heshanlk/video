@@ -143,9 +143,6 @@ class video_localcommand implements video_transcoder {
     elseif (substr($converteddir, 1, 2) == ':\\') {
       $converteddirabsolute = TRUE;
     }
-    else {
-      $converteddirabsolute = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PRIVATE;
-    }
 
     if (!field_file_check_directory($converteddir, FILE_CREATE_DIRECTORY)) {
       watchdog('video_command', 'Video conversion could not be started: Could not create directory %dir for storing converted videos.', array('%dir' => $converteddir), WATCHDOG_ERROR);
