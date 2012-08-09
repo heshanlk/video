@@ -618,7 +618,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $ext = video_utility::getExtension($urlpath);
       $update = array();
       $thumb = new stdClass();
-      $thumb->uid = $entity->uid;
+      $thumb->uid = $outputfile->uid; // $entity may not have a uid property, so take it from the output file.
       $thumb->status = FILE_STATUS_PERMANENT;
       $thumb->filename = 'thumbnail-' . $video->fid . '_' . sprintf('%04d', $tnid++) . '.' . $ext;
       $thumb->uri = $thumburibase . $thumb->filename;
@@ -673,7 +673,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       default:
         // entity_save() is supplied by the entity module
         if (function_exists('entity_save')) {
-          entity_save($entity);
+          entity_save($video->entity_type, $entity);
         }
         break;
     }
