@@ -272,7 +272,7 @@ class video_s3 implements video_filesystem {
     db_query('INSERT INTO {video_s3} (fid, status) VALUES (%d, %d)', $video->fid, VIDEO_S3_ACTIVE);
 
     // Push the original file, but leave it on the local disk for the local transcoder
-    if ($video = $this->s3->pushFile($video, TRUE)) {
+    if ($this->s3->pushFile($video, TRUE) != NULL) {
       db_query('UPDATE {video_s3} SET bucket="%s", filename="%s", filepath="%s", filemime="%s", filesize="%s", status=%d, completed=%d WHERE fid=%d',
         $video->bucket, $video->filename, $video->filepath, $video->filemime, $video->filesize, VIDEO_S3_COMPLETE, time(), $video->fid);
       return TRUE;
