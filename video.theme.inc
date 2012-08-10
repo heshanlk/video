@@ -89,7 +89,7 @@ function theme_video_formatter_player(array $variables) {
     $theme_function = 'video_html5';
   }
 
-  return theme($theme_function, array('item' => $item, 'width' => $player_width, 'height' => $player_height));
+  return theme($theme_function, array('item' => $item, 'width' => $player_width, 'height' => $player_height, 'entity' => $variables['entity'], 'entity_type' => $variables['entity_type']));
 }
 
 /**
@@ -278,7 +278,7 @@ function theme_video_html5($variables) {
         'width' => $variables['width'],
         'height' => $variables['height'],
       );
-      return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $item['fid'], 'attributes' => $attributes));
+      return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $item['fid'], 'attributes' => $attributes, 'entity' => $variables['entity'], 'entity_type' => $variables['entity_type']));
   }
 }
 

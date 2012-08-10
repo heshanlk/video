@@ -1071,6 +1071,7 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
           '#image_style' => $settings['image_style'],
           '#path' => isset($uri) ? $uri : '',
           '#entity' => $entity,
+          '#entity_type' => $entity_type,
           '#field' => $field,
           '#instance' => $instance
         );
@@ -1081,6 +1082,7 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
           '#theme' => 'video_formatter_player',
           '#item' => $item,
           '#entity' => $entity,
+          '#entity_type' => $entity_type,
           '#field' => $field,
           '#instance' => $instance,
           '#player_dimensions' => $settings['widthxheight'],
