@@ -7,18 +7,9 @@
 define('VIDEO_PRESET_MAX_LENGTH', 64);
 
 /**
- * All the other settings that you need to declare in your preset.
- *
- * The preset object is passed to this form, so you can use that data to
- * populate the default values for your form elements by using
- * $preset['settings']['param2'].
- *
- * @param $preset
- *   The preset object.
- * @return
- *   The additional form settings that you would like to add to your preset.
+ * Preset form builder.
  */
-function video_preset_default_form($form, &$form_state, $preset) {
+function video_preset_form($form, &$form_state, $preset = FALSE) {
   $factory = new TranscoderAbstractionAbstractFactory();
   $transcoder = $factory->getProduct();
   $codecs = $transcoder->getCodecs();
@@ -26,6 +17,44 @@ function video_preset_default_form($form, &$form_state, $preset) {
   $pixelformats = $transcoder->getPixelFormats();
 
   $form = array();
+  $form_state['preset'] = $preset;
+
+  // basic preset details
+  $form['preset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Preset information'),
+    '#weight' => -10,
+  );
+
+  if (!$preset || $preset['module'] == NULL) {
+    $form['preset']['name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Preset name'),
+      '#maxlength' => VIDEO_PRESET_MAX_LENGTH,
+      '#description' => t('The only permitted punctuation is space, period, hyphen, apostrophe, and underscore.'),
+      '#required' => TRUE,
+      '#weight' => -10,
+      '#element_validate' => array('_video_preset_name_validate'),
+      '#default_value' => !empty($preset['name']) ? $preset['name'] : ''
+    );
+  }
+  else {
+    $form['preset']['name'] = array(
+      '#type' => 'item',
+      '#title' => t('Preset name'),
+      '#description' => t('This preset is provided by the %module_name module. You can override the settings by submitting this form.', array('%module_name' => $preset['module'])),
+      '#weight' => -10,
+      '#markup' => check_plain($preset['name']),
+    );
+  }
+
+  $form['preset']['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Description'),
+    '#description' => t('Add a brief description to your preset name.'),
+    '#weight' => -9,
+    '#default_value' => !empty($preset['description']) ? $preset['description'] : ''
+  );
 
   // video settings
   $form['settings']['video'] = array(
@@ -470,42 +499,6 @@ function video_preset_default_form($form, &$form_state, $preset) {
     '#default_value' => !empty($preset['settings']['clip_length']) ? $preset['settings']['clip_length'] : ''
   );
 
-  return $form;
-}
-
-/**
- * Preset form
- */
-function video_preset_form($form, &$form_state, $preset = FALSE) {
-  $form = array();
-  $form_state['preset'] = $preset;
-
-  // basic preset details
-  $form['preset'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Preset information'),
-    '#weight' => -10,
-  );
-  $form['preset']['name'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Preset name'),
-    '#maxlength' => VIDEO_PRESET_MAX_LENGTH,
-    '#description' => t('Spaces are NOT allowed. The only permitted punctuation is period, hyphen, apostrophe, and underscore.'),
-    '#required' => TRUE,
-    '#weight' => -10,
-    '#element_validate' => array('_video_preset_name_validate'),
-    '#default_value' => !empty($preset['name']) ? $preset['name'] : ''
-  );
-  $form['preset']['description'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Description'),
-    '#description' => t('Add a brief description to your preset name.'),
-    '#weight' => -9,
-    '#default_value' => !empty($preset['description']) ? $preset['description'] : ''
-  );
-
-  // Preset settings
-  $form += video_preset_default_form($form, $form_state, $preset);
 
   // Buttons
   $form['actions'] = array(
@@ -513,25 +506,43 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
       '#weight' => 40,
   );
 
-  $form['actions']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save preset'),
-  );
-
-  if ($preset) {
-    $form['actions']['delete'] = array(
+  if (!$preset || $preset['module'] == NULL || $preset['overridden']) {
+    $form['actions']['submit'] = array(
       '#type' => 'submit',
-      '#value' => t('Delete'),
-      '#submit' => array('video_preset_delete_submit'),
+      '#value' => t('Save'),
     );
   }
   else {
-    $form['actions']['cancel'] = array(
-      '#type' => 'link',
-      '#title' => t('Cancel'),
-      '#href' => 'admin/config/media/video/presets',
+    $form['actions']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Override defaults'),
     );
   }
+
+  if ($preset) {
+    if ($preset['module'] == NULL) {
+      $form['actions']['delete'] = array(
+        '#type' => 'submit',
+        '#value' => t('Delete'),
+        '#submit' => array('video_preset_delete_submit'),
+        '#limit_validation_errors' => array(),
+      );
+    }
+    elseif($preset['overridden']) {
+      $form['actions']['revert'] = array(
+        '#type' => 'submit',
+        '#value' => t('Revert'),
+        '#submit' => array('video_preset_revert_submit'),
+        '#limit_validation_errors' => array(),
+      );
+    }
+  }
+
+  $form['actions']['cancel'] = array(
+    '#type' => 'link',
+    '#title' => t('Cancel'),
+    '#href' => 'admin/config/media/video/presets',
+  );
 
   // Add the form submit handler.
   $form['#submit'][] = 'video_preset_submit';
@@ -555,25 +566,27 @@ function video_preset_validate($form, &$form_state) {
  * Submit handler for the preset form.
  */
 function video_preset_submit($form, &$form_state) {
+  $v =& $form_state['values'];
   $old = isset($form_state['preset']) ? $form_state['preset'] : NULL;
 
   $preset = array();
-  if ($old) {
-    $preset['pid'] = $form_state['preset']['pid'];
+  if ($old && isset($old['pid'])) {
+    $preset['pid'] = $old['pid'];
   }
 
-  $preset['name'] = $form_state['values']['name'];
-  $preset['description'] = $form_state['values']['description'];
+  // There is only a name if this isn't a module provided preset
+  $preset['name'] = isset($v['name']) ? $v['name'] : $old['name'];
+  $preset['description'] = $v['description'];
   // unset unwanted values saved to database
-  unset($form_state['values']['pid'], $form_state['values']['name'], $form_state['values']['description'], $form_state['values']['submit'], $form_state['values']['delete'], $form_state['values']['form_build_id'], $form_state['values']['form_token'], $form_state['values']['form_id'], $form_state['values']['op']);
-  $preset['settings'] = video_preset_array_flatten($form_state['values']);
+  unset($v['name'], $v['description'], $v['submit'], $v['delete'], $v['form_build_id'], $v['form_token'], $v['form_id'], $v['op']);
+  $preset['settings'] = video_preset_array_flatten($v);
 
   // Save this preset.
   $preset = video_preset_save($preset);
 
   // Save new watermark image if exists
-  if (!empty($form_state['values']['video_watermark_fid'])) {
-    $file = file_load($form_state['values']['video_watermark_fid']);
+  if (!empty($v['video_watermark_fid'])) {
+    $file = file_load($v['video_watermark_fid']);
     if ($file->status != FILE_STATUS_PERMANENT) {
       $file->status = FILE_STATUS_PERMANENT;
       file_save($file);
@@ -598,7 +611,7 @@ function video_preset_submit($form, &$form_state) {
 /**
  * Flatten the settings array.
  */
-function video_preset_array_flatten($array, $return=array()) {
+function video_preset_array_flatten($array, $return = array()) {
   foreach ($array as $key => $value) {
     if (is_array($value)) {
       $return = video_preset_array_flatten($value, $return);
@@ -614,8 +627,16 @@ function video_preset_array_flatten($array, $return=array()) {
  * Button submit function: handle the 'Delete' button on the preset form.
  */
 function video_preset_delete_submit($form, &$form_state) {
-  $preset['name'] = $form_state['values']['name'];
-  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . rawurlencode($preset['name']) . '/delete';
+  $preset['name'] = $form_state['preset']['name'];
+  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete';
+}
+
+/**
+ * Button submit function: handle the 'Revert' button on the preset form.
+ */
+function video_preset_revert_submit($form, &$form_state) {
+  $preset['name'] = $form_state['preset']['name'];
+  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . $preset['name'] . '/revert';
 }
 
 /**
@@ -638,11 +659,36 @@ function video_preset_delete_confirm_submit($form, &$form_state) {
 }
 
 /**
+ * Menu callback; revert a single preset.
+ */
+function video_preset_revert_confirm($form, &$form_state, $preset) {
+  $form['name'] = array('#type' => 'value', '#value' => $preset['name']);
+  return confirm_form(
+    $form,
+    t('Are you sure you want to revert the preset %name?', array('%name' => $preset['name'])),
+    'admin/config/media/video/presets',
+    '<p>' . t('This will revert the preset to the default settings provided by module %module_name.', array('%module_name' => $preset['module'])) . '<br/>' . t('This action cannot be undone.') . '</p>',
+    t('Revert'));
+}
+
+/**
+ * Execute preset revert
+ */
+function video_preset_revert_confirm_submit($form, &$form_state) {
+  if ($form_state['values']['confirm']) {
+    video_preset_revert($form_state['values']['name']);
+  }
+
+  $form_state['redirect'] = 'admin/config/media/video/presets';
+}
+
+/**
  * Validation for the preset form.
  */
-function _video_preset_name_validate($element, &$form_state) {
-  $error = video_validate_preset_name($form_state['values']['name']);
-  if ($error && !isset($form_state['preset'])) {
+function _video_preset_name_validate($element, $form_state) {
+  $oldname = isset($form_state['preset']) ? $form_state['preset']['name'] : '';
+  $error = video_validate_preset_name($form_state['values']['name'], $oldname);
+  if ($error) {
     form_set_error('name', $error);
   }
 }
@@ -710,7 +756,8 @@ function video_preset_import_validate($form, &$form_state) {
 function video_preset_import_submit($form, &$form_state) {
   $preset = $form_state['preset'];
   video_preset_save($preset);
-  $form_state['redirect'] = 'admin/config/media/video/presets/preset/' . $preset['name'];
+  drupal_set_message(t('The preset %preset_name has been imported.', array('%preset_name' => $preset['name'])));
+  $form_state['redirect'] = 'admin/config/media/video/presets';
 }
 
 /**
@@ -718,8 +765,7 @@ function video_preset_import_submit($form, &$form_state) {
  */
 function video_preset_export_form($form, &$form_state, $preset) {
   // Unset the unnecessary elements.
-  unset($preset['pid']);
-  unset($preset['default']);
+  unset($preset['pid'], $preset['module'], $preset['overridden'], $preset['default']);
 
   // @todo: support watermarks for export
   if (!empty($preset['settings']['video_watermark_fid'])) {
@@ -752,17 +798,6 @@ function video_preset_export_form($form, &$form_state, $preset) {
 }
 
 /**
- * Get's the player settings for the given player.
- */
-function video_player_settings_form($preset) {
-  $settings_form = $preset['player'] . '_player_settings_form';
-  if (function_exists($settings_form)) {
-    return $settings_form($preset);
-  }
-  return array();
-}
-
-/**
  * Title callback for a preset.
  */
 function video_preset_page_title($preset) {
@@ -789,9 +824,24 @@ function video_preset_save($preset) {
  * Returns the default presets.
  */
 function video_preset_get_default_presets() {
-  $default_presets = module_invoke_all('video_default_presets');
-  drupal_alter('video_default_presets', $default_presets);
-  return $default_presets;
+  $presets = array();
+
+  foreach (module_implements('video_default_presets') as $module) {
+    $function = $module . '_video_default_presets';
+    if (function_exists($function)) {
+      $result = $function();
+      if (isset($result) && is_array($result)) {
+        foreach ($result as $preset) {
+          $preset['module'] = $module;
+          $presets[$preset['name']] = $preset;
+        }
+      }
+    }
+  }
+
+  drupal_alter('video_default_presets', $presets);
+
+  return $presets;
 }
 
 /**
@@ -799,28 +849,31 @@ function video_preset_get_default_presets() {
  */
 function video_preset_get_presets() {
   $presets = array();
-  $normal_presets = array();
 
   // Get all the presets from the database.
-  $result = db_select('video_preset', 'p')
-    ->fields('p')
-    ->orderBy('p.name', 'ASC')
-    ->execute();
+  $result = db_select('video_preset', 'p')->fields('p')->execute();
 
   // Iterate through all the presets and structure them in an array.
   foreach ($result as $preset) {
     $preset = (array) $preset;
-    $preset['default'] = FALSE;
-    $preset['settings'] = $preset['settings'] ? unserialize($preset['settings']) : array();
-    $presets[$preset['pid']] = $preset;
-    $normal_presets[$preset['name']] = $preset['pid'];
+    $preset['module'] = NULL;
+    $preset['settings'] = !empty($preset['settings']) ? unserialize($preset['settings']) : array();
+    $presets[$preset['name']] = $preset;
   }
 
   // Now allow other modules to add their default presets.
   foreach (video_preset_get_default_presets() as $preset) {
-    // adding default TRUE
-    $preset['default'] = TRUE;
-    if (!empty($preset['name']) && !isset($normal_presets[$preset['name']])) {
+    if (empty($preset['name'])) {
+      continue;
+    }
+
+    // Check if this default preset has been overridden.
+    if (isset($presets[$preset['name']])) {
+      $presets[$preset['name']]['overridden'] = TRUE;
+      $presets[$preset['name']]['module'] = $preset['module'];
+    }
+    else {
+      $preset['overridden'] = FALSE;
       $presets[$preset['name']] = $preset;
     }
   }
@@ -829,27 +882,35 @@ function video_preset_get_presets() {
 }
 
 /**
- * Get's the preset.
+ * Retrieves a single preset.
  */
 function video_get_preset($preset_name) {
+  $preset = FALSE;
+
+  // Check if it is a default preset.
+  $default_presets = video_preset_get_default_presets();
+  if (isset($default_presets[$preset_name])) {
+    $preset = $default_presets[$preset_name];
+    $preset['overridden'] = FALSE;
+  }
+
   // Get the preset from the database.
-  $preset = db_select('video_preset', 'p')
+  $dbpreset = db_select('video_preset', 'p')
     ->fields('p')
     ->condition('p.name', $preset_name)
     ->execute()
     ->fetchAssoc();
-  if ($preset) {
-    $preset['settings'] = $preset['settings'] ? unserialize($preset['settings']) : array();
-  }
-  else {
-    // Get all of the default presets.
-    $default_presets = video_preset_get_default_presets();
-
-    // Check to see if this preset exists.
-    if (isset($default_presets[$preset_name])) {
-      // Make this our preset
-      $preset = $default_presets[$preset_name];
+  if ($dbpreset) {
+    $dbpreset['settings'] = !empty($dbpreset['settings']) ? unserialize($dbpreset['settings']) : array();
+    if ($preset == NULL) {
+      $dbpreset['overridden'] = FALSE;
+      $dbpreset['module'] = NULL;
     }
+    else {
+      $dbpreset['overridden'] = TRUE;
+      $dbpreset['module'] = $preset['module'];
+    }
+    $preset = $dbpreset;
   }
 
   // Return the preset.
@@ -871,6 +932,40 @@ function video_preset_delete($preset_name) {
   }
 
   // Delete the preset.
+  db_delete('video_preset')
+    ->condition('name', $preset_name)
+    ->execute();
+
+  // Rebuild Theme Registry
+  drupal_theme_rebuild();
+}
+
+/**
+ * Reverts a preset
+ */
+function video_preset_revert($preset_name) {
+  $preset = video_get_preset($preset_name);
+  if (!$preset || !$preset['overridden']) {
+    return FALSE;
+  }
+
+  // We need to determine if the watermark image is provided by the default or by the override.
+  $default_presets = video_preset_get_default_presets();
+  $default_preset = $default_presets[$preset_name];
+
+  $watermark_override = isset($preset['settings']['video_watermark_fid']) ? intval($preset['settings']['video_watermark_fid']) : 0;
+  $watermark_default = isset($default_preset['settings']['video_watermark_fid']) ? intval($default_preset['settings']['video_watermark_fid']) : 0;
+
+  if ($watermark_override > 0 && $watermark_override != $watermark_default) {
+    $file = file_load($watermark_default);
+    if (!empty($file)) {
+      file_usage_delete($file, 'video');
+      $file->status = 0;
+      file_save($file);
+    }
+  }
+
+  // Delete the preset, this reverts the preset.
   db_delete('video_preset')
     ->condition('name', $preset_name)
     ->execute();
@@ -905,34 +1000,22 @@ function video_preset_name_exists($preset_name) {
  *
  * Borrowed from the user.module.   :)
  */
-function video_validate_preset_name($name) {
-  if (!$name) {
+function video_validate_preset_name($name, $old_name = '') {
+  if (empty($name)) {
     return t('You must enter a preset.');
   }
-  if (video_preset_name_exists($name)) {
+  if ($name != $old_name && video_preset_name_exists($name)) {
     return t('The preset name %name is already taken.', array('%name' => $name));
-  }
-  if (strpos($name, ' ') !== FALSE) {
-    return t('The preset name cannot contain a space.');
   }
   if (is_numeric($name[0])) {
     return t('The preset name cannot begin with a number.');
   }
-  if (preg_match('/[^a-z0-9_]/i', $name)) {
+  if (preg_match('/[^a-z0-9_ \-.\']/i', $name)) {
     return t('The preset name contains an illegal character.');
   }
   if (drupal_strlen($name) > VIDEO_PRESET_MAX_LENGTH) {
     return t('The preset name %name is too long: it must be %max characters or less.', array('%name' => $name, '%max' => VIDEO_PRESET_MAX_LENGTH));
   }
-}
 
-/**
- * Check for default preset
- */
-function video_is_default_preset($preset_name) {
-  // Get the default presets.
-  $default_presets = video_preset_get_default_presets();
-
-  // See if there is a default preset name.
-  return ($default_presets && isset($default_presets[$preset_name]));
+  return NULL;
 }

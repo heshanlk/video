@@ -63,10 +63,18 @@ function video_preset_admin_settings($form_state) {
     );
 
     foreach ($presets as $preset) {
+      $delete = NULL;
+      if (empty($preset['module'])) {
+        $delete = array('#type' => 'link', '#title' => t('delete'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete');
+      }
+      elseif ($preset['overridden']) {
+        $delete = array('#type' => 'link', '#title' => t('revert'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/revert');
+      }
+
       $form['video_preset'][$preset['name']] = array(
         'description' => array('#markup' => check_plain($preset['description'])),
         'edit' => array('#type' => 'link', '#title' => t('edit'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name']),
-        'delete' => $preset['default'] ? '' : array('#type' => 'link', '#title' => t('delete'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete'),
+        'delete' => $delete,
         'export' => array('#type' => 'link', '#title' => t('export'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/export'),
         /*
         'weight' => array(
@@ -78,7 +86,7 @@ function video_preset_admin_settings($form_state) {
         */
         'status' => array(
           '#type' => 'checkbox',
-          '#title' => $preset['name'],
+          '#title' => check_plain($preset['name']),
           '#default_value' => in_array($preset['name'], $selected),
         ),
       );
