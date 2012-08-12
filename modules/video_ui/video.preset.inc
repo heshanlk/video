@@ -878,6 +878,8 @@ function video_preset_get_presets() {
     }
   }
 
+  uksort($presets, 'strnatcasecmp');
+
   return $presets;
 }
 
@@ -1004,7 +1006,7 @@ function video_validate_preset_name($name, $old_name = '') {
   if (empty($name)) {
     return t('You must enter a preset.');
   }
-  if ($name != $old_name && video_preset_name_exists($name)) {
+  if (strnatcasecmp($name, $old_name) != 0 && video_preset_name_exists($name)) {
     return t('The preset name %name is already taken.', array('%name' => $name));
   }
   if (is_numeric($name[0])) {
