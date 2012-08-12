@@ -127,11 +127,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       }
     }
 
-    // Disable two-pass encoding for Ogg Theora
-    if ($options['video_extension'] == 'ogg' || $options['video_extension'] == 'ogv') {
-      $this->multipass = FALSE;
-    }
-
     return TRUE;
   }
 
@@ -145,7 +140,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     parent::setOutput($tmpoutputdir, $tmpoutputname, $overwrite_mode);
 
-    $result = $this->transcoder->setOutput($tmpoutputdir . '/', $tmpoutputname);
+    $result = $this->transcoder->setOutput($tmpoutputdir . '/', $tmpoutputname, PHPVideoToolkit::OVERWRITE_EXISTING);
     if ($result !== PHPVideoToolkit::RESULT_OK) {
       watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
       $this->errors['output'] = $this->transcoder->getLastError();
