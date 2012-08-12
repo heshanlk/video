@@ -140,6 +140,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     parent::setOutput($tmpoutputdir, $tmpoutputname, $overwrite_mode);
 
+    // Overwrite is necessary to have two-pass encoding for WebM and Ogg Theora
     $result = $this->transcoder->setOutput($tmpoutputdir . '/', $tmpoutputname, PHPVideoToolkit::OVERWRITE_EXISTING);
     if ($result !== PHPVideoToolkit::RESULT_OK) {
       watchdog('transcoder', 'Error set options @message', array('@message' => $this->transcoder->getLastError()), WATCHDOG_ERROR);
