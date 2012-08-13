@@ -19,12 +19,15 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
 
   if (isset($settings['video_extension']) && !isset($formats[$settings['video_extension']])) {
     drupal_set_message(t('The currently selected @setting_name %setting_value is no longer available, possibly because you changed the transcoder type or the transcoder itself was updated. Please select a new @setting_name.', array('@setting_name' => t('Video output extension'), '%setting_value' => $settings['video_extension'])), 'warning');
+    unset($settings['video_extension']);
   }
   if (isset($settings['video_codec']) && !isset($codecs['encode']['video'][$settings['video_codec']])) {
     drupal_set_message(t('The currently selected @setting_name %setting_value is no longer available, possibly because you changed the transcoder type or the transcoder itself was updated. Please select a new @setting_name.', array('@setting_name' => t('Video codec'), '%setting_value' => $settings['video_codec'])), 'warning');
+    unset($settings['video_codec']);
   }
   if (isset($settings['audio_codec']) && !isset($codecs['encode']['audio'][$settings['audio_codec']])) {
     drupal_set_message(t('The currently selected @setting_name %setting_value is no longer available, possibly because you changed the transcoder type or the transcoder itself was updated. Please select a new @setting_name.', array('@setting_name' => t('Audio codec'), '%setting_value' => $settings['audio_codec'])), 'warning');
+    unset($settings['audio_codec']);
   }
 
   $form = array();
@@ -84,7 +87,6 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#required' => TRUE,
   );
 
-  natcasesort($codecs['encode']['video']);
   $form['settings']['video']['video_codec'] = array(
     '#type' => 'select',
     '#title' => t('Video codec'),
@@ -192,7 +194,6 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#collapsed' => FALSE,
   );
 
-  natcasesort($codecs['encode']['audio']);
   $form['settings']['audio']['audio_codec'] = array(
     '#type' => 'select',
     '#title' => t('Audio codec'),
@@ -541,7 +542,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
         '#limit_validation_errors' => array(),
       );
     }
-    elseif($preset['overridden']) {
+    elseif ($preset['overridden']) {
       $form['actions']['revert'] = array(
         '#type' => 'submit',
         '#value' => t('Revert'),
