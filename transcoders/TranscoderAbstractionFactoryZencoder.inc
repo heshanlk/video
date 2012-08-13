@@ -654,6 +654,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
     lock_release('video_zencoder_thumbnails:' . $video->fid);
 
+    // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
+    cache_clear_all('field:' . $video->entity_type . ':' . $video->entity_id, 'cache_field');
+
     // Skip setting the thumbnail if there are no thumbnails or when the current value is already valid
     $currentthumb = isset($entity->{$fieldname}[$langcode][$delta]['thumbnail']) ? intval($entity->{$fieldname}[$langcode][$delta]['thumbnail']) : 0;
     if (empty($thumbs) || isset($thumbs[$currentthumb])) {
@@ -677,9 +680,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
         break;
     }
-
-    // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
-    cache_clear_all('field:' . $video->entity_type . ':' . $video->entity_id, 'cache_field');
   }
 
   /**
