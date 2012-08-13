@@ -20,7 +20,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   protected $multipass = NULL;
 
   public function __construct() {
-    $this->transcoder = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), file_directory_temp() . '/');
+    $this->transcoder = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), realpath(file_directory_temp()) . '/');
     PHPVideoToolkit::$ffmpeg_info = $this->getCachedFFmpegInfo();
     parent::__construct();
   }
