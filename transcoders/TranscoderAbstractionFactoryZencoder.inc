@@ -206,12 +206,10 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     try {
       $encoding_job = $zencoder->jobs->create($this->options);
-      $output_uri = $this->settings['base_url'] . '/' . $this->settings['filename'];
 
       $output = new stdClass();
       $output->filename = $this->settings['filename'];
-      $output->uri = $output_uri;
-      $output->filemime = file_get_mimetype($output_uri);
+      $output->uri = $this->settings['base_url'] . '/' . $this->settings['filename'];
       $output->filesize = 0;
       $output->timestamp = time();
       $output->jobid = intval($encoding_job->id);
@@ -688,7 +686,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   public function getCodecs() {
     $auto = t('Default for this extension');
 
-    $codecs = array(
+    return array(
       'encode' => array(
         'video' => array(
           '' => $auto,
@@ -709,8 +707,36 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       ),
       'decode' => array(),
     );
+  }
 
-    return $codecs;
+  public function getAvailableFormats($type = FALSE) {
+    return array(
+      '3g2' => '3G2',
+      '3gp' => '3GP',
+      '3gp2' => '3GP2',
+      '3gpp' => '3GPP',
+      '3gpp2' => '3GPP2',
+      'aac' => 'AAC',
+      'f4a' => 'F4A',
+      'f4b' => 'F4B',
+      'f4v' => 'F4V',
+      'flv' => 'FLV',
+      'm4a' => 'M4A',
+      'm4b' => 'M4B',
+      'm4r' => 'M4R',
+      'm4v' => 'M4V',
+      'mov' => 'MOV',
+      'mp3' => 'MP3',
+      'mp4' => 'MP4',
+      'oga' => 'OGA',
+      'ogg' => 'OGG',
+      'ogv' => 'OGV',
+      'ogx' => 'OGX',
+      'ts' => 'TS',
+      'webm' => 'WebM',
+      'wma' => 'WMA',
+      'wmv' => 'WMV',
+    );
   }
 
   public function getPixelFormats() {

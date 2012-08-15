@@ -93,40 +93,12 @@ abstract class TranscoderAbstractionFactory {
   /**
    * Get enabled and supporting codecs by the transcoder.
    */
-  abstract public function getCodecs();
+  public abstract function getCodecs();
 
   /**
    * Get available output file formats from the transcoder.
    */
-  public function getAvailableFormats($type = FALSE) {
-    return array(
-      '3g2' => '3G2',
-      '3gp' => '3GP',
-      '3gp2' => '3GP2',
-      '3gpp' => '3GPP',
-      '3gpp2' => '3GPP2',
-      'aac' => 'AAC',
-      'f4a' => 'F4A',
-      'f4b' => 'F4B',
-      'f4v' => 'F4V',
-      'flv' => 'FLV',
-      'm4a' => 'M4A',
-      'm4b' => 'M4B',
-      'm4r' => 'M4R',
-      'm4v' => 'M4V',
-      'mov' => 'MOV',
-      'mp3' => 'MP3',
-      'mp4' => 'MP4',
-      'oga' => 'OGA',
-      'ogg' => 'OGG',
-      'ogv' => 'OGV',
-      'ogx' => 'OGX',
-      'ts' => 'TS',
-      'webm' => 'WebM',
-      'wma' => 'WMA',
-      'wmv' => 'WMV'
-    );
-  }
+  public abstract function getAvailableFormats($type = FALSE);
 
   /**
    * Returns a list of all supported pixel formats.
@@ -249,9 +221,10 @@ abstract class TranscoderAbstractionFactory {
    */
   public function loadOutput($fid) {
     $fids = db_select('video_output', 'vo')
-      ->fields('vo')
-      ->condition('vo.original_fid', $fid)->execute()->fetchAllAssoc('output_fid');
-    $files = file_load_multiple(array_keys($fids));
+      ->fields('vo', array('output_fid'))
+      ->condition('vo.original_fid', $fid)
+      ->execute()->fetchAllKeyed(0, 0);
+    $files = file_load_multiple($fids);
 
     $videofiles = array();
     foreach ($files as $file) {

@@ -271,10 +271,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       return FALSE;
     }
 
-    // Work-around for missing WebM support in file_get_mimetype().
-    // See http://drupal.org/node/1347624 .
-    $iswebm = substr($this->realoutputname, -5) === '.webm';
-
     $file_info = $this->getFileInfo();
     $realoutputuri = $this->realoutputdir . '/' . $this->realoutputname;
     copy($tmpoutputpath, $realoutputuri);
@@ -283,7 +279,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $output = new stdClass();
     $output->filename = $this->realoutputname;
     $output->uri = $realoutputuri;
-    $output->filemime = $iswebm ? 'video/webm' : file_get_mimetype($realoutputuri);
     $output->filesize = $filesize;
     $output->timestamp = REQUEST_TIME;
     $output->jobid = NULL;

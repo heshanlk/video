@@ -45,6 +45,10 @@ class video_utility {
 
       if (strncmp($wrapperbase, $url, $wrapperbaselength) === 0) {
         $uri = $wrapperscheme . '://' . drupal_substr($url, $wrapperbaselength);
+        // Remove the query part
+        if (($pos = strpos($uri, '?')) !== FALSE) {
+          $uri = substr($uri, 0, $pos);
+        }
         break;
       }
     }
@@ -225,5 +229,33 @@ class video_utility {
       'video_play_windowsmedia' => t('Windows Media Player'),
       'video_play_theora' => t('Theora Player'),
     );
+  }
+
+  /**
+   * Video-specific replacement for file_get_mimetype()
+   *
+   * The Drupal file_get_mimetype() function lacks support for some
+   * video formats.
+   */
+  public static function getMimeType($uri) {
+    $extension = drupal_strtolower(self::getExtension($uri));
+
+    switch ($extension) {
+      // Work-around for missing WebM support in file_get_mimetype().
+      // See http://drupal.org/node/1347624
+      case 'webm':
+        return 'video/webm';
+
+      case 'm3u8':
+        // Could also be application/x-mpegurl
+        return 'application/vnd.apple.mpegurl';
+
+      case 'ts':
+        // RFC3555
+        return 'video/MP2T';
+
+      default:
+        return file_get_mimetype($uri);
+    }
   }
 }

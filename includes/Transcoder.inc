@@ -152,12 +152,10 @@ class Transcoder {
     if (!empty($output) && $transcodingsuccess) {
       $this->cleanConverted($video->fid);
       foreach ($output as $file) {
+        $file->filemime = video_utility::getMimeType($file->uri);
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $video->uid;
-        // if media module exists add type as an image
-        if (module_exists('media')) {
-          $file->type = 'video';
-        }
+        $file->type = 'video'; // For the media module
         drupal_write_record('file_managed', $file);
         file_usage_add($file, 'file', $video->entity_type, $video->entity_id);
         $output_vid = array(
@@ -172,7 +170,7 @@ class Transcoder {
         db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('fid', $video->fid)->execute();
 
         // Change the status if the file exists.
-        // this happens for ffmpeg and other transcoders that transcoder
+        // this happens for FFmpeg and other transcoders that transcoder
         // directly. For Zencoder, the status is changed later.
         if (file_exists($file->uri)) {
           $this->changeStatus($video->fid, VIDEO_RENDERING_COMPLETE);
@@ -202,7 +200,7 @@ class Transcoder {
       db_delete('file_managed')
           ->condition('fid', $file->output_fid)
           ->execute();
-      // delete from file_usagle
+      // delete from file_usage
       db_delete('file_usage')
           ->condition('fid', $file->output_fid)
           ->execute();
