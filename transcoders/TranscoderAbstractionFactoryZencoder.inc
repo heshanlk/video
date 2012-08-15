@@ -10,11 +10,13 @@
 class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory implements TranscoderFactoryInterface {
   protected $options = array();
   private $postbackurl;
+  private $outputdestination;
 
   public function __construct() {
     parent::__construct();
     $this->options['api_key'] = variable_get('video_zencoder_api_key');
     $this->postbackurl = variable_get('video_zencoder_postback', url('postback/jobs', array('absolute' => TRUE)));
+    $this->outputdestination = variable_get('video_zencoder_output_destination');
   }
 
   public function setInput(array $file) {
@@ -122,6 +124,34 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $this->options['output']['label'] = 'video-' . $this->settings['input']['fid'];
     $this->options['output']['filename'] = $this->settings['filename'];
     $this->options['output']['public'] = 1;
+    $baseurl = NULL;
+
+    if ($this->outputdestination == 's3') {
+      $bucket = variable_get('amazons3_bucket');
+      // For now, silently ignore the "Use Amazon S3 module" setting when the bucket is not found
+      if ($bucket !== NULL) {
+        $baseurl = 's3://' . $bucket . '/';
+      }
+    }
+    elseif ($this->outputdestination == 'rcf') {
+      $username = variable_get('rackspace_cloud_username');
+      $key = variable_get('rackspace_cloud_api_key');
+      $container = variable_get('rackspace_cloud_container');
+      $authurl = variable_get('rackspace_cloud_auth_url');
+      // For now, silently ignore the "Use Rackspace Cloud Files module" setting when the cloudfiles module isn't setup
+      if ($username !== NULL && $key !== NULL && $container !== NULL && $authurl !== NULL) {
+        $scheme = $authurl == 'https://lon.auth.api.rackspacecloud.com' ? 'cf+uk' : 'cf';
+        $baseurl = $scheme . '://' . rawurlencode($username) . ':' . rawurlencode($key) . '@' . $container . '/';
+      }
+    }
+
+    if ($baseurl != NULL) {
+      $this->options['output']['base_url'] = $baseurl . file_uri_target($output_directory) . '/';
+
+      if (isset($this->options['output']['thumbnails'])) {
+        $this->options['output']['thumbnails']['base_url'] = $baseurl . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $this->settings['input']['fid'] . '/';
+      }
+    }
   }
 
   /**
@@ -178,7 +208,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           break;
         }
 
-        copy($srcuri, $dsturi);
+        $this->moveFile($srcuri, $dsturi);
         if (variable_get('video_zencoder_testing_mode', FALSE)) {
           db_update('video_queue')
             ->fields(array('status' => VIDEO_RENDERING_COMPLETE))
@@ -351,6 +381,39 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           address from which Zencoder can download video.'),
         '#default_value' => variable_get('video_zencoder_test_file_path', 'http://example.com/video.mp4'),
       );
+
+      // advanced
+      $form['zencoder_info']['advanced'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Advanced'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+
+      $tempdestinations = array(
+        '' => t('Zencoder temporary storage') . ' (' . t('default') . ')',
+      );
+      if (module_exists('amazons3') && variable_get('amazons3_bucket', FALSE)) {
+        $tempdestinations['s3'] = t('Amazon S3 bucket %bucket', array('%bucket' => variable_get('amazons3_bucket')));
+      }
+      if (module_exists('cloud_files') && variable_get('rackspace_cloud_container', FALSE)) {
+        $tempdestinations['rcf'] = t('Rackspace Cloud Files container %container', array('%container' => variable_get('rackspace_cloud_container')));
+      }
+
+      if (count($tempdestinations) > 1) {
+        $form['zencoder_info']['advanced']['video_zencoder_output_destination'] = array(
+          '#type' => 'radios',
+          '#title' => t('Location for Zencoder output'),
+          '#default_value' => $this->outputdestination === NULL ? '' : $this->outputdestination,
+          '#options' => $tempdestinations,
+          '#description' => t('Normally, Zencoder uploads its transcoded files to its own Amazon S3 bucket from which the Video module will copy the file to the final destination. Use this setting to use a different location. If the selected location is identical to the final destination, this saves resource intensive copy operations during handling of the postback.'),
+        );
+
+        if (isset($tempdestinations['s3'])) {
+          $form['zencoder_info']['advanced']['video_zencoder_output_destination']['#description'] .= '<br/>' .
+            t('To enable Zencoder to upload directly to your Amazon S3 bucket, read the <a href="@zencoder-s3-url">Zencoder manual</a>.', array('@zencoder-s3-url' => url('https://app.zencoder.com/docs/guides/getting-started/working-with-s3')));
+        }
+      }
     }
     return $form;
   }
@@ -539,7 +602,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // to timeout and retry the notification postback later.
     // So we only copy the file when it doesn't exist or has a different file size.
     if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes) {
-      copy($output->url, $outputfile->uri);
+      if (!$this->moveFile($output->url, $outputfile->uri)) {
+        db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('fid', $fid)->execute();
+        watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $notification->output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
+        return;
+      }
     }
 
     $outputfile->filesize = $output->file_size_in_bytes;
@@ -635,7 +702,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         $update = array('fid');
       }
 
-      if ($shouldcopy && !copy($thumbnail->url, $thumb->uri)) {
+      if ($shouldcopy && !$this->moveFile($thumbnail->url, $thumb->uri)) {
         watchdog('transcoder', 'Could not copy @thumbsrc to @thumbdest.', array('@thumbsrc' => $thumbnail->url, '@thumbdest' => $thumb->uri), WATCHDOG_ERROR);
         continue;
       }
