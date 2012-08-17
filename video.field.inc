@@ -677,11 +677,12 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
     if ($field['settings']['autothumbnail'] == 'auto') {
       $transcoder = new Transcoder();
       $thumbs = $transcoder->extractFrames($file, $field);
+      $thumbstyle = !empty($field['settings']['preview_video_thumb_style']) ? $field['settings']['preview_video_thumb_style'] : 'thumbnail';
 
       if (!empty($thumbs)) {
         $thumbss = array();
         foreach ($thumbs as $img) {
-          $thumbss[$img->fid] = theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $img->uri));
+          $thumbss[$img->fid] = theme('image_style', array('style_name' => $thumbstyle, 'path' => $img->uri));
         }
 
         if ($thumbnailfid > 0 && isset($thumbss[$thumbnailfid])) {
@@ -731,19 +732,21 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
     }
 
     // Setup our large thumbnail that is on the left.
-    $large_thumb = NULL;
-    if (!empty($currentthumb)) {
-      $large_thumb = file_load($currentthumb);
-    }
-    elseif ($thumbnailfid > 0) {
-      $large_thumb = file_load($thumbnailfid);
-    }
-    elseif ($defaultthumbfid > 0) {
-      $large_thumb = file_load($defaultthumbfid);
-    }
+    if (!empty($field['settings']['preview_video_thumb_style'])) {
+      $large_thumb = NULL;
+      if (!empty($currentthumb)) {
+        $large_thumb = file_load($currentthumb);
+      }
+      elseif ($thumbnailfid > 0) {
+        $large_thumb = file_load($thumbnailfid);
+      }
+      elseif ($defaultthumbfid > 0) {
+        $large_thumb = file_load($defaultthumbfid);
+      }
 
-    if (!empty($large_thumb)) {
-      $element['preview']['#markup'] = '<div class="video-preview video_large_thumbnail-' . $fid . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
+      if (!empty($large_thumb)) {
+        $element['preview']['#markup'] = '<div class="video-preview video_large_thumbnail-' . $fid . '">' . theme('image_style', array('style_name' => $field['settings']['preview_video_thumb_style'], 'path' => $large_thumb->uri)) . '</div>';
+      }
     }
   }
 }
