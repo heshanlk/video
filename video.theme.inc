@@ -200,7 +200,7 @@ function theme_video_flv($variables) {
     return '';
   }
 
-  $extension = strtolower(video_utility::getExtension($video->filename));
+  $extension = video_utility::getExtension($video->filename);
   $flash_player = variable_get('video_extension_' . $extension . '_flash_player', '');
   switch ($flash_player) {
     case 'flowplayer':
@@ -258,7 +258,7 @@ function theme_video_html5($variables) {
   $item = $variables['item'];
 
   $files = $item['playablefiles'];
-  $extension = strtolower(video_utility::getExtension($files[0]->filename));
+  $extension = video_utility::getExtension($files[0]->filename);
 
   $html5_player = variable_get('video_extension_' . $extension . '_html5_player', 'video');
   switch ($html5_player) {

@@ -73,7 +73,7 @@ class video_utility {
   }
 
   public static function getExtension($filename) {
-    return pathinfo($filename, PATHINFO_EXTENSION);
+    return drupal_strtolower(pathinfo($filename, PATHINFO_EXTENSION));
   }
 
   public static function imageSave($resource, $path, $type) {
@@ -238,7 +238,7 @@ class video_utility {
    * video formats.
    */
   public static function getMimeType($uri) {
-    $extension = drupal_strtolower(self::getExtension($uri));
+    $extension = self::getExtension($uri);
 
     switch ($extension) {
       // Work-around for missing WebM support in file_get_mimetype().
