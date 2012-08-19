@@ -78,7 +78,7 @@ function theme_video_formatter_player(array $variables) {
     }
   }
 
-  $extension = video_utility::getExtension($item['playablefiles'][0]->filename);
+  $extension = video_utility::getExtension($item['playablefiles'][0]->uri);
   $defaults = video_utility::getVideoExtensions();
   $theme_function = variable_get('video_extension_' . $extension, $defaults[$extension]);
 
@@ -200,7 +200,7 @@ function theme_video_flv($variables) {
     return '';
   }
 
-  $extension = video_utility::getExtension($video->filename);
+  $extension = video_utility::getExtension($video->uri);
   $flash_player = variable_get('video_extension_' . $extension . '_flash_player', '');
   switch ($flash_player) {
     case 'flowplayer':
@@ -258,7 +258,7 @@ function theme_video_html5($variables) {
   $item = $variables['item'];
 
   $files = $item['playablefiles'];
-  $extension = video_utility::getExtension($files[0]->filename);
+  $extension = video_utility::getExtension($files[0]->uri);
 
   $html5_player = variable_get('video_extension_' . $extension . '_html5_player', 'video');
   switch ($html5_player) {
