@@ -9,12 +9,6 @@
       if($.fn.media) {
         $('.jmedia').media();
       }
-
-      // change metadata options
-      video_hide_all__metadata_options();
-      $("input[name='video_metadata']").change(function() {
-        video_hide_all__metadata_options();
-      });
 	
       if(settings.video) {
         $.fn.media.defaults.flvPlayer = settings.video.flvplayer;
@@ -61,16 +55,6 @@
         var id = $(this).attr('id');
         var src = $('label[for="'+id+'"]').find('img').attr('src');
         $('.'+holder+' img').attr('src', src);
-      }
-    });
-  }
-  
-  function video_hide_all__metadata_options() {
-    $("input[name='video_metadata']").each(function() {
-      var id = $(this).val();
-      $('#'+id).hide();
-      if ($(this).is(':checked')) {
-        $('#' + id).show();
       }
     });
   }

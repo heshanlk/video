@@ -213,7 +213,26 @@ function video_general_admin_settings() {
     '#disabled' => TRUE,
     '#access' => $hastranscoder,
   );
+  $form['video_dimensions'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Available dimensions for converting and displaying videos'),
+    '#description' => t('Enter one dimension per line. Each resolution must be in the form of <code>width</code>x<code>height</code>. Example dimensions: <code>1280x720</code>.'),
+    '#default_value' => variable_get('video_dimensions', video_utility::getDefaultDimensions()),
+    '#required' => TRUE,
+    '#wysiwyg' => FALSE,
+  );
+
   return system_settings_form($form);
+}
+
+function video_general_admin_settings_validate($form, $form_state) {
+  $v =& $form_state['values'];
+  if (!empty($v['video_dimensions'])) {
+    $v['video_dimensions'] = str_replace("\r", '', $v['video_dimensions']);
+    if (!video_utility::validateDimensionList($v['video_dimensions'])) {
+      form_error($form['video_dimensions'], t('The list of dimensions contains errors: only enter new lines and dimensions in the form widthxheight.'));
+    }
+  }
 }
 
 /**
@@ -317,22 +336,6 @@ function video_players_admin_settings_submit($form, &$form_state) {
       unset($form_state['values']['video_extension_' . $ext . '_html5_player']);
     }
   }
-}
-
-/**
- * Video Metadata admin settings
- */
-function video_metadata_admin_settings() {
-  $metadata = new Metadata;
-  $form = $metadata->adminSettings();
-  return system_settings_form($form);
-}
-
-function video_metadata_admin_settings_validate($form, &$form_state) {
-  // add vallidations by metadata interface
-  $metadata = $form_state['values']['video_metadata'];
-  $metadata = new Metadata($metadata);
-  $metadata->adminSettingsValidate($form, $form_state);
 }
 
 /**

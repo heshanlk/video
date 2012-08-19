@@ -18,6 +18,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   protected $realoutputdir = NULL;
   protected $realoutputname = NULL;
   protected $multipass = NULL;
+  protected $outputextension = NULL;
 
   public function __construct() {
     $this->transcoder = new PHPVideoToolkit(variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'), realpath(file_directory_temp()) . '/');
@@ -55,6 +56,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     $video_info = $this->getFileInfo();
     $this->multipass = TRUE;
+    $this->outputextension = NULL;
     foreach ($options as $key => $value) {
       if (empty($value) || $value === 'none') {
         continue;
@@ -116,6 +118,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           if ($value == 1) {
             $this->multipass = FALSE;
           }
+          break;
+        case 'video_extension':
+          $this->outputextension = $value;
           break;
       }
 
@@ -252,6 +257,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     // Restore the directory
     chdir($drupaldir);
 
+    // Log an error when trancoding fails
     $tmpoutputpath = $this->settings['base_url'] . '/' . $this->settings['filename'];
     if ($result !== PHPVideoToolkit::RESULT_OK || !file_exists($tmpoutputpath) || ($filesize = filesize($tmpoutputpath)) == 0) {
       $errorlist = $this->transcoder->getErrors();
@@ -269,6 +275,39 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       $this->errors['execute'] = $errorlist;
       $this->transcoder->reset(true);
       return FALSE;
+    }
+
+    // Post-process the file with qt-faststart
+    $cmd = variable_get('video_ffmpeg_qtfaststart_path');
+
+    if ($cmd != NULL && is_file($cmd) && $this->outputextension == 'mp4') {
+      $qttmpfile = $tmpoutputpath . '-qt';
+      $output = array();
+      $retval = 0;
+      exec($cmd . ' ' . escapeshellarg($tmpoutputpath) . ' ' . escapeshellarg($qttmpfile) . ' 2>&1', $output, $retval);
+
+      // qt-faststart does not return an error code when it doesn't generate an output file,
+      // so also check if the output file has been generated.
+      if ($retval == 0 && file_exists($qttmpfile)) {
+        unlink($tmpoutputpath);
+        rename($qttmpfile, $tmpoutputpath);
+      }
+      else {
+        watchdog('transcoder', 'Error while executing @cmdname on video @filename: @output', array('@cmdname' => 'qt-faststart', '@filename' => $this->realoutputname, '@output' => implode("\n", $output)), WATCHDOG_ERROR);
+        file_delete($qttmpfile);
+      }
+    }
+
+    // Post-process the file with flvtool2
+    $cmd = variable_get('video_ffmpeg_flvtool2_path');
+    if ($cmd != NULL && is_file($cmd) && $this->outputextension == 'flv') {
+      $output = array();
+      $retval = 0;
+      exec($cmd . ' -U ' . escapeshellarg($tmpoutputpath) . ' 2>&1', $output, $retval);
+
+      if ($retval != 0) {
+        watchdog('transcoder', 'Error while executing @cmdname on video @filename: @output', array('@cmdname' => 'flvtool2', '@filename' => $this->realoutputname, '@output' => implode("\n", $output)), WATCHDOG_ERROR);
+      }
     }
 
     $file_info = $this->getFileInfo();
@@ -423,18 +462,39 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       '#default_value' => variable_get('video_thumbnail_count', 5),
       '#size' => 5,
     );
+
+    // Video conversion settings.
+    $form['helpers'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Helper programs'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+    $form['helpers']['video_ffmpeg_qtfaststart_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to qt-faststart'),
+      '#default_value' => variable_get('video_ffmpeg_qtfaststart_path'),
+      '#description' => t('When you enter the path to @toolname here, it will be run after any @filetype files are transcoded. It improves the loading time of @filetype videos. On Linux, the default for this field is %default_value.', array('@toolname' => 'qt-faststart', '@filetype' => 'MP4', '%default_value' => '/usr/bin/qt-faststart')),
+    );
+    $form['helpers']['video_ffmpeg_flvtool2_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to flvtool2'),
+      '#default_value' => variable_get('video_ffmpeg_flvtool2_path'),
+      '#description' => t('When you enter the path to @toolname here, it will be run after any @filetype files are transcoded. It improves the loading time of @filetype videos. On Linux, the default for this field is %default_value.', array('@toolname' => 'flvtool2', '@filetype' => 'FLV', '%default_value' => '/usr/bin/flvtool2')),
+    );
+
     return $form;
   }
 
   public function adminSettingsValidate($form, &$form_state) {
-    $ffmpeg_path = $form_state['values']['video_ffmpeg_path'];
+    $v =& $form_state['values'];
 
-    if (!empty($ffmpeg_path)) {
-      $toolkit = new PHPVideoToolkit($ffmpeg_path);
+    if (!empty($v['video_ffmpeg_path'])) {
+      $toolkit = new PHPVideoToolkit($v['video_ffmpeg_path']);
       PHPVideoToolkit::$ffmpeg_info = FALSE;
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
       if (!$ffmpeg['ffmpeg-found'] || ($version = self::getVersionFromOutput($ffmpeg['raw'])) == NULL) {
-        form_set_error('video_ffmpeg_path', t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $ffmpeg_path, '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+        form_set_error('video_ffmpeg_path', t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $v['video_ffmpeg_path'], '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
       elseif (empty($ffmpeg['codecs']['video']) || empty($ffmpeg['codecs']['audio'])) {
         form_set_error('video_ffmpeg_path', t('FFmpeg version %version was found, but no supported codecs could be found. Please check whether FFmpeg and all support libraries have been installed correctly.', array('%version' => $version)));
@@ -445,6 +505,18 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
       // Clear FFmpeg information when the path has changed.
       cache_clear_all(self::INFO_CID, self::INFO_CACHE);
+    }
+
+    if (!empty($v['video_ffmpeg_qtfaststart_path'])) {
+      if (!is_file($v['video_ffmpeg_qtfaststart_path'])) {
+        form_error($form['helpers']['video_ffmpeg_qtfaststart_path'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_qtfaststart_path'])));
+      }
+    }
+
+    if (!empty($v['video_ffmpeg_flvtool2_path'])) {
+      if (!is_file($v['video_ffmpeg_flvtool2_path'])) {
+        form_error($form['helpers']['video_ffmpeg_flvtool2_path'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_flvtool2_path'])));
+      }
     }
   }
 

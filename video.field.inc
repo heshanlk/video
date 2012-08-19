@@ -985,7 +985,7 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
         '#title' => t('Dimensions'),
         '#type' => 'select',
         '#default_value' => $settings['widthxheight'],
-        '#description' => t('Select the desired dimensions of the video player. You can add your own dimensions at !settings.', array('!settings' => l(t('video metadata settings'), 'admin/config/media/video/metadata'))),
+        '#description' => t('Select the desired dimensions of the video player. You can add your own dimensions at !settings.', array('!settings' => l(t('video module settings'), 'admin/config/media/video'))),
         '#options' => video_utility::getDimensions(),
       );
 

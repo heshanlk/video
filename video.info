@@ -7,7 +7,6 @@ dependencies[] = image
 
 files[] = video.utility.inc
 files[] = includes/Conversion.inc
-files[] = includes/Metadata.inc
 files[] = includes/Preset.inc
 files[] = includes/Transcoder.inc
 files[] = includes/TranscoderFactory.inc

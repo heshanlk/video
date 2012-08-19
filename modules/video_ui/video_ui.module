@@ -134,22 +134,9 @@ function video_ui_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  // Metadata settings
-  $items['admin/config/media/video/metadata'] = array(
-    'title' => 'Metadata',
-    'description' => 'Configure your metadata settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_metadata_admin_settings'),
-    'access callback' => 'video_admin_access_withtranscoder',
-    'access arguments' => array('administer site configuration'),
-    'file' => 'video.admin.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 4,
-  );
-
   // Cron settings
   $items['admin/config/media/video/cron'] = array(
-    'title' => 'Cron settings',
+    'title' => 'Cron',
     'description' => 'Configure your cron settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('video_cron_admin_settings'),

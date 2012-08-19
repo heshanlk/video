@@ -503,3 +503,14 @@ function video_update_7207(&$sandbox) {
 function video_update_7208(&$sandbox) {
   db_add_index('video_output', 'original_fid', array('original_fid'));
 }
+
+/**
+ * Rename variable video_metadata_path to video_ffmpeg_flvtool2_path and
+ * video_metadata_dimensions to video_dimensions.
+ */
+function video_update_7209(&$sandbox) {
+  variable_set('video_ffmpeg_flvtool2_path', variable_get('video_metadata_path'));
+  variable_set('video_dimensions', variable_get('video_metadata_dimensions'));
+  variable_del('video_metadata_path');
+  variable_del('video_metadata_dimensions');
+}
