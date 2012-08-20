@@ -747,6 +747,43 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
   }
 
+  private function moveFile($srcurl, $dsturi) {
+    // If the Amazon S3 or Cloud Files module is used, we know that the file is on s3:// or rcf://.
+    // We must move the file, because the original must be deleted.
+    if ($this->outputdestination == 's3' || $this->outputdestination == 'rcf') {
+      $srcuri = $this->outputdestination . ':/' . parse_url($srcurl, PHP_URL_PATH);
+      // Check if the file is already at the right place
+      if ($srcuri === $dsturi) {
+        return TRUE;
+      }
+      // Move the file if the target is also s3:// or rcf://
+      if (file_uri_scheme($dsturi) == $this->outputdestination) {
+        return rename($srcuri, $dsturi);
+      }
+      if (!copy($srcurl, $dsturi)) {
+        return FALSE;
+      }
+      unlink($srcuri);
+      return TRUE;
+    }
+
+    // Check if $srcurl is actually a $uri
+    $srcuri = $srcurl;
+    if (strncmp('http', $srcuri, 4) === 0) {
+      $srcuri = video_utility::urlToUri($srcurl);
+      if ($srcuri === NULL) {
+        $srcuri = $srcurl;
+      }
+    }
+
+    // Check if the file is already at the right place
+    if ($srcuri === $dsturi) {
+      return TRUE;
+    }
+    
+    return copy($srcuri, $dsturi);
+  }
+
   /**
    * Get enabled and supporting codecs by Zencoder.
    */
