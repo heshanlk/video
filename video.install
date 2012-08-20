@@ -505,7 +505,9 @@ function video_update_7208(&$sandbox) {
 }
 
 /**
- * Rename variable video_metadata_path to video_ffmpeg_flvtool2_path and
+ * Renames some variables.
+ *
+ * Renames variable video_metadata_path to video_ffmpeg_flvtool2_path
  * video_metadata_dimensions to video_dimensions.
  */
 function video_update_7209(&$sandbox) {

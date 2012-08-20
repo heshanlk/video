@@ -419,10 +419,10 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function adminSettings() {
     $form = array();
-    // FFMPEG
-    $form['ffmpeg']['ffmpeg'] = array(
+
+    $form['ffmpeg'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Path to FFmpeg executable'),
+      '#title' => t('FFmpeg'),
       '#collapsible' => FALSE,
       '#collapsed' => FALSE,
       '#states' => array(
@@ -431,31 +431,22 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         ),
       ),
     );
-    $form['ffmpeg']['ffmpeg']['video_ffmpeg_path'] = array(
+
+    $form['ffmpeg']['video_ffmpeg_path'] = array(
       '#type' => 'textfield',
-      '#title' => t('FFMPEG'),
+      '#title' => t('Path to FFmpeg executable'),
       '#description' => t('Absolute path to FFmpeg executable.') . t('When you install a new FFmpeg version, please <a href="@performance-page">clear the caches</a> to let Drupal detect the updated codec support.', array('@performance-page' => url('admin/config/development/performance'))),
       '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
     );
-    // Thumbnail Videos We need to put this stuff last.
-    $form['ffmpeg']['thumbnail'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Video thumbnails'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#states' => array(
-        'visible' => array(
-          ':input[name=video_convertor]' => array('value' => 'TranscoderAbstractionFactoryFfmpeg'),
-        ),
-      ),
-    );
-    $form['ffmpeg']['thumbnail']['video_thumbnail_path'] = array(
+
+    // Video thumbnails
+    $form['ffmpeg']['video_thumbnail_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),
       '#description' => t('Path to save video thumbnails extracted from videos.'),
       '#default_value' => variable_get('video_thumbnail_path', 'videos/thumbnails'),
     );
-    $form['ffmpeg']['thumbnail']['video_thumbnail_count'] = array(
+    $form['ffmpeg']['video_thumbnail_count'] = array(
       '#type' => 'textfield',
       '#title' => t('Number of thumbnails'),
       '#description' => t('Number of thumbnails to extract from video.'),
@@ -464,19 +455,19 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     );
 
     // Video conversion settings.
-    $form['helpers'] = array(
+    $form['ffmpeg']['helpers'] = array(
       '#type' => 'fieldset',
       '#title' => t('Helper programs'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE
+      '#collapsed' => TRUE,
     );
-    $form['helpers']['video_ffmpeg_qtfaststart_path'] = array(
+    $form['ffmpeg']['helpers']['video_ffmpeg_qtfaststart_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to qt-faststart'),
       '#default_value' => variable_get('video_ffmpeg_qtfaststart_path'),
       '#description' => t('When you enter the path to @toolname here, it will be run after any @filetype files are transcoded. It improves the loading time of @filetype videos. On Linux, the default for this field is %default_value.', array('@toolname' => 'qt-faststart', '@filetype' => 'MP4', '%default_value' => '/usr/bin/qt-faststart')),
     );
-    $form['helpers']['video_ffmpeg_flvtool2_path'] = array(
+    $form['ffmpeg']['helpers']['video_ffmpeg_flvtool2_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to flvtool2'),
       '#default_value' => variable_get('video_ffmpeg_flvtool2_path'),
@@ -494,10 +485,10 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       PHPVideoToolkit::$ffmpeg_info = FALSE;
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
       if (!$ffmpeg['ffmpeg-found'] || ($version = self::getVersionFromOutput($ffmpeg['raw'])) == NULL) {
-        form_set_error('video_ffmpeg_path', t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $v['video_ffmpeg_path'], '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+        form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $v['video_ffmpeg_path'], '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
       elseif (empty($ffmpeg['codecs']['video']) || empty($ffmpeg['codecs']['audio'])) {
-        form_set_error('video_ffmpeg_path', t('FFmpeg version %version was found, but no supported codecs could be found. Please check whether FFmpeg and all support libraries have been installed correctly.', array('%version' => $version)));
+        form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg version %version was found, but no supported codecs could be found. Please check whether FFmpeg and all support libraries have been installed correctly.', array('%version' => $version)));
       }
       else {
         drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
@@ -509,13 +500,13 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     if (!empty($v['video_ffmpeg_qtfaststart_path'])) {
       if (!is_file($v['video_ffmpeg_qtfaststart_path'])) {
-        form_error($form['helpers']['video_ffmpeg_qtfaststart_path'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_qtfaststart_path'])));
+        form_error($form['ffmpeg']['helpers']['video_ffmpeg_qtfaststart_path'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_qtfaststart_path'])));
       }
     }
 
     if (!empty($v['video_ffmpeg_flvtool2_path'])) {
       if (!is_file($v['video_ffmpeg_flvtool2_path'])) {
-        form_error($form['helpers']['video_ffmpeg_flvtool2_path'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_flvtool2_path'])));
+        form_error($form['ffmpeg']['helpers']['video_ffmpeg_flvtool2_path'], t('The file %file does not exist.', array('%file' => $v['video_ffmpeg_flvtool2_path'])));
       }
     }
   }
