@@ -55,25 +55,19 @@ function video_widget_element_settings(&$element) {
     }
   }
 
-  // Override our player dimensions to the user selected.
-  if (!empty($file['data']['player_dimensions'])) {
-    $player_dimensions = $file['data']['player_dimensions'];
-  }
+  if ($override_dimensions) {
+    // Override our player dimensions to the user selected.
+    if (!empty($file['data']['player_dimensions'])) {
+      $player_dimensions = $file['data']['player_dimensions'];
+    }
 
-  $element['data']['player_dimensions'] = array(
-    '#type' => 'select',
-    '#title' => t('Dimensions for video player'),
-    '#default_value' => $player_dimensions,
-    '#description' => t('WxH of your video player.'),
-    '#options' => $options,
-  );
-
-  // If users cannot change the default dimensions, lets change this to a value.
-  if (!$override_dimensions) {
-    $element['data']['dimensions']['#type'] = 'value';
-    $element['data']['dimensions']['#value'] = $dimensions;
-    $element['data']['player_dimensions']['#type'] = 'value';
-    $element['data']['player_dimensions']['#value'] = $player_dimensions;
+    $element['data']['player_dimensions'] = array(
+      '#type' => 'select',
+      '#title' => t('Dimensions for video player'),
+      '#default_value' => $player_dimensions,
+      '#description' => t('WxH of your video player.'),
+      '#options' => $options,
+    );
   }
 
   // only in preview mode and then create thumbnails
@@ -196,7 +190,7 @@ function video_widget_process(&$element, &$form_state) {
     case 'multistep_done':
       // Auto convert our video file
       if ($field['widget']['autoconversion']) {
-        video_convert_process($element);
+        video_convert_process($element, $field);
         // Lets set our node status to unpublished if our video is not converted.
         if (isset($element['#unpublish']) && $element['#unpublish']) {
           // Unpublish the node
@@ -233,8 +227,14 @@ function video_widget_process(&$element, &$form_state) {
  * passing the element by reference just in case we ever want to add more to
  * the element during this process.
  */
-function video_convert_process(&$element) {
+function video_convert_process(&$element, $field) {
   $value = $element['#value'];
+
+  // Set the dimensions when the user has no permission
+  if (!user_access('override player dimensions')) {
+    $value['data']['dimensions'] = $field['widget']['default_dimensions'];
+    $value['data']['player_dimensions'] = $field['widget']['default_player_dimensions'];
+  }
 
   // If the dimensions #value is empty, it is probably because the user
   // clicked the Save button directly and did not choose dimensions.
