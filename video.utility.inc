@@ -24,6 +24,24 @@ class video_utility {
   }
 
   /**
+   * Clears all caches associated with a certain entity.
+   *
+   * @param $type
+   *   Entity type
+   * @param $id
+   *   Entity ID
+   */
+  public static function clearEntityCache($type, $id) {
+    // Clear field cache
+    cache_clear_all('field:' . $type . ':' . $id, 'cache_field');
+
+    if (module_exists('entitycache')) {
+      // Clear entitycache cache
+      cache_clear_all($id, 'cache_entity_' . $type);
+    }
+  }
+
+  /**
    * Finds a stream wrapper using the output URL.
    *
    * Examples of output URLs:

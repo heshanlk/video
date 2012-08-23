@@ -56,13 +56,13 @@ class Transcoder {
    *
    * @param $video
    * @return
-   *   array of converted file objects
+   *   TRUE on success, FALSE on failure. Also check $video->video_status.
    */
   public function executeConversion(stdClass $video) {
     global $user;
 
     // load the presets
-    $this->changeStatus($video->fid, VIDEO_RENDERING_ACTIVE);
+    $this->changeStatus($video, VIDEO_RENDERING_ACTIVE);
 
     // update the video conversion start time
     db_update('video_queue')->fields(array('started' => time()))->condition('fid', $video->fid)->execute();
@@ -101,55 +101,56 @@ class Transcoder {
     $factory = new TranscoderAbstractionAbstractFactory();
     $transcoder = $factory->getProduct();
     $transcoder->setInput((array) $video);
-    $output = array();
     $transcodingsuccess = TRUE;
+    $output = array();
     $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
     $output_directory = $converted_scheme . '://' . file_uri_target($output_directory);
 
     if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
       watchdog('transcoder', 'Video conversion failed. Could not create the directory: %dir', array('%dir' => $output_directory), WATCHDOG_ERROR);
-      return FALSE;
+      $transcodingsuccess = FALSE;
     }
-
     // if no presets enabled then write an error log
-    if (empty($presets)) {
+    elseif (empty($presets)) {
       watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l(t('enable or create new preset'), 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
-      return FALSE;
+      $transcodingsuccess = FALSE;
+    }
+    else {
+      foreach ($presets as $name => $preset) {
+        // override the widthXheight if enabled
+        $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
+        $preset['settings']['thumbnails']['format'] = $thumbnail_format;
+        $preset['settings']['thumbnails']['number'] = $thumbnail_number;
+
+        // Only create thumbnails for the first preset
+        $thumbnail_number = 0;
+
+        // set transcoder options
+        if (!$transcoder->setOptions($preset['settings'])) {
+          // setOptions should write to the watchdog log.
+          $transcodingsuccess = FALSE;
+          break;
+        }
+
+        $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
+        $transcoder->setOutput($output_directory, $output_name);
+        if ($output_file = $transcoder->execute()) {
+          $output[] = $output_file;
+        }
+        else {
+          $transcodingsuccess = FALSE;
+          break;
+        }
+
+        $transcoder->reset(TRUE);
+      }
     }
 
-    foreach ($presets as $name => $preset) {
-      // override the widthXheight if enabled
-      $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
-      $preset['settings']['thumbnails']['format'] = $thumbnail_format;
-      $preset['settings']['thumbnails']['number'] = $thumbnail_number;
-      // Only create thumbnails for the first preset
-      $thumbnail_number = 0;
-
-      // set transcoder options
-      if (!$transcoder->setOptions($preset['settings'])) {
-        // setOptions should write to the watchdog log.
-        $transcodingsuccess = FALSE;
-        break;
-      }
-
-      $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
-      $transcoder->setOutput($output_directory, $output_name);
-      if ($output_file = $transcoder->execute()) {
-        $output[] = $output_file;
-      }
-      else {
-        $transcodingsuccess = FALSE;
-        break;
-      }
-
-      $transcoder->reset(TRUE);
+    if (!$transcodingsuccess) {
+      $video->video_status = VIDEO_RENDERING_FAILED;
     }
-
-    // update the video conversion completed time
-    db_update('video_queue')->fields(array('completed' => time()))->condition('fid', $video->fid)->execute();
-
-    // add files to file_managed table and add reference to the file_usage table
-    if (!empty($output) && $transcodingsuccess) {
+    else {
+      // add files to file_managed table and add reference to the file_usage table
       $this->cleanConverted($video->fid);
       foreach ($output as $file) {
         $file->filemime = video_utility::getMimeType($file->uri);
@@ -165,25 +166,26 @@ class Transcoder {
           'job_id' => !empty($file->jobid) ? $file->jobid : NULL,
         );
         drupal_write_record('video_output', $output_vid);
+      }
 
-        // add duration to the video_queue table
-        db_update('video_queue')->fields(array('duration' => round($file->duration)))->condition('fid', $video->fid)->execute();
+      // add duration to the video_queue table
+      $video->duration = round($file->duration);
 
-        // Change the status if the file exists.
-        // this happens for FFmpeg and other transcoders that transcoder
-        // directly. For Zencoder, the status is changed later.
-        if (file_exists($file->uri)) {
-          $this->changeStatus($video->fid, VIDEO_RENDERING_COMPLETE);
-        }
+      // Change the status if the file exists.
+      // this happens for FFmpeg and other transcoders that transcoder
+      // directly. For Zencoder, the status is changed later.
+      if (file_exists($file->uri)) {
+        $video->video_status = VIDEO_RENDERING_COMPLETE;
       }
     }
 
-    if (!$transcodingsuccess) {
-      $this->changeStatus($video->fid, VIDEO_RENDERING_FAILED);
-      return FALSE;
-    }
+    $video->completed = time();
+    $transcoder->updateJob($video);
 
-    return $output;
+    // Clear the cache for this entity
+    video_utility::clearEntityCache($video->entity_type, $video->entity_id);
+
+    return $transcodingsuccess;
   }
 
   /**
@@ -279,10 +281,12 @@ class Transcoder {
    * Change the status of the job, this will effect in database and use when
    * represent a job data.
    */
-  public function changeStatus($fid, $status) {
+  public function changeStatus(stdClass $video, $status) {
+    $video->video_status = $status;
+
     db_update('video_queue')
       ->fields(array('status' => $status))
-      ->condition('fid', $fid)
+      ->condition('fid', $video->fid)
       ->execute();
   }
 }

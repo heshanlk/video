@@ -37,6 +37,10 @@ interface TranscoderFactoryInterface {
 
   public function setInput(array $file);
 
+  public function updateJob(stdClass $video);
+
+  public function loadJob($fid = NULL);
+
   public function loadOutput($fid);
 }
 
@@ -180,7 +184,15 @@ abstract class TranscoderAbstractionFactory {
   }
 
   public function updateJob(stdClass $video) {
-    return drupal_write_record('video_queue', $video, 'fid') === SAVED_UPDATED;
+    // Rewrite the status attribute
+    // @todo rename the status field in the video_queue table to something that doesn't
+    // collide with the file_managed table.
+    $oldstatus = $video->status;
+    $video->status = $video->video_status;
+    $result = drupal_write_record('video_queue', $video, 'fid') === SAVED_UPDATED;
+    $video->status = $oldstatus;
+
+    return $result;
   }
 
   /**
@@ -201,12 +213,12 @@ abstract class TranscoderAbstractionFactory {
   /**
    * Load transcoding job from the database.
    */
-  public function loadJob($id = NULL, $field = 'fid') {
-    if ($id == NULL) {
-      $id = $this->settings['input']['fid'];
+  public function loadJob($fid = NULL) {
+    if ($fid == NULL) {
+      $fid = $this->settings['input']['fid'];
     }
 
-    $job = db_query('SELECT vf.*, f.*, vf.status as video_status FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND vf.' . $field . ' = :id', array(':id' => $id))->fetch();
+    $job = db_query('SELECT vf.*, f.*, vf.status as video_status FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE f.fid=vf.fid AND vf.fid = :fid', array(':fid' => $fid))->fetch();
     if (empty($job)) {
       return FALSE;
     }
@@ -236,14 +248,19 @@ abstract class TranscoderAbstractionFactory {
   }
 
   /**
-   * Select videos from our queue
+   * Select videos from our queue.
+   *
+   * Up to 'video_ffmpeg_instances' videos are returned.
+   * The status of all returned videos is set to VIDEO_RENDERING_INQUEUE.
    */
   public function loadJobQueue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
     $videos = array();
     $result = db_query_range('SELECT vf.*, f.*, vf.status as video_status FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
+      $row->video_status = VIDEO_RENDERING_INQUEUE;
       $row->data = empty($row->data) ? NULL : unserialize($row->data);
+      $this->updateJob($row);
       $videos[] = $row;
     }
     return $videos;

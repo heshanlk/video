@@ -1148,13 +1148,18 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
       $transcoder->updateJob($video);
     }
 
-    // Convert on save if the job is pending and if it is requested
-    // The automatic conversions of files is handled in _video_field_convert_on_save(),
-    // which is called from hook_entity_insert/hook_entity_update.
-    if (!empty($item['convert_video_on_save']) && $video->video_status == VIDEO_RENDERING_PENDING) {
-      // Only save the fid, because the location of the file may change
-      // between now and _video_field_convert_on_save().
-      $entity->video_convert_on_save[$video->fid] = $video->fid;
+    if ($video->video_status == VIDEO_RENDERING_PENDING) {
+      // Convert on save if the job is pending and if it is requested
+      // The automatic conversions of files is handled in _video_field_convert_on_save(),
+      // which is called from hook_entity_insert/hook_entity_update.
+      if (!empty($item['convert_video_on_save'])) {
+        // Only save the fid, because the location of the file may change
+        // between now and _video_field_convert_on_save().
+        $entity->video_convert_on_save[$video->fid] = $video->fid;
+      }
+      else {
+        drupal_set_message(t('Transcoding job was successfully queued for %transcoder-name. The video %video-name will be converted soon.', array('%transcoder-name' => $transcoder->getName(), '%video-name' => $video->filename)));
+      }
     }
   }
 }
@@ -1174,15 +1179,22 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
  */
 function _video_field_convert_on_save($entity, $type) {
   if (!empty($entity->video_convert_on_save)) {
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
     $video_conversion = new Conversion();
 
     foreach ($entity->video_convert_on_save as $videofid) {
-      if ($video_conversion->process($videofid)) {
-        drupal_set_message(t('Transcoding job submission was successful. Your video will be converted and published very soon.'));
+      $video = $transcoder->loadJob($videofid);
+      if ($video_conversion->process($video)) {
+        if ($video->video_status == VIDEO_RENDERING_COMPLETE) {
+          drupal_set_message(t('The video %video-name has been converted.', array('%video-name' => $video->filename)));
+        }
+        else {
+          drupal_set_message(t('Transcoding job was successfully submitted to %transcoder-name. The video %video-name will be converted soon.', array('%transcoder-name' => $transcoder->getName(), '%video-name' => $video->filename)));
+        }
       }
       else {
-        $video_conversion->changeStatus($videofid, VIDEO_RENDERING_FAILED);
-        drupal_set_message(t('Something went wrong with your video transcoding. Please check your recent log entries for further debugging.'), 'error');
+        drupal_set_message(t('Something went wrong with transcoding %video-name. Please check your <a href="@log-page">recent log entries</a> for further debugging.', array('%video-name' => $video->filename, '@log-page' => url('admin/reports/dblog'))), 'error');
       }
     }
 

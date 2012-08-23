@@ -332,7 +332,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     $this->assertEqual('', $out);
 
     // Test whether the duration and status have been saved
-    $video = $this->transcoder->loadJob(1, 'vid');
+    $video = $this->transcoder->loadJob(1);
 
     $this->assertEqual(5, $video->duration);
     $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
@@ -400,7 +400,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     }');
 
     $this->assertEqual('', $out);
-    $video = $this->transcoder->loadJob(1, 'vid');
+    $video = $this->transcoder->loadJob(1);
     $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
   }
 
