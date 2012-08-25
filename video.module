@@ -403,7 +403,7 @@ function video_file_download($filepath) {
     );
   }
 
-  // Converted videos
+  // Only handle converted videos. Originals are handled by filefield_file_download().
   if (strpos($filepath, '/converted/') === FALSE) {
     return NULL;
   }
@@ -422,7 +422,27 @@ function video_file_download($filepath) {
     return NULL;
   }
 
-  return filefield_file_download($video->filepath);
+  // If FileField has returned headers, then the video has passed all access
+  // control requirements, so we know it's okay to display.
+  $headers = filefield_file_download($video->filepath);
+
+  if (!is_array($headers)) {
+    return $headers;
+  }
+
+  // Look to see if the requested file is one of the converted files and return the headers.
+  foreach ($video->data as $converted) {
+    if ($converted->filepath == $full_path) {
+      $name = mime_header_encode($converted->filename);
+      $type = mime_header_encode($converted->filemime);
+      return array(
+        'Content-Type: ' . $type . '; name="' . $name . '"',
+        'Content-Length: ' . $converted->filesize,
+        'Content-Disposition: inline; filename="' . $name . '"',
+        'Cache-Control: private',
+      );
+    }
+  }
 }
 
 /**
