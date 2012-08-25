@@ -473,8 +473,6 @@ function video_field_update($entity_type, $entity, $field, $instance, $langcode,
  * Implements hook_field_delete().
  */
 function video_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $items);
-
   // Deregister the thumbnails in file_usage
   $thumbnails = _video_field_get_all_thumbnails($field, $items);
   file_field_delete($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
@@ -482,14 +480,14 @@ function video_field_delete($entity_type, $entity, $field, $instance, $langcode,
   // Deregister the converted files in file_usage
   $converted = _video_field_get_all_converted($items);
   file_field_delete($entity_type, $entity, $field, $instance, $langcode, $converted);
+
+  file_field_delete($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
  * Implements hook_field_delete_revision().
  */
 function video_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $items);
-
   // Deregister the thumbnails in file_usage
   $thumbnails = _video_field_get_all_thumbnails($field, $items);
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $thumbnails);
@@ -497,6 +495,8 @@ function video_field_delete_revision($entity_type, $entity, $field, $instance, $
   // Deregister the converted files in file_usage
   $converted = _video_field_get_all_converted($items);
   file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $converted);
+
+  file_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, $items);
 }
 
 /**
