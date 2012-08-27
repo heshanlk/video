@@ -24,8 +24,7 @@ $args = @getopt($shortopts, $longopts);
 
 if (isset($args['h']) || isset($args['help'])) {
   echo <<<EOF
-
-Video Scheduler.
+Drupal Video Module Transcoding Scheduler
 
 Usage:        {$script} [OPTIONS]
 Example:      {$script}
@@ -40,11 +39,10 @@ All arguments are long options.
               running on Unix). Current directory is not required.
               Use surrounding quotation marks on Windows.
 
-  -s, --site  Used to specify with site will be used for the upgrade. If no
-              site is selected then default will be used.
-
-  -v, --verbose This option displays the options as they are set, but will
-              produce errors from setting the session.
+  -s, --site  Used to specify which hostname will be used to invoke Drupal.
+              This option is required when your site is using the sites/default
+              directory or when you are not executing this script from a
+              sites/<sitename> directory.
 
 To run this script without --root argument invoke it from the root directory
 of your Drupal installation with
@@ -60,7 +58,7 @@ EOF;
 }
 
 // define default settings
-$_SERVER['HTTP_HOST'] = 'default';
+$_SERVER['HTTP_HOST'] = 'localhost';
 $_SERVER['PHP_SELF'] = '/index.php';
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 $_SERVER['SERVER_SOFTWARE'] = 'PHP CLI';
@@ -72,9 +70,6 @@ $_SERVER['HTTP_USER_AGENT'] = 'console';
 
 // Starting directory
 $cwd = realpath(getcwd());
-
-// toggle verbose mode
-$_verbose_mode = isset($args['v']) || isset($args['verbose']) ? TRUE : FALSE;
 
 // parse invocation arguments
 if (isset($args['r']) || isset($args['root'])) {
@@ -95,21 +90,14 @@ else {
   }
 
   if (!(file_exists($path . '/index.php') && file_exists($path . '/includes/bootstrap.inc'))) {
-    echo "Unable to locate Drupal root, user -r option to specify path to Drupal root\n";
+    echo "Unable to locate Drupal root, use -r option to specify path to Drupal root\n";
     exit(1);
   }
   chdir($path);
 }
 
 if (isset($args['s']) || isset($args['site'])) {
-  $site = isset($args['s']) ? $args['s'] : $args['site'];
-  if (file_exists('./sites/' . $site)) {
-    $_SERVER['HTTP_HOST'] = $site;
-  }
-  else {
-    echo "ERROR: Unable to locate site {$site}\n";
-    exit(1);
-  }
+  $_SERVER['HTTP_HOST'] = isset($args['s']) ? $args['s'] : $args['site'];
 }
 else if (preg_match('/' . preg_quote($path . '/sites/', '/') . '(.*?)\//i', $cwd, $matches)) {
   if ($matches[1] != 'all' && file_exists('./sites/' . $matches[1])) {
@@ -117,15 +105,36 @@ else if (preg_match('/' . preg_quote($path . '/sites/', '/') . '(.*?)\//i', $cwd
   }
 }
 
+if ($_SERVER['HTTP_HOST'] == 'default') {
+  echo "ERROR: You must use the --site option to set the hostname of your website.\n";
+  exit(1);
+}
+
 define('DRUPAL_ROOT', realpath(getcwd()));
 
 ini_set('display_errors', 0);
 include_once DRUPAL_ROOT . '/includes/bootstrap.inc';
+// Check if the site setting seems to be OK.
+drupal_bootstrap(DRUPAL_BOOTSTRAP_CONFIGURATION);
+if (empty($GLOBALS['databases'])) {
+  if (isset($args['s']) || isset($args['site'])) {
+    echo "ERROR: Drupal was unable to find the database settings. Check the --site setting.\n";
+  }
+  else {
+    echo "ERROR: Drupal was unable to find the database settings. Use the --site setting to indicate to Drupal which site to use.\n";
+  }
+  exit(1);
+}
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
 ini_set('display_errors', 1);
 
 // turn off the output buffering that drupal is doing by default.
 ob_end_flush();
+
+if (class_exists('Conversion', TRUE)) {
+  echo "ERROR: The Video module doesn't seem to be installed.\n";
+  exit(1);
+}
 
 // include our conversion class (also contains our defines)
 $video_conversion = new Conversion();
