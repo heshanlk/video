@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Implement an video field, based on the file module's file field.
+ * Implement a video field, based on the file module's file field.
  */
 
 /**
@@ -766,14 +766,14 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
   $default_dimensions = user_access('override player dimensions');
   $autoconversion = !empty($field['settings']['autoconversion']) && $transcoder != NULL;
 
-  $description = t('Set your video dimensions. This will create your player with these dimensions.');
+  $description = t('Set the size of the converted video.');
   $options = video_utility::getDimensions();
-  if ($autoconversion && isset($element['preview']) && $file['fid'] != 0 && $default_dimensions) {
+  if ($autoconversion && $file['fid'] != 0 && $default_dimensions) {
     $file_object = file_load($file['fid']);
     $video_info = _video_dimensions_options($options, $file_object);
     if (!empty($video_info['width']) && !empty($video_info['height'])) {
       $dimensions = $video_info['width'] . 'x' . $video_info['height'];
-      $description .= ' ' . t('Your video size is %size, if you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, we will pad your video by adding black bars on either the top or bottom while maintaining your videos original aspect ratio.', array('%size' => $dimensions));
+      $description .= ' ' . t('The original video size is %size. If you choose a higher resolution, this could cause video distortion. You are shown dimensions that match your aspect ratio, if you choose dimensions that do not match your ratio, black bars will be added to maintain the original aspect ratio.', array('%size' => $dimensions));
     }
   }
 
@@ -802,11 +802,11 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
   if ($autoconversion) {
     // check if already converted or failed
     if (user_access('re convert video') && isset($file['conversionstatus']) && ($file['conversionstatus'] == VIDEO_RENDERING_COMPLETE || $file['conversionstatus'] == VIDEO_RENDERING_FAILED)) {
-      $status = array(VIDEO_RENDERING_COMPLETE => 'been completed', VIDEO_RENDERING_FAILED => 'failed');
+      $status = array(VIDEO_RENDERING_COMPLETE => 'was successful', VIDEO_RENDERING_FAILED => 'failed');
       $element['re_convert_video'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Video conversion has ' . $status[$file['conversionstatus']] . '. Re-queue video?'),
-        '#description' => t('This will re-convert your video to output formats when you save or schedule it for cron.'),
+        '#title' => t('Video conversion ' . $status[$file['conversionstatus']] . '. Re-queue video conversion?'),
+        '#description' => t('This will re-convert your video and schedule it for cron, unless you also check “convert video on save,” below.'),
         '#attributes' => array('class' => array('video-re-convert', 'video-' . $file['conversionstatus'])),
       );
     }
@@ -815,7 +815,7 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
         '#type' => 'checkbox',
         '#title' => t('Bypass auto conversion'),
         '#default_value' => isset($file['bypass_autoconversion']) ? $file['bypass_autoconversion'] : variable_get('video_bypass_conversion', FALSE),
-        '#description' => t('This will bypass the auto-conversion of videos.'),
+        '#description' => t('This video will not convert your video when you save, and it will not be scheduled for cron.'),
         '#attributes' => array('class' => array('video-bypass-auto-conversion')),
       );
     }
@@ -831,7 +831,7 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
         '#type' => 'checkbox',
         '#title' => t('Convert video on save'),
         '#default_value' => variable_get('video_convert_on_save', FALSE),
-        '#description' => t('This will convert your video to flv format when you save, instead of scheduling it for cron.'),
+        '#description' => t('This will convert your video on save, instead of scheduling it for cron.'),
         '#attributes' => array('class' => array('video-convert-video-on-save')),
       );
     }
@@ -994,6 +994,7 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
         '#type' => 'select',
         '#default_value' => $settings['poster_image_style'],
         '#empty_option' => t('None (original image)'),
+        '#description' => t('The original video thumbnail will be displayed. Otherwise, you can add a custom image style at !settings.', array('!settings' => l(t('media image styles'), 'admin/config/media/image-styles'))),
         '#options' => $image_styles,
       );
       break;
@@ -1187,7 +1188,7 @@ function _video_field_convert_on_save($entity, $type) {
       $video = $transcoder->loadJob($videofid);
       if ($video_conversion->process($video)) {
         if ($video->video_status == VIDEO_RENDERING_COMPLETE) {
-          drupal_set_message(t('The video %video-name has been converted.', array('%video-name' => $video->filename)));
+          drupal_set_message(t('The video %video-name was converted.', array('%video-name' => $video->filename)));
         }
         else {
           drupal_set_message(t('Transcoding job was successfully submitted to %transcoder-name. The video %video-name will be converted soon.', array('%transcoder-name' => $transcoder->getName(), '%video-name' => $video->filename)));
