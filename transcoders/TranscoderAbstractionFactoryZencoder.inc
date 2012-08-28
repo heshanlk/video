@@ -444,7 +444,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         if ($result->code != 200) {
           $error = t('The postback URL cannot be retrieved: @error (@code).', array('@code' => $result->code, '@error' => empty($result->error) ? t('unknown error') : $result->error));
         }
-        elseif (empty($result->data) || $result->data != $testcode) {
+        elseif (empty($result->data) || trim($result->data) != $testcode) {
           $error = t('The postback URL is not valid: returned data contains unexpected value &quot;@value&quot;.', array('@value' => $result->data));
         }
 
