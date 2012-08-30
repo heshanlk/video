@@ -164,7 +164,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#type' => 'select',
     '#title' => t('Dimensions'),
     '#description' => t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => l(t('Video module settings'), 'admin/config/media/video'))),
-    '#default_value' => !empty($settings['wxh']) ? $settings['wxh'] : '640x480',
+    '#default_value' => !empty($settings['wxh']) ? $settings['wxh'] : '640x360',
     '#options' => video_utility::getDimensions(),
   );
   $form['settings']['video']['video_aspectmode'] = array(

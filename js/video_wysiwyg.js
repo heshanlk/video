@@ -21,7 +21,7 @@
         autoOpen: false,
         title: 'Video Browser',
         width: 640,
-        height: 420
+        height: 360
       });
       $dialog.dialog('open');
       // add button
@@ -36,7 +36,7 @@
         }
         ]
       });
-      
+
       // close
       $dialog.dialog({
         close: function(event, ui) {
