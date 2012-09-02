@@ -163,6 +163,10 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
    */
   public function testProcessPostback() {
     // Only test this if the library is installed
+    if (!function_exists('libraries_load')) {
+      $this->verbose('Not starting testProcessPostback() because the Libraries API module is not available.');
+      return;
+    }
     $load = libraries_load('zencoder');
     if (!$load['loaded'] || !$load['installed']) {
       $this->verbose('Not starting testProcessPostback() because Zencoder API can\'t be loaded.');
