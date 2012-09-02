@@ -402,15 +402,14 @@ function video_video_flv_players() {
 }
 
 /**
- * Return our possible flash players.
+ * Return our possible HTML5 players.
  */
 function video_video_html5_players() {
-  $options = array();
+  $options = array(
+    'video' => t('Video for everybody'),
+  );
   if (module_exists('videojs')) {
     $options['videojs'] = t('Video.js');
-  }
-  if (module_exists('video')) {
-    $options['video'] = t('Video for everybody');
   }
   return $options;
 }
