@@ -28,9 +28,10 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
   public function setUp() {
     parent::setUp();
 
-    $this->assertTrue(module_enable(array('video'), TRUE), t('Enabled modules: %modules', array('%modules' => 'video')));
-    $this->assertTrue(module_enable(array('zencoderapi'), TRUE), t('Enabled modules: %modules', array('%modules' => 'zencoderapi')));
-    $this->assertTrue(module_enable(array('node'), TRUE), t('Enabled modules: %modules', array('%modules' => 'node')));
+    module_enable(array('video', 'node'), TRUE);
+    if (!module_enable(array('zencoderapi'), TRUE)) {
+      $this->verbose('The Zencoder API module could not be enabled.');
+    }
 
     field_info_cache_clear();
     $this->resetAll();
@@ -162,10 +163,6 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
    */
   public function testProcessPostback() {
     // Only test this if the library is installed
-    if (!function_exists('libraries_load')) {
-      $this->verbose('Not starting testProcessPostback() because the Libraries API module is not available.');
-      return;
-    }
     $load = libraries_load('zencoder');
     if (!$load['loaded'] || !$load['installed']) {
       $this->verbose('Not starting testProcessPostback() because Zencoder API can\'t be loaded.');
