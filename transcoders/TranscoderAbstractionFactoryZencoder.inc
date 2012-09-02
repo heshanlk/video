@@ -496,7 +496,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       ));
 
       variable_set('video_zencoder_api_key', $result->api_key);
-      drupal_set_message(t('Your Zencoder details are as below.<br/><b>API Key</b> : @api_key<br/> <b>Password</b> : @password<br/> You can now login to !zencoder website and track your transcoding jobs online. Make sure you <b>save user/pass combination somewhere</b> before proceed.', array('@api_key' => $result->api_key, '@password' => $result->password, '!zencoder' => l(t('Zencoder'), 'http://zencoder.com'))), 'status');
+      drupal_set_message(t('Your Zencoder details are as below.<br/><b>API Key</b> : @api_key<br/> <b>Password</b> : @password<br/> You can now login to the <a href="@zencoder-url">Zencoder website</a> and track your transcoding jobs online. Make sure you <b>save user/pass combination somewhere</b> before you proceed.', array('@api_key' => $result->api_key, '@password' => $result->password, '@zencoder-url' => url('http://zencoder.com'))), 'status');
 
       return TRUE;
     }
@@ -780,7 +780,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if ($srcuri === $dsturi) {
       return TRUE;
     }
-    
+
     return copy($srcuri, $dsturi);
   }
 

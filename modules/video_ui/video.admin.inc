@@ -45,7 +45,7 @@ function video_preset_admin_settings($form_state) {
   $presets = video_preset_get_presets();
 
   if (empty($presets)) {
-    drupal_set_message(t('No presets were found. Please use the !create_link link to create a new Video Preset, or upload an existing Feature to your modules directory.', array('!create_link' => l(t('Add Preset'), 'admin/config/media/video/presets/add'))), 'warning');
+    drupal_set_message(t('No presets were found. Please use the <a href="@create-preset">Add preset</a> link to create a new Video preset or upload an existing Video preset feature module to your modules directory.', array('@create-preset' => url('admin/config/media/video/presets/add'))), 'warning');
   }
 
   $form['video_use_preset_wxh'] = array(
