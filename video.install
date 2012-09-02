@@ -70,6 +70,13 @@ function video_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'statusupdated' => array(
+        'description' => 'Timestamp of last status update, used to track stuck videos',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+      ),
       'data' => array(
         'type' => 'blob',
         'not null' => FALSE,
@@ -515,4 +522,29 @@ function video_update_7209(&$sandbox) {
   variable_set('video_dimensions', variable_get('video_metadata_dimensions'));
   variable_del('video_metadata_path');
   variable_del('video_metadata_dimensions');
+}
+
+/**
+ * Scheduling variables and schema update.
+ *
+ * Renames variable video_queue_timeout to video_transcode_timeout, dividing by 60.
+ * The minimum value of this variable is set to 5.
+ * Sets video_queue_timeout to 60 minutes.
+ *
+ * Adds a field to video_queue to save the last time the status was updated.
+ * Sets this field to the current time for all videos.
+ */
+function video_update_7210(&$sandbox) {
+  variable_set('video_transcode_timeout', max(10, ceil(variable_get('video_queue_timeout', 90) / 60)));
+  variable_set('video_queue_timeout', 60);
+
+  $new_field = array(
+    'description' => 'Timestamp of last status update, used to track stuck videos',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'unsigned' => TRUE,
+    'initial' => time(),
+  );
+  db_add_field('video_queue', 'statusupdated', $new_field);
 }

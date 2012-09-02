@@ -560,7 +560,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     // Find all error situations
     if ($output->state === 'cancelled') {
-      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('fid', $fid)->execute();
+      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))->condition('fid', $fid)->execute();
       echo 'Cancelled';
       return;
     }
@@ -576,7 +576,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
       }
 
-      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('fid', $fid)->execute();
+      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))->condition('fid', $fid)->execute();
       watchdog('transcoder', 'Zencoder reports errors in postback for fid @fid, job id @jobid: !errordetail', array('@fid' => $fid, '@jobid' => $jobid, '!errordetail' => $errordetail), WATCHDOG_ERROR);
       echo 'Failure';
     }
@@ -603,7 +603,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // So we only copy the file when it doesn't exist or has a different file size.
     if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes) {
       if (!$this->moveFile($output->url, $outputfile->uri)) {
-        db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED))->condition('fid', $fid)->execute();
+        db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))->condition('fid', $fid)->execute();
         watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $notification->output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
         return;
       }
@@ -615,6 +615,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Actual processing of the response
     $video->duration = round($output->duration_in_ms / 1000);
     $video->status = VIDEO_RENDERING_COMPLETE;
+    $video->statusupdated = time();
     drupal_write_record('video_queue', $video, 'vid');
 
     // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases

@@ -341,25 +341,45 @@ function video_players_admin_settings_submit($form, &$form_state) {
 /**
  * Video cron admin settings
  */
-function video_cron_admin_settings() {
+function video_scheduling_admin_settings() {
   $form = array();
   $form['video_cron'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Use Drupal\'s built-in cron.'),
+    '#title' => t('Use Drupal\'s built-in cron'),
     '#default_value' => variable_get('video_cron', TRUE),
-    '#description' => t('Check this box to use Drupal\'s built in cron hook. Be aware that video transcoding is very resource-intensive. If you use poor man\'s cron, this option is strongly discouraged. We suggest you set up your cron to call this function through CLI instead of WGET.'),
+    '#description' =>
+        t('Check this box to use Drupal\'s built in cron execution to transcode videos. Be aware that video transcoding is very resource-intensive. If you use poor man\'s cron, this option is strongly discouraged.') . '<br/>' .
+        t('Alternatives to using cron are the video_scheduler.php script that is located in the Video module directory or the video-scheduler <a href="@drush-url">Drush</a> command (recommended).', array('@drush-url' => url('http://drupal.org/project/drush'))) . '<br/>' .
+        t('If you use none of these options, you can only transcode videos by using the %convertonsave option when uploading a video.', array('%convertonsave' => t('Convert video on save'))),
+  );
+  $form['video_transcode_timeout'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Video transcode timeout'),
+    '#default_value' => variable_get('video_transcode_timeout', 10),
+    '#description' => t('The maximum time allowed for a video transcode to complete. Use a larger value when you regularly transcode large or long videos. When a video has been transcoding for more than this amount of time, it will be marked as failed. Leave this field empty to disable this behavior.'),
+    '#field_suffix' => t('minutes'),
+    '#maxlength' => 5,
+    '#size' => 10,
+    '#element_validate' => array('element_validate_integer_positive'),
   );
   $form['video_queue_timeout'] = array(
     '#type' => 'textfield',
-    '#title' => t('Video queue timeout (s).'),
-    '#default_value' => variable_get('video_queue_timeout', 90),
-    '#description' => t('The maximum time allowed for a video transcode to complete. Use a larger value for larger-sized video.'),
+    '#title' => t('Video queue timeout'),
+    '#default_value' => variable_get('video_queue_timeout', 60),
+    '#description' => t('The maximum time allowed for a video to be in the queue. When processing of the queue is aborted, the video will be requeued after this amount of time. Leave this field empty to disable this behavior.'),
+    '#field_suffix' => t('minutes'),
+    '#maxlength' => 5,
+    '#size' => 10,
+    '#element_validate' => array('element_validate_integer_positive'),
   );
   $form['video_ffmpeg_instances'] = array(
     '#type' => 'textfield',
-    '#title' => t('Total videos to convert during each cron process.'),
+    '#title' => t('Total videos to convert during each scheduled run'),
     '#default_value' => variable_get('video_ffmpeg_instances', 5),
-    '#description' => t('How many videos do you want to process on each cron run?  Either through hook_cron or video_scheduler.php.'),
+    '#description' => t('How many videos do you want to process on each cron/video_scheduler.php/drush run?'),
+    '#maxlength' => 5,
+    '#size' => 10,
+    '#element_validate' => array('element_validate_integer_positive'),
   );
   return system_settings_form($form);
 }

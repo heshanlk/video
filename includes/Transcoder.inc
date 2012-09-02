@@ -61,12 +61,19 @@ class Transcoder {
   public function executeConversion(stdClass $video) {
     global $user;
 
-    // load the presets
-    $this->changeStatus($video, VIDEO_RENDERING_ACTIVE);
+    $factory = new TranscoderAbstractionAbstractFactory();
+    $transcoder = $factory->getProduct();
+    if ($transcoder == NULL) {
+      return FALSE;
+    }
 
-    // update the video conversion start time
-    db_update('video_queue')->fields(array('started' => time()))->condition('fid', $video->fid)->execute();
+    // update the video conversion start time and status
+    $video->statusupdated = time();
+    $video->started = $video->statusupdated;
+    $video->video_status = VIDEO_RENDERING_ACTIVE;
+    $transcoder->updateJob($video);
 
+    // Load the presets
     $video_preset = new Preset();
     $presets = $video_preset->properties();
     $converted_scheme = file_uri_scheme($video->uri);
@@ -98,8 +105,6 @@ class Transcoder {
       }
     }
 
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
     $transcoder->setInput((array) $video);
     $transcodingsuccess = TRUE;
     $output = array();
@@ -112,7 +117,7 @@ class Transcoder {
     }
     // if no presets enabled then write an error log
     elseif (empty($presets)) {
-      watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l(t('enable or create new preset'), 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
+      watchdog('transcoder', 'No preset enabled. Please !presets_message.', array('!presets_message' => l(t('enable or create a preset'), 'admin/config/media/video/presets')), WATCHDOG_ERROR, 'admin/config/media/video/presets');
       $transcodingsuccess = FALSE;
     }
     else {
@@ -148,6 +153,7 @@ class Transcoder {
 
     if (!$transcodingsuccess) {
       $video->video_status = VIDEO_RENDERING_FAILED;
+      $video->statusupdated = time();
     }
     else {
       // add files to file_managed table and add reference to the file_usage table
@@ -176,6 +182,7 @@ class Transcoder {
       // directly. For Zencoder, the status is changed later.
       if (file_exists($file->uri)) {
         $video->video_status = VIDEO_RENDERING_COMPLETE;
+        $video->statusupdated = time();
       }
     }
 
@@ -275,18 +282,5 @@ class Transcoder {
       }
     }
     return $form;
-  }
-
-  /**
-   * Change the status of the job, this will effect in database and use when
-   * represent a job data.
-   */
-  public function changeStatus(stdClass $video, $status) {
-    $video->video_status = $status;
-
-    db_update('video_queue')
-      ->fields(array('status' => $status))
-      ->condition('fid', $video->fid)
-      ->execute();
   }
 }

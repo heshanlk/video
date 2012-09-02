@@ -173,6 +173,7 @@ abstract class TranscoderAbstractionFactory {
     $video->entity_id = intval($entity_id);
     $video->entity_type = $entity_type;
     $video->status = VIDEO_RENDERING_PENDING;
+    $video->statusupdated = time();
     $video->dimensions = $dimensions;
     $video->data = array(
       'field_name' => $field_name,
@@ -255,10 +256,12 @@ abstract class TranscoderAbstractionFactory {
    */
   public function loadJobQueue() {
     $total_videos = variable_get('video_ffmpeg_instances', 5);
+    $now = time();
     $videos = array();
     $result = db_query_range('SELECT vf.*, f.*, vf.status as video_status FROM {video_queue} vf LEFT JOIN {file_managed} f ON vf.fid = f.fid WHERE vf.status = :vstatus AND f.status = :fstatus ORDER BY f.timestamp', 0, $total_videos, array(':vstatus' => VIDEO_RENDERING_PENDING, ':fstatus' => FILE_STATUS_PERMANENT));
     foreach ($result as $row) {
       $row->video_status = VIDEO_RENDERING_INQUEUE;
+      $row->statusupdated = $now;
       $row->data = empty($row->data) ? NULL : unserialize($row->data);
       $this->updateJob($row);
       $videos[] = $row;

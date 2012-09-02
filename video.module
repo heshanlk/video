@@ -198,17 +198,66 @@ function video_cron() {
       }
     }
   }
+
+  // Mark items as FAILED that have been ACTIVE for more than video_transcode_timeout minutes and log this.
+  $transcodetimeout = variable_get('video_transcode_timeout', 5);
+  if (!empty($transcodetimeout)) {
+    $limit = time() - $transcodetimeout * 60;
+    $videos = db_query('SELECT f.fid, f.filename, q.entity_type, q.entity_id, q.statusupdated FROM {video_queue} q INNER JOIN {file_managed} f ON (f.fid = q.fid) WHERE q.statusupdated < ? AND q.status = ?', array($limit, VIDEO_RENDERING_ACTIVE))->fetchAllAssoc('fid');
+    if (!empty($videos)) {
+      db_update('video_queue')
+        ->condition('fid', array_keys($videos), 'IN')
+        ->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))
+        ->execute();
+
+      $list = array();
+      foreach ($videos as $video) {
+        $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
+        $uri = entity_uri($video->entity_type, $entity);
+        $list[] = l($video->filename, $uri['path'], $uri['options']) . ' (' . t('@status since @datetime', array('@status' => t('active'), '@datetime' => format_date($video->statusupdated))) . ')';
+      }
+
+      watchdog('video', 'The following videos were marked as %newstate because they have been in %oldstate state for more than @timeout minutes. To increase this limit, update the Video module scheduling @setting-name setting. !list', array('%newstate' => 'failed', '%oldstate' => 'rendering active', '@timeout' => $transcodetimeout, '@setting-name' => t('Video transcode timeout'), '!list' => theme('item_list', array('items' => $list))), WATCHDOG_WARNING, l(t('configure'), 'admin/config/media/video/scheduling'));
+    }
+  }
+
+  // Mark items as PENDING that have been QUEUED for more than video_queue_timeout minutes and log this.
+  $queuetimeout = variable_get('video_queue_timeout', 60);
+  if (!empty($queuetimeout)) {
+    $limit = time() - $queuetimeout * 60;
+    $videos = db_query('SELECT f.fid, f.filename, q.entity_type, q.entity_id, q.statusupdated FROM {video_queue} q INNER JOIN {file_managed} f ON (f.fid = q.fid) WHERE q.statusupdated < ? AND q.status = ?', array($limit, VIDEO_RENDERING_INQUEUE))->fetchAllAssoc('fid');
+    if (!empty($videos)) {
+      db_update('video_queue')
+        ->condition('fid', array_keys($videos), 'IN')
+        ->fields(array('status' => VIDEO_RENDERING_PENDING, 'statusupdated' => time()))
+        ->execute();
+
+      $list = array();
+      foreach ($videos as $video) {
+        $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
+        $uri = entity_uri($video->entity_type, $entity);
+        $list[] = l($video->filename, $uri['path'], $uri['options']) . ' (' . t('@status since @datetime', array('@status' => t('queued'), '@datetime' => format_date($video->statusupdated))) . ')';
+      }
+
+      watchdog('video', 'The following videos were marked as %newstate because they have been in %oldstate state for more than @timeout minutes. To increase this limit, update the Video module scheduling @setting-name setting. !list', array('%newstate' => 'rendering pending', '%oldstate' => 'queued', '@timeout' => $queuetimeout, '@setting-name' => t('Video queue timeout'), '!list' => theme('item_list', array('items' => $list))), WATCHDOG_NOTICE, l(t('configure'), 'admin/config/media/video/scheduling'));
+    }
+  }
 }
 
 /**
  * Implements hook_cron_queue_info().
+ *
+ * The queue timeout is the value for the entire cron run, not just one
+ * item, so the timeout is set to the timeout of one video times the maximum
+ * number items in the queue.
  */
 function video_cron_queue_info() {
-  $queues['video_queue'] = array(
-    'worker callback' => 'video_queue_process',
-    'time' => variable_get('video_queue_timeout', 90),
+  return array(
+    'video_queue' => array(
+      'worker callback' => 'video_queue_process',
+      'time' => 60 * variable_get('video_transcode_timeout', 5) * variable_get('video_ffmpeg_instances', 5),
+    ),
   );
-  return $queues;
 }
 
 /**

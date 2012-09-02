@@ -134,12 +134,12 @@ function video_ui_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  // Cron settings
-  $items['admin/config/media/video/cron'] = array(
-    'title' => 'Cron',
-    'description' => 'Configure your cron settings.',
+  // Scheduling
+  $items['admin/config/media/video/scheduling'] = array(
+    'title' => 'Scheduling',
+    'description' => 'Configure your Video transcoding scheduling settings.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('video_cron_admin_settings'),
+    'page arguments' => array('video_scheduling_admin_settings'),
     'access callback' => 'video_admin_access_withtranscoder',
     'access arguments' => array('administer site configuration'),
     'file' => 'video.admin.inc',

@@ -1145,6 +1145,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
     // re queue for video conversion
     if (!empty($item['re_convert_video'])) {
       $video->video_status = VIDEO_RENDERING_PENDING;
+      $video->statusupdated = time();
       $video->dimensions = $item['dimensions'];
       $transcoder->updateJob($video);
     }
