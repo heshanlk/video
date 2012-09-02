@@ -20,7 +20,7 @@ class LocalCommandTranscoderTestCase extends DrupalWebTestCase {
    * Implementation of setUp().
    */
   function setUp() {
-    parent::setUp('content', 'filefield', 'video');
+    parent::setUp('content', 'filefield', 'ctools', 'video');
   }
 
   function testShouldReturnOutputDimensionsWhenInputAndOutputAspectRatioEqual() {
