@@ -80,13 +80,20 @@ function video_field_settings_form($field, $instance, $has_data) {
     $value = $transcoder->getValue();
 
     if ($value == 'TranscoderAbstractionFactoryFfmpeg') {
-      $form['uri_scheme']['#description'] .= '<br/><strong>';
+      $form['uri_scheme']['#description'] .= '<br/>';
       $form['uri_scheme']['#description'] .= t('You are using the FFmpeg transcoder. Using @scheme to store videos is not advised because FFmpeg is not able to transcode remote files. Every time FFmpeg needs access to the video, it will be copied to a temporary location.', array('@scheme' => $scheme_options['s3']));
-      $form['uri_scheme']['#description'] .= '</strong>';
     }
 
     $form['uri_scheme_thumbnails']['#description'] .= '<br/>';
     $form['uri_scheme_thumbnails']['#description'] .= t('Be aware that using @scheme to store thumbnails increases the overhead of dynamic image manipulation by the Image module.', array('@scheme' => $scheme_options['s3']));
+  }
+
+  // Add warnings for streaming to iPad when using the private file system
+  // See http://www.metaltoad.com/blog/iphone-video-streaming-drupals-file-system
+  if (isset($scheme_options['private']) && !module_exists('xsendfile')) {
+    $ioswarning = '<br/>' . t('Streaming to Apple iOS devices (iPad/iPhone/iPod) is not supported when using the private file system unless the <a href="@xsendfile-module">X-Sendfile</a> module is used.', array('@xsendfile-module' => url('http://drupal.org/project/xsendfile')));
+    $form['uri_scheme']['#description'] .= $ioswarning;
+    $form['uri_scheme_converted']['#description'] .= $ioswarning;
   }
 
   $form['autoconversion'] = array(
