@@ -90,8 +90,8 @@ function video_field_settings_form($field, $instance, $has_data) {
 
   // Add warnings for streaming to iPad when using the private file system
   // See http://www.metaltoad.com/blog/iphone-video-streaming-drupals-file-system
-  if (isset($scheme_options['private']) && !module_exists('xsendfile')) {
-    $ioswarning = '<br/>' . t('Streaming to Apple iOS devices (iPad/iPhone/iPod) is not supported when using the private file system unless the <a href="@xsendfile-module">X-Sendfile</a> module is used.', array('@xsendfile-module' => url('http://drupal.org/project/xsendfile')));
+  if (isset($scheme_options['private']) && !module_exists('xsendfile') && !module_exists('resumable_download')) {
+    $ioswarning = '<br/>' . t('Streaming to Apple iOS devices (iPad/iPhone/iPod) is not supported when using the private file system unless a module to support Range requests is installed. Modules that are known to work are <a href="@xsendfile-module">X-Sendfile</a> or <a href="@resumable-download-module">Resumable Download</a>.', array('@xsendfile-module' => url('http://drupal.org/project/xsendfile'), '@resumable-download-module' => url('http://drupal.org/project/resumable_download')));
     $form['uri_scheme']['#description'] .= $ioswarning;
     $form['uri_scheme_converted']['#description'] .= $ioswarning;
   }
