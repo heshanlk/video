@@ -54,7 +54,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     // Reset the transcoder class keeping the input file info
     $this->transcoder->reset(TRUE);
 
-    $video_info = $this->getFileInfo();
     $this->multipass = TRUE;
     $this->outputextension = NULL;
     foreach ($options as $key => $value) {
@@ -74,7 +73,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $result = $this->transcoder->setVideoPreset($value);
           break;
         case 'audio_sample_rate':
-          $value = (!empty($value)) ? $value : $video_info['audio']['sample_rate'];
           if ($value < 1000) {
             $value *= 1000;
           }
@@ -88,20 +86,12 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $result = $this->transcoder->setAudioChannels($value);
           break;
         case 'audio_bitrate':
-          if (empty($value)) {
-            $value = 64;
-          }
-
           if ($value < 1000) {
             $value *= 1000;
           }
           $result = $this->transcoder->setAudioBitRate($value);
           break;
         case 'video_bitrate':
-          if (empty($value)) {
-            $value = 200;
-          }
-
           $result = $this->transcoder->setVideoBitRate($value);
           break;
         case 'wxh':
@@ -121,6 +111,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           break;
         case 'video_extension':
           $this->outputextension = $value;
+          break;
+        case 'video_quality':
+          $result = $this->transcoder->setConstantQuality($value * 20); // phpVideoToolkit expects 1 to 100 range.
           break;
       }
 

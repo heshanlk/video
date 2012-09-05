@@ -2286,7 +2286,7 @@ class PHPVideoToolkit {
     elseif ($quality < 1) {
       $quality = 1;
     }
-    $this->addCommand('-qscale', $quality);
+    return $this->addCommand('-qscale', $quality);
   }
 
   /**
