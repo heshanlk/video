@@ -81,7 +81,12 @@ function video_preset_admin_settings($form_state) {
       }
 
       $form['video_preset'][$preset['name']] = array(
-        'description' => array('#markup' => check_plain($preset['description'])),
+        'status' => array(
+          '#type' => 'checkbox',
+          '#title' => check_plain($preset['name']),
+          '#default_value' => in_array($preset['name'], $selected),
+        ),
+        'description' => array('#markup' => !empty($preset['description']) ? check_plain($preset['description']) : ''),
         'edit' => array('#type' => 'link', '#title' => t('edit'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name']),
         'delete' => $delete,
         'export' => array('#type' => 'link', '#title' => t('export'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/export'),
@@ -93,11 +98,6 @@ function video_preset_admin_settings($form_state) {
           '#default_value' => mt_rand(1, 14),
         ),
         */
-        'status' => array(
-          '#type' => 'checkbox',
-          '#title' => check_plain($preset['name']),
-          '#default_value' => in_array($preset['name'], $selected),
-        ),
       );
     }
   }
