@@ -396,14 +396,15 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
   public function getVersion() {
     $info = $this->getCachedFFmpegInfo();
     if ($info['ffmpeg-found']) {
-      return self::getVersionFromOutput($info['raw']);
+      $ffmpegoravconv = NULL;
+      return self::getVersionFromOutput($info['raw'], $ffmpegoravconv);
     }
 
     return FALSE;
   }
 
   public function getName() {
-    return 'FFmpeg';
+    return 'FFmpeg / avconv';
   }
 
   public function getValue() {
@@ -415,7 +416,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     $form['ffmpeg'] = array(
       '#type' => 'fieldset',
-      '#title' => t('FFmpeg'),
+      '#title' => $this->getName(),
       '#collapsible' => FALSE,
       '#collapsed' => FALSE,
       '#states' => array(
@@ -427,8 +428,8 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     $form['ffmpeg']['video_ffmpeg_path'] = array(
       '#type' => 'textfield',
-      '#title' => t('Path to FFmpeg executable'),
-      '#description' => t('Absolute path to FFmpeg executable.') . t('When you install a new FFmpeg version, please <a href="@performance-page">clear the caches</a> to let Drupal detect the updated codec support.', array('@performance-page' => url('admin/config/development/performance'))),
+      '#title' => t('Path to FFmpeg or avconv executable'),
+      '#description' => t('Absolute path to the FFmpeg or avconv executable.') . ' ' . t('When you install a new FFmpeg version, please <a href="@performance-page">clear the caches</a> to let Drupal detect the updated codec support.', array('@performance-page' => url('admin/config/development/performance'))),
       '#default_value' => variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg'),
     );
 
@@ -477,14 +478,15 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       $toolkit = new PHPVideoToolkit($v['video_ffmpeg_path']);
       PHPVideoToolkit::$ffmpeg_info = FALSE;
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
-      if (!$ffmpeg['ffmpeg-found'] || ($version = self::getVersionFromOutput($ffmpeg['raw'])) == NULL) {
+      $ffmpegoravconv = NULL;
+      if (!$ffmpeg['ffmpeg-found'] || ($version = self::getVersionFromOutput($ffmpeg['raw'], $ffmpegoravconv)) == NULL) {
         form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $v['video_ffmpeg_path'], '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
       elseif (empty($ffmpeg['codecs']['video']) || empty($ffmpeg['codecs']['audio'])) {
         form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg version %version was found, but no supported codecs could be found. Please check whether FFmpeg and all support libraries have been installed correctly.', array('%version' => $version)));
       }
       else {
-        drupal_set_message(t('FFmpeg version %version found on your system.', array('%version' => $version)), 'status');
+        drupal_set_message(t('%ffmpegoravconv version %version found on your system.', array('%version' => $version, '%ffmpegoravconv' => $ffmpegoravconv)), 'status');
       }
 
       // Clear FFmpeg information when the path has changed.
@@ -534,38 +536,45 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
    * @return
    *   string containing version of FFmpeg
    */
-  public static function getVersionFromOutput($output) {
+  public static function getVersionFromOutput($output, &$ffmpegoravconv) {
+    $version = NULL;
+    $ffmpegoravconv = NULL;
+
     $matches = array();
 
     // Git check outs
-    $pattern = '/ffmpeg version N-\d+-g([a-f0-9]+)/';
-    if (preg_match($pattern, $output, $matches)) {
-      return 'git: ' . $matches[1];
+    if (preg_match('/(ffmpeg|avconv) version N-\d+-g([a-f0-9]+)/', $output, $matches)) {
+      $ffmpegoravconv = $matches[1];
+      $version = 'git: ' . $matches[2];
     }
 
     // Git check outs
-    $pattern = '/ffmpeg version git-(\d{4}-\d{2}-\d{2}-[a-f0-9]+)/';
-    if (preg_match($pattern, $output, $matches)) {
-      return 'git: ' . $matches[1];
+    elseif (preg_match('/(ffmpeg|avconv) version git-(\d{4}-\d{2}-\d{2}-[a-f0-9]+)/', $output, $matches)) {
+      $ffmpegoravconv = $matches[1];
+      $version = 'git: ' . $matches[2];
     }
 
     // Release
-    $pattern = '/ffmpeg version ([0-9.]+)/i';
-    if (preg_match($pattern, $output, $matches)) {
-      return $matches[1];
+    elseif (preg_match('/(ffmpeg|avconv) version ([0-9.]+)/i', $output, $matches)) {
+      $ffmpegoravconv = $matches[1];
+      $version = $matches[2];
     }
 
     // Fallback to unrecognized string
-    $pattern = '/ffmpeg version ([^\n]+)/i';
-    if (preg_match($pattern, $output, $matches)) {
-      $version = $matches[1];
+    elseif (preg_match('/(ffmpeg|avconv) version ([^\n]+)/i', $output, $matches)) {
+      $ffmpegoravconv = $matches[1];
+      $version = $matches[2];
       if (($pos = strpos($version, ' Copyright')) !== FALSE) {
         $version = drupal_substr($version, 0, $pos);
       }
-      return t('unrecognized: !version', array('!version' => $version));
+      $version = t('unrecognized: !version', array('!version' => $version));
     }
 
-    return NULL;
+    if ($ffmpegoravconv == 'ffmpeg') {
+      $ffmpegoravconv = 'FFmpeg';
+    }
+
+    return $version;
   }
 
   /**

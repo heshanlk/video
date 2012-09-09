@@ -807,14 +807,14 @@ class PHPVideoToolkit {
   protected function getVersion($output) {
     // Search for SVN string
     // FFmpeg version SVN-r20438, Copyright (c) 2000-2009 Fabrice Bellard, et al.
-    $pattern = "/ffmpeg version SVN-r([0-9.]*)/i";
+    $pattern = "/(?:ffmpeg|avconv) version SVN-r([0-9.]*)/i";
     if (preg_match($pattern, $output, $matches)) {
       return $matches[1];
     }
 
     // Some OSX versions are built from a very early CVS
     // I do not know what to do with this version- using 1 for now
-    $pattern = "/ffmpeg version.*CVS.*Mac OSX universal/msUi";
+    $pattern = "/(?:ffmpeg|avconv) version.*CVS.*Mac OSX universal/msUi";
     if (preg_match($pattern, $output, $matches)) {
       return 0;
     }
@@ -822,7 +822,7 @@ class PHPVideoToolkit {
     // Search for git string
     // FFmpeg version git-N-29240-gefb5fa7, Copyright (c) 2000-2011 the FFmpeg developers.
     // ffmpeg version N-31145-g59bd0fe, Copyright (c) 2000-2011 the FFmpeg developers
-    $pattern = "/ffmpeg version.*N-([0-9.]*)/i";
+    $pattern = "/(?:ffmpeg|avconv) version.*N-([0-9.]*)/i";
     if (preg_match($pattern, $output, $matches)) {
       // Versions above this seem to be ok
       if ($matches[1] >= 29240) {
@@ -835,14 +835,14 @@ class PHPVideoToolkit {
 
     // Do we have a release?
     // ffmpeg version 0.4.9-pre1, build 4736, Copyright (c) 2000-2004 Fabrice Bellard
-    $pattern = "/ffmpeg version ([0-9.]*)/i";
+    $pattern = "/(?:ffmpeg|avconv) version ([0-9.]*)/i";
     if (preg_match($pattern, $output, $matches)) {
       return $matches[1];
     }
 
     // Do we have a build version?
     // ffmpeg version 0.4.9-pre1, build 4736, Copyright (c) 2000-2004 Fabrice Bellard
-    $pattern = "/ffmpeg version.*, build ([0-9]*)/i";
+    $pattern = "/(?:ffmpeg|avconv) version.*, build ([0-9]*)/i";
     if (preg_match($pattern, $output, $matches)) {
       return $matches[1];
     }
