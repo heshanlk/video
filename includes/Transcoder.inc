@@ -6,6 +6,30 @@
 
 class Transcoder {
   /**
+   * @var TranscoderFactoryInterface
+   */
+  private $transcoder;
+
+  public function __construct() {
+    $transcoder = variable_get('video_convertor', 'TranscoderAbstractionFactoryFfmpeg');
+    $this->transcoder = self::createTranscoder($transcoder);
+  }
+
+  public function hasTranscoder() {
+    return $this->transcoder != NULL;
+  }
+
+  /**
+   * Returns the current transcoder implementation.
+   *
+   * @return
+   *   TranscoderFactoryInterface
+   */
+  public function getTranscoder() {
+    return $this->transcoder;
+  }
+
+  /**
    * Extract frames from the video file. This helper function will interact with
    * only the database and it will save all the thumbnail file reference in to
    * the database.
@@ -21,15 +45,14 @@ class Transcoder {
       return $thumbnails;
     }
 
-    $scheme = !empty($field['settings']['uri_scheme_thumbnails']) ? $field['settings']['uri_scheme_thumbnails'] : 'public';
-    $format = !empty($field['settings']['thumbnail_format']) ? $field['settings']['thumbnail_format'] : 'png';
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    if ($transcoder == NULL) {
+    if ($this->transcoder == NULL) {
       return array();
     }
-    $transcoder->setInput($video);
-    $thumbnails = $transcoder->extractFrames($scheme, $format);
+    $scheme = !empty($field['settings']['uri_scheme_thumbnails']) ? $field['settings']['uri_scheme_thumbnails'] : 'public';
+    $format = !empty($field['settings']['thumbnail_format']) ? $field['settings']['thumbnail_format'] : 'png';
+    $this->transcoder->setInput($video);
+    $thumbnails = $this->transcoder->extractFrames($scheme, $format);
+    $this->transcoder->reset();
 
     if ($thumbnails === FALSE) {
       return FALSE;
@@ -50,6 +73,19 @@ class Transcoder {
   }
 
   /**
+   * Processes up to 'video_ffmpeg_instances' jobs in the current thread.
+   *
+   * @see video_jobs::loadQueue()
+   */
+  public function runQueue() {
+    if ($this->hasTranscoder() && $videos = video_jobs::loadQueue()) {
+      foreach ($videos as $video) {
+        $this->executeConversion($video);
+      }
+    }
+  }
+
+  /**
    * This helper function will help to execute video conversion job by loading
    * job from the database and once it completed saving its data in to the
    * database.
@@ -61,9 +97,18 @@ class Transcoder {
   public function executeConversion(stdClass $video) {
     global $user;
 
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    if ($transcoder == NULL) {
+    // Check the video state
+    if ($video->video_status != VIDEO_RENDERING_INQUEUE && $video->video_status != VIDEO_RENDERING_PENDING) {
+      $status = array(
+        VIDEO_RENDERING_ACTIVE => 'activated previously',
+        VIDEO_RENDERING_COMPLETE => 'completed',
+        VIDEO_RENDERING_FAILED => 'failed'
+      );
+      watchdog('transcoder', 'Video conversion has been @status. You should add video to the queue. Please check the re-queue to enable the video conversion.', array('@status' => $status[$video->video_status]), WATCHDOG_WARNING);
+      return FALSE;
+    }
+
+    if ($this->transcoder == NULL) {
       return FALSE;
     }
 
@@ -71,7 +116,7 @@ class Transcoder {
     $video->statusupdated = time();
     $video->started = $video->statusupdated;
     $video->video_status = VIDEO_RENDERING_ACTIVE;
-    $transcoder->updateJob($video);
+    video_jobs::update($video);
 
     // Load the presets
     $video_preset = new Preset();
@@ -105,7 +150,7 @@ class Transcoder {
       }
     }
 
-    $transcoder->setInput((array) $video);
+    $this->transcoder->setInput((array) $video);
     $transcodingsuccess = TRUE;
     $output = array();
     $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
@@ -131,15 +176,15 @@ class Transcoder {
         $thumbnail_number = 0;
 
         // set transcoder options
-        if (!$transcoder->setOptions($preset['settings'])) {
+        if (!$this->transcoder->setOptions($preset['settings'])) {
           // setOptions should write to the watchdog log.
           $transcodingsuccess = FALSE;
           break;
         }
 
         $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
-        $transcoder->setOutput($output_directory, $output_name);
-        if ($output_file = $transcoder->execute()) {
+        $this->transcoder->setOutput($output_directory, $output_name);
+        if ($output_file = $this->transcoder->execute()) {
           $output[] = $output_file;
         }
         else {
@@ -147,13 +192,12 @@ class Transcoder {
           break;
         }
 
-        $transcoder->reset(TRUE);
+        $this->transcoder->reset(TRUE);
       }
     }
 
     if (!$transcodingsuccess) {
-      $video->video_status = VIDEO_RENDERING_FAILED;
-      $video->statusupdated = time();
+      video_jobs::setFailed($video);
     }
     else {
       // add files to file_managed table and add reference to the file_usage table
@@ -178,19 +222,18 @@ class Transcoder {
       $video->duration = round($file->duration);
 
       // Change the status if the file exists.
-      // this happens for FFmpeg and other transcoders that transcoder
+      // this happens for FFmpeg and other transcoders that transcode
       // directly. For Zencoder, the status is changed later.
       if (file_exists($file->uri)) {
-        $video->video_status = VIDEO_RENDERING_COMPLETE;
-        $video->statusupdated = time();
+        video_jobs::setCompleted($video);
+      }
+      else {
+        // Else: just update the video.
+        video_jobs::update($video);
       }
     }
 
-    $video->completed = time();
-    $transcoder->updateJob($video);
-
-    // Clear the cache for this entity
-    video_utility::clearEntityCache($video->entity_type, $video->entity_id);
+    $this->transcoder->reset();
 
     return $transcodingsuccess;
   }
@@ -221,32 +264,9 @@ class Transcoder {
   }
 
   /**
-   * Get admin settings forms from the transcoder classes and construct the admin
-   * form will do here.
+   * Retuns all transcoders implemented to work with the video module.
    */
-  public function adminSettings() {
-    // @todo use Drupal Form API status facility for this
-    $form = array();
-    $options = $this->_transcoders();
-    $form['video_convertor'] = array(
-      '#type' => 'radios',
-      '#title' => t('Video transcoder'),
-      '#default_value' => variable_get('video_convertor', 'TranscoderAbstractionFactoryFfmpeg'),
-      '#options' => $options['radios'],
-      '#description' => '<p>' . t('Select a video transcoder will help you convert videos and generate thumbnails.') . '</p>' . theme('item_list', array('items' => $options['help'])),
-      '#prefix' => '<div id="transcoder-radios">',
-      '#suffix' => '</div>',
-    );
-    $form = $form + $options['admin_settings'];
-    return $form;
-  }
-
-  /**
-   * Get all transcoders implemented to work with video  module and get its
-   * values and names to display in admin settings form.
-   */
-  private function _transcoders() {
-    $files = array();
+  public function getAllTranscoders() {
     // Lets find our transcoder classes and build our radio options
     // We do this by scanning our transcoders folder
     $form = array(
@@ -260,13 +280,13 @@ class Transcoder {
     $modules = module_list();
     $files = array();
     foreach ($modules as $module) {
-      $mobule_files = array();
+      $module_files = array();
       $module_path = drupal_get_path('module', $module) . '/transcoders';
       foreach (file_scan_directory($module_path, '/.*\.inc/') as $filekey => $file) {
         $file->module = $module;
-        $mobule_files[] = $file;
+        $module_files[] = $file;
       }
-      $files = array_merge($files, $mobule_files);
+      $files = array_merge($files, $module_files);
     }
     foreach ($files as $file) {
       module_load_include('inc', $file->module, '/transcoders/' . $file->name);
@@ -282,5 +302,23 @@ class Transcoder {
       }
     }
     return $form;
+  }
+
+  /**
+   * Create a new instance of the transcoder implementation.
+   *
+   * @return
+   *   TranscoderFactoryInterface
+   */
+  public static function createTranscoder($transcoder) {
+    if ($transcoder == '') {
+      return NULL;
+    }
+
+    if (!class_exists($transcoder, TRUE)) {
+      drupal_set_message(t('The transcoder %transcoder is not configured properly.', array('%transcoder' => $transcoder)), 'error');
+    }
+
+    return new $transcoder;
   }
 }

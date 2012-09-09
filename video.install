@@ -256,19 +256,18 @@ function video_requirements($phase) {
   $requirements = array();
 
   if ($phase == 'runtime') {
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
+    $transcoder = new Transcoder();
     $errormsg = '';
 
-    if ($transcoder == NULL) {
+    if (!$transcoder->hasTranscoder()) {
       $name = t('None');
       $version = t('None');
       $available = TRUE;
     }
     else {
-      $name = $transcoder->getName();
-      $version = $transcoder->getVersion();
-      $available = $transcoder->isAvailable($errormsg);
+      $name = $transcoder->getTranscoder()->getName();
+      $version = $transcoder->getTranscoder()->getVersion();
+      $available = $transcoder->getTranscoder()->isAvailable($errormsg);
     }
 
     $requirements['video'] = array(

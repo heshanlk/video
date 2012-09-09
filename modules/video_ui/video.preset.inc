@@ -10,8 +10,8 @@ define('VIDEO_PRESET_MAX_LENGTH', 64);
  * Preset form builder.
  */
 function video_preset_form($form, &$form_state, $preset = FALSE) {
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
+  $transcoder = new Transcoder();
+  $transcoder = $transcoder->getTranscoder();
   $codecs = $transcoder->getCodecs();
   $formats = $transcoder->getAvailableFormats('muxing');
   $pixelformats = $transcoder->getPixelFormats();

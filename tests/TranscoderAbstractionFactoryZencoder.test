@@ -72,7 +72,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
       'timestamp' => time(),
       'uid' => 1,
     ))->execute();
-    $transcoder->createJob(1, '320x240', 1, 'node', 'videofield', LANGUAGE_NONE, 0);
+    video_jobs::create(1, '320x240', 1, 'node', 'videofield', LANGUAGE_NONE, 0);
     db_insert('video_output')->fields(array(
       'vid' => 1,
       'original_fid' => 1,
@@ -337,7 +337,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     $this->assertEqual('', $out);
 
     // Test whether the duration and status have been saved
-    $video = $this->transcoder->loadJob(1);
+    $video = video_jobs::load(1);
 
     $this->assertEqual(5, $video->duration);
     $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
@@ -405,7 +405,7 @@ class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
     }');
 
     $this->assertEqual('', $out);
-    $video = $this->transcoder->loadJob(1);
+    $video = video_jobs::load(1);
     $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
   }
 

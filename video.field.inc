@@ -39,9 +39,8 @@ function video_field_info() {
  * Implements hook_field_settings_form().
  */
 function video_field_settings_form($field, $instance, $has_data) {
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
-  $hastranscoder = $transcoder != NULL;
+  $transcoder = new Transcoder();
+  $hastranscoder = $transcoder->hasTranscoder();
 
   $defaults = field_info_field_settings($field['type']);
   $settings = array_merge($defaults, $field['settings']);
@@ -77,7 +76,7 @@ function video_field_settings_form($field, $instance, $has_data) {
 
   // Add warnings for S3
   if ($hastranscoder && isset($scheme_options['s3'])) {
-    $value = $transcoder->getValue();
+    $value = $transcoder->getTranscoder()->getValue();
 
     if ($value == 'TranscoderAbstractionFactoryFfmpeg') {
       $form['uri_scheme']['#description'] .= '<br/>';
@@ -623,11 +622,9 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
   $value = file_field_widget_value($element, $input, $form_state);
 
   if ($value['fid'] > 0) {
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-
-    if ($transcoder != NULL) {
-      $video = $transcoder->loadJob($value['fid']);
+    $transcoder = new Transcoder();
+    if ($transcoder->hasTranscoder()) {
+      $video = video_jobs::load($value['fid']);
 
       if ($video) {
         $value['dimensions'] = $video->dimensions;
@@ -762,8 +759,7 @@ function video_thumb_process(array &$element, array &$form_state, array $field) 
  * Process elements loads on settings
  */
 function video_widget_element_settings(array &$element, array &$form_state, array $field) {
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
+  $transcoder = new Transcoder();
 
   $file = $element['#value'];
   $delta = $element['#delta'];
@@ -771,7 +767,7 @@ function video_widget_element_settings(array &$element, array &$form_state, arra
   $instance = field_widget_instance($element, $form_state);
   $dimensions = $instance['settings']['default_dimensions'];
   $default_dimensions = user_access('override player dimensions');
-  $autoconversion = !empty($field['settings']['autoconversion']) && $transcoder != NULL;
+  $autoconversion = !empty($field['settings']['autoconversion']) && $transcoder->hasTranscoder();
 
   $description = t('Set the size of the converted video.');
   $options = video_utility::getDimensions();
@@ -912,8 +908,8 @@ function _video_dimensions_options(&$options, $video) {
  * Returns the width/height and aspect ratio of the video
  */
 function _video_aspect_ratio($video) {
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
+  $transcoder = new Transcoder();
+  $transcoder = $transcoder->getTranscoder();
   $transcoder->setInput((array) $video);
   $wxh = $transcoder->getDimensions();
 
@@ -1117,36 +1113,34 @@ function video_filefield_sources_widgets() {
  * Video file save to the video_queue table for conversions
  */
 function _video_field_file_autoconversion($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
+  $transcoder = new Transcoder();
 
-  if (empty($field['settings']['autoconversion']) || $transcoder == NULL) {
+  if (empty($field['settings']['autoconversion']) || !$transcoder->hasTranscoder()) {
     return;
   }
 
   foreach ($items as $delta => &$item) {
-    // set input file
-    $transcoder->setInput($item);
+    $fid = intval($item['fid']);
     // skip adding entry if bypass conversion is checked
     if (!empty($item['bypass_autoconversion'])) {
       // delete the conversion job if any
-      $transcoder->deleteJob();
+      video_jobs::delete($fid);
       return;
     }
 
     // Try to load the job
-    $video = $transcoder->loadJob();
+    $video = video_jobs::load($fid);
 
     // Create the job if it doesn't exist
     if (!$video) {
       list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
       // @todo get the default dimension when not available in $item
-      if (!($transcoder->createJob($item['fid'], $item['dimensions'], $entity_id, $entity_type, $field['field_name'], $langcode, $delta))) {
+      if (!video_jobs::create($item['fid'], $item['dimensions'], $entity_id, $entity_type, $field['field_name'], $langcode, $delta)) {
         drupal_set_message(t('Something went wrong with your video job creation. Please check your recent log entries for further debugging.'), 'error');
         return;
       }
       // Load a fresh copy of the job
-      $video = $transcoder->loadJob();
+      $video = video_jobs::load($fid);
     }
 
     // re queue for video conversion
@@ -1154,7 +1148,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
       $video->video_status = VIDEO_RENDERING_PENDING;
       $video->statusupdated = time();
       $video->dimensions = $item['dimensions'];
-      $transcoder->updateJob($video);
+      video_jobs::update($video);
     }
 
     if ($video->video_status == VIDEO_RENDERING_PENDING) {
@@ -1167,7 +1161,7 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
         $entity->video_convert_on_save[$video->fid] = $video->fid;
       }
       else {
-        drupal_set_message(t('Transcoding job was successfully queued for %transcoder-name. The video %video-name will be converted soon.', array('%transcoder-name' => $transcoder->getName(), '%video-name' => $video->filename)));
+        drupal_set_message(t('Transcoding job was successfully queued for %transcoder-name. The video %video-name will be converted soon.', array('%transcoder-name' => $transcoder->getTranscoder()->getName(), '%video-name' => $video->filename)));
       }
     }
   }
@@ -1188,18 +1182,17 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
  */
 function _video_field_convert_on_save($entity, $type) {
   if (!empty($entity->video_convert_on_save)) {
-    $factory = new TranscoderAbstractionAbstractFactory();
-    $transcoder = $factory->getProduct();
-    $video_conversion = new Conversion();
+    $transcoder = new Transcoder();
+    $transcodername = $transcoder->getTranscoder()->getName();
 
     foreach ($entity->video_convert_on_save as $videofid) {
-      $video = $transcoder->loadJob($videofid);
-      if ($video_conversion->process($video)) {
+      $video = video_jobs::load($videofid);
+      if ($transcoder->executeConversion($video)) {
         if ($video->video_status == VIDEO_RENDERING_COMPLETE) {
           drupal_set_message(t('The video %video-name was converted.', array('%video-name' => $video->filename)));
         }
         else {
-          drupal_set_message(t('Transcoding job was successfully submitted to %transcoder-name. The video %video-name will be converted soon.', array('%transcoder-name' => $transcoder->getName(), '%video-name' => $video->filename)));
+          drupal_set_message(t('Transcoding job was successfully submitted to %transcoder-name. The video %video-name will be converted soon.', array('%transcoder-name' => $transcodername, '%video-name' => $video->filename)));
         }
       }
       else {

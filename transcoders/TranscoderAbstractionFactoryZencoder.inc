@@ -163,7 +163,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Check if the job has been completed.
     // If the job has not been completed, don't bother checking for
     // thumbnails
-    $job = $this->loadJob();
+    $fid = $this->settings['input']['fid'];
+    $job = video_jobs::load($fid);
     if (empty($job)) {
       return array();
     }
@@ -172,7 +173,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       return array();
     }
 
-    $fid = $this->settings['input']['fid'];
     $path = variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $fid;
 
     // Get the file system directory.
@@ -209,11 +209,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
 
         $this->moveFile($srcuri, $dsturi);
-        if (variable_get('video_zencoder_testing_mode', FALSE)) {
-          db_update('video_queue')
-            ->fields(array('status' => VIDEO_RENDERING_COMPLETE))
-            ->condition('fid', $fid)->execute();
-        }
 
         // Delete the source, it is no longer needed
         drupal_unlink($srcuri);
@@ -554,13 +549,20 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $fid = intval($video_output->original_fid);
     watchdog('transcoder', 'Postback received from Zencoder for fid: @fid, Zencoder job id: @jobid.', array('@fid' => $fid, '@jobid' => $jobid));
 
+    // Find the transcoding job.
+    $video = video_jobs::load($fid);
+    if (empty($video)) {
+      echo 'Transcoding job not found in database';
+      return;
+    }
+
     // Zencoder API 2.1.0 and above use $notification->job->outputs.
     // For now, only one output is supported.
     $output = isset($notification->output) ? $notification->output :  current($notification->job->outputs);
 
     // Find all error situations
     if ($output->state === 'cancelled') {
-      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))->condition('fid', $fid)->execute();
+      video_jobs::setFailed($video);
       echo 'Cancelled';
       return;
     }
@@ -576,18 +578,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
       }
 
-      db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))->condition('fid', $fid)->execute();
+      video_jobs::setFailed($video);
       watchdog('transcoder', 'Zencoder reports errors in postback for fid @fid, job id @jobid: !errordetail', array('@fid' => $fid, '@jobid' => $jobid, '!errordetail' => $errordetail), WATCHDOG_ERROR);
       echo 'Failure';
     }
 
     if ($notification->job->state !== 'finished') {
-      return;
-    }
-
-    $video = $this->loadJob($fid);
-    if (empty($video)) {
-      echo 'Not found';
       return;
     }
 
@@ -603,7 +599,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // So we only copy the file when it doesn't exist or has a different file size.
     if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes) {
       if (!$this->moveFile($output->url, $outputfile->uri)) {
-        db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))->condition('fid', $fid)->execute();
+        video_jobs::setFailed($video);
         watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $notification->output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
         return;
       }
@@ -614,9 +610,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     // Actual processing of the response
     $video->duration = round($output->duration_in_ms / 1000);
-    $video->status = VIDEO_RENDERING_COMPLETE;
-    $video->statusupdated = time();
-    drupal_write_record('video_queue', $video, 'vid');
+    video_jobs::setCompleted($video);
 
     // Clear the field cache. Normally, node_save() does this, but that function is not invoked in all cases
     video_utility::clearEntityCache($video->entity_type, $video->entity_id);
@@ -640,7 +634,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       return;
     }
 
-    // The following information was saved in TranscoderFactory::createJob()
+    // The following information was saved in video_jobs::create()
     $fieldname = $video->data['field_name'];
     $field = field_info_field($fieldname);
     $langcode = $video->data['langcode'];

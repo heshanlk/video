@@ -6,10 +6,10 @@ dependencies[] = file
 dependencies[] = image
 
 files[] = video.utility.inc
-files[] = includes/Conversion.inc
 files[] = includes/Preset.inc
 files[] = includes/Transcoder.inc
 files[] = includes/TranscoderFactory.inc
+files[] = includes/jobs.inc
 files[] = transcoders/TranscoderAbstractionFactoryFfmpeg.inc
 files[] = transcoders/TranscoderAbstractionFactoryZencoder.inc
 files[] = views/video_handler_field_video_duration.inc

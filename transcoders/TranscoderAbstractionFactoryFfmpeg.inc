@@ -152,8 +152,8 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function extractFrames($destinationScheme, $format) {
     // When $job is null, we are viewing the thumbnails before the form has been submitted.
-    $job = $this->loadJob();
     $fid = intval($this->settings['input']['fid']);
+    $job = video_jobs::load($fid);
 
     // Get the file system directory.
     $dsturibase = $destinationScheme . '://' . variable_get('video_thumbnail_path', 'videos/thumbnails') . '/' . $fid . '/';

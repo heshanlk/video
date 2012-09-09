@@ -8,8 +8,19 @@
  * Video transcoder admin settings
  */
 function video_transcoder_admin_settings() {
-  $transcoder = new Transcoder;
-  $form = $transcoder->adminSettings();
+  $transcoder = new Transcoder();
+  $options = $transcoder->getAllTranscoders();
+
+  $form = array();
+  $form['video_convertor'] = array(
+    '#type' => 'radios',
+    '#title' => t('Video transcoder'),
+    '#default_value' => variable_get('video_convertor', 'TranscoderAbstractionFactoryFfmpeg'),
+    '#options' => $options['radios'],
+    '#description' => '<p>' . t('Select a video transcoder will help you convert videos and generate thumbnails.') . '</p>' . theme('item_list', array('items' => $options['help'])),
+  );
+  $form = $form + $options['admin_settings'];
+
   return system_settings_form($form);
 }
 
@@ -22,9 +33,7 @@ function video_transcoder_admin_settings_validate($form, &$form_state) {
     return;
   }
 
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct($transcodername);
-  $transcoder->adminSettingsValidate($form, $form_state);
+  Transcoder::createTranscoder($transcodername)->adminSettingsValidate($form, $form_state);
 
   if (!form_get_errors() && $transcodername != variable_get('video_convertor')) {
     drupal_set_message(t('Because the selected transcoder was changed, you need to update the codec settings for your presets.'), 'warning');

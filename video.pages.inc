@@ -15,9 +15,12 @@ function video_transcoder_postback_jobs() {
     exit;
   }
 
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
-  return $transcoder->processPostback();
+  $transcoder = new Transcoder();
+  if ($transcoder->hasTranscoder()) {
+    return $transcoder->getTranscoder()->processPostback();
+  }
+
+  return MENU_NOT_FOUND;
 }
 
 /**

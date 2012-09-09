@@ -187,15 +187,11 @@ function video_cron() {
   }
 
   // Append up to video_ffmpeg_instances videos to the video queue.
-  $factory = new TranscoderAbstractionAbstractFactory();
-  $transcoder = $factory->getProduct();
-  if ($transcoder != NULL) {
-    $videos = $transcoder->loadJobQueue();
-    if (!empty($videos)) {
-      $queue = DrupalQueue::get('video_queue');
-      foreach ($videos as $video) {
-        $queue->createItem($video);
-      }
+  $videos = video_jobs::loadQueue();
+  if (!empty($videos)) {
+    $queue = DrupalQueue::get('video_queue');
+    foreach ($videos as $video) {
+      $queue->createItem($video);
     }
   }
 
@@ -203,15 +199,12 @@ function video_cron() {
   $transcodetimeout = variable_get('video_transcode_timeout', 5);
   if (!empty($transcodetimeout)) {
     $limit = time() - $transcodetimeout * 60;
-    $videos = db_query('SELECT f.fid, f.filename, q.entity_type, q.entity_id, q.statusupdated FROM {video_queue} q INNER JOIN {file_managed} f ON (f.fid = q.fid) WHERE q.statusupdated < ? AND q.status = ?', array($limit, VIDEO_RENDERING_ACTIVE))->fetchAllAssoc('fid');
+    $videos = db_query('SELECT f.fid FROM {video_queue} q INNER JOIN {file_managed} f ON (f.fid = q.fid) WHERE q.statusupdated < ? AND q.status = ?', array($limit, VIDEO_RENDERING_ACTIVE))->fetchAllKeyed(0, 0);
     if (!empty($videos)) {
-      db_update('video_queue')
-        ->condition('fid', array_keys($videos), 'IN')
-        ->fields(array('status' => VIDEO_RENDERING_FAILED, 'statusupdated' => time()))
-        ->execute();
-
       $list = array();
-      foreach ($videos as $video) {
+      foreach ($videos as $fid) {
+        $video = video_jobs::load($fid);
+        video_jobs::setFailed($video);
         $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
         $uri = entity_uri($video->entity_type, $entity);
         $list[] = l($video->filename, $uri['path'], $uri['options']) . ' (' . t('@status since @datetime', array('@status' => t('active'), '@datetime' => format_date($video->statusupdated))) . ')';
@@ -264,8 +257,8 @@ function video_cron_queue_info() {
  * Process video transcoding queue
  */
 function video_queue_process(stdClass $video) {
-  $video_conversion = new Conversion();
-  $video_conversion->process($video);
+  $video_conversion = new Transcoder();
+  $video_conversion->executeConversion($video);
 }
 
 /**
