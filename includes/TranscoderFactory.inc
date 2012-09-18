@@ -5,7 +5,7 @@
  */
 
 /**
- * Interface for transocder classes
+ * Interface for transcoder classes
  */
 interface TranscoderFactoryInterface {
   /**
@@ -41,8 +41,37 @@ interface TranscoderFactoryInterface {
    * Reset internal variables to their initial state.
    */
   public function reset($keepinput = FALSE);
+
+  /**
+   * Process postback jobs
+   */
   public function processPostback();
+
+  /**
+   * Get enabled and supporting codecs by the transcoder.
+   */
+  public function getCodecs();
+
+  /**
+   * Get available output file formats from the transcoder.
+   */
+  public function getAvailableFormats($type = FALSE);
+
+  /**
+   * Returns a list of all supported pixel formats.
+   *
+   * Returns NULL when pixel formats are not configurable for this transcoder.
+   */
+  public function getPixelFormats();
+
+  /**
+   * Admin settings form for the transcoder
+   */
   public function adminSettings();
+
+  /**
+   * Validate admin settings. This will call when Drupal admin settings validate.
+   */
   public function adminSettingsValidate($form, &$form_state);
 }
 
@@ -97,23 +126,6 @@ abstract class TranscoderAbstractionFactory {
   }
 
   /**
-   * Get enabled and supporting codecs by the transcoder.
-   */
-  public abstract function getCodecs();
-
-  /**
-   * Get available output file formats from the transcoder.
-   */
-  public abstract function getAvailableFormats($type = FALSE);
-
-  /**
-   * Returns a list of all supported pixel formats.
-   *
-   * Returns NULL when pixel formats are not configurable for this transcoder.
-   */
-  public abstract function getPixelFormats();
-
-  /**
    * Get the installed transcoder version.
    */
   public function getVersion() {
@@ -155,16 +167,6 @@ abstract class TranscoderAbstractionFactory {
   public function checkErrors() {
     return !empty($this->errors);
   }
-
-  /**
-   * Admin settings form for the transcoder
-   */
-  abstract public function adminSettings();
-
-  /**
-   * Validate admin settings. This will call when Drupal admin settings validate.
-   */
-  abstract public function adminSettingsValidate($form, &$form_state);
 
   /**
    * Process postback jobs
