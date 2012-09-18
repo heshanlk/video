@@ -676,8 +676,19 @@ class PHPVideoToolkit {
     // grab the codecs available
     $codecsmatches = array();
     $data['codecs'] = array('video' => array(), 'audio' => array(), 'subtitle' => array());
-    if (preg_match_all('/ ((?:[DEVAST ]{6})|(?:[DEVASTFB ]{8})) ([A-Za-z0-9\_]+) (.+)/', $codecs, $codecsmatches)) {
-    // Codecs:
+    if (preg_match_all('/ ((?:[DEVAST ]{6})|(?:[DEVASTFB ]{8})|(?:[DEVASIL\.]{6})) ([A-Za-z0-9\_]+) (.+)/', $codecs, $codecsmatches)) {
+
+// FFmpeg 0.12+
+//  D..... = Decoding supported
+//  .E.... = Encoding supported
+//  ..V... = Video codec
+//  ..A... = Audio codec
+//  ..S... = Subtitle codec
+//  ...I.. = Intra frame-only codec
+//  ....L. = Lossy compression
+//  .....S = Lossless compression
+
+// FFmpeg other
 //  D..... = Decoding supported
 //  .E.... = Encoding supported
 //  ..V... = Video codec
@@ -686,6 +697,7 @@ class PHPVideoToolkit {
 //  ...S.. = Supports draw_horiz_band
 //  ....D. = Supports direct rendering method 1
 //  .....T = Supports weird frame truncation
+
       for ($i = 0, $a = count($codecsmatches[0]); $i < $a; $i++) {
         $options = preg_split('//', $codecsmatches[1][$i], -1, PREG_SPLIT_NO_EMPTY);
         if ($options) {
