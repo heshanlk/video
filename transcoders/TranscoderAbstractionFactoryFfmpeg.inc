@@ -347,6 +347,10 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         }
       }
     }
+
+    uasort($codecs['encode']['video'], 'strnatcasecmp');
+    uasort($codecs['encode']['audio'], 'strnatcasecmp');
+
     return $codecs;
   }
 
