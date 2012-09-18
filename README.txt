@@ -37,3 +37,8 @@ Examples of codecs that should work:
 - Flash Video (FLV) / Sorenson Spark / Sorenson H.263
 - libx264 H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10
 
+#### "[aac @ 0x______] Too many bits per frame requested"
+
+The sample rate of your input video is not valid for AAC audio encoding.
+Edit your preset and set "Audio sample rate" to 44100 in the
+"Advanced audio settings" section.
