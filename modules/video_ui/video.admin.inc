@@ -324,6 +324,33 @@ function video_players_admin_settings() {
     }
   }
 
+  // Miscellaneous player settings
+  $form['playersettings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Player settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  if (module_exists('jw_player')) {
+    $presets = array();
+    foreach (jw_player_preset_load() as $preset => $item) {
+      $presets[$preset] = $item['preset_name'];
+    }
+
+    $form['playersettings']['video_jwplayer_preset'] = array(
+      '#type' => 'select',
+      '#title' => t('JW Player preset'),
+      '#options' => $presets,
+      '#default_value' => variable_get('video_jwplayer_preset', NULL),
+      '#empty_value' => '',
+    );
+  }
+
+  if (count(element_children($form['playersettings'])) == 0) {
+    unset($form['playersettings']);
+  }
+
   return system_settings_form($form);
 }
 

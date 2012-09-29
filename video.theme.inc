@@ -230,6 +230,7 @@ function theme_video_flv($variables) {
       break;
 
     case 'jwplayer':
+      $preset = variable_get('video_jwplayer_preset');
       $options = array(
         'width' => $variables['width'],
         'height' => $variables['height'],
@@ -239,7 +240,7 @@ function theme_video_flv($variables) {
       if (!empty($item['thumbnailfile'])) {
         $config['image'] = $item['thumbnailfile']->url;
       }
-      $themed_output = theme('jw_player', array('file_object' => $video, 'options' => $options, 'config' => $config));
+      $themed_output = theme('jw_player', array('file_object' => $video, 'options' => $options, 'config' => $config, 'preset' => $preset));
       break;
 
     default:
