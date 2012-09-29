@@ -27,6 +27,11 @@ function video_views_data() {
       'left_field' => 'nid',
       'field' => 'entity_id',
     ),
+    // ...to the file_managed table
+    'file_managed' => array(
+      'left_field' => 'fid',
+      'field' => 'fid',
+    ),
   );
 
   // dimensions
