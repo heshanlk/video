@@ -4,7 +4,7 @@ REQUIREMENTS
 
 INSTALL INSTRUCTIONS FOR VIDEO.MODULE
 -------------------------------------
-- See : http://video.heidisoft.com/content/welcome-video-module-documentation
+- See : http://video.heidisoft.com/documentation/welcome-video-module-documentation
 
 
 MIGRATE INSTRUCTIONS TO VIDEO.MODULE
