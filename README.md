@@ -19,7 +19,7 @@ player.
 
 ## More information
 
-- [Documentation](http://video.heidisoft.com/content/welcome-video-module-documentation)
+- [Documentation](http://video.heidisoft.com/documentation/welcome-video-module-documentation)
 - [Handbook](http://video.heidisoft.com/content/features)
 - [Report a bug](http://drupal.org/node/add/project-issue/video)
 
