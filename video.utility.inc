@@ -32,8 +32,14 @@ class video_utility {
    *   Entity ID
    */
   public static function clearEntityCache($type, $id) {
+    // Clear the entity controller cache
+    entity_get_controller($type)->resetCache(array($id));
+
     // Clear field cache
     cache_clear_all('field:' . $type . ':' . $id, 'cache_field');
+
+    // Clear page cache and block cache
+    cache_clear_all(NULL, NULL);
 
     if (module_exists('entitycache')) {
       // Clear entitycache cache
