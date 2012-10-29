@@ -50,8 +50,7 @@ function video_preset_admin_settings($form_state) {
     '#submit' => array('video_preset_admin_settings_submit'),
   );
 
-  module_load_include('inc', 'video_ui', 'video.preset');
-  $presets = video_preset_get_presets();
+  $presets = Preset::getAllPresets();
 
   if (empty($presets)) {
     drupal_set_message(t('No presets were found. Please use the <a href="@create-preset">Add preset</a> link to create a new Video preset or upload an existing Video preset feature module to your modules directory.', array('@create-preset' => url('admin/config/media/video/presets/add'))), 'warning');
@@ -73,7 +72,7 @@ function video_preset_admin_settings($form_state) {
 
     foreach ($presets as $preset) {
       $delete = NULL;
-      if (empty($preset['module'])) {
+      if (empty($preset['module']) && !in_array($preset['name'], $selected)) {
         $delete = array('#type' => 'link', '#title' => t('delete'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/delete');
       }
       elseif ($preset['overridden']) {

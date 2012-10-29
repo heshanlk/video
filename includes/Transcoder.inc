@@ -118,15 +118,14 @@ class Transcoder {
     $video->video_status = VIDEO_RENDERING_ACTIVE;
     video_jobs::update($video);
 
-    // Load the presets
-    $video_preset = new Preset();
-    $presets = $video_preset->properties();
+    $fieldname = !empty($video->data['field_name']) ? $video->data['field_name'] : NULL;
+    $presets = Preset::getEnabledPresets($fieldname);
     $converted_scheme = file_uri_scheme($video->uri);
     $thumbnail_format = 'png';
     $thumbnail_number = intval(variable_get('video_thumbnail_count', 5));
 
     // Apply field-specific settings
-    if (!empty($video->data['field_name'])) {
+    if ($fieldname != NULL) {
       $field = field_info_field($video->data['field_name']);
       // Find the scheme and thumbnail format for the converted videos
       if (!empty($field['settings']['uri_scheme_converted'])) {
@@ -138,15 +137,6 @@ class Transcoder {
       // If no automatic thumbnail generation, set thumbnail number to 0
       if ($field['settings']['autothumbnail'] != 'auto') {
         $thumbnail_number = 0;
-      }
-      // Limit the presets to the selected presets for this field.
-      // If the selection is no longer valid, ignore it.
-      if (!empty($field['settings']['presets'])) {
-        $video_preset = new Preset($field['settings']['presets']);
-        $fieldpresets = $video_preset->properties();
-        if (!empty($fieldpresets)) {
-          $presets = $fieldpresets;
-        }
       }
     }
 

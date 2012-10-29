@@ -5,28 +5,156 @@
  */
 
 class Preset {
-  private $preset;
+  public static function getEnabledPresets($field_name = NULL) {
+    if ($field_name != NULL) {
+      $field = field_info_field($field_name);
+      $names = $field['settings']['presets'];
+      if (empty($names)) {
+        return self::getEnabledPresets();
+      }
+    }
+    else {
+      $names = variable_get('video_preset', array());
+    }
+    $names = array_filter($names);
 
-  public function __construct($preset = NULL) {
-    $this->preset = $preset;
-    if (!isset($preset))
-      $this->preset = variable_get('video_preset', array('FLV'));
+    $presets = array();
+    $all = self::getAllPresets();
+    $error = array();
+
+    foreach ($names as $name) {
+      if (isset($all[$name])) {
+        $presets[$name] = $all[$name];
+      }
+      else {
+        $error[] = $name;
+      }
+    }
+
+    // Display a warning when presets are missing.
+    if (!empty($error)) {
+      $params = array('%preset-names' => implode(', ', $error));
+      $message = t('The following selected presets are no longer available: %preset-names.', $params);
+
+      // Log to the watchdog when none of the presets are available.
+      if (empty($presets)) {
+        watchdog('video', 'The following selected presets are no longer available: %preset-names.', $params);
+      }
+
+      if (!empty($field)) {
+        $message .= ' ' . t('Please update the @field-name field settings.', array('@field-name' => $field_name));
+      }
+      else {
+        $message .= ' ' . t('Please update the Video module settings.');
+      }
+      drupal_set_message($message, 'warning', FALSE);
+    }
+
+    // When no presets are available and a field was supplied, try without a field.
+    if (empty($presets) && !empty($field)) {
+      return self::getEnabledPresets();
+    }
+
+    return $presets;
   }
 
   /**
-   * Get the preset properties
-   * @return array $properties
+   * Returns the default presets.
    */
-  public function properties() {
-    // adding modules/video_ui to load this file even if UI module is disabled
-    module_load_include('inc', 'video', 'modules/video_ui/video.preset');
+  public static function getDefaultPresets() {
     $presets = array();
-    foreach ($this->preset as $preset_name) {
-      // skip selecting disabled presets 0=>0
-      if (!empty($preset_name)) {
-        $presets[$preset_name] = video_get_preset($preset_name);
+
+    foreach (module_implements('video_default_presets') as $module) {
+      $function = $module . '_video_default_presets';
+      if (function_exists($function)) {
+        $result = $function();
+        if (isset($result) && is_array($result)) {
+          foreach ($result as $preset) {
+            $preset['module'] = $module;
+            $presets[$preset['name']] = $preset;
+          }
+        }
       }
     }
+
+    drupal_alter('video_default_presets', $presets);
+
     return $presets;
+  }
+
+  /**
+   * Gets a list of all presets.
+   */
+  public static function getAllPresets() {
+    $presets = array();
+
+    // Get all the presets from the database.
+    $result = db_select('video_preset', 'p')->fields('p')->execute();
+
+    // Iterate through all the presets and structure them in an array.
+    foreach ($result as $preset) {
+      $preset = (array) $preset;
+      $preset['module'] = NULL;
+      $preset['overridden'] = NULL;
+      $preset['settings'] = !empty($preset['settings']) ? unserialize($preset['settings']) : array();
+      $presets[$preset['name']] = $preset;
+    }
+
+    // Now allow other modules to add their default presets.
+    foreach (self::getDefaultPresets() as $preset) {
+      if (empty($preset['name'])) {
+        continue;
+      }
+
+      // Check if this default preset has been overridden.
+      if (isset($presets[$preset['name']])) {
+        $presets[$preset['name']]['overridden'] = TRUE;
+        $presets[$preset['name']]['module'] = $preset['module'];
+      }
+      else {
+        $preset['overridden'] = FALSE;
+        $presets[$preset['name']] = $preset;
+      }
+    }
+
+    uksort($presets, 'strnatcasecmp');
+
+    return $presets;
+  }
+
+  /**
+   * Retrieves a single preset.
+   */
+  public static function getPreset($preset_name) {
+    $preset = FALSE;
+
+    // Check if it is a default preset.
+    $default_presets = self::getDefaultPresets();
+    if (isset($default_presets[$preset_name])) {
+      $preset = $default_presets[$preset_name];
+      $preset['overridden'] = FALSE;
+    }
+
+    // Get the preset from the database.
+    $dbpreset = db_select('video_preset', 'p')
+      ->fields('p')
+      ->condition('p.name', $preset_name)
+      ->execute()
+      ->fetchAssoc();
+    if ($dbpreset) {
+      $dbpreset['settings'] = !empty($dbpreset['settings']) ? unserialize($dbpreset['settings']) : array();
+      if ($preset == NULL) {
+        $dbpreset['overridden'] = FALSE;
+        $dbpreset['module'] = NULL;
+      }
+      else {
+        $dbpreset['overridden'] = TRUE;
+        $dbpreset['module'] = $preset['module'];
+      }
+      $preset = $dbpreset;
+    }
+
+    // Return the preset.
+    return $preset;
   }
 }

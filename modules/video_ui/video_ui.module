@@ -154,8 +154,7 @@ function video_ui_menu() {
  * Implementing the special "auto-loader" for menu %video_preset.
  */
 function video_preset_load($preset_name) {
-  module_load_include('inc', 'video_ui', 'video.preset');
-  return video_get_preset($preset_name);
+  return Preset::getPreset($preset_name);
 }
 
 /**

@@ -657,6 +657,10 @@ function video_preset_revert_submit($form, &$form_state) {
  * Menu callback; delete a single preset.
  */
 function video_preset_delete_confirm($form, &$form_state, $preset) {
+  if (in_array($preset['name'], variable_get('video_preset', array()))) {
+    drupal_access_denied();
+    exit;
+  }
   $form['name'] = array('#type' => 'value', '#value' => $preset['name']);
   return confirm_form($form, t('Are you sure you want to delete the preset %name?', array('%name' => $preset['name'])), 'admin/config/media/video/presets', '<p>' . t('This action cannot be undone.') . '</p>', t('Delete'));
 }
@@ -836,108 +840,36 @@ function video_preset_save($preset) {
 
 /**
  * Returns the default presets.
+ *
+ * @deprecated Use Preset::getDefaultPresets().
  */
 function video_preset_get_default_presets() {
-  $presets = array();
-
-  foreach (module_implements('video_default_presets') as $module) {
-    $function = $module . '_video_default_presets';
-    if (function_exists($function)) {
-      $result = $function();
-      if (isset($result) && is_array($result)) {
-        foreach ($result as $preset) {
-          $preset['module'] = $module;
-          $presets[$preset['name']] = $preset;
-        }
-      }
-    }
-  }
-
-  drupal_alter('video_default_presets', $presets);
-
-  return $presets;
+  return Preset::getDefaultPresets();
 }
 
 /**
  * Gets a list of all presets.
+ *
+ * @deprecated Use Preset::getAllPresets().
  */
 function video_preset_get_presets() {
-  $presets = array();
-
-  // Get all the presets from the database.
-  $result = db_select('video_preset', 'p')->fields('p')->execute();
-
-  // Iterate through all the presets and structure them in an array.
-  foreach ($result as $preset) {
-    $preset = (array) $preset;
-    $preset['module'] = NULL;
-    $preset['settings'] = !empty($preset['settings']) ? unserialize($preset['settings']) : array();
-    $presets[$preset['name']] = $preset;
-  }
-
-  // Now allow other modules to add their default presets.
-  foreach (video_preset_get_default_presets() as $preset) {
-    if (empty($preset['name'])) {
-      continue;
-    }
-
-    // Check if this default preset has been overridden.
-    if (isset($presets[$preset['name']])) {
-      $presets[$preset['name']]['overridden'] = TRUE;
-      $presets[$preset['name']]['module'] = $preset['module'];
-    }
-    else {
-      $preset['overridden'] = FALSE;
-      $presets[$preset['name']] = $preset;
-    }
-  }
-
-  uksort($presets, 'strnatcasecmp');
-
-  return $presets;
+  return Preset::getAllPresets();
 }
 
 /**
  * Retrieves a single preset.
+ *
+ * @deprecated Use Preset::getPreset().
  */
 function video_get_preset($preset_name) {
-  $preset = FALSE;
-
-  // Check if it is a default preset.
-  $default_presets = video_preset_get_default_presets();
-  if (isset($default_presets[$preset_name])) {
-    $preset = $default_presets[$preset_name];
-    $preset['overridden'] = FALSE;
-  }
-
-  // Get the preset from the database.
-  $dbpreset = db_select('video_preset', 'p')
-    ->fields('p')
-    ->condition('p.name', $preset_name)
-    ->execute()
-    ->fetchAssoc();
-  if ($dbpreset) {
-    $dbpreset['settings'] = !empty($dbpreset['settings']) ? unserialize($dbpreset['settings']) : array();
-    if ($preset == NULL) {
-      $dbpreset['overridden'] = FALSE;
-      $dbpreset['module'] = NULL;
-    }
-    else {
-      $dbpreset['overridden'] = TRUE;
-      $dbpreset['module'] = $preset['module'];
-    }
-    $preset = $dbpreset;
-  }
-
-  // Return the preset.
-  return $preset;
+  return Preset::getPreset($preset_name);
 }
 
 /**
  * Deletes a preset
  */
 function video_preset_delete($preset_name) {
-  $preset = video_get_preset($preset_name);
+  $preset = Preset::getPreset($preset_name);
   if (!empty($preset['settings']['video_watermark_fid'])) {
     $file = file_load($preset['settings']['video_watermark_fid']);
     if (!empty($file)) {
@@ -960,13 +892,13 @@ function video_preset_delete($preset_name) {
  * Reverts a preset
  */
 function video_preset_revert($preset_name) {
-  $preset = video_get_preset($preset_name);
+  $preset = Preset::getPreset($preset_name);
   if (!$preset || !$preset['overridden']) {
     return FALSE;
   }
 
   // We need to determine if the watermark image is provided by the default or by the override.
-  $default_presets = video_preset_get_default_presets();
+  $default_presets = Preset::getDefaultPresets();
   $default_preset = $default_presets[$preset_name];
 
   $watermark_override = isset($preset['settings']['video_watermark_fid']) ? intval($preset['settings']['video_watermark_fid']) : 0;
@@ -995,7 +927,7 @@ function video_preset_revert($preset_name) {
  */
 function video_preset_name_exists($preset_name) {
   // Get the default presets.
-  $default_presets = video_preset_get_default_presets();
+  $default_presets = Preset::getDefaultPresets();
 
   // See if there is a default preset name.
   if ($default_presets && isset($default_presets[$preset_name])) {
