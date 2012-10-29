@@ -401,7 +401,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           '#title' => t('Location for Zencoder output'),
           '#default_value' => $this->outputdestination === NULL ? '' : $this->outputdestination,
           '#options' => $tempdestinations,
-          '#description' => t('Normally, Zencoder uploads its transcoded files to its own Amazon S3 bucket from which the Video module will copy the file to the final destination. Use this setting to use a different location. If the selected location is identical to the final destination, this saves resource intensive copy operations during handling of the postback.'),
+          '#description' => t('Normally, Zencoder uploads its transcoded files to its own Amazon S3 bucket from which the Video module will copy the file to the final destination. Use this setting to use a different location. If the selected location is identical to the final destination, this saves resource intensive copy operations during handling of the postback. The final destination is set per video field and defaults to the public files folder.'),
         );
 
         if (isset($tempdestinations['s3'])) {
