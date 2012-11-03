@@ -123,7 +123,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     parent::setOutput($output_directory, $output_name, $overwrite_mode);
     $this->options['output']['label'] = 'video-' . $this->settings['input']['fid'];
     $this->options['output']['filename'] = $this->settings['filename'];
-    $this->options['output']['public'] = 1;
+    $this->options['output']['public'] = !variable_get('video_zencoder_private', FALSE);
     $baseurl = NULL;
 
     if ($this->outputdestination == 's3') {
@@ -409,6 +409,15 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
             t('To enable Zencoder to upload directly to your Amazon S3 bucket, read the <a href="@zencoder-s3-url">Zencoder manual</a>.', array('@zencoder-s3-url' => url('https://app.zencoder.com/docs/guides/getting-started/working-with-s3')));
         }
       }
+
+      if (module_exists('amazons3')) {
+        $form['zencoder_info']['advanced']['video_zencoder_private'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Store files on Amazon S3 privately'),
+          '#default_value' => variable_get('video_zencoder_private', FALSE),
+          '#description' => t('Files stored privately are only accessible by visitors when <a href="@amazons3-settings">Presigned URLs</a> are enabled. These URLs expire, allow you to control access to the video files. For this setting to work, you must set %destination-setting-name to Amazon S3.', array('@amazons3-settings' => url('admin/config/media/amazons3'), '%destination-setting-name' => t('Location for Zencoder output'))),
+        );
+      }
     }
     return $form;
   }
@@ -600,7 +609,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes) {
       if (!$this->moveFile($output->url, $outputfile->uri)) {
         video_jobs::setFailed($video);
-        watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $notification->output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
+        watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
         return;
       }
     }
@@ -743,6 +752,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   }
 
   private function moveFile($srcurl, $dsturi) {
+    $unlinksrc = FALSE;
+
     // If the Amazon S3 or Cloud Files module is used, we know that the file is on s3:// or rcf://.
     // We must move the file, because the original must be deleted.
     if ($this->outputdestination == 's3' || $this->outputdestination == 'rcf') {
@@ -755,11 +766,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       if (file_uri_scheme($dsturi) == $this->outputdestination) {
         return rename($srcuri, $dsturi);
       }
-      if (!copy($srcurl, $dsturi)) {
-        return FALSE;
-      }
-      unlink($srcuri);
-      return TRUE;
+
+      // The src file needs to be removed after copying.
+      $unlinksrc = TRUE;
     }
 
     // Check if $srcurl is actually a $uri
@@ -776,7 +785,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       return TRUE;
     }
 
-    return copy($srcuri, $dsturi);
+    $result = copy($srcuri, $dsturi);
+    if ($result && $unlinksrc) {
+      unlink($srcuri);
+    }
+
+    return $result;
   }
 
   /**
