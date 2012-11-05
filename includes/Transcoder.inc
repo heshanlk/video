@@ -232,25 +232,27 @@ class Transcoder {
    * This helper function clean the database records if exist for current job.
    */
   protected function cleanConverted($fid) {
-    // @todo : if this impact on performance then think about other way
-    $result = db_select('video_output', 'vo')
-        ->fields('vo', array('original_fid', 'output_fid'))
-        ->condition('original_fid', $fid)
-        ->execute();
-    foreach ($result as $file) {
-      // delete from file_managed
-      db_delete('file_managed')
-          ->condition('fid', $file->output_fid)
-          ->execute();
-      // delete from file_usage
-      db_delete('file_usage')
-          ->condition('fid', $file->output_fid)
-          ->execute();
-      // delete from video_output
-      db_delete('video_output')
-          ->condition('output_fid', $file->output_fid)
-          ->execute();
+    $output_fids = db_select('video_output', 'vo')
+      ->fields('vo', array('output_fid'))
+      ->condition('original_fid', $fid)
+      ->execute()->fetchCol();
+
+    if (empty($output_fids)) {
+      return;
     }
+
+    $output_files = file_load_multiple($output_fids);
+
+    // Delete for all output files file_usage and file if not used anymore.
+    foreach ($output_files as $output_file) {
+      file_usage_delete($output_file, 'file');
+      file_delete($output_file);
+    }
+
+    // Delete original_fid and all output_fid's from video_output table.
+    db_delete('video_output')
+      ->condition('original_fid', $fid)
+      ->execute();
   }
 
   /**
