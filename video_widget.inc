@@ -228,7 +228,7 @@ function video_widget_process(&$element, &$form_state) {
  * the element during this process.
  */
 function video_convert_process(&$element, $field) {
-  $value = $element['#value'];
+  $value = &$element['#value'];
 
   // Set the dimensions when the user has no permission
   if (!user_access('override player dimensions')) {
