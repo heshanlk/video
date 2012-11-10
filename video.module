@@ -436,7 +436,7 @@ function video_file_download($filepath) {
       $name = mime_header_encode($converted->filename);
       $type = mime_header_encode($converted->filemime);
       return array(
-        'Content-Type: ' . $type . '; name="' . $name . '"',
+        'Content-Type: ' . $type,
         'Content-Length: ' . $converted->filesize,
         'Content-Disposition: inline; filename="' . $name . '"',
         'Cache-Control: private',
