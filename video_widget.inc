@@ -571,14 +571,14 @@ function video_thumb_process(&$element) {
 
     // Setup our large thumbnail that is on the left.
     // @todo Add smaller video preview instead of thumbnail?
-    if (!empty($file['data']['video_thumb'])) {
+    if (!empty($currentthumb)) {
+      $large_thumb = array('filepath' => $currentthumb);
+    }
+    elseif (!empty($file['data']['video_thumb'])) {
       $large_thumb = array('filepath' => $file['data']['video_thumb']);
     }
     elseif (!empty($field['widget']['default_video_thumb'])) {
       $large_thumb = $field['widget']['default_video_thumb'];
-    }
-    elseif (!empty($currentthumb)) {
-      $large_thumb = array('filepath' => $currentthumb);
     }
 
     if (!empty($large_thumb)) {
