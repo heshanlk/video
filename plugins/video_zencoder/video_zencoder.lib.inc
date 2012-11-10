@@ -109,7 +109,6 @@ class video_zencoder_api {
       return TRUE;
     }
     catch (Services_Zencoder_Exception $e) {
-      dpm($e);
       watchdog('zencoder', 'Error while cancelling job @jobid for video %filepath: !errorlist, @errormsg', array('@jobid' => $video->jobid, '%filepath' => $video->filepath, '@errormsg' => $e->getMessage(), '!errorlist' => theme('item_list', $e->getErrors())), WATCHDOG_ERROR);
       return FALSE;
     }
