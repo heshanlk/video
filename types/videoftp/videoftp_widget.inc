@@ -361,8 +361,11 @@ function videoftp_save_upload($element) {
 
 function videoftp_options($field) {
   $ftp_path = file_directory_path() .'/'. $field['widget']['ftp_path'];
-  $video_files = scandir($ftp_path);
+  if (!is_dir($ftp_path)) {
+    return array();
+  }
 
+  $video_files = scandir($ftp_path);
   if (empty($video_files)) {
     return array();
   }
