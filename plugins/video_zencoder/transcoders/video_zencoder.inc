@@ -87,7 +87,7 @@ class video_zencoder implements video_transcoder {
       }
 
       db_query('UPDATE {video_zencoder} SET jobid = %d, completed=%d, data="%s" WHERE vid=%d', $video->jobid, time(), serialize($video->data), $video->vid);
-      watchdog('zencoder', 'Successfully created Zencoder trancoding job @jobid for video @video.', array('@jobid' => $video->jobid, '@video' => $video->filename), WATCHDOG_INFO);
+      watchdog('zencoder', 'Successfully created Zencoder trancoding job <a href="@zencoder-job-url">@jobid</a> for video @video.', array('@jobid' => $video->jobid, '@video' => $video->filename, '@zencoder-job-url' => url('https://app.zencoder.com/jobs/'. $video->jobid)), WATCHDOG_INFO);
       return TRUE;
     }
 

@@ -41,6 +41,9 @@ class video_zencoder_api {
       return FALSE;
     }
 
+    // The video may be stored in the private file store using an absolute path, so remove the first slash if there is one.
+    $filepath = ltrim($video->filepath, '/');
+
     // dimensions
     $dimensions = explode('x', $video->dimensions);
 
@@ -54,7 +57,7 @@ class video_zencoder_api {
     $public = !variable_get('amazon_s3_private', FALSE);
 
     // Common output URL prefix
-    $output_url_prefix = 's3://'. $video->bucket .'/'. dirname(dirname($video->filepath)) .'/converted/'. pathinfo($video->filepath, PATHINFO_FILENAME);
+    $output_url_prefix = 's3://'. $video->bucket .'/'. dirname(dirname($filepath)) .'/converted/'. pathinfo($video->filepath, PATHINFO_FILENAME);
 
     // construct the output array with the presets
     $zc_outputs = array();
@@ -82,14 +85,15 @@ class video_zencoder_api {
     $zc_outputs[0]['thumbnails'] = array(
       'number' => intval(variable_get('video_thumbs', 5)),
       'size' => variable_get('video_thumbs_size', '160x120'),
-      'base_url' => 's3://'. $video->bucket .'/'. video_thumb_path($video, TRUE),
+      // The video may be stored in the private file store using an absolute path, so remove the first slash if there is one.
+      'base_url' => 's3://'. $video->bucket .'/'. ltrim(video_thumb_path($video, TRUE), '/'),
       'prefix' => $video->fid,
     );
 
     try {
       return $this->zencoder->jobs->create(array(
         'api_key' => $this->access_key,
-        'input' => 's3://'. $video->bucket .'/'. $video->filepath,
+        'input' => 's3://'. $video->bucket .'/'. $filepath,
         'outputs' => $zc_outputs,
       ));
     }
@@ -105,6 +109,7 @@ class video_zencoder_api {
       return TRUE;
     }
     catch (Services_Zencoder_Exception $e) {
+      dpm($e);
       watchdog('zencoder', 'Error while cancelling job @jobid for video %filepath: !errorlist, @errormsg', array('@jobid' => $video->jobid, '%filepath' => $video->filepath, '@errormsg' => $e->getMessage(), '!errorlist' => theme('item_list', $e->getErrors())), WATCHDOG_ERROR);
       return FALSE;
     }

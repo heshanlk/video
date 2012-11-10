@@ -87,7 +87,10 @@ class video_amazon_s3 {
     // Increase the database timeout to prevent database errors after a long upload
     _video_db_increase_timeout();
 
-    $response = $this->s3->create_object($this->bucket, $file->filepath, array(
+    // The video may be stored in the private file store using an absolute path, so remove the first slash if there is one.
+    $dstfilepath = ltrim($file->filepath, '/');
+
+    $response = $this->s3->create_object($this->bucket, $dstfilepath, array(
       'fileUpload' => $file->filepath,
       'acl' => $perm,
       'contentType' => $file->filemime,
@@ -97,7 +100,7 @@ class video_amazon_s3 {
     if ($response->isOK()) {
       // If private, set permissions for Zencoder to read
       if ($perm == AmazonS3::ACL_PRIVATE) {
-        $this->setZencoderAccessPolicy($this->bucket, $file->filepath);
+        $this->setZencoderAccessPolicy($this->bucket, $dstfilepath);
       }
 
       $file->bucket = $this->bucket;
@@ -110,8 +113,8 @@ class video_amazon_s3 {
         'Successfully uploaded %file to Amazon S3 location <a href="@s3-url">@s3-path</a> and permission %permission.',
         array(
           '%file' => $file->filename,
-          '@s3-url' => 'http://'. $file->bucket .'.s3.amazonaws.com/'. drupal_urlencode($file->filepath),
-          '@s3-path' => $file->filepath,
+          '@s3-url' => 'http://'. $file->bucket .'.s3.amazonaws.com/'. drupal_urlencode($dstfilepath),
+          '@s3-path' => $dstfilepath,
           '%permission' => $perm,
         ), WATCHDOG_INFO, $file);
 
@@ -200,7 +203,9 @@ class video_amazon_s3 {
   }
 
   private function update_headers($file, $permission, $headers) {
-    $filepath = $file->filepath;
+    // The video may be stored in the private file store using an absolute path, so remove the first slash if there is one.
+    $filepath = ltrim($file->filepath, '/');
+
     // For old video's (pre-4.5), the filename property is actually the path we need
     if (strpos('/', $file->filename) !== FALSE) {
       $filepath = $file->filename;
