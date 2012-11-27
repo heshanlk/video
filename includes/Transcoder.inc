@@ -197,7 +197,7 @@ class Transcoder {
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $video->uid;
         $file->type = 'video'; // For the media module
-        drupal_write_record('file_managed', $file);
+        file_save($file);
         file_usage_add($file, 'file', $video->entity_type, $video->entity_id);
         $output_vid = array(
           'vid' => $video->vid,

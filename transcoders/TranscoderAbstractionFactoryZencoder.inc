@@ -615,7 +615,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
 
     $outputfile->filesize = $output->file_size_in_bytes;
-    drupal_write_record('file_managed', $outputfile, 'fid');
+    file_save($outputfile);
 
     // Actual processing of the response
     $video->duration = round($output->duration_in_ms / 1000);
@@ -685,7 +685,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $thumbnail = (object)$thumbnail;
       $urlpath = parse_url($thumbnail->url, PHP_URL_PATH);
       $ext = video_utility::getExtension($urlpath);
-      $update = array();
       $thumb = new stdClass();
       $thumb->uid = $outputfile->uid; // $entity may not have a uid property, so take it from the output file.
       $thumb->status = FILE_STATUS_PERMANENT;
@@ -703,7 +702,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           $shouldcopy = FALSE;
         }
         $thumb->fid = intval($existingthumbs[$thumb->uri]->fid);
-        $update = array('fid');
       }
 
       if ($shouldcopy && !$this->moveFile($thumbnail->url, $thumb->uri)) {
@@ -711,7 +709,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         continue;
       }
 
-      drupal_write_record('file_managed', $thumb, $update);
+      file_save($thumb);
 
       // Saving to video_thumbnails and file_usage is only necessary when this is a new thumbnail
       if (!isset($existingthumbs[$thumb->uri])) {
