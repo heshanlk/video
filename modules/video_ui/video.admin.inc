@@ -52,10 +52,6 @@ function video_preset_admin_settings($form_state) {
 
   $presets = Preset::getAllPresets();
 
-  if (empty($presets)) {
-    drupal_set_message(t('No presets were found. Please use the <a href="@create-preset">Add preset</a> link to create a new Video preset or upload an existing Video preset feature module to your modules directory.', array('@create-preset' => url('admin/config/media/video/presets/add'))), 'warning');
-  }
-
   $form['video_use_preset_wxh'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use preset dimensions for video conversion.'),
@@ -89,14 +85,6 @@ function video_preset_admin_settings($form_state) {
         'edit' => array('#type' => 'link', '#title' => t('edit'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name']),
         'delete' => $delete,
         'export' => array('#type' => 'link', '#title' => t('export'), '#href' => 'admin/config/media/video/presets/preset/' . $preset['name'] . '/export'),
-        /*
-        'weight' => array(
-          '#type' => 'weight',
-          '#title' => t('Weight for @title', array('@title' => $preset['name'])),
-          '#title_display' => 'invisible',
-          '#default_value' => mt_rand(1, 14),
-        ),
-        */
       );
     }
   }
@@ -143,32 +131,34 @@ function theme_video_preset_admin_settings($variables) {
   $header = array(
     array('data' => t('Name')),
     array('data' => t('Description')),
-//    array('data' => t('Weight')),
     array('data' => t('Operations'), 'colspan' => 3),
   );
 
   $rows = array();
-  foreach (element_children($form['video_preset']) as $id) {
-//    $form['video_preset'][$id]['weight']['#attributes']['class'] = array('video-preset-weight');
-    $rows[] = array(
-      'data' => array(
-        drupal_render($form['video_preset'][$id]['status']),
-        drupal_render($form['video_preset'][$id]['description']),
-//        drupal_render($form['video_preset'][$id]['weight']),
-        drupal_render($form['video_preset'][$id]['edit']),
-        drupal_render($form['video_preset'][$id]['delete']),
-        drupal_render($form['video_preset'][$id]['export']),
-      ),
-//      'class' => array('draggable'),
-    );
+
+  if (!empty($form['video_preset'])) {
+    foreach (element_children($form['video_preset']) as $id) {
+      $rows[] = array(
+        'data' => array(
+          drupal_render($form['video_preset'][$id]['status']),
+          drupal_render($form['video_preset'][$id]['description']),
+          drupal_render($form['video_preset'][$id]['edit']),
+          drupal_render($form['video_preset'][$id]['delete']),
+          drupal_render($form['video_preset'][$id]['export']),
+        ),
+      );
+    }
   }
 
   $actions = drupal_render_children($form['actions']);
   $output = drupal_render_children($form);
-  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'video-preset')));
+  $output = theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'attributes' => array('id' => 'video-preset'),
+    'empty' => t('No presets were found. Please use the <a href="@create-preset">Add preset</a> link to create a new Video preset or upload an existing Video preset feature module to your modules directory.', array('@create-preset' => url('admin/config/media/video/presets/add'))),
+  ));
   $output .= $actions;
-
-//  drupal_add_tabledrag('video-preset', 'order', 'sibling', 'video-preset-weight');
 
   return $output;
 }
