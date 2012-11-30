@@ -479,15 +479,20 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $v =& $form_state['values'];
 
     if (!empty($v['video_ffmpeg_path'])) {
+      $errorhelp = '';
+      if (module_exists('video_ui')) {
+        $errorhelp = '<br/>' . t('Visit the <a href="@ffmpeg-debug-page">FFmpeg debug page</a> for information thay may help you find the cause of this problem.', array('@ffmpeg-debug-page' => url('admin/config/media/video/ffmpeg-info', array('query' => array('ffmpegpath' => $v['video_ffmpeg_path'])))));
+      }
+
       $toolkit = new PHPVideoToolkit($v['video_ffmpeg_path']);
       PHPVideoToolkit::$ffmpeg_info = FALSE;
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
       $ffmpegoravconv = NULL;
       if (!$ffmpeg['ffmpeg-found'] || ($version = self::getVersionFromOutput($ffmpeg['raw'], $ffmpegoravconv)) == NULL) {
-        form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.', array('%path' => $v['video_ffmpeg_path'], '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
+        form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg not found at %path. To convert videos and create thumbnails you have to install FFmpeg on your server. For more information please see the !documentation.' . $errorhelp, array('%path' => $v['video_ffmpeg_path'], '!documentation' => l(t('documentation'), 'http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts'))));
       }
       elseif (empty($ffmpeg['codecs']['video']) || empty($ffmpeg['codecs']['audio'])) {
-        form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg version %version was found, but no supported codecs could be found. Please check whether FFmpeg and all support libraries have been installed correctly.', array('%version' => $version)));
+        form_error($form['ffmpeg']['video_ffmpeg_path'], t('FFmpeg version %version was found, but no supported codecs could be found. Please check whether FFmpeg and all support libraries have been installed correctly.' . $errorhelp, array('%version' => $version)));
       }
       else {
         drupal_set_message(t('%ffmpegoravconv version %version found on your system.', array('%version' => $version, '%ffmpegoravconv' => $ffmpegoravconv)), 'status');

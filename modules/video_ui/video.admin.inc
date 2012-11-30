@@ -438,3 +438,52 @@ function video_video_html5_players() {
   }
   return $options;
 }
+
+/**
+ * Page callback that displays FFmpeg information.
+ */
+function video_admin_ffmpeg_info($form_state) {
+  $ffmpegpath = variable_get('video_ffmpeg_path', '/usr/bin/ffmpeg');
+  if (isset($_GET['ffmpegpath'])) {
+    $ffmpegpath = $_GET['ffmpegpath'];
+  }
+
+  $form = array();
+  $form['ffmpegpath'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Path to FFmpeg or avconv executable'),
+    '#default_value' => $ffmpegpath,
+    '#required' => TRUE,
+  );
+
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array('#type' => 'submit', '#value' => t('Show information'));
+
+  if ($ffmpegpath != '') {
+    $transcoder = new PHPVideoToolkit($ffmpegpath, realpath(file_directory_temp()) . '/');
+    PHPVideoToolkit::$ffmpeg_info = FALSE;
+    $info = $transcoder->getFFmpegInfo(FALSE);
+    $infotxt = var_export($info, TRUE);
+
+    $form['info'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Debug information'),
+      '#default_value' => $infotxt,
+      '#weight' => 1000,
+      '#rows' => min(20, substr_count($infotxt, "\n")),
+    );
+  }
+
+  return $form;
+}
+
+function video_admin_ffmpeg_info_submit($form, &$form_state) {
+  $form_state['redirect'] = array(
+    'admin/config/media/video/ffmpeg-info',
+    array(
+      'query' => array(
+        'ffmpegpath' => $form_state['values']['ffmpegpath'],
+      ),
+    ),
+  );
+}

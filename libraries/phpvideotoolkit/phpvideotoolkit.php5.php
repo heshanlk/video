@@ -613,10 +613,6 @@ class PHPVideoToolkit {
     $data['compiler'] = array();
     $data['binary'] = array();
     $data['ffmpeg-php-support'] = self::hasFFmpegPHPSupport();
-    if (!self::$ffmpeg_found) {
-      self::$ffmpeg_info = $data;
-      return $data;
-    }
 
     // FFmpeg 0.5 and lower don't support -codecs, -bsfs or -protocols, but the info is in -formats
     if (strpos(end($codecs), 'missing argument for option')) {
@@ -636,6 +632,11 @@ class PHPVideoToolkit {
       $pixformats = implode("\n", $pixformats);
       $help = implode("\n", $help);
       $data['raw'] = $formats . "\n" . $codecs . "\n" . $filters . "\n" . $protocols . "\n" . $pixformats;
+    }
+
+    if (!self::$ffmpeg_found) {
+      self::$ffmpeg_info = $data;
+      return $data;
     }
 
     // grab the versions

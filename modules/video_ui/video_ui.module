@@ -147,6 +147,17 @@ function video_ui_menu() {
     'weight' => 6,
   );
 
+  // FFmpeg debugging
+  $items['admin/config/media/video/ffmpeg-info'] = array(
+    'title' => 'FFmpeg debug information',
+    'description' => 'Displays information about your FFmpeg installation.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_admin_ffmpeg_info'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'video.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
