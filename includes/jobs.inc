@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file
+ * Static class containing transcoding job related operations.
+ */
+
 class video_jobs {
   /**
    * Create new transcoder job in the database.

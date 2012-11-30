@@ -526,7 +526,8 @@ function video_update_7209(&$sandbox) {
 /**
  * Scheduling variables and schema update.
  *
- * Renames variable video_queue_timeout to video_transcode_timeout, dividing by 60.
+ * Renames variable video_queue_timeout to video_transcode_timeout,
+ * divided by 60.
  * The minimum value of this variable is set to 5.
  * Sets video_queue_timeout to 60 minutes.
  *
