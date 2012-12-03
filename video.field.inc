@@ -120,8 +120,12 @@ function video_field_settings_form($field, $instance, $has_data) {
     'no' => 'Don\'t create thumbnail',
   );
 
+  // When there is no transcoder, the auto option is not available and should not be the default.
   if (!$hastranscoder) {
     unset($thumb_options['auto']);
+    if (!isset($settings['autothumbnail']) || $settings['autothumbnail'] == 'auto') {
+      $settings['autothumbnail'] = 'no';
+    }
   }
 
   $form['autothumbnail'] = array(
@@ -129,7 +133,7 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#title' => t('Video thumbnails'),
     '#options' => $thumb_options,
     '#description' => t('If you choose <i>Automatically extract thumbnails from video</i> then please make sure to configure your !settings to make this work properly.', array('!settings' => l(t('transcoder settings'), 'admin/config/media/video/transcoders'))),
-    '#default_value' => isset($settings['autothumbnail']) ? $settings['autothumbnail'] : 'no',
+    '#default_value' => isset($settings['autothumbnail']) ? $settings['autothumbnail'] : 'auto',
   );
 
   $form['default_video_thumbnail'] = array(
