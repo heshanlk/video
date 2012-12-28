@@ -152,7 +152,7 @@ function theme_video_preset_admin_settings($variables) {
 
   $actions = drupal_render_children($form['actions']);
   $output = drupal_render_children($form);
-  $output = theme('table', array(
+  $output .= theme('table', array(
     'header' => $header,
     'rows' => $rows,
     'attributes' => array('id' => 'video-preset'),
