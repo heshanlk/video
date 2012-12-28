@@ -580,6 +580,9 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
   // Add display_field setting to field because file_field_widget_form() assumes it is set.
   $field['settings']['display_field'] = 0;
 
+  if (module_exists('filefield_role_limit')) {
+    filefield_role_limit_file_field_process($element, $form_state, $form);
+  }
   $elements = file_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
   $settings = $instance['settings'];
 
@@ -1110,6 +1113,15 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
  */
 function video_filefield_sources_widgets() {
   return array('video_upload');
+}
+
+/**
+ * Implements hook_filefield_role_limit_supported_widgets_alter().
+ *
+ * Add the video field to the list of supported FileField Role Limit widgets.
+ */
+function video_filefield_role_limit_supported_widgets_alter(&$types) {
+  $types[] = 'video_upload';
 }
 
 /**
