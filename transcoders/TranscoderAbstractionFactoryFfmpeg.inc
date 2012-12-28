@@ -282,12 +282,12 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       // qt-faststart does not return an error code when it doesn't generate an output file,
       // so also check if the output file has been generated.
       if ($retval == 0 && file_exists($qttmpfile)) {
-        unlink($tmpoutputpath);
+        drupal_unlink($tmpoutputpath);
         rename($qttmpfile, $tmpoutputpath);
       }
       else {
         watchdog('transcoder', 'Error while executing @cmdname on video @filename: @output', array('@cmdname' => 'qt-faststart', '@filename' => $this->realoutputname, '@output' => implode("\n", $output)), WATCHDOG_ERROR);
-        file_delete($qttmpfile);
+        drupal_unlink($qttmpfile);
       }
     }
 
