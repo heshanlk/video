@@ -193,7 +193,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           }
         }
         else {
-          $this->transcoder->extractFrame($seek);
+          $this->transcoder->extractFrame($seek, FALSE, '%st');
           $result = $this->transcoder->setOutput(dirname($dstpath) . '/', basename($dstpath), PHPVideoToolkit::OVERWRITE_EXISTING);
           if ($result === PHPVideoToolkit::RESULT_OK) {
             $result = $this->transcoder->execute() === PHPVideoToolkit::RESULT_OK;

@@ -467,17 +467,6 @@ class PHPVideoToolkit {
    */
   protected $_command_output = array();
 
-  /**
-   * Holds commands should be sent added to the exec before the input file, this is by no means a definitive list
-   * of all the ffmpeg commands, as it only utilizes the ones in use by this class. Also only commands that have
-   * specific required places are entered in the arrays below. Anything not in these arrays will be treated as an
-   * after-input item.
-   * @access protected
-   * @var array
-   */
-// 		protected $_cmds_before_input		= array();
-  protected $_cmds_before_input = array('-inputr', '-ss');
-// 		protected $_cmds_before_input		= array('-r', '-f');
   // Stores the FFMPEG Binary Path
   protected $_ffmpeg_binary;
 
@@ -1187,7 +1176,6 @@ class PHPVideoToolkit {
       $this->_input_file = $escaped_name;
       $this->_input_file_id = md5($escaped_name);
 
-// 				the -inputr is a hack for -r to come before the input
       if ($input_frame_rate !== 0) {
         $info = $this->getFileInfo();
         if (isset($info['video']) === TRUE) {
@@ -1195,7 +1183,7 @@ class PHPVideoToolkit {
             $input_frame_rate = $info['video']['frame_rate'];
           }
 // 						input frame rate is a command hack
-          $this->addCommand('-inputr', $input_frame_rate);
+          $this->addCommand('-r', $input_frame_rate, TRUE);
         }
       }
     }
@@ -1585,7 +1573,7 @@ class PHPVideoToolkit {
       array_push($this->_unlink_files, $tmp_file);
     }
 // 			the inputr is a hack for -r to come before the input
-    $this->addCommand('-inputr', $input_frame_rate);
+    $this->addCommand('-r', $input_frame_rate, TRUE);
 // 			exit;
 //			add the directory to the unlinks
     array_push($this->_unlink_dirs, $this->_tmp_directory . $uniqid);
@@ -1884,7 +1872,19 @@ class PHPVideoToolkit {
       $extract_begin_timecode = $this->formatTimecode($extract_begin_timecode, $timecode_format, '%hh:%mm:%ss.%ms', $frames_per_second);
       }
      */
-    $this->addCommand('-ss', $extract_begin_timecode);
+
+    // Use seek before the input tag to quickly move to the approximate location,
+    // then use the seek after the input tag to locate the exact frames.
+    // See http://ffmpeg.org/trac/ffmpeg/wiki/Seeking%20with%20FFmpeg
+    $seconds = $this->formatTimecode($extract_begin_timecode, $timecode_format, '%st', $frames_per_second);
+    if ($seconds > 5) {
+      $this->addCommand('-ss', $this->formatTimecode($seconds - 5, $timecode_format, '%hh:%mm:%ss:%ms', $frames_per_second), TRUE);
+      $this->addCommand('-ss', $this->formatTimecode(5, $timecode_format, '%hh:%mm:%ss:%ms', $frames_per_second), FALSE);
+    }
+    else {
+      $this->addCommand('-ss', $extract_begin_timecode);
+    }
+
 //			added by Matthias on 12th March 2007
 //			allows for exporting the entire timeline
     if ($extract_end_timecode !== FALSE) {
@@ -1962,7 +1962,7 @@ class PHPVideoToolkit {
 // 			this way we limit the cpu usage of ffmpeg
 // 			Thanks to Istvan Szakacs for pointing out that ffmpeg can export frames using the -ss hh:mm:ss[.xxx]
 // 			it has saved a lot of cpu intensive processes.
-    $this->extractFrames($frame_timecode, $frame_timecode, $frames_per_second, 1, '%hh:%mm:%ss.%ms', FALSE);
+    $this->extractFrames($frame_timecode, $frame_timecode, $frames_per_second, 1, $frame_timecode_format, FALSE);
 // 			register the post tidy process
 // 			$this->registerPostProcess('_extractFrameTidy', $this);
   }
@@ -3499,8 +3499,8 @@ class PHPVideoToolkit {
    * @param mixed $argument
    * @return boolean
    */
-  public function addCommand($command, $argument=FALSE) {
-    $this->_commands[$command] = $argument === FALSE ? FALSE : escapeshellarg($argument);
+  public function addCommand($command, $argument = FALSE, $before_input = FALSE) {
+    $this->_commands[$before_input][$command] = $argument === FALSE ? FALSE : escapeshellarg($argument);
     return TRUE;
   }
 
@@ -3511,8 +3511,8 @@ class PHPVideoToolkit {
    * @param string $command
    * @return mixed boolean if failure or value if exists.
    */
-  public function hasCommand($command) {
-    return isset($this->_commands[$command]) === TRUE ? ($this->_commands[$command] === FALSE ? TRUE : $this->_commands[$command]) : FALSE;
+  public function hasCommand($command, $before_input = FALSE) {
+    return isset($this->_commands[$before_input][$command]) ? ($this->_commands[$before_input][$command] === FALSE ? TRUE : $this->_commands[$before_input][$command]) : FALSE;
   }
 
   /**
@@ -3525,23 +3525,22 @@ class PHPVideoToolkit {
     $before_input = array();
     $after_input = array();
     $input = NULL;
-    foreach ($this->_commands as $command => $argument) {
-      $command_string = trim($command . (!empty($argument) ? ' ' . $argument : ''));
-//				check for specific none combinable commands as they have specific places they have to go in the string
-      switch ($command) {
-        case '-i' :
+
+    foreach ($this->_commands as $is_before_input => $commands) {
+      foreach ($commands as $command => $argument) {
+        $command_string = trim($command . (!empty($argument) ? ' ' . $argument : ''));
+
+        if ($command === '-i') {
           $input = $command_string;
-          break;
-        case '-inputr' :
-          $command_string = trim('-r' . ($argument ? ' ' . $argument : ''));
-          ;
-        default :
-          if (in_array($command, $this->_cmds_before_input)) {
+        }
+        else {
+          if ($is_before_input) {
             array_push($before_input, $command_string);
           }
           else {
             array_push($after_input, $command_string);
           }
+        }
       }
     }
 
