@@ -287,7 +287,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       }
       else {
         watchdog('transcoder', 'Error while executing @cmdname on video @filename: @output', array('@cmdname' => 'qt-faststart', '@filename' => $this->realoutputname, '@output' => implode("\n", $output)), WATCHDOG_ERROR);
-        drupal_unlink($qttmpfile);
+        if (file_exists($qttmpfile)) {
+          drupal_unlink($qttmpfile);
+        }
       }
     }
 
