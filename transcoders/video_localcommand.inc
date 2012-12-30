@@ -501,7 +501,7 @@ class video_localcommand implements video_transcoder {
     $form['autothumb']['video_thumb_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Path to save thumbnails'),
-      '#description' => t('Path to save video thumbnails extracted from the videos.'),
+      '#description' => t('Path to save video thumbnails extracted from the videos.') . ' ' . t('This path will be created within the %files-directory directory.', array('%files-directory' => file_directory_path())),
       '#default_value' => variable_get('video_thumb_path', 'video_thumbs'),
     );
     $form['autothumb']['video_localcommand_thumbnailer_options'] = array(
