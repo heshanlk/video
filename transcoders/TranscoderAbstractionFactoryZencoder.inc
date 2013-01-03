@@ -321,6 +321,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
           ),
         ),
       );
+      $form['zencoder_info']['api_status'] = array(
+        '#type' => 'item',
+        '#title' => t('Zencoder API status'),
+        '#markup' => $this->getCurrentStatus(),
+      );
       $form['zencoder_info']['video_zencoder_api_key'] = array(
         '#type' => 'textfield',
         '#title' => t('Zencoder API key'),
@@ -865,5 +870,29 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       unset($this->options['input']);
     }
     unset($this->options['output']);
+  }
+
+  /**
+   * Check the current Zencoder API status.
+   */
+  public function getCurrentStatus() {
+    $json = drupal_http_request('http://status.zencoder.com/api/events.json');
+    $message = t('All systems go');
+
+    if ($json->code != 200) {
+      $message = t('The Zencoder Status API URL cannot be retrieved: @error (@code).', array('@code' => $json->code, '@error' => empty($json->error) ? t('unknown error') : $json->error));
+    }
+    else {
+
+      $status_messages = drupal_json_decode($json->data);
+
+      if (!empty($status_messages)) {
+        $last_message = reset($status_messages);
+        $last_event = $last_message['event'];
+        $message = nl2br(t('@status', array('@status' =>  $last_event['description'])));
+      }
+    }
+
+    return $message;
   }
 }
