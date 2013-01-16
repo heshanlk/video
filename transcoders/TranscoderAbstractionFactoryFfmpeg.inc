@@ -487,7 +487,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
       }
 
       $toolkit = new PHPVideoToolkit($v['video_ffmpeg_path']);
-      PHPVideoToolkit::$ffmpeg_info = FALSE;
       $ffmpeg = $toolkit->getFFmpegInfo(FALSE);
       $ffmpegoravconv = NULL;
       if (!$ffmpeg['ffmpeg-found'] || ($version = self::getVersionFromOutput($ffmpeg['raw'], $ffmpegoravconv)) == NULL) {

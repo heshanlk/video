@@ -562,33 +562,13 @@ class PHPVideoToolkit {
    * @access public
    * @return mixed FALSE on error encountered, TRUE otherwise
    * */
-  public function getFFmpegInfo($read_from_cache=TRUE, $tmp_dir=FALSE) {
-    $cache_file = isset($this) === TRUE || $tmp_dir !== FALSE ? TRUE : FALSE;
-
-    if ($read_from_cache === TRUE && $cache_file !== FALSE) {
-      $cache_file = ($tmp_dir === FALSE ? $this->_tmp_directory : $tmp_dir) . '_ffmpeg_info.php';
-      if (is_file($cache_file) === TRUE) {
-        require_once $cache_file;
-        if (isset($info) === TRUE && $info['_cache_date'] > time() - 2678400) {
-          $info['reading_from_cache'] = TRUE;
-          PHPVideoToolkit::$ffmpeg_info = $info;
-        }
-      }
-    }
-
+  public function getFFmpegInfo($read_from_cache = TRUE) {
     // check to see if the info has already been cached
-    if (PHPVideoToolkit::$ffmpeg_info !== FALSE) {
+    if ($read_from_cache && PHPVideoToolkit::$ffmpeg_info !== FALSE) {
       return PHPVideoToolkit::$ffmpeg_info;
     }
 
-    // check to see if this is a static call
-    if (isset($this) === FALSE) {
-      $toolkit = new PHPVideoToolkit();
-      return $toolkit->getFFmpegInfo($read_from_cache, $tmp_dir);
-    }
-
-    $format = '';
-    $data = array('reading_from_cache' => FALSE);
+    $data = array();
 
     $formats = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -formats');
     $codecs = $this->_captureExecBuffer($this->_ffmpeg_binary . ' -codecs');
@@ -790,12 +770,6 @@ class PHPVideoToolkit {
 
     PHPVideoToolkit::$ffmpeg_info = $data;
 
-    // cache the data
-    if ($cache_file !== FALSE && $read_from_cache === TRUE) {
-      $data['_cache_date'] = time();
-      file_put_contents($cache_file, '<?php $info = ' . var_export($data, TRUE) . ';');
-    }
-
     return $data;
   }
 
@@ -865,7 +839,7 @@ class PHPVideoToolkit {
    */
   public function hasCodecSupport($codec, $support=PHPVideoToolkit::ENCODE) {
     $codec = strtolower($codec);
-    $data = $this->getFFmpegInfo(true);
+    $data = $this->getFFmpegInfo();
     return isset($data['formats'][$codec]) === TRUE ? $data['formats'][$codec][$support] : FALSE;
   }
 
@@ -888,7 +862,7 @@ class PHPVideoToolkit {
    * @return mixed. Boolean FALSE if there is no support, TRUE there is support.
    */
   public function hasVHookSupport() {
-    $info = $this->getFFmpegInfo(true);
+    $info = $this->getFFmpegInfo();
     return $info['binary']['vhook-support'];
   }
 
@@ -1424,7 +1398,7 @@ class PHPVideoToolkit {
 // 			run a libmp3lame check as it require different mp3 codec
 // 			updated thanks to Varon for providing the research
     if ($audio_codec == self::FORMAT_MP3) {
-      $info = $this->getFFmpegInfo(false);
+      $info = $this->getFFmpegInfo();
       if (isset($info['formats']['libmp3lame']) === TRUE || in_array('--enable-libmp3lame', $info['binary']['configuration']) === TRUE) {
         $audio_codec = 'libmp3lame';
       }
@@ -2601,7 +2575,7 @@ class PHPVideoToolkit {
    * @return boolean True if the codec can be used with the given method by ffmpeg, otherwise FALSE.
    */
   public function validateCodec($codec, $type, $method) {
-    $info = $this->getFFmpegInfo(true);
+    $info = $this->getFFmpegInfo();
     return isset($info['codecs'][$type]) === TRUE && isset($info['codecs'][$type][$codec]) === TRUE && isset($info['codecs'][$type][$codec][$method]) === TRUE ? $info['codecs'][$type][$codec][$method] : FALSE;
   }
 
@@ -2633,7 +2607,7 @@ class PHPVideoToolkit {
    * @return boolean True if the format can be used with the given method by ffmpeg, otherwise FALSE.
    */
   public function validateFormat($format, $method) {
-    $info = $this->getFFmpegInfo(true);
+    $info = $this->getFFmpegInfo();
     return isset($info['formats'][$format]) === TRUE && isset($info['formats'][$format][$method]) === TRUE ? $info['formats'][$format][$method] : FALSE;
   }
 
@@ -2644,7 +2618,7 @@ class PHPVideoToolkit {
    * @return array An array of formats available to ffmpeg.
    */
   public function getAvailableFormats($method=FALSE) {
-    $info = $this->getFFmpegInfo(true);
+    $info = $this->getFFmpegInfo();
     $return_vals = array();
     switch ($method) {
       case FALSE :
@@ -2684,10 +2658,10 @@ class PHPVideoToolkit {
 // 			check to see if this is a static call
     if (isset($this) === FALSE) {
       $toolkit = new PHPVideoToolkit();
-      $info = $toolkit->getFFmpegInfo(true);
+      $info = $toolkit->getFFmpegInfo();
     }
     else {
-      $info = $this->getFFmpegInfo(true);
+      $info = $this->getFFmpegInfo();
     }
 // 			are we checking for particluar method?
     $return_vals = array();
@@ -2707,10 +2681,9 @@ class PHPVideoToolkit {
    *   array An array of pixel formats available to ffmpeg.
    */
   public function getAvailablePixelFormats() {
-    $info = $this->getFFmpegInfo(TRUE);
+    $info = $this->getFFmpegInfo();
 
     if (!isset($info['pixelformats'])) {
-      PHPVideoToolkit::$ffmpeg_info = FALSE;
       $info = $this->getFFmpegInfo(FALSE);
 
       if (!isset($info['pixelformats'])) {

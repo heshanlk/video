@@ -461,7 +461,6 @@ function video_admin_ffmpeg_info($form_state) {
 
   if ($ffmpegpath != '') {
     $transcoder = new PHPVideoToolkit($ffmpegpath, realpath(file_directory_temp()) . '/');
-    PHPVideoToolkit::$ffmpeg_info = FALSE;
     $info = $transcoder->getFFmpegInfo(FALSE);
     $infotxt = var_export($info, TRUE);
 
