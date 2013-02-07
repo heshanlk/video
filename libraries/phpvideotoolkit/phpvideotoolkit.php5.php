@@ -1852,8 +1852,8 @@ class PHPVideoToolkit {
     // See http://ffmpeg.org/trac/ffmpeg/wiki/Seeking%20with%20FFmpeg
     $seconds = $this->formatTimecode($extract_begin_timecode, $timecode_format, '%st', $frames_per_second);
     if ($seconds > 5) {
-      $this->addCommand('-ss', $this->formatTimecode($seconds - 5, $timecode_format, '%hh:%mm:%ss:%ms', $frames_per_second), TRUE);
-      $this->addCommand('-ss', $this->formatTimecode(5, $timecode_format, '%hh:%mm:%ss:%ms', $frames_per_second), FALSE);
+      $this->addCommand('-ss', $this->formatTimecode($seconds - 5, $timecode_format, '%hh:%mm:%ss.%ms', $frames_per_second), TRUE);
+      $this->addCommand('-ss', $this->formatTimecode(5, $timecode_format, '%hh:%mm:%ss.%ms', $frames_per_second), FALSE);
     }
     else {
       $this->addCommand('-ss', $extract_begin_timecode);
