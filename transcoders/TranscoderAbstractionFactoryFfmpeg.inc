@@ -336,28 +336,37 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function getCodecs() {
     $info = $this->getCachedFFmpegInfo();
-    $codecs = array('decode' => array(), 'encode' => array());
-    foreach ($info['codecs'] as $key => $value) {
-      $codecs['encode'][$key] = array();
-      $codecs['decode'][$key] = array();
-      foreach ($value as $codec_key => $codec) {
-        if ($codec['encode']) {
-          $codecs['encode'][$key][$codec_key] = $codec['fullname'];
+    $codecs = array(
+      'decode' => array('audio' => array(), 'video' => array()),
+      'encode' => array('audio' => array(), 'video' => array()),
+    );
+
+    if (!empty($info['codecs'])) {
+      foreach ($info['codecs'] as $key => $value) {
+        $codecs['encode'][$key] = array();
+        $codecs['decode'][$key] = array();
+        foreach ($value as $codec_key => $codec) {
+          if ($codec['encode']) {
+            $codecs['encode'][$key][$codec_key] = $codec['fullname'];
+          }
+          if ($codec['decode']) {
+            $codecs['decode'][$key][$codec_key] = $codec['fullname'];
+          }
         }
-        if ($codec['decode']) {
-          $codecs['decode'][$key][$codec_key] = $codec['fullname'];
-        }
+        uasort($codecs['encode'][$key], 'strnatcasecmp');
+        uasort($codecs['encode'][$key], 'strnatcasecmp');
       }
     }
-
-    uasort($codecs['encode']['video'], 'strnatcasecmp');
-    uasort($codecs['encode']['audio'], 'strnatcasecmp');
 
     return $codecs;
   }
 
   public function getAvailableFormats($type = FALSE) {
     $info = $this->getCachedFFmpegInfo();
+    if (empty($info['formats'])) {
+      return array();
+    }
+
     $formats = array();
     switch ($type) {
       case FALSE:
@@ -396,6 +405,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
   public function getPixelFormats() {
     $info = $this->getCachedFFmpegInfo();
+    if (empty($info['pixelformats'])) {
+      return array();
+    }
     return array_keys($info['pixelformats']);
   }
 

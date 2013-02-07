@@ -17,15 +17,24 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
   $pixelformats = $transcoder->getPixelFormats();
   $settings = $preset['settings'];
 
-  if (isset($settings['video_extension']) && !isset($formats[$settings['video_extension']])) {
+  if (empty($formats)) {
+    drupal_set_message(t('No video output extensions are available. Please reconfigure your <a href="@transcoder-url">video transcoder</a>.', array('@transcoder-url' => url('admin/config/media/video/transcoders'))), 'warning');
+  }
+  elseif (isset($settings['video_extension']) && !isset($formats[$settings['video_extension']])) {
     drupal_set_message(t('The currently selected @setting_name %setting_value is no longer available, possibly because you changed the transcoder type or the transcoder itself was updated. Please select a new @setting_name.', array('@setting_name' => t('Video output extension'), '%setting_value' => $settings['video_extension'])), 'warning');
     unset($settings['video_extension']);
   }
-  if (isset($settings['video_codec']) && !isset($codecs['encode']['video'][$settings['video_codec']])) {
+  if (empty($codecs['encode']['video'])) {
+    drupal_set_message(t('No video codecs are available. Please reconfigure your <a href="@transcoder-url">video transcoder</a>.', array('@transcoder-url' => url('admin/config/media/video/transcoders'))), 'warning');
+  }
+  elseif (isset($settings['video_codec']) && !isset($codecs['encode']['video'][$settings['video_codec']])) {
     drupal_set_message(t('The currently selected @setting_name %setting_value is no longer available, possibly because you changed the transcoder type or the transcoder itself was updated. Please select a new @setting_name.', array('@setting_name' => t('Video codec'), '%setting_value' => $settings['video_codec'])), 'warning');
     unset($settings['video_codec']);
   }
-  if (isset($settings['audio_codec']) && !isset($codecs['encode']['audio'][$settings['audio_codec']])) {
+  if (empty($codecs['encode']['audio'])) {
+    drupal_set_message(t('No audio codecs are available. Please reconfigure your <a href="@transcoder-url">video transcoder</a>.', array('@transcoder-url' => url('admin/config/media/video/transcoders'))), 'warning');
+  }
+  elseif (isset($settings['audio_codec']) && !isset($codecs['encode']['audio'][$settings['audio_codec']])) {
     drupal_set_message(t('The currently selected @setting_name %setting_value is no longer available, possibly because you changed the transcoder type or the transcoder itself was updated. Please select a new @setting_name.', array('@setting_name' => t('Audio codec'), '%setting_value' => $settings['audio_codec'])), 'warning');
     unset($settings['audio_codec']);
   }
