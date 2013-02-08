@@ -78,15 +78,24 @@ function theme_video_formatter_player(array $variables) {
     }
   }
 
-  $extension = video_utility::getExtension($item['playablefiles'][0]->uri);
+  // Determine theme function based on the playable files.
+  // If one of the video types is configured to use an HTML5 player then the
+  // HTML5 theme function is used.
+  // If the last or only video type is configured to use an FLV player then the
+  // FLV theme function is used.
+  // In all other cases the player configured for the last or only video type
+  // is used.
   $defaults = video_utility::getVideoExtensions();
-  $theme_function = variable_get('video_extension_' . $extension, $defaults[$extension]);
-
-  if ($theme_function == 'video_play_flv') {
-    $theme_function = 'video_flv';
-  }
-  if ($theme_function == 'video_play_html5') {
-    $theme_function = 'video_html5';
+  foreach ($item['playablefiles'] as $playablefile) {
+    $extension = video_utility::getExtension($playablefile->uri);
+    $theme_function = variable_get('video_extension_' . $extension, $defaults[$extension]);
+    if ($theme_function == 'video_play_html5') {
+      $theme_function = 'video_html5';
+      break;
+    }
+    elseif ($theme_function == 'video_play_flv') {
+      $theme_function = 'video_flv';
+    }
   }
 
   return theme($theme_function, array('item' => $item, 'width' => $player_width, 'height' => $player_height, 'entity' => $variables['entity'], 'entity_type' => $variables['entity_type']));
