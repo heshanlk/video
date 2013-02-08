@@ -31,7 +31,7 @@ function video_features_export_render($module_name, $data) {
   $items = array();
   foreach ($data as $key) {
     $preset = Preset::getPreset($key);
-    unset($preset['pid']);
+    unset($preset['pid'], $preset['module'], $preset['overridden']);
     $items[$key] = $preset;
   }
   $code = "  \$items = " . features_var_export($items, '  ') . ";\n";
@@ -45,7 +45,7 @@ function video_features_export_render($module_name, $data) {
 function video_features_revert($module) {
   if ($default_presets = features_get_default('video', $module)) {
     foreach (array_keys($default_presets) as $default_preset) {
-      video_preset_delete($default_preset);
+      Preset::deletePreset($default_preset);
     }
   }
 }

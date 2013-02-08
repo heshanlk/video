@@ -601,7 +601,7 @@ function video_preset_submit($form, &$form_state) {
   $preset['name'] = isset($v['name']) ? $v['name'] : $old['name'];
   $preset['description'] = $v['description'];
   // unset unwanted values saved to database
-  unset($v['name'], $v['description'], $v['submit'], $v['delete'], $v['form_build_id'], $v['form_token'], $v['form_id'], $v['op']);
+  unset($v['name'], $v['description'], $v['submit'], $v['delete'], $v['form_build_id'], $v['form_token'], $v['form_id'], $v['op'], $v['revert']);
   $preset['settings'] = video_preset_array_flatten($v);
 
   // Save this preset.
@@ -679,7 +679,7 @@ function video_preset_delete_confirm($form, &$form_state, $preset) {
  */
 function video_preset_delete_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
-    video_preset_delete($form_state['values']['name']);
+    Preset::deletePreset($form_state['values']['name']);
   }
 
   $form_state['redirect'] = 'admin/config/media/video/presets';
@@ -703,7 +703,7 @@ function video_preset_revert_confirm($form, &$form_state, $preset) {
  */
 function video_preset_revert_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
-    video_preset_revert($form_state['values']['name']);
+    Preset::deletePreset($form_state['values']['name']);
   }
 
   $form_state['redirect'] = 'admin/config/media/video/presets';
@@ -872,63 +872,6 @@ function video_preset_get_presets() {
  */
 function video_get_preset($preset_name) {
   return Preset::getPreset($preset_name);
-}
-
-/**
- * Deletes a preset
- */
-function video_preset_delete($preset_name) {
-  $preset = Preset::getPreset($preset_name);
-  if (!empty($preset['settings']['video_watermark_fid'])) {
-    $file = file_load($preset['settings']['video_watermark_fid']);
-    if (!empty($file)) {
-      file_usage_delete($file, 'video');
-      $file->status = 0;
-      file_save($file);
-    }
-  }
-
-  // Delete the preset.
-  db_delete('video_preset')
-    ->condition('name', $preset_name)
-    ->execute();
-
-  // Rebuild Theme Registry
-  drupal_theme_rebuild();
-}
-
-/**
- * Reverts a preset
- */
-function video_preset_revert($preset_name) {
-  $preset = Preset::getPreset($preset_name);
-  if (!$preset || !$preset['overridden']) {
-    return FALSE;
-  }
-
-  // We need to determine if the watermark image is provided by the default or by the override.
-  $default_presets = Preset::getDefaultPresets();
-  $default_preset = $default_presets[$preset_name];
-
-  $watermark_override = isset($preset['settings']['video_watermark_fid']) ? intval($preset['settings']['video_watermark_fid']) : 0;
-  $watermark_default = isset($default_preset['settings']['video_watermark_fid']) ? intval($default_preset['settings']['video_watermark_fid']) : 0;
-
-  if ($watermark_override > 0 && $watermark_override != $watermark_default) {
-    $file = file_load($watermark_default);
-    if (!empty($file)) {
-      file_usage_delete($file, 'video');
-      $file->status = 0;
-      file_save($file);
-    }
-  }
-
-  // Delete the preset, this reverts the preset.
-  db_delete('video_preset')
-    ->condition('name', $preset_name)
-    ->execute();
-
-  // Rebuild Theme Registry
-  drupal_theme_rebuild();
 }
 
 /**

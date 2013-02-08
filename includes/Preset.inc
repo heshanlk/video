@@ -144,7 +144,7 @@ class Preset {
     if ($dbpreset) {
       $dbpreset['settings'] = !empty($dbpreset['settings']) ? unserialize($dbpreset['settings']) : array();
       if ($preset == NULL) {
-        $dbpreset['overridden'] = FALSE;
+        $dbpreset['overridden'] = NULL;
         $dbpreset['module'] = NULL;
       }
       else {
@@ -156,5 +156,42 @@ class Preset {
 
     // Return the preset.
     return $preset;
+  }
+
+  /**
+   * Deletes a preset from the database.
+   */
+  public static function deletePreset($preset_name) {
+    $preset = self::getPreset($preset_name);
+    if (empty($preset) || $preset['overridden'] === FALSE) {
+      return;
+    }
+
+    // Find out whether there is a default watermark.
+    $watermark_override = isset($preset['settings']['video_watermark_fid']) ? intval($preset['settings']['video_watermark_fid']) : 0;
+    $watermark_default = 0;
+    if ($preset['overridden']) {
+      $default_presets = Preset::getDefaultPresets();
+      $default_preset = $default_presets[$preset_name];
+      $watermark_default = isset($default_preset['settings']['video_watermark_fid']) ? intval($default_preset['settings']['video_watermark_fid']) : 0;
+    }
+
+    // Delete the watermark when it is not the default one.
+    if ($watermark_override > 0 && $watermark_override != $watermark_default) {
+      $file = file_load($preset['settings']['video_watermark_fid']);
+      if (!empty($file)) {
+        file_usage_delete($file, 'video');
+        $file->status = 0;
+        file_save($file);
+      }
+    }
+
+    // Delete the preset.
+    db_delete('video_preset')
+      ->condition('name', $preset_name)
+      ->execute();
+
+    // Rebuild Theme Registry
+    drupal_theme_rebuild();
   }
 }
