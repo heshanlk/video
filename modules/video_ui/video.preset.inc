@@ -510,19 +510,19 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#type' => 'fieldset',
     '#title' => t('Create clip'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => empty($settings['clip_start']) && empty($settings['clip_length']),
   );
   $form['settings']['create_clip']['clip_start'] = array(
     '#type' => 'textfield',
     '#title' => t('Start clip'),
-    '#description' => t('The starting point of a subclip (in timecode or number of seconds).'),
-    '#default_value' => !empty($settings['clip_start']) ? $settings['clip_start'] : ''
+    '#description' => t('The starting point of a subclip (in hh:mm:ss.s or number of seconds).'),
+    '#default_value' => !empty($settings['clip_start']) ? $settings['clip_start'] : '',
   );
   $form['settings']['create_clip']['clip_length'] = array(
     '#type' => 'textfield',
     '#title' => t('Clip length'),
-    '#description' => t('The length of the subclip (in timecode or number of seconds).'),
-    '#default_value' => !empty($settings['clip_length']) ? $settings['clip_length'] : ''
+    '#description' => t('The length of the subclip (in hh:mm:ss.s or number of seconds).'),
+    '#default_value' => !empty($settings['clip_length']) ? $settings['clip_length'] : '',
   );
 
 

@@ -56,6 +56,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
 
     $this->multipass = TRUE;
     $this->outputextension = NULL;
+    $clipstart = NULL;
+    $cliplength = NULL;
+
     foreach ($options as $key => $value) {
       if (empty($value) || $value === 'none') {
         continue;
@@ -115,6 +118,28 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         case 'video_quality':
           $result = $this->transcoder->setConstantQuality($value * 20); // phpVideoToolkit expects 1 to 100 range.
           break;
+        case 'clip_start':
+          if (preg_match('#^(\d+)$#', $value)) {
+            $clipstart = intval($value);
+          }
+          else {
+            $clipstart = $this->transcoder->formatTimecode($value, '%hh:%mm:%ss.%ms', '%st');
+          }
+          break;
+        case 'clip_length':
+          if (preg_match('#^(\d+)$#', $value)) {
+            $cliplength = intval($value);
+          }
+          else {
+            $cliplength = $this->transcoder->formatTimecode($value, '%hh:%mm:%ss.%ms', '%st');
+          }
+          break;
+      }
+
+      if ($cliplength !== NULL && $clipstart !== NULL) {
+        $result = $this->transcoder->extractSegment($clipstart, $clipstart + $cliplength, '%st', FALSE, FALSE);
+        $cliplength = NULL;
+        $clipstart = NULL;
       }
 
       if ($result !== PHPVideoToolkit::RESULT_OK) {
