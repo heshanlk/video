@@ -372,13 +372,13 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
 
   // When the scheme is private, Zencoder can't download the file.
   // Force the scheme to public in this case.
-  $destinationscheme = file_default_scheme() != 'private' ? file_default_scheme() : 'public';
+  $destination = (file_default_scheme() != 'private' ? file_default_scheme() : 'public') . '://videos/watermark';
   $form['settings']['watermark']['video_watermark_fid'] = array(
     '#type' => 'managed_file',
     '#title' => t('Upload watermark image'),
     '#description' => t('Watermark image should be a PNG or JPG image. The file will be uploaded to %destination.', array('%destination' => $destination)),
     '#default_value' => !empty($settings['video_watermark_fid']) ? $settings['video_watermark_fid'] : 0,
-    '#upload_location' => $destinationscheme . '://videos/watermark',
+    '#upload_location' => $destination,
     '#upload_validators' => array('file_validate_extensions' => array('jpg png'), 'file_validate_is_image' => array()),
     '#states' => array(
       'visible' => array(
