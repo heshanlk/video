@@ -54,6 +54,13 @@ function video_widget_element_settings(&$element) {
       );
     }
   }
+  elseif (isset($element['preview']) && !$override_dimensions) {
+    $element['data']['dimensions'] = array(
+      '#type' => 'value',
+      '#value' => $dimensions,
+      '#default_value' => $dimensions,
+    );
+  }
 
   if ($override_dimensions) {
     // Override our player dimensions to the user selected.
