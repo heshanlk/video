@@ -289,6 +289,11 @@ function theme_video_html5($variables) {
         'height' => $variables['height'],
       );
       return theme('videojs', array('items' => $items, 'player_id' => 'video-' . $item['fid'], 'attributes' => $attributes, 'entity' => $variables['entity'], 'entity_type' => $variables['entity_type']));
+
+    case 'mediaelement':
+      $file = reset($files);
+
+      return theme('mediaelement_video', array('attributes' => array('src' => file_create_url($file->uri), 'height' => $variables['height'], 'width' => $variables['width']), 'settings' => array('download_link' => FALSE)));
   }
 }
 
