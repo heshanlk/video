@@ -145,6 +145,11 @@ function video_theme() {
  * Add a generic preprocess function to all video theme methods.
  */
 function video_theme_registry_alter(&$registry) {
+  // After upgrades, this class may not yet be in the class registry,
+  // so load the include explicitly.
+  if (!class_exists('video_utility', TRUE)) {
+    module_load_include('utility.inc', 'video');
+  }
   $players = video_utility::getVideoPlayers();
   $templates = array_keys($players);
   $templates[] = 'video_flv';
