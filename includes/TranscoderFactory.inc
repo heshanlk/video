@@ -73,6 +73,13 @@ interface TranscoderFactoryInterface {
    * Validate admin settings. This will call when Drupal admin settings validate.
    */
   public function adminSettingsValidate($form, &$form_state);
+
+  /**
+   * Whether the transcoder works by sending jobs to an external system.
+   *
+   * True for transcoders like Zencoder, false for transcoders like FFmpeg.
+   */
+  public function isOffSite();
 }
 
 /**

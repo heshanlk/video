@@ -190,13 +190,18 @@ class Transcoder {
       video_jobs::setFailed($video);
     }
     else {
-      // add files to file_managed table and add reference to the file_usage table
+      // add files to file_managed table and add reference to the file_usage table.
+      $offsite = $this->transcoder->isOffSite();
       $this->cleanConverted($video->fid);
       foreach ($output as $file) {
         $file->filemime = video_utility::getMimeType($file->uri);
         $file->status = FILE_STATUS_PERMANENT;
         $file->uid = $video->uid;
         $file->type = 'video'; // For the media module
+        // Empty file to prevent 'Warning: filesize(): stat failed' error.
+        if ($offsite && $file->filesize == 0) {
+          file_put_contents($output->uri, '');
+        }
         file_save($file);
         file_usage_add($file, 'file', $video->entity_type, $video->entity_id);
         $output_vid = array(
@@ -211,10 +216,8 @@ class Transcoder {
       // add duration to the video_queue table
       $video->duration = round($file->duration);
 
-      // Change the status if the file exists.
-      // this happens for FFmpeg and other transcoders that transcode
-      // directly. For Zencoder, the status is changed later.
-      if (file_exists($file->uri)) {
+      // Change the status if the file exists for onsite transcoders.
+      if (!$offsite && file_exists($file->uri)) {
         video_jobs::setCompleted($video);
       }
       else {

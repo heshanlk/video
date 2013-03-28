@@ -632,4 +632,13 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $this->transcoder->reset($keepinput);
     $this->multipass = NULL;
   }
+
+  /**
+   * Whether the transcoder works by sending jobs to an external system.
+   *
+   * True for transcoders like Zencoder, false for transcoders like FFmpeg.
+   */
+  public function isOffSite() {
+    return FALSE;
+  }
 }

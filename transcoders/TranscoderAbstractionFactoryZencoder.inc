@@ -895,4 +895,13 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     return $message;
   }
+
+  /**
+   * Whether the transcoder works by sending jobs to an external system.
+   *
+   * True for transcoders like Zencoder, false for transcoders like FFmpeg.
+   */
+  public function isOffSite() {
+    return TRUE;
+  }
 }
