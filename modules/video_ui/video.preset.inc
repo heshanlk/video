@@ -39,6 +39,10 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     unset($settings['audio_codec']);
   }
 
+  // NULL triggers the - Select - option.
+  $defaultvideocodec = isset($codecs['encode']['video']['']) ? '' : NULL;
+  $defaultaudiocodec = isset($codecs['encode']['audio']['']) ? '' : NULL;
+
   $form = array();
   $form_state['preset'] = $preset;
 
@@ -76,7 +80,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#title' => t('Description'),
     '#description' => t('Add a brief description to your preset name.'),
     '#weight' => -9,
-    '#default_value' => !empty($preset['description']) ? $preset['description'] : ''
+    '#default_value' => !empty($preset['description']) ? $preset['description'] : '',
   );
 
   // video settings
@@ -84,7 +88,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#type' => 'fieldset',
     '#title' => t('Video settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
 
   $form['settings']['video']['video_extension'] = array(
@@ -92,7 +96,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#title' => t('Video output extension'),
     '#description' => t('Extension of the output video.'),
     '#options' => $formats,
-    '#default_value' => (!empty($settings['video_extension'])) ? $settings['video_extension'] : 'mp4',
+    '#default_value' => !empty($settings['video_extension']) ? $settings['video_extension'] : NULL,
     '#required' => TRUE,
   );
 
@@ -101,7 +105,8 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#title' => t('Video codec'),
     '#description' => t('The video codec used in the video file can affect the ability to play the video on certain devices.'),
     '#options' => $codecs['encode']['video'],
-    '#default_value' => (!empty($settings['video_codec'])) ? $settings['video_codec'] : '',
+    '#required' => TRUE,
+    '#default_value' => !empty($settings['video_codec']) ? $settings['video_codec'] : $defaultvideocodec,
   );
 
   $form['settings']['video']['video_preset'] = array(
@@ -208,7 +213,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#title' => t('Audio codec'),
     '#description' => t('The audio codec to be used.'),
     '#options' => $codecs['encode']['audio'],
-    '#default_value' => (!empty($settings['audio_codec'])) ? $settings['audio_codec'] : '',
+    '#default_value' => (!empty($settings['audio_codec'])) ? $settings['audio_codec'] : $defaultaudiocodec
   );
   $form['settings']['audio']['audio_quality'] = array(
     '#type' => 'select',
