@@ -81,6 +81,13 @@ class video_utility {
   }
 
   private static $streamBaseMapping = NULL;
+
+  /**
+   * Maintains a mapping from scheme to external URL prefix.
+   *
+   * @return
+   *   Array from string to string.
+   */
   private static function getStreamBaseMapping() {
     if (self::$streamBaseMapping != NULL) {
       return self::$streamBaseMapping;
@@ -90,7 +97,13 @@ class video_utility {
 
     foreach (file_get_stream_wrappers() as $wrapperscheme => $wrapperinfo) {
       $wrapper = file_stream_wrapper_get_instance_by_scheme($wrapperscheme);
-      self::$streamBaseMapping[$wrapperscheme] = $wrapper->getExternalUrl();
+      $externalUrl = $wrapper->getExternalUrl();
+      // Some stream wrappers, like the ones that derive from
+      // MediaReadOnlyStreamWrapper, return no default external URL. Ignore
+      // those, they're not useful for the Video module anyway.
+      if (!empty($externalUrl)) {
+        self::$streamBaseMapping[$wrapperscheme] = $externalUrl;
+      }
     }
 
     return self::$streamBaseMapping;
