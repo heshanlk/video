@@ -200,7 +200,7 @@ class Transcoder {
         $file->type = 'video'; // For the media module
         // Empty file to prevent 'Warning: filesize(): stat failed' error.
         if ($offsite && $file->filesize == 0) {
-          file_put_contents($output->uri, '');
+          file_put_contents($file->uri, '');
         }
         file_save($file);
         file_usage_add($file, 'file', $video->entity_type, $video->entity_id);
