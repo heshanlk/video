@@ -517,7 +517,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       $errors = '';
       foreach ($e->getErrors() as $error) {
         if ($error == 'Email has already been taken') {
-          drupal_set_message(t('Your account already exists on Zencoder. So <a href="@login-url">login</a> to here and enter API key below.', array('@login-url' => 'https://app.zencoder.com/session/new')));
+          drupal_set_message(t('Your account already exists on Zencoder. So <a href="@login-url">login</a> to here and enter a full access API key key below.', array('@login-url' => 'https://app.zencoder.com/api')));
           variable_set('video_zencoder_api_key', t('Please enter your API key'));
           return TRUE;
         }
