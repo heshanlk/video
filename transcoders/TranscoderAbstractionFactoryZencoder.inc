@@ -330,7 +330,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#type' => 'textfield',
         '#title' => t('Zencoder API key'),
         '#default_value' => variable_get('video_zencoder_api_key', NULL),
-        '#description' => t('Zencoder API Key. Click <b>Reset to default</b> button to add new account.')
+        '#description' => t('Leave empty and submit the form to start creating a new Zencoder account.')
       );
       $form['zencoder_info']['video_thumbnail_count_zc'] = array(
         '#type' => 'textfield',
