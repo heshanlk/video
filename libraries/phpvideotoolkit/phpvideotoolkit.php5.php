@@ -2811,24 +2811,21 @@ class PHPVideoToolkit {
       }
       if ($size !== FALSE) {
         $dim = explode('x', substr($size, 1, -1));
+        $floatratio = NULL;
         if (($boundry = strpos($ratio, ':')) !== FALSE) {
-          $ratio = substr($ratio, 1, $boundry - 1) / substr($ratio, $boundry + 1, -1);
-          $new_width = round($dim[1] * $ratio);
-// 						make sure new width is an even number
-          $ceiled = ceil($new_width);
-          $new_width = $ceiled % 2 !== 0 ? floor($new_width) : $ceiled;
-          if ($new_width != $dim[0]) {
-            $this->setVideoDimensions($new_width, $dim[1]);
-          }
+          $floatratio = substr($ratio, 1, $boundry - 1) / substr($ratio, $boundry + 1, -1);
         }
         elseif (strpos($ratio, '.') !== FALSE) {
-          $ratio = floatval($ratio);
-          $new_width = $dim[1] * $ratio;
-// 						make sure new width is an even number
-          $ceiled = ceil($new_width);
-          $new_width = $ceiled % 2 !== 0 ? floor($new_width) : $ceiled;
-          if ($new_width != $dim[0]) {
-            $this->setVideoDimensions($new_width, $dim[1]);
+          $floatratio = floatval(trim($ratio, '\''));
+        }
+
+        if ($floatratio !== NULL) {
+          $new_height = $dim[0] / $floatratio;
+// 						make sure new height is an even number
+          $ceiled = ceil($new_height);
+          $new_height = $ceiled % 2 !== 0 ? floor($new_height) : $ceiled;
+          if ($new_height != $dim[1]) {
+            $this->setVideoDimensions($dim[0], $new_height);
           }
         }
       }

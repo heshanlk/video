@@ -59,6 +59,8 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $clipstart = NULL;
     $cliplength = NULL;
 
+    $this->setAspectRatioOptions($options);
+
     foreach ($options as $key => $value) {
       if (empty($value) || $value === 'none') {
         continue;
@@ -96,10 +98,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           break;
         case 'video_bitrate':
           $result = $this->transcoder->setVideoBitRate($value);
-          break;
-        case 'wxh':
-          $dimension = explode('x', trim($value));
-          $result = $this->transcoder->setVideoDimensions($dimension[0], $dimension[1]);
           break;
         case 'pixel_format':
           $result = $this->transcoder->setPixelFormat($value);
@@ -640,5 +638,88 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
    */
   public function isOffSite() {
     return FALSE;
+  }
+
+  /**
+   * Set aspect ratio and size related transcoder options.
+   */
+  private function setAspectRatioOptions(array $options) {
+    $targetdimensions = explode('x', $options['wxh'], 2);
+    $file_info = $this->getFileInfo();
+    $sourcedimensions = array(
+      intval($file_info['video']['dimensions']['width']),
+      intval($file_info['video']['dimensions']['height'])
+    );
+
+    // If no change is necessary, just return.
+    if ($targetdimensions == $sourcedimensions) {
+      return;
+    }
+
+    $targetaspect = round($targetdimensions[0] / $targetdimensions[1], 4);
+    $sourceaspect = round($sourcedimensions[0] / $sourcedimensions[1], 4);
+
+    $aspectmode = !empty($options['video_aspectmode']) ? $options['video_aspectmode'] : 'preserve';
+    switch ($aspectmode) {
+      default:
+      case 'preserve':
+        if ($sourceaspect >= $targetaspect) {
+          // Source video is wider than destination.
+          // Decrease the height.
+          $factor = $targetdimensions[0] < $sourcedimensions[0] ? $targetdimensions[0] / $sourcedimensions[0] : $sourcedimensions[0] / $targetdimensions[0];
+          $width = $targetdimensions[0];
+          $height = round($sourcedimensions[1] * $factor);
+        }
+        else {
+          $factor = $targetdimensions[1] < $sourcedimensions[1] ? $targetdimensions[1] / $sourcedimensions[1] : $sourcedimensions[1] / $targetdimensions[1];
+          $width = round($sourcedimensions[0] * $factor);
+          $height = $targetdimensions[1];
+        }
+
+        if ($width != $sourcedimensions[0] || $height != $sourcedimensions[1]) {
+          $this->transcoder->addCommand('-vf', 'scale='.$width.':'.$height);
+        }
+        break;
+
+      case 'crop':
+        if ($sourceaspect >= $targetaspect) {
+          // Source video is wider than destination.
+          // Cut off left and right.
+          $factor = $targetdimensions[1] < $sourcedimensions[1] ? $targetdimensions[1] / $sourcedimensions[1] : $sourcedimensions[1] / $targetdimensions[1];
+          $width = round($factor * $sourcedimensions[0]);
+          $height = $sourcedimensions[1];
+        }
+        else {
+          $factor = $targetdimensions[0] < $sourcedimensions[0] ? $targetdimensions[0] / $sourcedimensions[0] : $sourcedimensions[0] / $targetdimensions[0];
+          $width = $sourcedimensions[0];
+          $height = round($factor * $sourcedimensions[1]);
+        }
+        $this->transcoder->addCommand('-vf', 'crop='.$width.':'.$height.',scale='.$targetdimensions[0].':'.$targetdimensions[1]);
+        break;
+
+      case 'pad':
+        if ($sourceaspect >= $targetaspect) {
+          // Source video is wider than destination.
+          // Add padding to top and bottom.
+          $factor = $targetdimensions[1] > $sourcedimensions[1] ? $targetdimensions[1] / $sourcedimensions[1] : $sourcedimensions[1] / $targetdimensions[1];
+          $width = $sourcedimensions[0];
+          $height = round($factor * $sourcedimensions[1]);
+          $x = 0;
+          $y = ($height - $sourcedimensions[1]) / 2;
+        }
+        else {
+          $factor = $targetdimensions[0] > $sourcedimensions[0] ? $targetdimensions[0] / $sourcedimensions[0] : $sourcedimensions[0] / $targetdimensions[0];
+          $width = round($factor * $sourcedimensions[0]);
+          $height = $sourcedimensions[1];
+          $x = ($width - $sourcedimensions[0]) / 2;
+          $y = 0;
+        }
+        $this->transcoder->addCommand('-vf', 'pad='.$width.':'.$height.':'.$x.':'.$y.',scale='.$targetdimensions[0].':'.$targetdimensions[1]);
+        break;
+
+      case 'stretch':
+        $result = $this->transcoder->setVideoDimensions($targetdimensions[0], $targetdimensions[1]);
+        break;
+    }
   }
 }
