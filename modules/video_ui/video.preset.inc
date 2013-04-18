@@ -213,7 +213,8 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#title' => t('Audio codec'),
     '#description' => t('The audio codec to be used.'),
     '#options' => $codecs['encode']['audio'],
-    '#default_value' => (!empty($settings['audio_codec'])) ? $settings['audio_codec'] : $defaultaudiocodec
+    '#required' => TRUE,
+    '#default_value' => (!empty($settings['audio_codec'])) ? $settings['audio_codec'] : $defaultaudiocodec,
   );
   $form['settings']['audio']['audio_quality'] = array(
     '#type' => 'select',

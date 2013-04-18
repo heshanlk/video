@@ -431,7 +431,8 @@ function video_video_flv_players() {
  */
 function video_video_html5_players() {
   $options = array(
-    'video' => t('Plain HTML5 player with Flash fallback'),
+    'video' => t('Plain HTML5 video player with Flash fallback'),
+    'audio' => t('Plain HTML5 audio player with Flash fallback'),
   );
   if (module_exists('videojs')) {
     $options['videojs'] = t('Video.js');

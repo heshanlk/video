@@ -276,6 +276,10 @@ function theme_video_html5($variables) {
       $variables['files'] = $files;
       return theme('video_play_html5', $variables);
 
+    case 'audio':
+      $variables['files'] = $files;
+      return theme('video_play_html5_audio', $variables);
+
     case 'videojs':
       $items = video_utility::objectToArray($files);
       if (!empty($item['thumbnailfile'])) {
