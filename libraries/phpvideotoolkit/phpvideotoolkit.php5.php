@@ -1482,11 +1482,6 @@ class PHPVideoToolkit {
    * @return boolean FALSE on error encountered, TRUE otherwise
    */
   public function setAudioBitRate($bitrate) {
-//			validate input
-    if (!in_array(intval($bitrate), array(16, 32, 64, 128, 160, 256, 320))) {
-      // return $this->_raiseError('setAudioBitRate_valid_bitrate', array('bitrate'=>$bitrate));
-// <-			exits
-    }
     return $this->addCommand('-ab', $bitrate);
   }
 

@@ -58,11 +58,19 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     $this->outputextension = NULL;
     $clipstart = NULL;
     $cliplength = NULL;
+    $hasvideo = empty($options['skip_video']);
+    $hasaudio = empty($options['skip_audio']);
 
     $this->setAspectRatioOptions($options);
 
     foreach ($options as $key => $value) {
       if (empty($value) || $value === 'none') {
+        continue;
+      }
+      if (strncmp($key, 'audio_', 6) === 0 && !$hasaudio) {
+        continue;
+      }
+      if (strncmp($key, 'video_', 6) === 0 && !$hasvideo) {
         continue;
       }
 
@@ -72,7 +80,9 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $result = $this->transcoder->setVideoFrameRate($value);
           break;
         case 'video_codec':
-          $result = $this->transcoder->setVideoCodec($value);
+          if ($hasvideo) {
+            $result = $this->transcoder->setVideoCodec($value);
+          }
           break;
         case 'video_preset':
           $result = $this->transcoder->setVideoPreset($value);
@@ -92,7 +102,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           break;
         case 'audio_bitrate':
           if ($value < 1000) {
-            $value *= 1000;
+            $value .= 'k';
           }
           $result = $this->transcoder->setAudioBitRate($value);
           break;
@@ -131,6 +141,13 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           else {
             $cliplength = $this->transcoder->formatTimecode($value, '%hh:%mm:%ss.%ms', '%st');
           }
+          break;
+        case 'skip_video':
+          $result = $this->transcoder->addCommand('-vn');
+          $this->multipass = FALSE;
+          break;
+        case 'skip_audio':
+          $result = $this->transcoder->addCommand('-an');
           break;
       }
 
