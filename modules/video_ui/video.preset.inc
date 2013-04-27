@@ -105,7 +105,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#title' => t('Video codec'),
     '#description' => t('The video codec used in the video file can affect the ability to play the video on certain devices.'),
     '#options' => $codecs['encode']['video'],
-    '#required' => TRUE,
+    '#required' => $defaultvideocodec === NULL,
     '#default_value' => !empty($settings['video_codec']) ? $settings['video_codec'] : $defaultvideocodec,
   );
 
@@ -213,7 +213,7 @@ function video_preset_form($form, &$form_state, $preset = FALSE) {
     '#title' => t('Audio codec'),
     '#description' => t('The audio codec to be used.'),
     '#options' => $codecs['encode']['audio'],
-    '#required' => TRUE,
+    '#required' => $defaultaudiocodec === NULL,
     '#default_value' => (!empty($settings['audio_codec'])) ? $settings['audio_codec'] : $defaultaudiocodec,
   );
   $form['settings']['audio']['audio_quality'] = array(
