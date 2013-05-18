@@ -685,13 +685,16 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           // Decrease the height.
           $factor = $targetdimensions[0] < $sourcedimensions[0] ? $targetdimensions[0] / $sourcedimensions[0] : $sourcedimensions[0] / $targetdimensions[0];
           $width = $targetdimensions[0];
-          $height = round($sourcedimensions[1] * $factor);
+          $height = $sourcedimensions[1] * $factor;
         }
         else {
           $factor = $targetdimensions[1] < $sourcedimensions[1] ? $targetdimensions[1] / $sourcedimensions[1] : $sourcedimensions[1] / $targetdimensions[1];
-          $width = round($sourcedimensions[0] * $factor);
+          $width = $sourcedimensions[0] * $factor;
           $height = $targetdimensions[1];
         }
+
+        $width = video_utility::roundToEvenNumber($width);
+        $height = video_utility::roundToEvenNumber($height);
 
         if ($width != $sourcedimensions[0] || $height != $sourcedimensions[1]) {
           $this->transcoder->addCommand('-vf', 'scale='.$width.':'.$height);

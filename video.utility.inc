@@ -230,13 +230,13 @@ class video_utility {
    * Return the list of known video/audio extensions.
    */
   public static function getMediaExtensions() {
-  	$supported_extensions = array_keys(self::getVideoExtensionPlayers());
+    $supported_extensions = array_keys(self::getVideoExtensionPlayers());
 
-  	// Add other extensions that don't get a separate player but are recognized as playable anyway.
-  	return array_merge($supported_extensions, array(
-  	  'oga', 'wma', 'flac',
+    // Add other extensions that don't get a separate player but are recognized as playable anyway.
+    return array_merge($supported_extensions, array(
+      'oga', 'wma', 'flac',
       'ts', 'mxf',
-  	));
+    ));
   }
 
   /**
@@ -312,5 +312,22 @@ class video_utility {
       default:
         return file_get_mimetype($uri);
     }
+  }
+
+  /**
+   * Returns the nearest even integer given an int or float.
+   *
+   * When equal, it will choose the highest nearest even integer.
+   */
+  public static function roundToEvenNumber($number) {
+    $remainder = fmod($number, 2);
+    if ($remainder == 0) {
+      return (int)($number);
+    }
+    elseif ($remainder < 1) {
+      return (int)($number - $remainder);
+    }
+
+    return (int)($number - $remainder + 2);
   }
 }

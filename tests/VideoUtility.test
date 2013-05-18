@@ -40,4 +40,18 @@ class VideoUtilityTestCase extends DrupalUnitTestCase {
     $result = video_utility::validateDimensionList(video_utility::getDefaultDimensions());
     $this->assertTrue($result, 'The default dimensions list must be valid');
   }
+
+  public function testRoundToEvenNumber() {
+    $result = video_utility::roundToEvenNumber(2);
+    $this->assertEqual($result, 2, '2 is even');
+
+    $result = video_utility::roundToEvenNumber(1);
+    $this->assertEqual($result, 2, 'The nearest even integer of 1 is 2');
+
+    $result = video_utility::roundToEvenNumber(0.9);
+    $this->assertEqual($result, 0, 'The nearest even integer of 0.9 is 0');
+
+    $result = video_utility::roundToEvenNumber(1.1);
+    $this->assertEqual($result, 2, 'The nearest even integer of 1.1 is 2');
+  }
 }
