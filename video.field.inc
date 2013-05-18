@@ -625,24 +625,18 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
  * video_field_widget_process().
  */
 function video_field_widget_value($element, $input = FALSE, $form_state) {
+  // file_field_widget_value() also takes care of adding $input to $value.
   $value = file_field_widget_value($element, $input, $form_state);
 
   // Extra default values.
-  $alldimensions = video_utility::getDimensions();
   $value += array(
     'bypass_autoconversion' => variable_get('video_bypass_conversion', FALSE),
     'convert_video_on_save' => variable_get('video_convert_on_save', FALSE),
     'use_default_video_thumb' => variable_get('video_use_default_thumb', FALSE),
-    'dimensions' => key($alldimensions),
     'conversionstatus' => NULL,
+    'fid' => 0,
     'thumbnail' => 0,
   );
-
-  // Load the default dimensions.
-  $instance = field_widget_instance($element, $form_state);
-  if (in_array($instance['settings']['default_dimensions'], $alldimensions)) {
-    $value['dimensions'] = $instance['settings']['default_dimensions'];
-  }
 
   if ($value['fid'] > 0) {
     $transcoder = new Transcoder();
@@ -650,7 +644,11 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
       $video = video_jobs::load($value['fid']);
 
       if ($video) {
-        $value['dimensions'] = $video->dimensions;
+      	// The dimensions may have been set from input, so check first to not
+      	// overwrite a change by the user.
+      	if (empty($value['dimensions'])) {
+          $value['dimensions'] = $video->dimensions;
+      	}
         $value['conversionstatus'] = $video->video_status;
         // When there is a job, unselect "Bypass auto conversion" because it
         // would remove the converted files.
@@ -658,12 +656,14 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
       }
       else {
         // No job (yet), find the video dimensions to use as default.
-        $video_ratio = _video_aspect_ratio($value);
+        if (empty($value['dimensions'])) {
+          $video_ratio = _video_aspect_ratio($value);
 
-        if (!empty($video_ratio['width']) && !empty($video_ratio['height'])) {
-          $filedimensions = $video_ratio['width'] . 'x' . $video_ratio['height'];
-          if (in_array($filedimensions, $alldimensions)) {
-            $value['dimensions'] = $filedimensions;
+          if (!empty($video_ratio['width']) && !empty($video_ratio['height'])) {
+            $filedimensions = $video_ratio['width'] . 'x' . $video_ratio['height'];
+            if (in_array($filedimensions, $alldimensions)) {
+              $value['dimensions'] = $filedimensions;
+            }
           }
         }
 
@@ -685,6 +685,18 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
       if ($field['settings']['default_video_thumbnail']['fid'] == $value['thumbnail']) {
         $value['use_default_video_thumb'] = 1;
       }
+    }
+  }
+
+  // Load the default dimensions when there is no file or input.
+  if (empty($value['dimensions'])) {
+  	$alldimensions = video_utility::getDimensions();
+    $instance = field_widget_instance($element, $form_state);
+    if (in_array($instance['settings']['default_dimensions'], $alldimensions)) {
+      $value['dimensions'] = $instance['settings']['default_dimensions'];
+    }
+    else {
+      $value['dimensions'] = key($alldimensions);
     }
   }
 
