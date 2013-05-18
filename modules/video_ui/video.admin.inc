@@ -246,7 +246,7 @@ function video_players_admin_settings() {
     '#description' => t('Here you can map specific players to each video extension type.') . ' ' . t('This player will be selected when you choose the !formatter formatter for a Video field.', array('!formatter' => t('Video player'))),
   );
   // lets get all our supported extensions and players.
-  $extensions = video_utility::getVideoExtensions();
+  $extensions = video_utility::getVideoExtensionPlayers();
   $players = video_utility::getVideoPlayers();
   $flv_players = video_video_flv_players();
   $html5_players = video_video_html5_players();
@@ -351,7 +351,7 @@ function video_players_admin_settings_submit($form, &$form_state) {
   db_query('DELETE FROM {variable} WHERE name LIKE \'video_extension_%\'');
 
   // Remove flv player or html5 player when that player hasn't been selected
-  $extensions = video_utility::getVideoExtensions();
+  $extensions = video_utility::getVideoExtensionPlayers();
   foreach (array_keys($extensions) as $ext) {
     $selected = $form_state['values']['video_extension_' . $ext];
     if ($selected != 'video_play_flv') {

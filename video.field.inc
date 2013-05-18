@@ -588,7 +588,7 @@ function video_field_widget_form(&$form, &$form_state, $field, $instance, $langc
 
   foreach (element_children($elements) as $delta) {
     // If not using custom extension validation, ensure this is an video.
-    $supported_extensions = array_keys(video_utility::getVideoExtensions());
+    $supported_extensions = video_utility::getMediaExtensions();
     $extensions = isset($elements[$delta]['#upload_validators']['file_validate_extensions'][0]) ? $elements[$delta]['#upload_validators']['file_validate_extensions'][0] : implode(' ', $supported_extensions);
     $extensions = array_intersect(explode(' ', $extensions), $supported_extensions);
     $elements[$delta]['#upload_validators']['file_validate_extensions'][0] = implode(' ', $extensions);

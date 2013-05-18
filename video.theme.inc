@@ -85,7 +85,7 @@ function theme_video_formatter_player(array $variables) {
   // FLV theme function is used.
   // In all other cases the player configured for the last or only video type
   // is used.
-  $defaults = video_utility::getVideoExtensions();
+  $defaults = video_utility::getVideoExtensionPlayers();
   foreach ($item['playablefiles'] as $playablefile) {
     $extension = video_utility::getExtension($playablefile->uri);
     $theme_function = variable_get('video_extension_' . $extension, $defaults[$extension]);

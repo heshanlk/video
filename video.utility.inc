@@ -227,9 +227,22 @@ class video_utility {
   }
 
   /**
+   * Return the list of known video/audio extensions.
+   */
+  public static function getMediaExtensions() {
+  	$supported_extensions = array_keys(self::getVideoExtensionPlayers());
+
+  	// Add other extensions that don't get a separate player but are recognized as playable anyway.
+  	return array_merge($supported_extensions, array(
+  	  'oga', 'wma', 'flac',
+      'ts', 'mxf',
+  	));
+  }
+
+  /**
    * Return our list of video extensions and their associated player.
    */
-  public static function getVideoExtensions() {
+  public static function getVideoExtensionPlayers() {
     return array(
       'divx' => 'video_play_divx',
       'mkv' => 'video_play_divx',
