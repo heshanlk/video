@@ -950,6 +950,7 @@ function video_field_formatter_info() {
       'settings' => array(
         'image_style' => '',
         'image_link' => '',
+        'widthxheight' => '640x360',
       ),
     ),
   );
@@ -983,6 +984,21 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
           'file' => t('File'),
         ),
       );
+      if (module_exists('colorbox')) {
+        $element['image_link']['#options']['colorbox'] = t('Colorbox');
+        $element['widthxheight'] = array(
+          '#title' => t('Video Player Dimensions'),
+          '#type' => 'select',
+          '#default_value' => $settings['widthxheight'],
+          '#description' => t('Select the desired dimensions of the video player. You can add your own dimensions at !settings.', array('!settings' => l(t('video module settings'), 'admin/config/media/video'))),
+          '#options' => video_utility::getDimensions(),
+          '#states' => array(
+            'visible' => array(
+              'input[name="options[settings][image_link]"]' => array('value' => 'colorbox'),
+            ),
+          ),
+        );
+      }
       break;
 
     case 'video_formatter_player':
@@ -1033,7 +1049,9 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
       $link_types = array(
         'content' => t('Linked to content'),
         'file' => t('Linked to video file'),
+        'colorbox' => t('Linked to Colorbox overlay')
       );
+
       // Display this setting only if image is linked.
       if (isset($link_types[$settings['image_link']])) {
         $summary[] = $link_types[$settings['image_link']];
@@ -1066,14 +1084,19 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
           $uri = entity_uri($entity_type, $entity);
         }
         elseif ($settings['image_link'] == 'file') {
-          $link_file = TRUE;
-        }
-        if (isset($link_file)) {
           $uri = array(
             'path' => file_create_url($item['uri']),
             'options' => array(),
           );
         }
+        elseif ($settings['image_link'] == 'colorbox') {
+          $dimentions = explode('x', $settings['widthxheight']);
+          $uri = array(
+            'path' => 'video/embed/' . $entity->nid . '/' . str_replace('x', '/',$settings['widthxheight']),
+            'options' => array('query' => array('width' => $dimentions[0], 'height' => $dimentions[1] + 10, 'iframe' => 'true'))
+          );
+       }
+
         $element[$delta] = array(
           '#theme' => 'video_formatter_thumbnail',
           '#item' => $item,
@@ -1082,7 +1105,8 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
           '#entity' => $entity,
           '#entity_type' => $entity_type,
           '#field' => $field,
-          '#instance' => $instance
+          '#instance' => $instance,
+          '#colorbox' => $settings['image_link'] == 'colorbox',
         );
         break;
 

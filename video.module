@@ -92,7 +92,7 @@ function video_theme() {
     'file' => 'video.theme.inc',
   );
   $theme['video_formatter_thumbnail'] = array(
-    'variables' => array('item' => NULL, 'path' => NULL, 'image_style' => NULL, 'entity' => NULL, 'entity_type' => NULL, 'field' => NULL, 'instance' => NULL),
+    'variables' => array('item' => NULL, 'path' => NULL, 'image_style' => NULL, 'entity' => NULL, 'entity_type' => NULL, 'field' => NULL, 'instance' => NULL, 'colorbox' => NULL),
     'file' => 'video.theme.inc',
   );
   $theme['video_widget'] = array(

@@ -138,6 +138,9 @@ function theme_video_formatter_thumbnail($variables) {
     $options = $variables['path']['options'];
     // When displaying an image inside a link, the html option must be TRUE.
     $options['html'] = TRUE;
+    if (!empty($variables['colorbox'])) {
+      $options['attributes'] = array('class' => array('colorbox-load'));
+    }
     $output = l($output, $path, $options);
   }
 
