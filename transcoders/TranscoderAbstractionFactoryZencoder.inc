@@ -576,6 +576,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     // Find all error situations
     if ($output->state === 'cancelled') {
+      watchdog('transcoder', 'Video with fid @fid and job id @jobid is marked as failed because a cancellation notification was received from Zencoder.', array('@fid' => $fid, '@jobid' => $jobid), WATCHDOG_WARNING);
       video_jobs::setFailed($video);
       echo 'Cancelled';
       return;
@@ -592,8 +593,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
       }
 
-      video_jobs::setFailed($video);
       watchdog('transcoder', 'Zencoder reports errors in postback for fid @fid, job id @jobid: !errordetail', array('@fid' => $fid, '@jobid' => $jobid, '!errordetail' => $errordetail), WATCHDOG_ERROR);
+      video_jobs::setFailed($video);
       echo 'Failure';
     }
 
@@ -613,8 +614,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // So we only copy the file when it doesn't exist or has a different file size.
     if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes) {
       if (!$this->moveFile($output->url, $outputfile->uri)) {
-        video_jobs::setFailed($video);
         watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
+        video_jobs::setFailed($video);
         return;
       }
     }
