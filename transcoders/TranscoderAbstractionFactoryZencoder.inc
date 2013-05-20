@@ -614,6 +614,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Sometimes the long duration of the copy() call causes Zencoder
     // to timeout and retry the notification postback later.
     // So we only copy the file when it doesn't exist or has a different file size.
+    // file_save() invokes filesize(), which may return a cached value.
+    // Clear the stat cache to get a fresh value.
+    clearstatcache();
     if (!file_exists($outputfile->uri) || filesize($outputfile->uri) != $output->file_size_in_bytes) {
       if (!$this->moveFile($output->url, $outputfile->uri)) {
         watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
@@ -624,9 +627,6 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     }
 
     $outputfile->filesize = $output->file_size_in_bytes;
-    // file_save() invokes filesize(), which may return a cached value.
-    // Clear the stat cache to get a fresh value.
-    clearstatcache();
     file_save($outputfile);
 
     // Actual processing of the response
@@ -782,7 +782,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       }
       // Move the file if the target is also s3:// or rcf://
       if (file_uri_scheme($dsturi) == $this->outputdestination) {
-        return rename($srcuri, $dsturi);
+        $result = rename($srcuri, $dsturi);
+        clearstatcache();
+        return $result;
       }
 
       // The src file needs to be removed after copying.
@@ -807,6 +809,9 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if ($result && $unlinksrc) {
       unlink($srcuri);
     }
+
+    // Clear the stat cache after the copy.
+    clearstatcache();
 
     return $result;
   }
