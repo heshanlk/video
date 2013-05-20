@@ -596,9 +596,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       watchdog('transcoder', 'Zencoder reports errors in postback for fid @fid, job id @jobid: !errordetail', array('@fid' => $fid, '@jobid' => $jobid, '!errordetail' => $errordetail), WATCHDOG_ERROR);
       video_jobs::setFailed($video);
       echo 'Failure';
+      return;
     }
 
     if ($notification->job->state !== 'finished') {
+      echo 'Not finished';
       return;
     }
 
@@ -616,11 +618,15 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
       if (!$this->moveFile($output->url, $outputfile->uri)) {
         watchdog('transcoder', 'While processing Zencoder postback, failed to copy @source-uri to @target-uri.', array('@source-uri' => $output->url, '@target-uri' => $outputfile->uri), WATCHDOG_ERROR);
         video_jobs::setFailed($video);
+        echo 'Error while moving';
         return;
       }
     }
 
     $outputfile->filesize = $output->file_size_in_bytes;
+    // file_save() invokes filesize(), which may return a cached value.
+    // Clear the stat cache to get a fresh value.
+    clearstatcache();
     file_save($outputfile);
 
     // Actual processing of the response
@@ -632,6 +638,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
 
     // If there are no thumbnails, quit now.
     if (empty($output->thumbnails)) {
+      echo 'No thumbnails';
       return;
     }
 
@@ -639,6 +646,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Pre-2.1.0, each thumbnail list was an array, now it is an object
     $thumbnails = is_array($output->thumbnails[0]) ? $output->thumbnails[0]['images'] : $output->thumbnails[0]->images;
     if (empty($thumbnails)) {
+      echo 'No thumbnails 2';
       return;
     }
 
@@ -646,6 +654,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     $entity = video_utility::loadEntity($video->entity_type, $video->entity_id);
     if (empty($entity)) {
       watchdog('transcoder', 'The entity to which the transcoded video belongs can\'t be found anymore. Entity type: @entity-type, entity id: @entity-id.', array('@entity-type' => $video->entity_type, '@entity-id' => $video->entity_id), WATCHDOG_ERROR);
+      echo 'No entity';
       return;
     }
 
@@ -659,11 +668,13 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     if (empty($entity->{$fieldname}[$langcode][$delta])) {
       // The field can't be found anymore. This may be a problem.
       watchdog('transcoder', 'The field to which video @filename was uploaded doesn\'t seem to exist anymore. Entity type: @entity-type, entity id: @entity-id, field name: @fieldname, field language: @langcode, delta: @delta.', array('@filename' => $video->filename, '@entity-type' => $video->entity_type, '@entity-id' => $video->entity_id, '@fieldname' => $fieldname, '@langcode' => $langcode, '@delta' => $delta), WATCHDOG_WARNING);
+      echo 'No field';
       return;
     }
     if ($entity->{$fieldname}[$langcode][$delta]['fid'] != $video->fid) {
       // The field does not contain the file we uploaded.
       watchdog('transcoder', 'The field to which video @filename was uploaded doesn\'t seem to contain this video anymore. Entity type: @entity-type, entity id: @entity-id, field name: @fieldname, field language: @langcode, delta: @delta.', array('@filename' => $video->filename, '@entity-type' => $video->entity_type, '@entity-id' => $video->entity_id, '@fieldname' => $fieldname, '@langcode' => $langcode, '@delta' => $delta), WATCHDOG_WARNING);
+      echo 'No field in entity';
       return;
     }
 
@@ -733,6 +744,7 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     // Skip setting the thumbnail if there are no thumbnails or when the current value is already valid
     $currentthumb = isset($entity->{$fieldname}[$langcode][$delta]['thumbnail']) ? intval($entity->{$fieldname}[$langcode][$delta]['thumbnail']) : 0;
     if (empty($thumbs) || isset($thumbs[$currentthumb])) {
+      echo 'OK: Thumbnail already set';
       return;
     }
 
@@ -753,6 +765,8 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         }
         break;
     }
+
+    echo 'OK';
   }
 
   private function moveFile($srcurl, $dsturi) {
