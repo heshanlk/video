@@ -661,6 +661,7 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
 
           if (!empty($video_ratio['width']) && !empty($video_ratio['height'])) {
             $filedimensions = $video_ratio['width'] . 'x' . $video_ratio['height'];
+            $alldimensions = video_utility::getDimensions();
             if (in_array($filedimensions, $alldimensions)) {
               $value['dimensions'] = $filedimensions;
             }
