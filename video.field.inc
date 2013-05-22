@@ -261,11 +261,19 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
       if (empty($item) || empty($item['fid'])) {
         continue;
       }
+
       // Check whether transcoding is enabled for this file
       if (isset($queues[$item['fid']])) {
+        $items[$id][$delta]['fid'] = intval($item['fid']);
+        $items[$id][$delta]['timestamp'] = intval($item['timestamp']);
+        $items[$id][$delta]['filesize'] = intval($item['filesize']);
+        $items[$id][$delta]['uid'] = intval($item['uid']);
+        $items[$id][$delta]['thumbnail'] = intval($item['thumbnail']);
+        $items[$id][$delta]['status'] = intval($item['status']);
         $items[$id][$delta]['autoconversion'] = TRUE;
         $items[$id][$delta]['conversioncompleted'] = $queues[$item['fid']]->status == VIDEO_RENDERING_COMPLETE;
-        $items[$id][$delta]['conversionstatus'] = $queues[$item['fid']]->status;
+        $items[$id][$delta]['conversionstatus'] = intval($queues[$item['fid']]->status);
+        $items[$id][$delta]['duration'] = intval($queues[$item['fid']]->duration);
 
         // Load converted files
         $items[$id][$delta]['playablefiles'] = array();
@@ -285,6 +293,7 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
       else {
         $items[$id][$delta]['playablefiles'] = array((object)$items[$id][$delta]);
         $items[$id][$delta]['autoconversion'] = FALSE;
+        $items[$id][$delta]['duration'] = NULL;
       }
 
       // Load thumbnail
@@ -293,6 +302,7 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
         $items[$id][$delta]['thumbnailfile'] = NULL;
       }
       else {
+        $items[$id][$delta]['thumbnail'] = intval($item['thumbnail']);
         $items[$id][$delta]['thumbnailfile'] = $files[$item['thumbnail']];
       }
     }
