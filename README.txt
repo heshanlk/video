@@ -2,6 +2,13 @@
 
 This readme file is still under construction.
 
+## Using Zencoder locally
+
+If you testing out the Video module and Zencoder on localhost, you'll need to
+use Zencoder's Fetcher script to be notified when a video is finished.
+
+See [the complete instructions](https://app.zencoder.com/docs/guides/advanced-integration/getting-zencoder-notifications-while-developing-locally).
+
 ## Troubleshooting
 
 ### FFmpeg errors
