@@ -86,20 +86,43 @@ function video_file_browser() {
 /**
  * Menu callback : video/embed
  */
-function video_file_embed(stdClass $node, $width, $height) {
-  $fields = field_info_instances('node', $node->type);
-  foreach ($fields as $field_type => $field) {
-    if ($field['widget']['type'] == 'video_upload') {
-      $video_field = $field;
-    }
+function video_file_embed($entity_id, $entity_type, $field_name, $width, $height) {
+  // Translate the field name from URL conventions and shorthand.
+  $field_name = strtr($field_name, '-', '_');
+  if (!preg_match('/^field_/', $field_name)) {
+    $field_name = 'field_'. $field_name;
   }
+
+  // Load the entity and field.
+  $field = field_info_field($field_name);
+  $entity = video_utility::loadEntity($entity_type, $entity_id);
+  if (empty($field) || empty($entity)) {
+    return MENU_NOT_FOUND;
+  }
+
+  // Check access to the field.
+  if (!field_access('view', $field, $entity_type, $entity)) {
+    return MENU_ACCESS_DENIED;
+  }
+
+  list($id, $rev, $bundle) = entity_extract_ids($entity_type, $entity);
+  $instance = field_info_instance($entity_type, $field['field_name'], $bundle);
+
+  // Not instance for this entity, wrong field type, or wrong module.
+  if (empty($instance) || $field['type'] !== 'video' || $field['module'] != 'video') {
+    return MENU_NOT_FOUND;
+  }
+
+  // Let field_get_items() handle language and field fetching
+  // considerations. Also protects against future API changes.
+  $items = field_get_items($entity_type, $entity, $instance['field_name']);
 
   $element = array(
     '#theme' => 'video_formatter_player',
-    '#item' => $node->{$video_field['field_name']}['und'][0],
-    '#entity' => $node,
-    '#field' => $video_field,
-    '#instance' => $video_field,
+    '#item' => reset($items),
+    '#entity' => $entity,
+    '#field' => $field,
+    '#instance' => $instance,
     '#player_dimensions' => $width . 'x' . $height,
   );
   return drupal_render($element);

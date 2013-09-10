@@ -40,11 +40,11 @@ function video_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
-  $items['video/embed/%node/%/%'] = array(
+  $items['video/embed/%/%/%/%/%'] = array(
     'page callback' => 'video_file_embed',
     'file' => 'video.pages.inc',
-    'page arguments' => array(2, 3, 4),
-    'access arguments' => array('access content'),
+    'page arguments' => array(3, 2, 4, 5, 6),
+    'access arguments' => array('access content'), // field_access() deferred to page callback
     'type' => MENU_CALLBACK,
   );
   return $items;

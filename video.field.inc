@@ -1101,10 +1101,16 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
           );
         }
         elseif ($settings['image_link'] == 'colorbox') {
-          $dimentions = explode('x', $settings['widthxheight']);
+          list($entity_id, $rev, $bundle) = entity_extract_ids($entity_type, $entity);
+
+          // Convert to a URL friendly version, and remove "field_" prefix for brevity.
+          $field_path = preg_replace(array('/^field_/', '/_/'), array('', '-'), $field['field_name']);
+          $field_path = "{$entity_type}/{$entity_id}/{$field_path}";
+
+          $dimensions = explode('x', $settings['widthxheight']);
           $uri = array(
-            'path' => 'video/embed/' . $entity->nid . '/' . str_replace('x', '/',$settings['widthxheight']),
-            'options' => array('query' => array('width' => $dimentions[0], 'height' => $dimentions[1] + 10, 'iframe' => 'true'))
+            'path' => 'video/embed/'. $field_path . '/' . str_replace('x', '/',$settings['widthxheight']),
+            'options' => array('query' => array('width' => $dimensions[0], 'height' => $dimensions[1] + 10, 'iframe' => 'true'))
           );
        }
 
