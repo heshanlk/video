@@ -234,7 +234,7 @@ class video_utility {
 
     // Add other extensions that don't get a separate player but are recognized as playable anyway.
     return array_merge($supported_extensions, array(
-      'oga', 'wma', 'flac',
+      'oga', 'wma', 'flac', 'wav',
       'ts', 'mxf',
     ));
   }
