@@ -214,6 +214,7 @@ class video_utility {
 
   public static function getDimensions() {
     $dims = explode("\n", str_replace("\r", '', variable_get('video_dimensions', self::getDefaultDimensions())));
+    $dims = array_filter($dims);
     return array_combine($dims, $dims);
   }
 

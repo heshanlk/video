@@ -223,10 +223,10 @@ function video_general_admin_settings() {
   return system_settings_form($form);
 }
 
-function video_general_admin_settings_validate($form, $form_state) {
+function video_general_admin_settings_validate($form, &$form_state) {
   $v =& $form_state['values'];
   if (!empty($v['video_dimensions'])) {
-    $v['video_dimensions'] = str_replace("\r", '', $v['video_dimensions']);
+    $v['video_dimensions'] = trim(str_replace("\r", '', $v['video_dimensions']));
     if (!video_utility::validateDimensionList($v['video_dimensions'])) {
       form_error($form['video_dimensions'], t('The list of dimensions contains errors: only enter new lines and dimensions in the form widthxheight.'));
     }
