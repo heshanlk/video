@@ -11,13 +11,17 @@ function video_transcoder_admin_settings() {
   $transcoder = new Transcoder();
   $options = $transcoder->getAllTranscoders();
 
+  foreach ($options['help'] as $message) {
+    drupal_set_message($message, 'warning');
+  }
+
   $form = array();
   $form['video_convertor'] = array(
     '#type' => 'radios',
     '#title' => t('Video transcoder'),
     '#default_value' => variable_get('video_convertor', 'TranscoderAbstractionFactoryFfmpeg'),
     '#options' => $options['radios'],
-    '#description' => '<p>' . t('Select a video transcoder will help you convert videos and generate thumbnails.') . '</p>' . theme('item_list', array('items' => $options['help'])),
+    '#description' => '<p>' . t('Select a video transcoder will help you convert videos and generate thumbnails.') . '</p>',
   );
   $form = $form + $options['admin_settings'];
 

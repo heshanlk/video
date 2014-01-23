@@ -262,11 +262,11 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
     registry_rebuild();
 
     if (!module_exists('zencoderapi')) {
-      $errormsg = t('You must install and enable the Zencoder API module to use Zencoder to transcode videos.');
+      $errormsg = t('You must <a href="@url">enable the Zencoder API module</a> to use Zencoder to transcode videos.', array('@url' => url('admin/modules/', array('fragment' => 'edit-modules-media-zencoderapi-enable'))));
       return FALSE;
     }
     elseif (!class_exists('Services_Zencoder')) {
-      $errormsg = t('The Zencoder API module has not been setup properly.');
+      $errormsg = t('The Zencoder API module has not been setup properly. Make sure that <a href="@url" target="_blank">the Zencoder API library</a> (from Github) is installed in sites/all/libraries/zencoder', array('@url' => 'https://github.com/zencoder/zencoder-php/archive/master.zip'));
       return FALSE;
     }
 
