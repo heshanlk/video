@@ -31,8 +31,46 @@ function video_field_info() {
       ),
       'default_widget' => 'video_upload',
       'default_formatter' => 'video_formatter_player',
+      'property_type' => 'field_item_video',
+      'property_callbacks' => array(
+        'entity_metadata_field_file_callback',
+        'video_metadata_field_property_callback',
+      ),
     ),
   );
+}
+
+/**
+ * Property callback for the Entity Metadata framework.
+ */
+function video_metadata_field_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
+
+  $name = $field['field_name'];
+  $property = & $info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+  $property['property info']['thumbnail'] = array(
+    'type' => 'file',
+    'label' => t('The thumbnail file.'),
+    'getter callback' => 'video_entity_metadata_thumbnail_get',
+  );
+
+  $property['property info']['playable_files'] = array(
+    'type' => 'list<file>',
+    'label' => t('The thumbnail file.'),
+    'getter callback' => 'video_entity_metadata_playable_files_get',
+  );
+
+}
+
+function video_entity_metadata_thumbnail_get($item) {
+  return $item['thumbnail'];
+}
+
+function video_entity_metadata_playable_files_get($item) {
+  $fid_list = array();
+  foreach ($item['playablefiles'] as $file) {
+    $fid_list[] = $file->fid;
+  }
+  return $fid_list;
 }
 
 /**
