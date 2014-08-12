@@ -316,7 +316,7 @@ function video_field_load($entity_type, $entities, $field, $instances, $langcode
         // Load converted files
         $items[$id][$delta]['playablefiles'] = array();
         foreach ($outputs as $outputfid => $output) {
-          if ($output->original_fid == $items[$id][$delta]['fid'] && isset($files[$outputfid]) && $files[$outputfid]->filesize > 0) {
+          if ($output->original_fid == $items[$id][$delta]['fid'] && isset($files[$outputfid])) {
             $conv = (array)$files[$outputfid] + (array)$output;
             $items[$id][$delta]['playablefiles'][] = (object)$conv;
           }
