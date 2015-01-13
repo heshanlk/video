@@ -69,7 +69,7 @@ function video_file_browser() {
           '#markup' => '<div class="video-image">' . render($item[0]) . '</div>',
         );
         $form['video_browser']['title'] = array(
-          '#markup' => '<div class="video-title">' . $node->title . '</div>',
+          '#markup' => '<div class="video-title">' . filter_xss($node->title) . '</div>',
         );
         $form['video_browser']['nid'] = array(
           '#type' => 'hidden',
