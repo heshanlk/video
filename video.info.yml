@@ -1,13 +1,7 @@
 name: Video
 type: module
-description: An implementation of a file with cropping and other effects.
+description: Video embedded and upload fields.
 package: Field types
-# core: 8.x
+core: 8.x
 dependencies:
   - file
-
-# Information added by Drupal.org packaging script on 2014-10-22
-version: '8.x-1.x-dev'
-core: '8.x'
-project: "video"
-datestamp: 1414014232

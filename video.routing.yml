@@ -1,6 +1,0 @@
-video.browser_setting:
-  path: '/video/browser'
-  defaults:
-    _controller: '\Drupal\video\Controller\VideoBrowserConfiguration'
-  requirements:
-    _permission: 'access content'

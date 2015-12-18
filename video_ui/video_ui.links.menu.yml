@@ -1,6 +1,0 @@
-video_ui.general_configuration:
-  title: 'Video'
-  description: 'Configure different aspects of the video module and its plugins'
-  weight: 10
-  route_name: video_ui.general_configuration
-  parent: system.admin_config_media
