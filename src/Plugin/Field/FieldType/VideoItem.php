@@ -171,7 +171,7 @@ class VideoItem extends FileItem {
    * {@inheritdoc}
    */
   public function isDisplayed() {
-    // Image items do not have per-item visibility settings.
+    // Video items do not have per-item visibility settings.
     return TRUE;
   }
 
