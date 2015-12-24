@@ -1,6 +1,6 @@
 name: Video
 type: module
-description: Video embedded and upload fields.
+description: A field type for storing uploaded or embedded videos.
 package: Field types
 core: 8.x
 dependencies:
