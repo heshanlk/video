@@ -66,8 +66,12 @@ class VideoItem extends FileItem {
       'file_extensions' => 'mp4 ogv webm',
       'file_directory' => 'videos/[date:custom:Y]-[date:custom:m]',
     ) + parent::defaultFieldSettings();
-    // Remove the description option.
+    // Remove field option.
     unset($settings['description_field']);
+    unset($settings['file_extensions']);
+    unset($settings['file_directory']);
+    unset($settings['max_filesize']);
+    
     return $settings;
   }
 
@@ -122,21 +126,6 @@ class VideoItem extends FileItem {
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $element = array();
-
-    // We need the field-level 'default_video' setting, and $this->getSettings()
-    // will only provide the instance-level one, so we need to explicitly fetch
-    // the field.
-    $settings = $this->getFieldDefinition()->getFieldStorageDefinition()->getSettings();
-
-    $scheme_options = \Drupal::service('stream_wrapper_manager')->getNames(StreamWrapperInterface::WRITE_VISIBLE);
-    $element['uri_scheme'] = array(
-      '#type' => 'radios',
-      '#title' => t('Upload destination'),
-      '#options' => $scheme_options,
-      '#default_value' => $settings['uri_scheme'],
-      '#description' => t('Select where the final files should be stored. Private file storage has significantly more overhead than public files, but allows restricted access to files within this field.'),
-    );
-
     return $element;
   }
 
@@ -146,9 +135,12 @@ class VideoItem extends FileItem {
   public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
     // Get base form from FileItem.
     $element = parent::fieldSettingsForm($form, $form_state);
+    
     // Remove the description option.
     unset($element['description_field']);
-    
+    unset($element['file_directory']);
+    unset($element['file_extensions']);
+    unset($element['max_filesize']);
     return $element;
   }
 
@@ -163,8 +155,21 @@ class VideoItem extends FileItem {
    * {@inheritdoc}
    */
   public static function generateSampleValue(FieldDefinitionInterface $field_definition) {
-    // @ TODO : @see the code at core image module
-    return array();
+    $random = new Random();
+    $settings = $field_definition->getSettings();
+
+    // Prepare destination.
+    $dirname = static::doGetUploadLocation($settings);
+    file_prepare_directory($dirname, FILE_CREATE_DIRECTORY);
+
+    // Generate a file entity.
+    $destination = $dirname . '/' . $random->name(10, TRUE) . '.mp4';
+    $data = $random->paragraphs(3);
+    $file = file_save_data($data, $destination, FILE_EXISTS_ERROR);
+    $values = array(
+      'target_id' => $file->id(),
+    );
+    return $values;
   }
 
   /**
