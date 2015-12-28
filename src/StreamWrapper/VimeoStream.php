@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\video\StreamWrapper\YoutubeStream.
+ * Contains \Drupal\video\StreamWrapper\VimeoStream.
  */
 
 namespace Drupal\video\StreamWrapper;
@@ -11,24 +11,24 @@ use Drupal\Core\StreamWrapper\ReadOnlyStream;
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;
 
 /**
- * Defines a YouTube (youtube://) stream wrapper class.
+ * Defines a YouTube (vimeo://) stream wrapper class.
  */
-class YoutubeStream extends VideoRemoteStreamWrapper {
+class VimeoStream extends VideoRemoteStreamWrapper {
   
-  protected static $base_url = 'http://www.youtube.com/watch';
+  protected static $base_url = 'http://www.vimeo.com';
   
   /**
    * {@inheritdoc}
    */
   public function getName() {
-    return t('YouTube');
+    return t('Vimeo');
   }
 
   /**
    * {@inheritdoc}
    */
   public function getDescription() {
-    return t('Video served by the YouTube services.');
+    return t('Video served by the Vimeo services.');
   }
   
   /**

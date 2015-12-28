@@ -15,7 +15,7 @@ use Drupal\video\ProviderPluginBase;
  *   label = @Translation("Vimeo"),
  *   description = @Translation("Vimeo Video Provider"),
  *   regular_expressions = {
- *     "^https?:\/\/(www\.)?vimeo.com\/(?<id>[0-9]*)$",
+ *     "/^https?:\/\/(www\.)?vimeo.com\/(?<id>[0-9]*)$/",
  *   },
  *   mimetype = "video/vimeo",
  *   stream_wrapper = "vimeo"

@@ -319,6 +319,22 @@ class VideoEmbedWidget extends FileWidget {
   }
   
   /**
+   * Form API callback: Processes a file_generic field element.
+   *
+   * Expands the file_generic type to include the description and display
+   * fields.
+   *
+   * This method is assigned as a #process callback in formElement() method.
+   */
+  public static function process($element, FormStateInterface $form_state, $form) {
+    $element  += parent::process($element, $form_state, $form);
+    $item = $element['#value'];
+    $element['data']['#value'] = $item['data'];
+    $element['data']['#type'] = 'hidden';
+    return $element;
+   }
+  
+  /**
    * Form element validation handler for URL alias form element.
    *
    * @param array $element
@@ -388,11 +404,7 @@ class VideoEmbedWidget extends FileWidget {
           }
         }
       }
-      $values = $this->massageFormValues($values, $form, $form_state);
-      // dsm('calls here');
-      // $values = $newvalues;
-      // use the stream wrapper to create the item
-      
+      $values = $this->massageFormValues($values, $form, $form_state);      
       // Assign the values and remove the empty ones.
       $items->setValue($values);
       $items->filterEmptyItems();

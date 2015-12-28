@@ -67,13 +67,4 @@ class ProviderManager extends DefaultPluginManager implements ProviderManagerInt
     }
     return FALSE;
   }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function loadProviderFromInput($user_input) {
-    $provider_matches = $this->filterApplicableDefinitions($definitions, $input);
-    return $provider_matches ? $this->createInstance($provider_matches['definition']['id'], ['input' => $input]) : FALSE;
-  }
-
 }

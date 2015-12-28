@@ -43,15 +43,4 @@ interface ProviderManagerInterface {
    */
   public function loadApplicableDefinitionMatches(array $definitions, $user_input);
 
-  /**
-   * Load a provider data from user input.
-   *
-   * @param string $input
-   *   Input provided from a field.
-   *
-   * @return \Drupal\video\ProviderPluginInterface|bool
-   *   The loaded plugin.
-   */
-  public function loadProviderFromInput($input);
-
 }

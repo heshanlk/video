@@ -6,3 +6,7 @@ services:
     class: Drupal\video\StreamWrapper\YoutubeStream
     tags:
       - { name: stream_wrapper, scheme: youtube }
+  stream_wrapper.vimeo:
+    class: Drupal\video\StreamWrapper\VimeoStream
+    tags:
+      - { name: stream_wrapper, scheme: vimeo }
