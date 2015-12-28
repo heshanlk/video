@@ -327,7 +327,7 @@ class VideoEmbedWidget extends FileWidget {
    * This method is assigned as a #process callback in formElement() method.
    */
   public static function process($element, FormStateInterface $form_state, $form) {
-    $element  += parent::process($element, $form_state, $form);
+    $element = parent::process($element, $form_state, $form);
     $item = $element['#value'];
     $element['data']['#value'] = $item['data'];
     $element['data']['#type'] = 'hidden';
