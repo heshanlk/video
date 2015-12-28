@@ -38,7 +38,7 @@ class Vimeo extends ProviderPluginBase {
         'height' => $settings['height'],
         'frameborder' => '0',
         'allowfullscreen' => 'allowfullscreen',
-        'src' => sprintf('https://player.vimeo.com/video/%s?autoplay=%d', $data['id'], $autoplay),
+        'src' => sprintf('https://player.vimeo.com/video/%s?autoplay=%d', $data['id'], $settings['autoplay']),
       ],
     ];
   }
