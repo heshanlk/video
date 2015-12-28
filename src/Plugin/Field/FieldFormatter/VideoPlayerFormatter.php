@@ -61,8 +61,6 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
   public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, AccountInterface $current_user) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
     $this->currentUser = $current_user;
-    $widget = \Drupal::service('plugin.manager.field.widget')->getInstance(array('field_definition' => $field_definition));
-    dsm($widget);
   }
 
   /**
