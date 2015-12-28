@@ -25,20 +25,22 @@ use Drupal\video\ProviderPluginBase;
  * )
  */
 class YouTube extends ProviderPluginBase {
-
+  
   /**
    * {@inheritdoc}
    */
-  public function renderEmbedCode($width, $height, $autoplay) {
+  public function renderEmbedCode($settings) {
+    $file = $this->getVideoFile();
+    $data = $this->getVideoMetadata();
     return [
       '#type' => 'html_tag',
       '#tag' => 'iframe',
       '#attributes' => [
-        'width' => $width,
-        'height' => $height,
+        'width' => $settings['width'],
+        'height' => $settings['height'],
         'frameborder' => '0',
         'allowfullscreen' => 'allowfullscreen',
-        'src' => sprintf('https://www.youtube.com/embed/%s?autoplay=%d&start=%d', $this->getVideoId(), $autoplay, $this->getTimeIndex()),
+        'src' => sprintf('https://www.youtube.com/embed/%s?autoplay=%d&start=%d', $data['id'], $autoplay, NULL),
       ],
     ];
   }

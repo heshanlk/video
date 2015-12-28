@@ -16,18 +16,18 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 abstract class ProviderPluginBase implements ProviderPluginInterface, ContainerFactoryPluginInterface {
 
   /**
-   * The ID of the video.
+   * File object to handle
    *
-   * @var string
+   * @var Drupal\file\Entity\File $file
    */
-  protected $videoId;
+  protected $file;
 
   /**
-   * The input that caused the embed provider to be selected.
+   * Additional metadata for the embedded video object
    *
-   * @var string
+   * @var array
    */
-  protected $input;
+  protected $metadata = array();
 
   /**
    * Create a plugin with the given input.
@@ -40,11 +40,8 @@ abstract class ProviderPluginBase implements ProviderPluginInterface, ContainerF
    * @throws \Exception
    */
   public function __construct($configuration) {
-    if (!static::isApplicable($configuration['input'])) {
-      throw new \Exception('Tried to create a video provider plugin with invalid input.');
-    }
-    $this->input = $configuration['input'];
-    $this->videoId = $this->getIdFromInput($configuration['input']);
+    $this->file = $configuration['file'];
+    $this->metadata = $configuration['metadata'];
   }
 
   /**
@@ -53,8 +50,8 @@ abstract class ProviderPluginBase implements ProviderPluginInterface, ContainerF
    * @return string
    *   The video ID.
    */
-  protected function getVideoId() {
-    return $this->videoId;
+  protected function getVideoFile() {
+    return $this->file;
   }
 
   /**
@@ -63,16 +60,8 @@ abstract class ProviderPluginBase implements ProviderPluginInterface, ContainerF
    * @return string
    *   The raw input from the user.
    */
-  protected function getInput() {
-    return $this->input;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function isApplicable($input) {
-    $id = static::getIdFromInput($input);
-    return !empty($id);
+  protected function getVideoMetadata() {
+    return $this->metadata;
   }
 
   /**

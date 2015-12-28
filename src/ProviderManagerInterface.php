@@ -42,5 +42,22 @@ interface ProviderManagerInterface {
    *   The relevant plugin or FALSE on failure.
    */
   public function loadApplicableDefinitionMatches(array $definitions, $user_input);
+  
+  /**
+   * Load a provider from stream wrapper.
+   *
+   * @param string $stream
+   *   Stream used from the file.
+   *
+   * @param Drupal\file\Entity\File $file
+   *   The source file.
+   *
+   * @param array $data
+   *   Source file metadata.
+   *
+   * @return \Drupal\video\ProviderPluginInterface|bool
+   *   The loaded plugin.
+   */
+  public function loadProviderFromStream($stream, $file, $data = array());
 
 }

@@ -11,27 +11,16 @@ namespace Drupal\video;
  * Providers an interface for embed providers.
  */
 interface ProviderPluginInterface {
-
+  
   /**
-   * Check if the plugin is applicable to the user input.
+   * Render embed code.
    *
-   * @param string $input
-   *   User input to check if it's a URL for the given provider.
+   * @param string $settings
+   *   The settings of the video player.
    *
-   * @return bool
-   *   If the plugin works for the given URL.
+   * @return mixed
+   *   A renderable array of the embed code.
    */
-  public static function isApplicable($input);
-
-  /**
-   * Get the ID of the video from user input.
-   *
-   * @param string $input
-   *   Input a user would enter into a video field.
-   *
-   * @return string
-   *   The ID in whatever format makes sense for the provider.
-   */
-  public static function getIdFromInput($input);
+  public function renderEmbedCode($settings);
 
 }

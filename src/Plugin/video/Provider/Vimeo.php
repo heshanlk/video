@@ -23,20 +23,22 @@ use Drupal\video\ProviderPluginBase;
  */
 
 class Vimeo extends ProviderPluginBase {
-
+  
   /**
    * {@inheritdoc}
    */
-  public function renderEmbedCode($width, $height, $autoplay) {
+  public function renderEmbedCode($settings) {
+    $file = $this->getVideoFile();
+    $data = $this->getVideoMetadata();
     return [
       '#type' => 'html_tag',
       '#tag' => 'iframe',
       '#attributes' => [
-        'width' => $width,
-        'height' => $height,
+        'width' => $settings['width'],
+        'height' => $settings['height'],
         'frameborder' => '0',
         'allowfullscreen' => 'allowfullscreen',
-        'src' => sprintf('https://player.vimeo.com/video/%s?autoplay=%d', $this->getVideoId(), $autoplay),
+        'src' => sprintf('https://player.vimeo.com/video/%s?autoplay=%d', $data['id'], $autoplay),
       ],
     ];
   }
