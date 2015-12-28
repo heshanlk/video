@@ -1,0 +1,8 @@
+services:
+  video.provider_manager:
+    class: Drupal\video\ProviderManager
+    parent: default_plugin_manager
+  stream_wrapper.youtube:
+    class: Drupal\video\StreamWrapper\YoutubeStream
+    tags:
+      - { name: stream_wrapper, scheme: youtube }

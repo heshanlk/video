@@ -275,8 +275,6 @@ class VideoUploadWidget extends FileWidget {
   /**
    * Form API callback: Processes a video_upload field element.
    *
-   * Expands the video_upload type to include the alt and title fields.
-   *
    * This method is assigned as a #process callback in formElement() method.
    */
   public static function process($element, FormStateInterface $form_state, $form) {
