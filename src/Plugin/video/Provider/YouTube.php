@@ -44,4 +44,12 @@ class YouTube extends ProviderPluginBase {
       ],
     ];
   }
+  
+  /**
+   * {@inheritdoc}
+   */
+  public function getRemoteThumbnailUrl() {
+    $data = $this->getVideoMetadata();
+    return 'http://img.youtube.com/vi/' . $data['id'] . "/maxresdefault.jpg";
+  }
 }

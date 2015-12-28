@@ -71,11 +71,11 @@ class ProviderManager extends DefaultPluginManager implements ProviderManagerInt
   /**
    * {@inheritdoc}
    */
-  public function loadProviderFromStream($stream, $file, $metadata = array()) {
+  public function loadProviderFromStream($stream, $file, $metadata = array(), $settings = array()) {
     $definitions = $this->getDefinitions();
     foreach ($definitions as $definition) {
       if($definition['stream_wrapper'] == $stream){
-        return $definition ? $this->createInstance($definition['id'], ['file' => $file, 'metadata' => $metadata]) : FALSE;
+        return $definition ? $this->createInstance($definition['id'], ['file' => $file, 'metadata' => $metadata, 'settings' => $settings]) : FALSE;
       }
     }
   }
