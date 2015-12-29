@@ -63,15 +63,11 @@ class VideoItem extends FileItem {
    */
   public static function defaultFieldSettings() {
     $settings = array(
-      'file_extensions' => 'mp4 ogv webm',
+      'file_extensions' => '',
       'file_directory' => 'videos/[date:custom:Y]-[date:custom:m]',
     ) + parent::defaultFieldSettings();
     // Remove field option.
     unset($settings['description_field']);
-    unset($settings['file_extensions']);
-    unset($settings['file_directory']);
-    unset($settings['max_filesize']);
-    
     return $settings;
   }
 

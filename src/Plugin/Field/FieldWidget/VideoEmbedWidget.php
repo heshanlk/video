@@ -380,27 +380,37 @@ class VideoEmbedWidget extends FileWidget {
         });
       }
       // Let the widget massage the submitted values.
-      foreach($values as &$value){
+      foreach($values as $delta => &$value){
         if(!empty($value['value']) && empty($value['fids'])){
           // ready to save the file
           $provider_manager = \Drupal::service('video.provider_manager');
-          $enabled_providers = $provider_manager->loadDefinitionsFromOptionList($element['#allowed_providers']);
+          $allowed_providers = $this->getSetting('allowed_providers');
+          $enabled_providers = $provider_manager->loadDefinitionsFromOptionList($allowed_providers);
           if ($provider_matches = $provider_manager->loadApplicableDefinitionMatches($enabled_providers, $value['value'])) {
             $definition  = $provider_matches['definition'];
             $matches = $provider_matches['matches'];
             $uri = $definition['stream_wrapper'] . '://' . $matches['id'];
-            $result = db_query('SELECT count(f.fid) FROM {file_managed} f WHERE f.uri = :uri', array(':uri' => $uri));
+            
+            $storage = \Drupal::entityManager()->getStorage('file');
+            $results = $storage->getQuery()
+                    ->condition('uri', $uri)
+                    ->execute();
             if(!(count($results) > 0)){
               $user = \Drupal::currentUser();
               $file = File::Create([
                 'uri' => $uri,
                 'filemime' => $definition['mimetype'],
-                'filesize' => 0,
+                'filesize' => 1,
                 'uid' => $user->id()
                 ]);
               $file->save();
+              unset($values[$delta]);
+              $values[] = array('fids' => array($file->id()), 'data' => serialize($matches));
             }
-            $values[] = array('fids' => array($file->id()), 'data' => serialize($matches));
+            else {
+              unset($values[$delta]);
+              $values[] = array('fids' => array(reset($results)), 'data' => serialize($matches));
+            }
           }
         }
       }

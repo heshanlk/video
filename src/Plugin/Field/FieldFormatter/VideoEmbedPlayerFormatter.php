@@ -46,7 +46,7 @@ class VideoEmbedPlayerFormatter extends FormatterBase implements ContainerFactor
     foreach ($items as $delta => $item) {
       $file = File::load($item->target_id);
       $metadata = isset($item->data) ? unserialize($item->data) : array();
-      $scheme =  FileSystem::uriScheme($file->getFileUri());
+      $scheme = file_uri_scheme($file->getFileUri());
       $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata);
       $element[$delta] = $provider->renderEmbedCode($settings);
     }

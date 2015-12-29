@@ -61,7 +61,7 @@ class VideoEmbedThumbnailFormatter extends FormatterBase implements ContainerFac
     foreach ($items as $delta => $item) {
       $file = File::load($item->target_id);
       $metadata = isset($item->data) ? unserialize($item->data) : array();
-      $scheme =  FileSystem::uriScheme($file->getFileUri());
+      $scheme = file_uri_scheme($file->getFileUri());
       $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata, $widget_settings);
       $url = FALSE;
       if ($this->getSetting('link_image_to') == static::LINK_CONTENT) {

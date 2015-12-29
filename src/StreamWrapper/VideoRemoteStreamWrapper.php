@@ -57,7 +57,7 @@ abstract class VideoRemoteStreamWrapper extends ReadOnlyStream {
    * Returns the base path for stream wrapper.
    */
   public static function basePath(\SplString $site_path = NULL) {
-    return $base_url;
+    return static::baseUrl();
   }
   
   /**
