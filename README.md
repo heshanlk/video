@@ -2,7 +2,7 @@ Video Module
 ------------
 Video module allows you to embedded videos from YouTube and Vimeo (can be extended to any provider) and upload videos and play using HTML5 video player (can be extended).
 
-Supporting Embeded Providers
+Supporting Embedded Providers
 ----------------------------
 * YouTube
 * Vimeo
@@ -18,7 +18,7 @@ https://github.com/heshanlk/Video-Provider-YouTube-Example
 How to Install
 --------------
 * Use this guide to download and install the module https://www.drupal.org/documentation/install/modules-themes/modules-8
-* There are NO any addtional settings
+* There are NO any additional settings
 
 
 How to Use
