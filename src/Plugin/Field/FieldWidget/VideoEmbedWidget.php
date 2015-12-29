@@ -46,7 +46,7 @@ class VideoEmbedWidget extends FileWidget {
   public static function defaultSettings() {
     $settings = array(
       'file_directory' => 'video-thumbnails/[date:custom:Y]-[date:custom:m]',
-      'allowed_providers' => ["youtube"],
+      'allowed_providers' => ["youtube" => "youtube"],
       'uri_scheme' => 'public'
     );
     return $settings;

@@ -24,7 +24,7 @@ use Drupal\file\Plugin\Field\FieldType\FileItem;
  *   description = @Translation("This field stores the ID of an video file or embedded video as an integer value."),
  *   category = @Translation("Reference"),
  *   default_widget = "video_embed",
- *   default_formatter = "video_player",
+ *   default_formatter = "video_embed_player",
  *   column_groups = {
  *     "file" = {
  *       "label" = @Translation("File"),
