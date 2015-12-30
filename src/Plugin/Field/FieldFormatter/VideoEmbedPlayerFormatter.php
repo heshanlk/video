@@ -48,7 +48,9 @@ class VideoEmbedPlayerFormatter extends FormatterBase implements ContainerFactor
       $metadata = isset($item->data) ? unserialize($item->data) : array();
       $scheme = file_uri_scheme($file->getFileUri());
       $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata);
-      $element[$delta] = $provider->renderEmbedCode($settings);
+      if($provider){
+        $element[$delta] = $provider->renderEmbedCode($settings);
+      }
     }
     return $element;
   }
