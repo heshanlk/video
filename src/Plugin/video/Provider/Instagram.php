@@ -33,11 +33,22 @@ class Instagram extends ProviderPluginBase {
       '#tag' => 'iframe',
       '#attributes' => [
         'width' => $settings['width'],
-        'height' => $settings['height'],
+        'height' => '100%',
         'frameborder' => '0',
         'allowfullscreen' => 'allowfullscreen',
         'src' => sprintf('//instagram.com/p/%s/embed/?autoplay=%d', $data['id'], $settings['autoplay']),
       ],
+      '0' => array(
+        '#type' => 'html_tag',
+        '#tag' => 'script',
+        '#attributes' => array(
+             'type' => 'text/javascript',
+             'src' => '//platform.instagram.com/en_US/embeds.js',
+             'async',
+             'defer'
+        ),
+        '#value' => '',
+      ),
     ];
   }
   
