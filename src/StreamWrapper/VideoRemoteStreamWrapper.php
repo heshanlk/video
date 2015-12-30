@@ -95,14 +95,6 @@ abstract class VideoRemoteStreamWrapper extends ReadOnlyStream {
   }
   
   /**
-   * Gets the path for the video thumbnail for the video remote stream wrapper.
-   *
-   * @return string
-   *   String specifying the path.
-   */
-  abstract function getLocalThumbnailPath();
-  
-  /**
    * Returns the canonical absolute path of the URI, if possible.
    *
    * @param string $uri

@@ -10,3 +10,7 @@ services:
     class: Drupal\video\StreamWrapper\VimeoStream
     tags:
       - { name: stream_wrapper, scheme: vimeo }
+  stream_wrapper.dailymotion:
+    class: Drupal\video\StreamWrapper\DailymotionStream
+    tags:
+      - { name: stream_wrapper, scheme: dailymotion }
