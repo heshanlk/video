@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\video\StreamWrapper\DailymotionStream.
+ * Contains \Drupal\video\StreamWrapper\VineStream.
  */
 
 namespace Drupal\video\StreamWrapper;
@@ -11,24 +11,24 @@ use Drupal\Core\StreamWrapper\ReadOnlyStream;
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;
 
 /**
- * Defines a Dailymotion (dailymotion://) stream wrapper class.
+ * Defines a VineStream (vine://) stream wrapper class.
  */
-class DailymotionStream extends VideoRemoteStreamWrapper {
+class VineStream extends VideoRemoteStreamWrapper {
   
-  protected static $base_url = 'http://www.dailymotion.com/video';
+  protected static $base_url = 'https://vine.co/v';
   
   /**
    * {@inheritdoc}
    */
   public function getName() {
-    return t('Dailymotion');
+    return t('Vine');
   }
 
   /**
    * {@inheritdoc}
    */
   public function getDescription() {
-    return t('Video served by the Dailymotion services.');
+    return t('Video served by the Vine services.');
   }
   
   /**

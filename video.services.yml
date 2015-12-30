@@ -14,3 +14,7 @@ services:
     class: Drupal\video\StreamWrapper\DailymotionStream
     tags:
       - { name: stream_wrapper, scheme: dailymotion }
+  stream_wrapper.vine:
+    class: Drupal\video\StreamWrapper\VineStream
+    tags:
+      - { name: stream_wrapper, scheme: vine }
