@@ -18,3 +18,7 @@ services:
     class: Drupal\video\StreamWrapper\VineStream
     tags:
       - { name: stream_wrapper, scheme: vine }
+  stream_wrapper.instagram:
+    class: Drupal\video\StreamWrapper\InstagramStream
+    tags:
+      - { name: stream_wrapper, scheme: instagram }
