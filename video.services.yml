@@ -22,3 +22,7 @@ services:
     class: Drupal\video\StreamWrapper\InstagramStream
     tags:
       - { name: stream_wrapper, scheme: instagram }
+  stream_wrapper.facebook:
+    class: Drupal\video\StreamWrapper\FacebookStream
+    tags:
+      - { name: stream_wrapper, scheme: facebook }
