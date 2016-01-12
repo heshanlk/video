@@ -8,6 +8,7 @@
 namespace Drupal\video\Plugin\video\Provider;
 
 use Drupal\video\ProviderPluginBase;
+use GuzzleHttp\Exception\ClientException;
 
 /**
  * @VideoEmbeddableProvider(
@@ -25,7 +26,7 @@ use Drupal\video\ProviderPluginBase;
  * )
  */
 class YouTube extends ProviderPluginBase {
-  
+
   /**
    * {@inheritdoc}
    */
@@ -50,6 +51,29 @@ class YouTube extends ProviderPluginBase {
    */
   public function getRemoteThumbnailUrl() {
     $data = $this->getVideoMetadata();
-    return 'http://img.youtube.com/vi/' . $data['id'] . "/maxresdefault.jpg";
+    $url = '';
+
+    // Sometimes the video has not every version of thumbnails. Guzzle throws
+    // exception at that time. Now catch it, and try download another size of
+    // thumbnail.
+    $img_urls = [
+      'http://img.youtube.com/vi/' . $data['id'] . "/maxresdefault.jpg",
+      'http://img.youtube.com/vi/' . $data['id'] . "/hqdefault.jpg",
+      'http://img.youtube.com/vi/' . $data['id'] . "/default.jpg",
+    ];
+
+    foreach ($img_urls as $url) {
+      try {
+        $this->httpClient->request('GET', $url);
+      }
+      catch (ClientException $e) {
+        $e->getResponse();
+        if ($e->getCode() != 404) {
+          throw $e;
+        }
+      }
+    }
+
+    return $url;
   }
 }
