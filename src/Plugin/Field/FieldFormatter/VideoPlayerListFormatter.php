@@ -23,7 +23,7 @@ use Drupal\video\Plugin\Field\FieldFormatter\VideoPlayerFormatter;
  *
  * @FieldFormatter(
  *   id = "video_player_list",
- *   label = @Translation("Video Player"),
+ *   label = @Translation("HTML5 Video Player"),
  *   field_types = {
  *     "video"
  *   }
@@ -62,11 +62,16 @@ class VideoPlayerListFormatter extends VideoPlayerFormatter implements Container
    * {@inheritdoc}
    */
   public static function isApplicable(FieldDefinitionInterface $field_definition) {
-    $entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
-    $widget = $entity_form_display->getRenderer($field_definition->getName());
-    $widget_id = $widget->getBaseId();
-    if($field_definition->isList() && $widget_id == 'video_upload'){
+    if(empty($field_definition->getTargetBundle()) && $field_definition->isList()){
       return TRUE;
+    }
+    else{
+      $entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+      $widget = $entity_form_display->getRenderer($field_definition->getName());
+      $widget_id = $widget->getBaseId();
+      if($field_definition->isList() && $widget_id == 'video_upload'){
+        return TRUE;
+      }
     }
     return FALSE;
   }

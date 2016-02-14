@@ -22,7 +22,7 @@ use Drupal\Core\Field\FieldDefinitionInterface;
  *
  * @FieldFormatter(
  *   id = "video_embed_player",
- *   label = @Translation("Video Player"),
+ *   label = @Translation("Embedded Video Player"),
  *   field_types = {
  *     "video"
  *   }
@@ -148,11 +148,16 @@ class VideoEmbedPlayerFormatter extends FormatterBase implements ContainerFactor
    * {@inheritdoc}
    */
   public static function isApplicable(FieldDefinitionInterface $field_definition) {
-    $entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
-    $widget = $entity_form_display->getRenderer($field_definition->getName());
-    $widget_id = $widget->getBaseId();
-    if($widget_id == 'video_embed'){
+    if(empty($field_definition->getTargetBundle())){
       return TRUE;
+    }
+    else{
+      $entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+      $widget = $entity_form_display->getRenderer($field_definition->getName());
+      $widget_id = $widget->getBaseId();
+      if($widget_id == 'video_embed'){
+        return TRUE;
+      }
     }
     return FALSE;
   }
