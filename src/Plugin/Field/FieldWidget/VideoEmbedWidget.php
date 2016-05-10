@@ -301,10 +301,12 @@ class VideoEmbedWidget extends FileWidget {
    * {@inheritdoc}
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
-    if(empty($items[$delta]->getValue())){
+    $value = NestedArray::getValue($form_state->getUserInput(), $element['#field_parents'])[$items->getName()][0]['value'];
+    if(empty($items[$delta]->getValue()) || !empty($value)){
       $element['value'] =  $element + array(
         '#type' => 'textfield',
         '#attributes' => ['class' => ['js-text-full', 'text-full']],
+          '#default_value' => empty($value) ? '' : $value,
         '#element_validate' => [
           [get_class($this), 'validateFormElement'],
         ],
