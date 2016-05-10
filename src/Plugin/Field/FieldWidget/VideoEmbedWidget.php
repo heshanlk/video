@@ -413,6 +413,11 @@ class VideoEmbedWidget extends FileWidget {
             }
           }
         }
+
+        if (!isset($value['fids'])) {
+          // If fids is still not set, remove this value, otherwise massageFormValues() will fail.
+          unset($values[$delta]);
+        }
       }
       $values = $this->massageFormValues($values, $form, $form_state);      
       // Assign the values and remove the empty ones.
