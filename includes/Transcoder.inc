@@ -279,6 +279,11 @@ class Transcoder {
       $module_path = drupal_get_path('module', $module) . '/transcoders';
       foreach (file_scan_directory($module_path, '/.*\.inc/') as $filekey => $file) {
         $file->module = $module;
+
+        // Get filename to retrieve transcoder class name
+        $filename = explode(".", $file->name);
+        $file->name = $filename[0];
+
         $module_files[] = $file;
       }
       $files = array_merge($files, $module_files);
