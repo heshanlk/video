@@ -688,7 +688,7 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $height = $sourcedimensions[1] * $factor;
         }
         else {
-          $factor = $targetdimensions[1] < $sourcedimensions[1] ? $targetdimensions[1] / $sourcedimensions[1] : $sourcedimensions[1] / $targetdimensions[1];
+          $factor = $targetdimensions[1] > $sourcedimensions[1] ? $targetdimensions[1] / $sourcedimensions[1] : $targetdimensions[1] / $sourcedimensions[1];
           $width = $sourcedimensions[0] * $factor;
           $height = $targetdimensions[1];
         }
