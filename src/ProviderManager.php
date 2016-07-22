@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\ProviderManager.
- */
-
 namespace Drupal\video;
 
 use Drupal\Component\Plugin\Mapper\MapperInterface;

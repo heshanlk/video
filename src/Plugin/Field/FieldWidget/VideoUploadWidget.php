@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\Plugin\Field\FieldWidget\VideoUploadWidget.
- */
-
 namespace Drupal\video\Plugin\Field\FieldWidget;
 
 use Drupal\Component\Utility\Bytes;

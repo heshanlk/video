@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\Plugin\video\Provider\Instagram.
- */
-
 namespace Drupal\video\Plugin\video\Provider;
 
 use Drupal\video\ProviderPluginBase;

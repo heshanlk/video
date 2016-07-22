@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\video\ProviderPluginBase
- */
-
 namespace Drupal\video;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;

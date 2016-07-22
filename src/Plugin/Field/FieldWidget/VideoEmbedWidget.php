@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\Plugin\Field\FieldWidget\VideoEmbedWidget.
- */
-
 namespace Drupal\video\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Field\FieldItemListInterface;

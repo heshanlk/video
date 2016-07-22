@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\StreamWrapper\VideoRemoteStreamWrapper.
- */
-
 namespace Drupal\video\StreamWrapper;
 
 use Drupal\Core\StreamWrapper\ReadOnlyStream;

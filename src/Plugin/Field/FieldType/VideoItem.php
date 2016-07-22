@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\Plugin\Field\FieldType\VideoItem.
- */
-
 namespace Drupal\video\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\FieldDefinitionInterface;

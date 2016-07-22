@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\Plugin\Field\FieldFormatter\VideoEmbedPlayerFormatter.
- */
-
 namespace Drupal\video\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FormatterBase;

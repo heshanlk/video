@@ -1,0 +1,390 @@
+diff --git a/src/Annotation/VideoEmbeddableProvider.php b/src/Annotation/VideoEmbeddableProvider.php
+index 73e2121..d67fecb 100644
+--- a/src/Annotation/VideoEmbeddableProvider.php
++++ b/src/Annotation/VideoEmbeddableProvider.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Annotation\VideoEmbeddableProvider.
+- */
+-
+ namespace Drupal\video\Annotation;
+ 
+ use Drupal\Component\Annotation\Plugin;
+diff --git a/src/Plugin/Field/FieldFormatter/VideoEmbedPlayerFormatter.php b/src/Plugin/Field/FieldFormatter/VideoEmbedPlayerFormatter.php
+index d8a41d8..17852b8 100644
+--- a/src/Plugin/Field/FieldFormatter/VideoEmbedPlayerFormatter.php
++++ b/src/Plugin/Field/FieldFormatter/VideoEmbedPlayerFormatter.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldFormatter\VideoEmbedPlayerFormatter.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldFormatter;
+ 
+ use Drupal\Core\Field\FormatterBase;
+diff --git a/src/Plugin/Field/FieldFormatter/VideoEmbedThumbnailFormatter.php b/src/Plugin/Field/FieldFormatter/VideoEmbedThumbnailFormatter.php
+index bb0b228..9df9c6a 100644
+--- a/src/Plugin/Field/FieldFormatter/VideoEmbedThumbnailFormatter.php
++++ b/src/Plugin/Field/FieldFormatter/VideoEmbedThumbnailFormatter.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldFormatter\VideoEmbedThumbnailFormatter.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldFormatter;
+ 
+ use Drupal\Core\Field\FormatterBase;
+diff --git a/src/Plugin/Field/FieldFormatter/VideoPlayerFormatter.php b/src/Plugin/Field/FieldFormatter/VideoPlayerFormatter.php
+index 0ee1335..c2d1fdd 100644
+--- a/src/Plugin/Field/FieldFormatter/VideoPlayerFormatter.php
++++ b/src/Plugin/Field/FieldFormatter/VideoPlayerFormatter.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldFormatter\VidePlayerFormatter.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldFormatter;
+ 
+ use Drupal\Core\Field\FieldItemListInterface;
+diff --git a/src/Plugin/Field/FieldFormatter/VideoPlayerFormatterBase.php b/src/Plugin/Field/FieldFormatter/VideoPlayerFormatterBase.php
+index a32db37..d55a81e 100644
+--- a/src/Plugin/Field/FieldFormatter/VideoPlayerFormatterBase.php
++++ b/src/Plugin/Field/FieldFormatter/VideoPlayerFormatterBase.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldFormatter\VidePlayerFormatterBase.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldFormatter;
+ 
+ use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
+diff --git a/src/Plugin/Field/FieldFormatter/VideoPlayerListFormatter.php b/src/Plugin/Field/FieldFormatter/VideoPlayerListFormatter.php
+index 5d4030e..43ec0e9 100644
+--- a/src/Plugin/Field/FieldFormatter/VideoPlayerListFormatter.php
++++ b/src/Plugin/Field/FieldFormatter/VideoPlayerListFormatter.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldFormatter\VideoPlayerListFormatter.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldFormatter;
+ 
+ use Drupal\Core\Field\FieldItemListInterface;
+diff --git a/src/Plugin/Field/FieldType/VideoItem.php b/src/Plugin/Field/FieldType/VideoItem.php
+index 1e00e2e..d4f1e0c 100644
+--- a/src/Plugin/Field/FieldType/VideoItem.php
++++ b/src/Plugin/Field/FieldType/VideoItem.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldType\VideoItem.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldType;
+ 
+ use Drupal\Core\Field\FieldDefinitionInterface;
+diff --git a/src/Plugin/Field/FieldWidget/VideoEmbedWidget.php b/src/Plugin/Field/FieldWidget/VideoEmbedWidget.php
+index f458024..55b6bdc 100644
+--- a/src/Plugin/Field/FieldWidget/VideoEmbedWidget.php
++++ b/src/Plugin/Field/FieldWidget/VideoEmbedWidget.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldWidget\VideoEmbedWidget.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldWidget;
+ 
+ use Drupal\Core\Field\FieldItemListInterface;
+diff --git a/src/Plugin/Field/FieldWidget/VideoUploadWidget.php b/src/Plugin/Field/FieldWidget/VideoUploadWidget.php
+index 2e651bb..8a0ac01 100644
+--- a/src/Plugin/Field/FieldWidget/VideoUploadWidget.php
++++ b/src/Plugin/Field/FieldWidget/VideoUploadWidget.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\Field\FieldWidget\VideoUploadWidget.
+- */
+-
+ namespace Drupal\video\Plugin\Field\FieldWidget;
+ 
+ use Drupal\Component\Utility\Bytes;
+diff --git a/src/Plugin/video/Provider/Dailymotion.php b/src/Plugin/video/Provider/Dailymotion.php
+index 6261454..701131b 100644
+--- a/src/Plugin/video/Provider/Dailymotion.php
++++ b/src/Plugin/video/Provider/Dailymotion.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\video\Provider\Dailymotion.
+- */
+-
+ namespace Drupal\video\Plugin\video\Provider;
+ 
+ use Drupal\video\ProviderPluginBase;
+diff --git a/src/Plugin/video/Provider/Facebook.php b/src/Plugin/video/Provider/Facebook.php
+index d4a412b..9515c49 100644
+--- a/src/Plugin/video/Provider/Facebook.php
++++ b/src/Plugin/video/Provider/Facebook.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\video\Provider\Facebook.
+- */
+-
+ namespace Drupal\video\Plugin\video\Provider;
+ 
+ use Drupal\video\ProviderPluginBase;
+diff --git a/src/Plugin/video/Provider/Instagram.php b/src/Plugin/video/Provider/Instagram.php
+index 461c78e..321c1bd 100644
+--- a/src/Plugin/video/Provider/Instagram.php
++++ b/src/Plugin/video/Provider/Instagram.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\video\Provider\Instagram.
+- */
+-
+ namespace Drupal\video\Plugin\video\Provider;
+ 
+ use Drupal\video\ProviderPluginBase;
+diff --git a/src/Plugin/video/Provider/Vimeo.php b/src/Plugin/video/Provider/Vimeo.php
+index 2524a1f..780f637 100644
+--- a/src/Plugin/video/Provider/Vimeo.php
++++ b/src/Plugin/video/Provider/Vimeo.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\video\Provider\Vimeo.
+- */
+-
+ namespace Drupal\video\Plugin\video\Provider;
+ 
+ use Drupal\video\ProviderPluginBase;
+diff --git a/src/Plugin/video/Provider/Vine.php b/src/Plugin/video/Provider/Vine.php
+index 91d00cf..12e0966 100644
+--- a/src/Plugin/video/Provider/Vine.php
++++ b/src/Plugin/video/Provider/Vine.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\video\Provider\Vine.
+- */
+-
+ namespace Drupal\video\Plugin\video\Provider;
+ 
+ use Drupal\video\ProviderPluginBase;
+diff --git a/src/Plugin/video/Provider/YouTube.php b/src/Plugin/video/Provider/YouTube.php
+index e9f4cdb..ff1f71e 100644
+--- a/src/Plugin/video/Provider/YouTube.php
++++ b/src/Plugin/video/Provider/YouTube.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\Plugin\video\Provider\YouTube.
+- */
+-
+ namespace Drupal\video\Plugin\video\Provider;
+ 
+ use Drupal\video\ProviderPluginBase;
+diff --git a/src/ProviderManager.php b/src/ProviderManager.php
+index 07c73b6..2f146fd 100644
+--- a/src/ProviderManager.php
++++ b/src/ProviderManager.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\ProviderManager.
+- */
+-
+ namespace Drupal\video;
+ 
+ use Drupal\Component\Plugin\Mapper\MapperInterface;
+diff --git a/src/ProviderManagerInterface.php b/src/ProviderManagerInterface.php
+index 2e7cabd..c247283 100644
+--- a/src/ProviderManagerInterface.php
++++ b/src/ProviderManagerInterface.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\VideoProviderManagerInterface.
+- */
+-
+ namespace Drupal\video;
+ 
+ /**
+diff --git a/src/ProviderPluginBase.php b/src/ProviderPluginBase.php
+index eb4b668..c67ec73 100644
+--- a/src/ProviderPluginBase.php
++++ b/src/ProviderPluginBase.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains Drupal\video\ProviderPluginBase
+- */
+-
+ namespace Drupal\video;
+ 
+ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+diff --git a/src/ProviderPluginInterface.php b/src/ProviderPluginInterface.php
+index 4f3fd92..fb550c0 100644
+--- a/src/ProviderPluginInterface.php
++++ b/src/ProviderPluginInterface.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains Drupal\video\ProviderInterface.
+- */
+-
+ namespace Drupal\video;
+ 
+ /**
+diff --git a/src/StreamWrapper/DailymotionStream.php b/src/StreamWrapper/DailymotionStream.php
+index 2a19f10..0ed00aa 100644
+--- a/src/StreamWrapper/DailymotionStream.php
++++ b/src/StreamWrapper/DailymotionStream.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\StreamWrapper\DailymotionStream.
+- */
+-
+ namespace Drupal\video\StreamWrapper;
+ 
+ use Drupal\Core\StreamWrapper\ReadOnlyStream;
+diff --git a/src/StreamWrapper/FacebookStream.php b/src/StreamWrapper/FacebookStream.php
+index 3d250f8..e257633 100644
+--- a/src/StreamWrapper/FacebookStream.php
++++ b/src/StreamWrapper/FacebookStream.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\StreamWrapper\FacebookStream.
+- */
+-
+ namespace Drupal\video\StreamWrapper;
+ 
+ use Drupal\Core\StreamWrapper\ReadOnlyStream;
+diff --git a/src/StreamWrapper/InstagramStream.php b/src/StreamWrapper/InstagramStream.php
+index d540633..6d54e95 100644
+--- a/src/StreamWrapper/InstagramStream.php
++++ b/src/StreamWrapper/InstagramStream.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\StreamWrapper\InstagramStream.
+- */
+-
+ namespace Drupal\video\StreamWrapper;
+ 
+ use Drupal\Core\StreamWrapper\ReadOnlyStream;
+diff --git a/src/StreamWrapper/VideoRemoteStreamWrapper.php b/src/StreamWrapper/VideoRemoteStreamWrapper.php
+index e1047b1..65cfd7c 100644
+--- a/src/StreamWrapper/VideoRemoteStreamWrapper.php
++++ b/src/StreamWrapper/VideoRemoteStreamWrapper.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\StreamWrapper\VideoRemoteStreamWrapper.
+- */
+-
+ namespace Drupal\video\StreamWrapper;
+ 
+ use Drupal\Core\StreamWrapper\ReadOnlyStream;
+diff --git a/src/StreamWrapper/VimeoStream.php b/src/StreamWrapper/VimeoStream.php
+index d1a1d33..d692235 100644
+--- a/src/StreamWrapper/VimeoStream.php
++++ b/src/StreamWrapper/VimeoStream.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\StreamWrapper\VimeoStream.
+- */
+-
+ namespace Drupal\video\StreamWrapper;
+ 
+ use Drupal\Core\StreamWrapper\ReadOnlyStream;
+diff --git a/src/StreamWrapper/VineStream.php b/src/StreamWrapper/VineStream.php
+index c6f29b4..3bd900d 100644
+--- a/src/StreamWrapper/VineStream.php
++++ b/src/StreamWrapper/VineStream.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\StreamWrapper\VineStream.
+- */
+-
+ namespace Drupal\video\StreamWrapper;
+ 
+ use Drupal\Core\StreamWrapper\ReadOnlyStream;
+diff --git a/src/StreamWrapper/YoutubeStream.php b/src/StreamWrapper/YoutubeStream.php
+index 22d50c0..c949fa8 100644
+--- a/src/StreamWrapper/YoutubeStream.php
++++ b/src/StreamWrapper/YoutubeStream.php
+@@ -1,10 +1,5 @@
+ <?php
+ 
+-/**
+- * @file
+- * Contains \Drupal\video\StreamWrapper\YoutubeStream.
+- */
+-
+ namespace Drupal\video\StreamWrapper;
+ 
+ use Drupal\Core\StreamWrapper\ReadOnlyStream;

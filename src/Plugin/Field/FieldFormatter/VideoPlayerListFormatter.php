@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\video\Plugin\Field\FieldFormatter\VideoPlayerListFormatter.
- */
-
 namespace Drupal\video\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
