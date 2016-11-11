@@ -9,6 +9,7 @@ use Drupal\Core\StreamWrapper\StreamWrapperInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\file\Entity\File;
 use Drupal\file\Plugin\Field\FieldType\FileItem;
+use Drupal\Component\Utility\Random;
 
 /**
  * Plugin implementation of the 'video' field type.
