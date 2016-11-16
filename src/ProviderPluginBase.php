@@ -122,11 +122,8 @@ abstract class ProviderPluginBase implements ProviderPluginInterface, ContainerF
     if (!file_exists($local_uri)) {
       $thumb_dir = $this->getUploadLocation();
       file_prepare_directory($thumb_dir, FILE_CREATE_DIRECTORY);
-      $remote_url = $this->getRemoteThumbnailUrl();
-      if ($remote_url) {
-        $thumbnail = $this->httpClient->request('GET', $this->getRemoteThumbnailUrl());
-        file_unmanaged_save_data((string) $thumbnail->getBody(), $local_uri);
-      }
+      $thumbnail = $this->httpClient->request('GET', $this->getRemoteThumbnailUrl());
+      file_unmanaged_save_data((string) $thumbnail->getBody(), $local_uri);
     }
   }
   

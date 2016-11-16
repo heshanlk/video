@@ -44,9 +44,6 @@ class Vimeo extends ProviderPluginBase {
   public function getRemoteThumbnailUrl() {
     $data = $this->getVideoMetadata();
     $video_data = json_decode(file_get_contents('http://vimeo.com/api/v2/video/' . $data['id'] . '.json'));
-    if (is_object($video_data[0])) {
-      return $video_data[0]->thumbnail_large;
-    }
-    return FALSE;
+    return $video_data[0]->thumbnail_large;
   }
 }

@@ -66,6 +66,5 @@ class YouTube extends ProviderPluginBase {
         continue;
       }
     }
-    return FALSE;
   }
 }
