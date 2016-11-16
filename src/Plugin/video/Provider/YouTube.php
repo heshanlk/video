@@ -40,7 +40,7 @@ class YouTube extends ProviderPluginBase {
       ],
     ];
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -60,15 +60,11 @@ class YouTube extends ProviderPluginBase {
     foreach ($img_urls as $url) {
       try {
         $this->httpClient->request('GET', $url);
+        return $url;
       }
       catch (ClientException $e) {
-        $e->getResponse();
-        if ($e->getCode() != 404) {
-          throw $e;
-        }
+        continue;
       }
     }
-
-    return $url;
   }
 }
