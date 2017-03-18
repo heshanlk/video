@@ -1,0 +1,7 @@
+name: Video transcode
+description: 'Convert uploaded video files in to web compatible video formats.'
+type: module
+package: Media
+core: 8.x
+dependencies:
+  - video
