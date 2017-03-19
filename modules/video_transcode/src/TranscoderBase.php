@@ -9,7 +9,7 @@ namespace Drupal\video_transcode;
 
 use Drupal\Component\Plugin\PluginBase;
 
-class TranscoderBase extends PluginBase implements FlavorInterface {
+abstract class TranscoderBase extends PluginBase implements TranscoderInterface {
 
   public function getName() {
     return $this->pluginDefinition['name'];

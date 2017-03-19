@@ -6,7 +6,7 @@
 
 namespace Drupal\video_transcode\Plugin\video\Transcoder;
 
-use Drupal\video_transcode\TranscoderPluginBase;
+use Drupal\video_transcode\TranscoderBase;
 
 /**
  * Provides Ffmpeg.
@@ -17,6 +17,6 @@ use Drupal\video_transcode\TranscoderPluginBase;
  * )
  */
 
-class FFmpeg extends TranscoderPluginBase {
+class FFmpeg extends TranscoderBase {
    
 }
