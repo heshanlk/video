@@ -35,5 +35,14 @@ class Transcoder extends Plugin {
    * @ingroup plugin_translatable
    */
   public $name;
-
+  
+  /**
+   * The type of the service.
+   *
+   * @var boolean
+   */
+  public $isExternal;
+  
+  
+  
 }
