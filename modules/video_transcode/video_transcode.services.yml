@@ -1,0 +1,4 @@
+services:
+  video_transcode.provider_manager:
+    class: Drupal\video_transcode\TranscoderManager
+    parent: default_plugin_manager

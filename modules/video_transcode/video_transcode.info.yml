@@ -1,4 +1,4 @@
-name: Video transcode
+name: Video Transcode
 description: 'Convert uploaded video files in to web compatible video formats.'
 type: module
 package: Media
