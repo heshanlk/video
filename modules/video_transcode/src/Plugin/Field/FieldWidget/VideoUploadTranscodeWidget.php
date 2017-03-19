@@ -3,13 +3,14 @@
 namespace Drupal\video_transcode\Plugin\Field\FieldWidget;
 
 use Drupal\video\Plugin\Field\FieldWidget\VideoUploadWidget;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Plugin implementation of the 'video_upload_transcode' widget.
  *
  * @FieldWidget(
  *   id = "video_upload_transcode",
- *   label = @Translation("Video Upload & Transcode"),
+ *   label = @Translation("Video Upload & Convert"),
  *   field_types = {
  *     "video"
  *   }
