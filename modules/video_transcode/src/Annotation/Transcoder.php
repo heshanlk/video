@@ -28,21 +28,28 @@ class Transcoder extends Plugin {
   public $id;
 
   /**
-   * The name of the transcoder.
+   * The label of the transcoder.
    *
    * @var \Drupal\Core\Annotation\Translation
    *
    * @ingroup plugin_translatable
    */
-  public $name;
+  public $label;
   
   /**
-   * The type of the service.
+   * A brief description of the transcoder.
+   *
+   * @ingroup plugin_translatable
+   *
+   * @var \Drupal\Core\Annotation\Translation (optional)
+   */
+  public $description = '';
+  
+  /**
+   * The type of the service, external service or a locally installed service like Ffmpeg.
    *
    * @var boolean
    */
   public $isExternal;
-  
-  
   
 }
