@@ -1,0 +1,5 @@
+video_transcode.admin.structure.video_transcode:
+  title: 'Video Transcode Jobs'
+  route_name: entity.video_transcode_job.collection
+  parent: system.admin_structure
+  description: 'List Transocde Jobs and Manage settings'

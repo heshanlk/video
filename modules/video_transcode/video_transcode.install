@@ -9,96 +9,98 @@
  * Implements hook_schema().
  */
 function video_transcode_schema() {
-  $schema['video_transcode_jobs'] = array(
-    'description' => 'Store video transcoding jobs.',
-    'fields' => array(
-      'job_id' => array(
-        'description' => t('Primary Key: Job Id'),
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'provider_job_id' => array(
-        'description' => 'The identifier of the provider job ID.',
-        'type' => 'varchar_ascii',
-        'length' => 128,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'provider' => array(
-        'description' => 'The identifier of the provider.',
-        'type' => 'varchar_ascii',
-        'length' => 128,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'input_media_file' => array(
-        'description' => 'The {file_managed}.fid being referenced in this field.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'state' => array(
-        'description' => 'Status of the transcoding, possible values are 1, 5, 10, 20',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'created' => array(
-        'description' => t('Start timestamp of transcodings'),
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'finished' => array(
-        'description' => 'Transcoding completed timestamp',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'updated' => array(
-        'description' => 'Transcoding last updated timestamp',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'submitted' => array(
-        'description' => 'Transcoding submitted for processing timestamp',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'input_media_file_data' => array(
-        'type' => 'blob',
-        'not null' => FALSE,
-        'size' => 'big',
-        'serialize' => TRUE,
-        'description' => 'A serialized array of input files',
-      ),
-      'output_media_file_data' => array(
-        'type' => 'blob',
-        'not null' => FALSE,
-        'size' => 'big',
-        'serialize' => TRUE,
-        'description' => 'A serialized array of converted files.',
-      ),
-      'thumbnails_data' => array(
-        'type' => 'blob',
-        'not null' => FALSE,
-        'size' => 'big',
-        'serialize' => TRUE,
-        'description' => 'A serialized array of generated thumbnail files.',
-      ),
-    ),
-    'indexes' => array(
-      'state' => array('state'),
-      'input_media_file' => array('input_media_file', 'provider_job_id'),
-    ),
-    'primary key' => array('job_id'),
-  );
-  return $schema;
+  // Use the content entity api to store video jobs and results
+  
+  // $schema['video_transcode_jobs'] = array(
+ //    'description' => 'Store video transcoding jobs.',
+ //    'fields' => array(
+ //      'job_id' => array(
+ //        'description' => t('Primary Key: Job Id'),
+ //        'type' => 'serial',
+ //        'unsigned' => TRUE,
+ //        'not null' => TRUE,
+ //      ),
+ //      'provider_job_id' => array(
+ //        'description' => 'The identifier of the provider job ID.',
+ //        'type' => 'varchar_ascii',
+ //        'length' => 128,
+ //        'not null' => TRUE,
+ //        'default' => '',
+ //      ),
+ //      'provider' => array(
+ //        'description' => 'The identifier of the provider.',
+ //        'type' => 'varchar_ascii',
+ //        'length' => 128,
+ //        'not null' => TRUE,
+ //        'default' => '',
+ //      ),
+ //      'input_media_file' => array(
+ //        'description' => 'The {file_managed}.fid being referenced in this field.',
+ //        'type' => 'int',
+ //        'unsigned' => TRUE,
+ //        'not null' => TRUE,
+ //        'default' => 0,
+ //      ),
+ //      'state' => array(
+ //        'description' => 'Status of the transcoding, possible values are 1, 5, 10, 20',
+ //        'type' => 'int',
+ //        'unsigned' => TRUE,
+ //        'not null' => TRUE,
+ //        'default' => 0,
+ //      ),
+ //      'created' => array(
+ //        'description' => t('Start timestamp of transcodings'),
+ //        'type' => 'int',
+ //        'not null' => TRUE,
+ //        'default' => 0,
+ //      ),
+ //      'finished' => array(
+ //        'description' => 'Transcoding completed timestamp',
+ //        'type' => 'int',
+ //        'not null' => TRUE,
+ //        'default' => 0,
+ //      ),
+ //      'updated' => array(
+ //        'description' => 'Transcoding last updated timestamp',
+ //        'type' => 'int',
+ //        'not null' => TRUE,
+ //        'default' => 0,
+ //      ),
+ //      'submitted' => array(
+ //        'description' => 'Transcoding submitted for processing timestamp',
+ //        'type' => 'int',
+ //        'not null' => TRUE,
+ //        'default' => 0,
+ //      ),
+ //      'input_media_file_data' => array(
+ //        'type' => 'blob',
+ //        'not null' => FALSE,
+ //        'size' => 'big',
+ //        'serialize' => TRUE,
+ //        'description' => 'A serialized array of input files',
+ //      ),
+ //      'output_media_file_data' => array(
+ //        'type' => 'blob',
+ //        'not null' => FALSE,
+ //        'size' => 'big',
+ //        'serialize' => TRUE,
+ //        'description' => 'A serialized array of converted files.',
+ //      ),
+ //      'thumbnails_data' => array(
+ //        'type' => 'blob',
+ //        'not null' => FALSE,
+ //        'size' => 'big',
+ //        'serialize' => TRUE,
+ //        'description' => 'A serialized array of generated thumbnail files.',
+ //      ),
+ //    ),
+ //    'indexes' => array(
+ //      'state' => array('state'),
+ //      'input_media_file' => array('input_media_file', 'provider_job_id'),
+ //    ),
+ //    'primary key' => array('job_id'),
+ //  );
+ //  return $schema;
 }
 
 /**

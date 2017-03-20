@@ -2,5 +2,26 @@
 
 /**
  * @file
+ * Contains Drupal\video_transcode\video_transcode.module.
  */
 
+/**
+ * @defgroup video_transcode : Transcode Job Entity
+ * @ingroup video_transcode
+ * @{
+ * Implement a Transcode Job entity.
+ *
+ * This module demonstrates implementing a Transcode Job Entity.
+ *
+ *
+ * We define a content entity named 'Transcode Job'. With it, we demonstrate the main
+ * tasks for an entity:
+ * - define
+ * - save
+ * - load
+ * - view
+ * - edit
+ * - delete
+ * - control access
+ * }
+ */

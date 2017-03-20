@@ -1,0 +1,56 @@
+# Route name can be used in several places; e.g. links, redirects, and local
+# actions.
+entity.video_transcode_job.canonical:
+  path: '/admin/structure/transcode-jobs/{video_transcode_job}'
+  defaults:
+  # Calls the view controller, defined in the annotation of the transcode job entity
+    _entity_view: 'video_transcode_job'
+    _title: 'Transcode Job Content'
+  requirements:
+  # Calls the access controller of the entity, $operation 'view'
+    _entity_access: 'video_transcode_job.view'
+
+entity.video_transcode_job.collection:
+  path: '/admin/structure/transcode-jobs/list'
+  defaults:
+  # Calls the list controller, defined in the annotation of the transcode job entity.
+    _entity_list: 'video_transcode_job'
+    _title: 'Transcode Job List'
+  requirements:
+  # Checks for permission directly.
+    _permission: 'view transcode job entity'
+
+video_transcode.transcode_job_add:
+  path: '/admin/structure/transcode-jobs/add'
+  defaults:
+  # Calls the form.add controller, defined in the transcode job entity.
+    _entity_form: video_transcode_job.add
+    _title: 'Add Transcode Job'
+  requirements:
+    _entity_create_access: 'video_transcode_job'
+
+entity.video_transcode_job.edit_form:
+  path: '/admin/structure/transcode-jobs/{video_transcode_job}/edit'
+  defaults:
+  # Calls the form.edit controller, defined in the transcode job entity.
+    _entity_form: video_transcode_job.edit
+    _title: 'Edit Transcode Job'
+  requirements:
+    _entity_access: 'video_transcode_job.edit'
+
+entity.video_transcode_job.delete_form:
+  path: '/admin/structure/transcode-jobs/{video_transcode_job}/delete'
+  defaults:
+    # Calls the form.delete controller, defined in the transcode job entity.
+    _entity_form: video_transcode_job.delete
+    _title: 'Delete Transcode Job'
+  requirements:
+    _entity_access: 'video_transcode_job.delete'
+
+video_transcode.video_transcode_job_settings:
+  path: 'admin/structure/transcode-jobs/settings'
+  defaults:
+    _form: '\Drupal\video_transcode\Form\TranscodeJobSettingsForm'
+    _title: 'Transcode Job Settings'
+  requirements:
+    _permission: 'administer transcode job entity'

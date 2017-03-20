@@ -1,0 +1,22 @@
+# Define the 'local' links for the module
+
+video_transcode_job.settings_tab:
+  route_name: video_transcode.video_transcode_job_settings
+  title: Settings
+  base_route: video_transcode.video_transcode_job_settings
+
+video_transcode_job.view:
+  route_name: entity.video_transcode_job.canonical
+  base_route: entity.video_transcode_job.canonical
+  title: View
+
+video_transcode_job.page_edit:
+  route_name: entity.video_transcode_job.edit_form
+  base_route: entity.video_transcode_job.canonical
+  title: Edit
+
+video_transcode_job.delete_confirm:
+  route_name: entity.video_transcode_job.delete_form
+  base_route: entity.video_transcode_job.canonical
+  title: Delete
+  weight: 10

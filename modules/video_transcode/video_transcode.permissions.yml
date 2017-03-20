@@ -1,0 +1,10 @@
+'delete transcode job entity':
+  title: Delete entity content.
+'add transcode job entity':
+  title: Add entity content
+'view transcode job entity':
+  title: View entity content
+'edit transcode job entity':
+  title: Edit entity content
+'administer transcode job entity':
+  title: Administer settings
