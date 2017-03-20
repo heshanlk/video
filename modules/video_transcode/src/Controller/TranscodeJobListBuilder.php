@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\video_transcode\Entity\Controller;
+namespace Drupal\video_transcode\Controller;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;

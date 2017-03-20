@@ -18,7 +18,7 @@ use Drupal\Core\Entity\EntityChangedTrait;
  *   label = @Translation("Transcode Job entity"),
  *   handlers = {
  *     "view_builder" = "Drupal\Core\Entity\EntityViewBuilder",
- *     "list_builder" = "Drupal\video_transcode\Entity\Controller\TranscodeJobListBuilder",
+ *     "list_builder" = "Drupal\video_transcode\Controller\TranscodeJobListBuilder",
  *     "form" = {
  *       "add" = "Drupal\video_transcode\Form\TranscodeJobForm",
  *       "edit" = "Drupal\video_transcode\Form\TranscodeJobForm",

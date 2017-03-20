@@ -1,11 +1,24 @@
 # All action links for this module
 
-video_transcode.transcode_job_add:
+video_transcode.add_transcode_job_action:
   # Which route will be called by the link
-  route_name: video_transcode.transcode_job_add
+  route_name: video_transcode.add_transcode_job
   title: 'Add transcode job'
 
   # Where will the link appear, defined by route name.
   appears_on:
     - entity.video_transcode_job.collection
     - entity.video_transcode_job.canonical
+    
+video_transcode.add_preset_action:
+  route_name: entity.video_transcode_preset.add_form
+  title: 'Add preset'
+  appears_on:
+    - entity.video_transcode_preset.list
+
+video_transcode.list_preset_action:
+  route_name: entity.video_transcode_preset.list
+  title: 'List Presets'
+  appears_on:
+    - entity.video_transcode_preset.add_form
+    - entity.video_transcode_preset.edit_form

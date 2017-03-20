@@ -20,7 +20,7 @@ entity.video_transcode_job.collection:
   # Checks for permission directly.
     _permission: 'view transcode job entity'
 
-video_transcode.transcode_job_add:
+video_transcode.add_transcode_job:
   path: '/admin/structure/transcode-jobs/add'
   defaults:
   # Calls the form.add controller, defined in the transcode job entity.
@@ -54,3 +54,54 @@ video_transcode.video_transcode_job_settings:
     _title: 'Transcode Job Settings'
   requirements:
     _permission: 'administer transcode job entity'
+
+# video transcode preset routes
+# This is the router item for listing all entities.
+entity.video_transcode_preset.list:
+  path: '/admin/structure/transcode-preset'
+  defaults:
+    _entity_list: 'video_transcode_preset'
+    _title: 'Presets'
+  requirements:
+    _permission: 'administer video transcode presets'
+
+# This is the router item for adding our entity.
+entity.video_transcode_preset.add_form:
+  path: '/admin/structure/transcode-preset/add'
+  defaults:
+    _title: 'Add preset'
+    # Like _entity_list above, _entity_form gives the entity type ID, only this
+    # time also lists the form separated by a period. Drupal looks in the
+    # annotation for the entity and locates the "add" entry under "form" for
+    # the form class to load.
+    # @see \Drupal\Core\Entity\Enhancer\EntityRouteEnhancer
+    _entity_form: video_transcode_preset.add
+  requirements:
+    _entity_create_access: video_transcode_preset
+
+# This is the router item for editing our entity.
+entity.video_transcode_preset.edit_form:
+  # Parameters may be passed to the form via the URL path. We name the
+  # parameter in the path by enclosing it in curly braces. For entity forms,
+  # we include the entity ID in the path by including a parameter with the
+  # same name as the entity type ID.
+  path: '/admin/structure/transcode-preset/manage/{video_transcode_preset}'
+  defaults:
+    _title: 'Edit preset'
+    # List our add entry above, this _entity_form entry instructs Drupal to
+    # read our entity type's annonation, and look for the "edit" entry under
+    # "form".
+    _entity_form: video_transcode_preset.edit
+  requirements:
+    # This uses our entity access controller.
+    # @see \Drupal\Core\Entity\EntityAccessCheck
+    _entity_access: video_transcode_preset.update
+
+# This is the router item for deleting an instance of our entity.
+entity.video_transcode_preset.delete_form:
+  path: '/admin/structure/transcode-preset/manage/{video_transcode_preset}/delete'
+  defaults:
+    _title: 'Delete preset'
+    _entity_form: video_transcode_preset.delete
+  requirements:
+    _entity_access: video_transcode_preset.delete

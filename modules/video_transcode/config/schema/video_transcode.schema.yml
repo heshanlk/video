@@ -1,0 +1,19 @@
+# Documentation for schema files like this one is located here:
+# https://drupal.org/node/1905070
+
+video_transcode.video_transcode_preset.*:
+  type: mapping
+  label: 'Preset'
+  mapping:
+    id:
+      type: string
+      label: 'Preset id'
+    uuid:
+      type: string
+      label: 'UUID'
+    label:
+      type: label
+      label: 'Label'
+    langcode:
+      type: string
+      label: 'Default language'

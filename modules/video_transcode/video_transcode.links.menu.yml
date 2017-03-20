@@ -3,3 +3,7 @@ video_transcode.admin.structure.video_transcode:
   route_name: entity.video_transcode_job.collection
   parent: system.admin_structure
   description: 'List Transocde Jobs and Manage settings'
+
+video_transcode.admin.structure.video_transcode_preset:
+  title: Video Transcode Preset
+  route_name: entity.video_transcode_preset.list

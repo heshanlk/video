@@ -8,3 +8,6 @@
   title: Edit entity content
 'administer transcode job entity':
   title: Administer settings
+'administer video transcode presets':
+  title: 'Administer video transcode presets'
+  description: Create and edit video transcode presets.
