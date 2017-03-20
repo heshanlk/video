@@ -142,38 +142,86 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
         'type' => 'video_upload',
         'weight' => -6,
       ))
+      ->setRequired(TRUE)
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
-      // Input file for the transcode job.
+      // Transcoder field for the transcode job.
+      $fields['transcoder'] = BaseFieldDefinition::create('list_string')
+        ->setLabel(t('Transcoder'))
+        ->setDescription(t('The transcoder.'))
+        ->setSettings(array(
+          'allowed_values' => array(
+            'zencoder' => 'Zencoder',
+            'ffmpeg' => 'FFMpeg',
+          ),
+        ))
+        ->setDisplayOptions('view', array(
+          'label' => 'above',
+          'type' => 'string',
+          'weight' => -5,
+        ))
+        ->setDisplayOptions('form', array(
+          'type' => 'options_buttons',
+          'weight' => -5,
+        ))
+        ->setRequired(TRUE)
+        ->setDisplayConfigurable('form', TRUE)
+        ->setDisplayConfigurable('view', TRUE);
+
+      // Transcoder field for the transcode job.
+      $fields['transcoder_preset'] = BaseFieldDefinition::create('list_string')
+        ->setLabel(t('Transcoder preset'))
+        ->setDescription(t('The transcoder presets to use for output.'))
+        ->setSettings(array(
+          'allowed_values' => array(
+            'h246' => 'h246',
+            'mpeg4' => 'mpeg4',
+          ),
+        ))
+        ->setDisplayOptions('view', array(
+          'label' => 'above',
+          'type' => 'string',
+          'weight' => -5,
+        ))
+        ->setDisplayOptions('form', array(
+          'type' => 'options_buttons',
+          'weight' => -5,
+        ))
+        ->setCardinality(-1)
+        ->setRequired(TRUE)
+        ->setDisplayConfigurable('form', TRUE)
+        ->setDisplayConfigurable('view', TRUE);
+
+      // Outpu files from the transcode job.
       $fields['output_files'] = BaseFieldDefinition::create('video')
         ->setLabel(t('Output Files'))
         ->setDescription(t('The output files from them transcode job.'))
         ->setDisplayOptions('view', array(
           'label' => 'above',
           'type' => 'video_player_list',
-          'weight' => -6,
+          'weight' => -4,
         ))
         ->setDisplayOptions('form', array(
           'type' => 'video_upload',
-          'weight' => -6,
+          'weight' => -4,
         ))
         ->setCardinality(-1)
         ->setDisplayConfigurable('form', TRUE)
         ->setDisplayConfigurable('view', TRUE);
       
-      // Input file for the transcode job.
+      // Thumbnail file from the transcode job.
       $fields['thumbnails'] = BaseFieldDefinition::create('image')
         ->setLabel(t('Thumbnails'))
         ->setDescription(t('The video thumbnails.'))
         ->setDisplayOptions('view', array(
           'label' => 'above',
           'type' => 'image',
-          'weight' => -6,
+          'weight' => -4,
         ))
         ->setDisplayOptions('form', array(
           'type' => 'image',
-          'weight' => -6,
+          'weight' => -4,
         ))
         ->setCardinality(-1)
         ->setDisplayConfigurable('form', TRUE)
@@ -204,7 +252,29 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
       ))
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
-
+    
+    $fields['state'] = BaseFieldDefinition::create('list_string')
+      ->setLabel(t('Job state'))
+      ->setDescription(t('The transcoder job state.'))
+      ->setSettings(array(
+        'allowed_values' => array(
+          'idle' => 'Idle',
+          'processing' => 'Processing',
+          'finished' => 'Finished'
+        ),
+      ))
+      ->setDisplayOptions('view', array(
+        'label' => 'above',
+        'type' => 'string',
+        'weight' => -5,
+      ))
+      ->setDisplayOptions('form', array(
+        'type' => 'options_select',
+        'weight' => -5,
+      ))
+      ->setDisplayConfigurable('form', FALSE)
+      ->setDisplayConfigurable('view', FALSE);
+    
     $fields['langcode'] = BaseFieldDefinition::create('language')
       ->setLabel(t('Language code'))
       ->setDescription(t('The language code of Transcode Job entity.'));
@@ -216,6 +286,14 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
     $fields['changed'] = BaseFieldDefinition::create('changed')
       ->setLabel(t('Changed'))
       ->setDescription(t('The time that the entity was last edited.'));
+
+    $fields['finished'] = BaseFieldDefinition::create('changed')
+      ->setLabel(t('Finished'))
+      ->setDescription(t('The time that the transcode job was finished.'));
+
+    $fields['submitted'] = BaseFieldDefinition::create('changed')
+      ->setLabel(t('Submitted'))
+      ->setDescription(t('The time that the transcode job was submitted.'));
 
     return $fields;
   }
