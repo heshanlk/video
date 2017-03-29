@@ -42,7 +42,7 @@ use Drupal\Core\Entity\EntityChangedTrait;
  *   },
  *   field_ui_base_route = "video_transcode.video_transcode_job_settings",
  * )
- * 
+ *
  */
 class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
 
@@ -129,6 +129,12 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
       ->setDescription(t('The UUID of the Transcode Job entity.'))
       ->setReadOnly(TRUE);
 
+    // Needed as label of entity
+    $fields['name'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Name'))
+      ->setDescription(t('The Name of the Transcode Job entity.'))
+      ->setReadOnly(TRUE);
+
     // Input file for the transcode job.
     $fields['input_file'] = BaseFieldDefinition::create('video')
       ->setLabel(t('Input File'))
@@ -209,7 +215,7 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
         ->setCardinality(-1)
         ->setDisplayConfigurable('form', TRUE)
         ->setDisplayConfigurable('view', TRUE);
-      
+
       // Thumbnail file from the transcode job.
       $fields['thumbnails'] = BaseFieldDefinition::create('image')
         ->setLabel(t('Thumbnails'))
@@ -226,7 +232,7 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
         ->setCardinality(-1)
         ->setDisplayConfigurable('form', TRUE)
         ->setDisplayConfigurable('view', TRUE);
-    
+
     // Owner field of the transcoder job.
     // Entity reference field, holds the reference to the user object.
     // The view shows the user name field of the user.
@@ -252,7 +258,7 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
       ))
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
-    
+
     $fields['state'] = BaseFieldDefinition::create('list_string')
       ->setLabel(t('Job state'))
       ->setDescription(t('The transcoder job state.'))
@@ -274,11 +280,11 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
       ))
       ->setDisplayConfigurable('form', FALSE)
       ->setDisplayConfigurable('view', FALSE);
-    
+
     $fields['langcode'] = BaseFieldDefinition::create('language')
       ->setLabel(t('Language code'))
       ->setDescription(t('The language code of Transcode Job entity.'));
-    
+
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time that the entity was created.'));
