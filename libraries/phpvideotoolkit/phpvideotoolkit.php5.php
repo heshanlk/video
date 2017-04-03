@@ -1017,6 +1017,12 @@ class PHPVideoToolkit {
       }
       $data['video']['pixel_format'] = $formats[1];
       $data['video']['codec'] = $formats[0];
+
+      // is rotation set?
+      preg_match('/rotate\s*:\s*(\d+)/', $raw, $rotate_matches);
+      if (count($rotate_matches) > 0) {
+        $data['video']['rotate'] = intval($rotate_matches[1]);
+      }
     }
 
     // match the audio stream info

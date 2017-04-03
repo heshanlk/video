@@ -236,6 +236,19 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
           $this->transcoder->extractFrame($seek, FALSE, '%st');
           $result = $this->transcoder->setOutput(dirname($dstpath) . '/', basename($dstpath), PHPVideoToolkit::OVERWRITE_EXISTING);
           if ($result === PHPVideoToolkit::RESULT_OK) {
+            if (isset($file_info['video']['rotate'])) {
+              switch ($file_info['video']['rotate']) {
+                case 90 :
+                  $this->transcoder->addCommand('-vf', 'transpose=1');
+                  break;
+                case 180 :
+                  $this->transcoder->addCommand('-vf', 'vflip');
+                  break;
+                case 270 :
+                  $this->transcoder->addCommand('-vf', 'transpose=2');
+                  break;
+              }
+            }
             $result = $this->transcoder->execute() === PHPVideoToolkit::RESULT_OK;
           }
 
