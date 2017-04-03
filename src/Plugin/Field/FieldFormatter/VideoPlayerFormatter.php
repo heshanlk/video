@@ -182,14 +182,14 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
    * {@inheritdoc}
    */
   public static function isApplicable(FieldDefinitionInterface $field_definition) {
-    if(empty($field_definition->getTargetBundle()) && !$field_definition->isList()){
+    if(empty($field_definition->getTargetBundle())){
       return TRUE;
     }
     else{
       $entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
       $widget = $entity_form_display->getRenderer($field_definition->getName());
       $widget_id = $widget->getBaseId();
-      if(!$field_definition->isList() && $widget_id == 'video_upload'){
+      if($widget_id == 'video_upload'){
         return TRUE;
       }
     }

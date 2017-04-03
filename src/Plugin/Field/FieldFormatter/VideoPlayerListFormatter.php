@@ -18,7 +18,7 @@ use Drupal\video\Plugin\Field\FieldFormatter\VideoPlayerFormatter;
  *
  * @FieldFormatter(
  *   id = "video_player_list",
- *   label = @Translation("HTML5 Video Player"),
+ *   label = @Translation("HTML5 Video Player Compact"),
  *   field_types = {
  *     "video"
  *   }
