@@ -717,7 +717,7 @@ function video_field_widget_value($element, $input = FALSE, $form_state) {
         }
 
         // If there is no job, it might be because the user selected
-        // "bypass autoconversion" previously. When the file is permanent, 
+        // "bypass autoconversion" previously. When the file is permanent,
         // this probably was the case.
         if (isset($value['status']) && $value['status'] == FILE_STATUS_PERMANENT) {
           $value['bypass_autoconversion'] = 1;
@@ -792,6 +792,11 @@ function video_field_widget_process($element, &$form_state, $form) {
       '#options' => $options,
       '#access' => user_access('override player dimensions'),
     );
+
+    // hide dimensions when video_use_preset_wxh is true
+    if (variable_get('video_use_preset_wxh', FALSE)) {
+      $element['dimensions']['#access'] = FALSE;
+    }
 
     if (!empty($file['conversionstatus']) && ($file['conversionstatus'] == VIDEO_RENDERING_COMPLETE || $file['conversionstatus'] == VIDEO_RENDERING_FAILED)) {
       $status = array(VIDEO_RENDERING_COMPLETE => 'was successful', VIDEO_RENDERING_FAILED => 'failed');
