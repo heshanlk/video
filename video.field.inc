@@ -79,6 +79,7 @@ function video_entity_metadata_playable_files_get($item) {
 function video_field_settings_form($field, $instance, $has_data) {
   $transcoder = new Transcoder();
   $hastranscoder = $transcoder->hasTranscoder();
+  $default_file_scheme = variable_get('file_default_scheme', 'public');
 
   $defaults = field_info_field_settings($field['type']);
   $settings = array_merge($defaults, $field['settings']);
@@ -180,7 +181,7 @@ function video_field_settings_form($field, $instance, $has_data) {
     '#element_validate' => array('video_field_default_thumbnail_validate'),
     '#description' => t('You can use a default thumbnail for all videos or videos from which a thumbnail can\'t be extracted. Settings to use default video thumbnails will be available on node edit. You can change the permissions for other users too.'),
     '#default_value' => !empty($settings['default_video_thumbnail']['fid']) ? $settings['default_video_thumbnail']['fid'] : '',
-    '#upload_location' => 'public://videos/thumbnails/default',
+    '#upload_location' => $default_file_scheme . '://videos/thumbnails/default',
   );
 
   $form['preview_video_thumb_style'] = array(
