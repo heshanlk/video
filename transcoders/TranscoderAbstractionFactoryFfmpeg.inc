@@ -112,9 +112,6 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
         case 'pixel_format':
           $result = $this->transcoder->setPixelFormat($value);
           break;
-        case 'h264_profile':
-          $result = $this->transcoder->addCommand('-vprofile', $value);
-          break;
         case 'one_pass':
           if ($value == 1) {
             $this->multipass = FALSE;
