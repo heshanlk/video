@@ -193,6 +193,9 @@ class Transcoder {
 
         $output_name = file_munge_filename(str_replace(' ', '_', pathinfo($video->filename, PATHINFO_FILENAME) . ' ' . strtolower($name)) . '_' . time() . '.' . $preset['settings']['video_extension'], '');
         $this->transcoder->setOutput($output_directory, $output_name);
+        // Close the database connection since encodding operation may take a lot of time
+        // and mysql connection will timed out
+        db_close(array('target' => 'default'));
         if ($output_file = $this->transcoder->execute()) {
           $output[] = $output_file;
         }
