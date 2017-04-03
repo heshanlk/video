@@ -925,7 +925,7 @@ class PHPVideoToolkit {
     // grab the duration and bitrate data
     preg_match_all('/Duration: (.*)/', $raw, $matches);
 
-    if (!empty($matches)) {
+    if (!empty($matches[0])) {
       $line = trim($matches[0][0]);
       // capture any data
       preg_match_all('/(Duration|start|bitrate): ([^,]*)/', $line, $matches);

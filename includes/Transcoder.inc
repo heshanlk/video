@@ -143,8 +143,28 @@ class Transcoder {
     $this->transcoder->setInput((array) $video);
     $transcodingsuccess = TRUE;
     $output = array();
-    $output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
-    $output_directory = $converted_scheme . '://' . file_uri_target($output_directory);
+	// Set output directory for converted files
+    // for following operations, we need 'file_directory' prefix from current bundle
+    $entity = entity_load('node', array("$video->entity_id"));
+    $entity = reset($entity);
+    list(, , $bundle) = entity_extract_ids('node', $entity);
+    $instance = field_info_instance('node', $video->data['field_name'], $bundle);
+    $fdirectory = $instance['settings']['file_directory'];
+    // if path not contains 'file_directory' string (probably because original video has been not copied to local file system)
+    if ((!empty($fdirectory)) && strpos(drupal_dirname($video->uri), $fdirectory) === false){
+		// replace last path level from file_directory with '/imported' or add '/imported' if only one level found ...
+		if (strrpos($fdirectory,'/') !== false){
+		$fdirectory = substr($fdirectory, 0, strrpos($fdirectory,'/')).'/imported';
+		}
+		//... and append source path and fid
+		$output_directory = $fdirectory . '/'. file_uri_target(drupal_dirname($video->uri)) . '/' . $video->fid;
+		$output_directory = $converted_scheme . '://' . $output_directory;
+    }
+    else {
+    // original behaviour for videos with original files in local file system
+		$output_directory = str_replace('original', 'converted', drupal_dirname($video->uri)) . '/' . $video->fid;
+		$output_directory = $converted_scheme . '://' . file_uri_target($output_directory);
+    }
 
     if (!file_prepare_directory($output_directory, FILE_CREATE_DIRECTORY)) {
       watchdog('transcoder', 'Video conversion failed. Could not create the directory: %dir', array('%dir' => $output_directory), WATCHDOG_ERROR);
@@ -161,10 +181,9 @@ class Transcoder {
         $preset['settings']['wxh'] = (variable_get('video_use_preset_wxh', FALSE)) ? $preset['settings']['wxh'] : $video->dimensions;
         $preset['settings']['thumbnails']['format'] = $thumbnail_format;
         $preset['settings']['thumbnails']['number'] = $thumbnail_number;
-
         // Only create thumbnails for the first preset
         $thumbnail_number = 0;
-
+		
         // set transcoder options
         if (!$this->transcoder->setOptions($preset['settings'])) {
           // setOptions should write to the watchdog log.

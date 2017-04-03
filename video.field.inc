@@ -1224,15 +1224,37 @@ function _video_field_file_autoconversion($entity_type, $entity, $field, $instan
     // Create the job if it doesn't exist
     if (!$video) {
       list($entity_id, $entity_vid, $bundle) = entity_extract_ids($entity_type, $entity);
-      // @todo get the default dimension when not available in $item
+      // get the default dimension when not available in $item
+      $info_instance = field_info_instance('node', $field['field_name'], $bundle);
+      if (empty($item['dimensions'])) {
+            $item['dimensions'] = $info_instance['settings']['default_dimensions'];
+          }
       if (!video_jobs::create($item['fid'], $item['dimensions'], $entity_id, $entity_type, $field['field_name'], $langcode, $delta)) {
         drupal_set_message(t('Something went wrong with your video job creation. Please check your recent log entries for further debugging.'), 'error');
         return;
       }
       // Load a fresh copy of the job
       $video = video_jobs::load($fid);
+ 
+	 // for case that video was not created through the form, we should check if it has a allowed extension and if needed, generate thumbnails.
+	 $fextension = video_utility::getExtension($video->filename);
+	 if ( strpos($info_instance['settings']['file_extensions'], $fextension) === false) {
+	drupal_set_message(t('The extension "' . $fextension .'" of file ' . $video->filename . ' is not allowed for import. Encoding job for '.$transcoder->getTranscoder()->getName(). ' cannot be created.'),'error');
+	return;
+	}
+	// if thumbnail(s) already exists or autocreation for thumbnails is disabled, do nothing.
+	if (empty($item['thumbnail']) && $field['settings']['autothumbnail'] == 'auto' ) {
+	$thumbs = $transcoder->extractFrames($item, $field);
+	// if thumbnails creation fails, we can assume, that something in the file is wrong and encoding will also fail     
+	if ($thumbs === FALSE) {
+		drupal_set_message(t('Thumbnails creation for '.$video->filename.' failed. Encoding job for '.$transcoder->getTranscoder()->getName(). ' cannot be created. Please check your recent log entries for further debugging.'),'error');
+        return;
+		}
+        else {
+			drupal_set_message('Thumbnails successfully created for '.$video->filename.'.','status');
+        }
     }
-
+	}
     // re queue for video conversion
     if (!empty($item['re_convert_video'])) {
       $video->video_status = VIDEO_RENDERING_PENDING;
