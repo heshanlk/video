@@ -385,9 +385,9 @@ function video_file_download($uri) {
 
   // If $uri is a converted file or thumbnail, $fileinfo contains the file object for that file and the URI of the original video
   if ($fileinfo != NULL) {
-    $original_headers = file_file_download($fileinfo->videouri, 'video');
-    if ($original_headers === -1 || $original_headers === NULL) {
-      return drupal_access_denied();
+    $original_headers = file_download_headers($fileinfo->videouri);
+    if (empty($original_headers)) {
+      return -1;
     }
 
     // Get the headers of the converted file of thumbnail and return
