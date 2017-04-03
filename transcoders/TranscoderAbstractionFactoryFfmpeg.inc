@@ -294,6 +294,11 @@ class TranscoderAbstractionFactoryFfmpeg extends TranscoderAbstractionFactory im
     chmod($tmpdir, 0777);
     chdir($tmpdir);
 
+    // Make sure that exec() is enabled.
+    if (!function_exists('exec')) {
+      watchdog('trancoder', 'Php can\'t use FFmpeg because php.ini has disabled the exec command. Please remove exec from the disable_functions directive (http://us1.php.net/manual/en/ini.core.php#ini.disable-functions)', WATCHDOG_ERROR);
+    }
+
     // Execute the command
     $result = $this->transcoder->execute($this->multipass);
 
