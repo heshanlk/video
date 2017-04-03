@@ -1002,6 +1002,14 @@ function video_field_formatter_info() {
         'widthxheight' => '640x360',
       ),
     ),
+    'video_formatter_url' => array(
+      'label' => t('Video url'),
+      'field types' => array('video'),
+      'settings' => array(
+        'video_extension' => '',
+        'link_title' => '',
+      ),
+    ),
   );
 }
 
@@ -1068,6 +1076,30 @@ function video_field_formatter_settings_form($field, $instance, $view_mode, $for
         '#options' => $image_styles,
       );
       break;
+      
+	case 'video_formatter_url':
+      // Get the transcoder presets
+      $presets = variable_get('video_preset');
+      $preset_extensions = array('original' => t('Original video format'));      
+      foreach ($presets as $preset){
+        $preset_settings = video_get_preset($preset);
+        $preset_extensions[$preset_settings['settings']['video_extension']] = $preset_settings['settings']['video_extension'];
+      }
+      
+      $element['video_extension'] = array(
+        '#title' => t('Video format'),
+        '#type' => 'select',
+        '#default_value' => $settings['video_extension'],
+        '#options' => $preset_extensions,
+      );
+      
+      $element['link_title'] = array(
+        '#title' => t('Link title'),
+        '#type' => 'textfield',
+        '#default_value' => $settings['link_title'],
+        '#description' => t('Leave this blank to use the url to the file'),
+      );
+      break;
   }
 
   return $element;
@@ -1112,6 +1144,11 @@ function video_field_formatter_settings_summary($field, $instance, $view_mode) {
       if (isset($image_styles[$settings['poster_image_style']])) {
         $summary[] = t('Poster image style: @style', array('@style' => $image_styles[$settings['poster_image_style']]));
       }
+      break;
+
+	case 'video_formatter_url':
+      $format = !empty($settings['video_extension']) ? t('transcoded ' . strtoupper($settings['video_extension']) . ' file') : 'Original file';
+      $summary[] = t('URL to @format', array('@format' => $format));
       break;
   }
 
@@ -1177,6 +1214,42 @@ function video_field_formatter_view($entity_type, $entity, $field, $instance, $l
           '#poster_image_style' => $settings['poster_image_style'],
         );
         break;
+      case 'video_formatter_url':
+        // If the original file is selected then we just return that
+        if ($settings['video_extension'] == 'original'){
+          $title = empty($settings['link_title']) ?  file_create_url($item['uri']) : $settings['link_title'];
+          $element[$delta] = array(
+            '#markup' => l($title, file_create_url($item['uri'])),
+            );
+            break;            
+        }
+      
+        // Nobody believes in standards
+        // @TODO revisit this, there must be a better way to replace the mimetypes
+        $extensions_fix = array('flv' => 'x-flv');
+        if (!empty($extensions_fix[$settings['video_extension']])){
+          $extension = $extensions_fix[$settings['video_extension']];
+        } else {
+          $extension = $settings['video_extension'];
+        }
+
+        $title = empty($settings['link_title']) ? NULL : $settings['link_title'];
+        
+        // Find the file based on the selected video type
+        foreach ($item['playablefiles'] as $file){
+          if (strstr($file->filemime, 'video/' . $extension)) {
+            $file_url = file_create_url($file->uri);
+            // Set the title to the filename if it's not set
+            if (empty($title)) $title = file_create_url($file->uri);
+            // Stop looking (shouldn't break out of switch)
+            //break;
+          }
+        }
+
+        $element[$delta] = array(
+          '#markup' => empty($item['uri']) ? '' : l($title, $item['uri']),
+          );
+	    break;
     }
   }
 
