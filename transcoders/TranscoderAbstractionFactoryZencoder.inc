@@ -15,6 +15,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
   public function __construct() {
     parent::__construct();
     $this->options['api_key'] = variable_get('video_zencoder_api_key');
+    $grouping = variable_get('video_zencoder_grouping');
+
+    if (!empty($grouping)) {
+      $this->options['grouping'] = $grouping;
+    }
+
     $this->postbackurl = variable_get('video_zencoder_postback', url('postback/jobs', array('absolute' => TRUE)));
     $this->outputdestination = variable_get('video_zencoder_output_destination');
   }
@@ -342,6 +348,12 @@ class TranscoderAbstractionFactoryZencoder extends TranscoderAbstractionFactory 
         '#default_value' => variable_get('video_zencoder_api_key', NULL),
         '#description' => t('Leave empty and submit the form to start creating a new Zencoder account.')
       );
+       $form['zencoder_info']['video_zencoder_grouping'] = array(
+         '#type' => 'textfield',
+         '#title' => t('Zencoder grouping'),
+         '#default_value' => variable_get('video_zencoder_grouping', NULL),
+         '#description' => t('Create a grouping for reporting purposes. Can be used with the Zencoder reporting API.')
+       );
       $form['zencoder_info']['video_zencoder_http_username'] = array(
         '#type' => 'textfield',
         '#title' => t('Zencoder HTTP username'),
