@@ -1,0 +1,6 @@
+name = "Video Storage"
+description = "Integrates the Storage API for more flexible file storage handling"
+package = "Media"
+dependencies[] = video
+dependencies[] = storage_core_bridge
+core = 7.x

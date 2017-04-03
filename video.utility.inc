@@ -168,6 +168,16 @@ class video_utility {
     }
 
     // Try to fetch the file using http. This is much faster in the case of S3 via the Amazon S3 module
+    if (module_exists('storage_core_bridge')) {
+      $storage = storage_core_bridge_load($uri);
+	  if (!$storage->serving_container->external)
+	    $copy = drupal_realpath($storage->serving_container->settings['path'] . '/' . $storage->filename);
+	  else {
+		  //TODO: copy remote storage_api file here
+	  }
+      self::$temporaryCopies[$uri] = $copy;
+	  return $url;
+	}
     $url = file_create_url($uri);
     if ($url != $uri && ($copy = self::createTemporaryLocalCopy($url))) {
       self::$temporaryCopies[$uri] = $copy;
