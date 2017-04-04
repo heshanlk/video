@@ -3,7 +3,7 @@
 video_transcode.add_transcode_job_action:
   # Which route will be called by the link
   route_name: video_transcode.add_transcode_job
-  title: 'Add transcode job'
+  title: 'Add video job'
 
   # Where will the link appear, defined by route name.
   appears_on:

@@ -1,11 +1,11 @@
 entity.video_transcode_jobs.collection:
-  title: 'Video transcode jobs'
+  title: 'Video jobs'
   description: 'Configure and list video transcode jobs.'
   parent: system.admin_config_media
   route_name: entity.video_transcode_job.collection
 
 entity.video_transcode_preset.collection:
-  title: 'Video transcode presets'
+  title: 'Video presets'
   description: 'Configure and list video transcode presets.'
   parent: system.admin_config_media
   route_name: entity.video_transcode_preset.list

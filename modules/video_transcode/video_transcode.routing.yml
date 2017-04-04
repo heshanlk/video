@@ -5,7 +5,7 @@ entity.video_transcode_job.canonical:
   defaults:
   # Calls the view controller, defined in the annotation of the transcode job entity
     _entity_view: 'video_transcode_job'
-    _title: 'Transcode job content'
+    _title: 'Video job content'
   requirements:
   # Calls the access controller of the entity, $operation 'view'
     _entity_access: 'video_transcode_job.view'
@@ -15,7 +15,7 @@ entity.video_transcode_job.collection:
   defaults:
   # Calls the list controller, defined in the annotation of the transcode job entity.
     _entity_list: 'video_transcode_job'
-    _title: 'Transcode jobs'
+    _title: 'Video jobs'
   requirements:
   # Checks for permission directly.
     _permission: 'view transcode job entity'
@@ -25,7 +25,7 @@ video_transcode.add_transcode_job:
   defaults:
   # Calls the form.add controller, defined in the transcode job entity.
     _entity_form: video_transcode_job.add
-    _title: 'Add transcode job'
+    _title: 'Add video job'
   requirements:
     _entity_create_access: 'video_transcode_job'
 
@@ -34,7 +34,7 @@ entity.video_transcode_job.edit_form:
   defaults:
   # Calls the form.edit controller, defined in the transcode job entity.
     _entity_form: video_transcode_job.edit
-    _title: 'Edit transcode job'
+    _title: 'Edit video job'
   requirements:
     _entity_access: 'video_transcode_job.edit'
 
@@ -43,7 +43,7 @@ entity.video_transcode_job.delete_form:
   defaults:
     # Calls the form.delete controller, defined in the transcode job entity.
     _entity_form: video_transcode_job.delete
-    _title: 'Delete transcode job'
+    _title: 'Delete video job'
   requirements:
     _entity_access: 'video_transcode_job.delete'
 
@@ -51,7 +51,7 @@ video_transcode.video_transcode_job_settings:
   path: '/admin/config/media/transcode-jobs/settings'
   defaults:
     _form: '\Drupal\video_transcode\Form\TranscodeJobSettingsForm'
-    _title: 'Transcode job settings'
+    _title: 'Video job settings'
   requirements:
     _permission: 'administer transcode job entity'
 
