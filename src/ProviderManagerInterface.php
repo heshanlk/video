@@ -53,6 +53,6 @@ interface ProviderManagerInterface {
    * @return \Drupal\video\ProviderPluginInterface|bool
    *   The loaded plugin.
    */
-  public function loadProviderFromStream($stream, $file, $data = array());
+  public function loadProviderFromStream($stream, $file, $data = []);
 
 }

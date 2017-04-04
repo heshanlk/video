@@ -25,14 +25,14 @@ abstract class ProviderPluginBase implements ProviderPluginInterface, ContainerF
    *
    * @var array
    */
-  protected $metadata = array();
+  protected $metadata = [];
 
   /**
    * Additional settings for the video widget
    *
    * @var array
    */
-  protected $settings = array();
+  protected $settings = [];
   
   /**
    * An http client.
