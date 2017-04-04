@@ -78,7 +78,7 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
    * {@inheritdoc}
    */
   public static function defaultSettings() {
-    return array(
+    return [
       'width' => '854',
       'height' => '480',
       'controls' => TRUE,
@@ -86,7 +86,7 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
       'loop' => FALSE,
       'muted' => FALSE,
       'preload' => 'none'
-    ) + parent::defaultSettings();
+    ] + parent::defaultSettings();
   }
 
   /**
@@ -129,11 +129,11 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
       '#title' => t('Preload'),
       '#type' => 'select',
       '#default_value' => $this->getSetting('preload'),
-      '#options' => array(
+      '#options' => [
         'none' =>'none',
         'metadata' => 'metadata',
         'auto' => 'auto'
-      ),
+      ],
       '#description' => t('Hint to the browser about whether optimistic downloading of the video itself or its metadata is considered worthwhile.')
     ];
     return $element;
@@ -143,7 +143,7 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
    * {@inheritdoc}
    */
   public function settingsSummary() {
-    $summary = array();
+    $summary = [];
     $summary[] = t('HTML5 Video (@widthx@height@controls@autoplay@loop@muted).', [
       '@width' => $this->getSetting('width'),
       '@height' => $this->getSetting('height'),
@@ -158,7 +158,7 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
    * {@inheritdoc}
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
-    $elements = array();
+    $elements = [];
     $files = $this->getEntitiesToView($items, $langcode);
 
     // Early opt-out if the field is empty.
@@ -169,11 +169,11 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
     // Collect cache tags to be added for each item in the field.
     foreach ($files as $delta => $file) {
       $video_uri = $file->getFileUri();
-      $elements[$delta] = array(
+      $elements[$delta] = [
         '#theme' => 'video_player_formatter',
-        '#items' => array(Url::fromUri(file_create_url($video_uri))),
+        '#items' => [Url::fromUri(file_create_url($video_uri))],
         '#player_attributes' => $this->getSettings(),
-      );
+      ];
     }
     return $elements;
   }

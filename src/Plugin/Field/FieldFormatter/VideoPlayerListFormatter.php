@@ -31,7 +31,7 @@ class VideoPlayerListFormatter extends VideoPlayerFormatter implements Container
    * {@inheritdoc}
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
-    $elements = array();
+    $elements = [];
     $files = $this->getEntitiesToView($items, $langcode);
 
     // Early opt-out if the field is empty.
@@ -40,16 +40,16 @@ class VideoPlayerListFormatter extends VideoPlayerFormatter implements Container
     }
 
     // Collect cache tags to be added for each item in the field.
-    $video_items = array();
+    $video_items = [];
     foreach ($files as $delta => $file) {
       $video_uri = $file->getFileUri();
       $video_items[] = Url::fromUri(file_create_url($video_uri));
     }
-    $elements[] = array(
+    $elements[] = [
       '#theme' => 'video_player_formatter',
       '#items' => $video_items,
       '#player_attributes' => $this->getSettings(),
-    );
+    ];
     return $elements;
   }
   

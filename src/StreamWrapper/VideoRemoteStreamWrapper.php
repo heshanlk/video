@@ -15,7 +15,7 @@ use Drupal\Component\Utility\UrlHelper;
 abstract class VideoRemoteStreamWrapper extends ReadOnlyStream {
   
   protected static $base_url = NULL;
-  protected $parameters = array();
+  protected $parameters = [];
   
   /**
    * {@inheritdoc}
