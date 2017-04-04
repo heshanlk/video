@@ -1,5 +1,11 @@
 # Define the 'local' links for the module
 
+entity.video_transcode_job.collection:
+  title: 'List'
+  route_name: entity.video_transcode_job.collection
+  base_route: video_transcode.video_transcode_job_settings
+  weight: -10
+  
 video_transcode_job.settings_tab:
   route_name: video_transcode.video_transcode_job_settings
   title: Settings

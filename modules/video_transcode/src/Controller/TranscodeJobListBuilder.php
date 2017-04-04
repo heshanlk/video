@@ -59,11 +59,6 @@ class TranscodeJobListBuilder extends EntityListBuilder {
    * buildHeader() and buildRow() implementations.
    */
   public function render() {
-    $build['description'] = array(
-      '#markup' => $this->t('These transcode jobs are fieldable entities. You can manage the fields on the <a href="@adminlink">manage fields page</a>.', array(
-        '@adminlink' => $this->urlGenerator->generateFromRoute('video_transcode.video_transcode_job_settings'),
-      )),
-    );
     $build['table'] = parent::render();
     return $build;
   }

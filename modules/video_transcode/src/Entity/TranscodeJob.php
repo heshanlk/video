@@ -35,9 +35,10 @@ use Drupal\Core\Entity\EntityChangedTrait;
  *     "uuid" = "uuid"
  *   },
  *   links = {
+ *     "canonical" = "/admin/structure/transcode-jobs/{video_transcode_job}",
  *     "edit-form" = "/admin/config/media/transcode-jobs/{video_transcode_job}/edit",
  *     "delete-form" = "/admin/config/media/transcode-jobs/{video_transcode_job}/delete",
- *     "collection" = "/admin/config/media/transcode-jobs"
+ *     "collection" = "/admin/config/media/transcode-jobs/list"
  *   },
  *   field_ui_base_route = "video_transcode.video_transcode_job_settings",
  *   common_reference_target = TRUE
