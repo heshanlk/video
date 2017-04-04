@@ -69,9 +69,6 @@ class PresetListBuilder extends ConfigEntityListBuilder {
    *   Renderable array.
    */
   public function render() {
-    $build['description'] = array(
-      '#markup' => $this->t("<p>The presets for transcoding videos.</p>"),
-    );
     $build[] = parent::render();
     return $build;
   }

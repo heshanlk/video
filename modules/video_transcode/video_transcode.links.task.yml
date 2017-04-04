@@ -26,3 +26,8 @@ video_transcode_job.delete_confirm:
   base_route: entity.video_transcode_job.canonical
   title: Delete
   weight: 10
+  
+video_transcode.list_preset_action:
+  route_name: entity.video_transcode_preset.list
+  title: 'List Presets'
+  base_route: entity.video_transcode_preset.add_form

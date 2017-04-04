@@ -58,7 +58,7 @@ video_transcode.video_transcode_job_settings:
 # video transcode preset routes
 # This is the router item for listing all entities.
 entity.video_transcode_preset.list:
-  path: '/admin/structure/transcode-preset'
+  path: '/admin/config/media/transcode-preset'
   defaults:
     _entity_list: 'video_transcode_preset'
     _title: 'Presets'
@@ -67,7 +67,7 @@ entity.video_transcode_preset.list:
 
 # This is the router item for adding our entity.
 entity.video_transcode_preset.add_form:
-  path: '/admin/structure/transcode-preset/add'
+  path: '/admin/config/media/transcode-preset/add'
   defaults:
     _title: 'Add preset'
     # Like _entity_list above, _entity_form gives the entity type ID, only this
@@ -85,7 +85,7 @@ entity.video_transcode_preset.edit_form:
   # parameter in the path by enclosing it in curly braces. For entity forms,
   # we include the entity ID in the path by including a parameter with the
   # same name as the entity type ID.
-  path: '/admin/structure/transcode-preset/manage/{video_transcode_preset}'
+  path: '/admin/config/media/transcode-preset/manage/{video_transcode_preset}'
   defaults:
     _title: 'Edit preset'
     # List our add entry above, this _entity_form entry instructs Drupal to
@@ -99,7 +99,7 @@ entity.video_transcode_preset.edit_form:
 
 # This is the router item for deleting an instance of our entity.
 entity.video_transcode_preset.delete_form:
-  path: '/admin/structure/transcode-preset/manage/{video_transcode_preset}/delete'
+  path: '/admin/config/media/transcode-preset/manage/{video_transcode_preset}/delete'
   defaults:
     _title: 'Delete preset'
     _entity_form: video_transcode_preset.delete

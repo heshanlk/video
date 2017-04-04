@@ -30,7 +30,7 @@ class PresetEditForm extends PresetFormBase {
    */
   protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
-    $actions['submit']['#value'] = $this->t('Update Preset');
+    $actions['submit']['#value'] = $this->t('Update');
     return $actions;
   }
 

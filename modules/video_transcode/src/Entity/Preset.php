@@ -51,8 +51,8 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *     "label" = "label"
  *   },
  *   links = {
- *     "edit-form" = "/admin/structure/transcode-preset/manage/{video_transcode_preset}",
- *     "delete-form" = "/admin/structure/transcode-preset/manage/{video_transcode_preset}/delete"
+ *     "edit-form" = "/admin/config/media/transcode-preset/manage/{video_transcode_preset}",
+ *     "delete-form" = "/admin/config/media/transcode-preset/manage/{video_transcode_preset}/delete"
  *   }
  * )
  */

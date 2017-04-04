@@ -15,10 +15,3 @@ video_transcode.add_preset_action:
   title: 'Add preset'
   appears_on:
     - entity.video_transcode_preset.list
-
-video_transcode.list_preset_action:
-  route_name: entity.video_transcode_preset.list
-  title: 'List Presets'
-  appears_on:
-    - entity.video_transcode_preset.add_form
-    - entity.video_transcode_preset.edit_form
