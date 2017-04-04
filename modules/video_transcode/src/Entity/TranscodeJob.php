@@ -15,7 +15,7 @@ use Drupal\Core\Entity\EntityChangedTrait;
  *
  * @ContentEntityType(
  *   id = "video_transcode_job",
- *   label = @Translation("Transcode Job entity"),
+ *   label = @Translation("Transcode job entity"),
  *   handlers = {
  *     "view_builder" = "Drupal\Core\Entity\EntityViewBuilder",
  *     "list_builder" = "Drupal\video_transcode\Controller\TranscodeJobListBuilder",
@@ -35,12 +35,12 @@ use Drupal\Core\Entity\EntityChangedTrait;
  *     "uuid" = "uuid"
  *   },
  *   links = {
- *     "canonical" = "/admin/structure/transcode-jobs/{video_transcode_job}",
- *     "edit-form" = "/admin/structure/transcode-jobs/{video_transcode_job}/edit",
- *     "delete-form" = "/admin/structure/transcode-jobs/{video_transcode_job}/delete",
- *     "collection" = "/admin/structure/transcode-jobs/list"
+ *     "edit-form" = "/admin/config/media/transcode-jobs/{video_transcode_job}/edit",
+ *     "delete-form" = "/admin/config/media/transcode-jobs/{video_transcode_job}/delete",
+ *     "collection" = "/admin/config/media/transcode-jobs"
  *   },
  *   field_ui_base_route = "video_transcode.video_transcode_job_settings",
+ *   common_reference_target = TRUE
  * )
  *
  */

@@ -1,9 +1,16 @@
-video_transcode.admin.structure.video_transcode:
-  title: 'Video Transcode Jobs'
+entity.video_transcode_jobs.collection:
+  title: 'Video transcode jobs'
+  description: 'Configure and list video transcode jobs.'
+  parent: system.admin_config_media
   route_name: entity.video_transcode_job.collection
-  parent: system.admin_structure
-  description: 'List Transocde Jobs and Manage settings'
+  
+entity.video_transcode_jobs.settings_tab:
+  route_name: video_transcode.video_transcode_job_settings
+  title: Settings
+  parent: entity.video_transcode_jobs.collection
 
-video_transcode.admin.structure.video_transcode_preset:
-  title: Video Transcode Preset
+entity.video_transcode_preset.collection:
+  title: 'Video transcode presets'
+  description: 'Configure and list video transcode presets.'
+  parent: system.admin_config_media
   route_name: entity.video_transcode_preset.list

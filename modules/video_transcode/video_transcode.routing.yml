@@ -1,7 +1,7 @@
 # Route name can be used in several places; e.g. links, redirects, and local
 # actions.
 entity.video_transcode_job.canonical:
-  path: '/admin/structure/transcode-jobs/{video_transcode_job}'
+  path: '/admin/config/media/transcode-jobs/{video_transcode_job}'
   defaults:
   # Calls the view controller, defined in the annotation of the transcode job entity
     _entity_view: 'video_transcode_job'
@@ -11,7 +11,7 @@ entity.video_transcode_job.canonical:
     _entity_access: 'video_transcode_job.view'
 
 entity.video_transcode_job.collection:
-  path: '/admin/structure/transcode-jobs/list'
+  path: '/admin/config/media/transcode-jobs'
   defaults:
   # Calls the list controller, defined in the annotation of the transcode job entity.
     _entity_list: 'video_transcode_job'
@@ -21,7 +21,7 @@ entity.video_transcode_job.collection:
     _permission: 'view transcode job entity'
 
 video_transcode.add_transcode_job:
-  path: '/admin/structure/transcode-jobs/add'
+  path: '/admin/config/media/transcode-jobs/add'
   defaults:
   # Calls the form.add controller, defined in the transcode job entity.
     _entity_form: video_transcode_job.add
@@ -30,7 +30,7 @@ video_transcode.add_transcode_job:
     _entity_create_access: 'video_transcode_job'
 
 entity.video_transcode_job.edit_form:
-  path: '/admin/structure/transcode-jobs/{video_transcode_job}/edit'
+  path: '/admin/config/media/transcode-jobs/{video_transcode_job}/edit'
   defaults:
   # Calls the form.edit controller, defined in the transcode job entity.
     _entity_form: video_transcode_job.edit
@@ -39,7 +39,7 @@ entity.video_transcode_job.edit_form:
     _entity_access: 'video_transcode_job.edit'
 
 entity.video_transcode_job.delete_form:
-  path: '/admin/structure/transcode-jobs/{video_transcode_job}/delete'
+  path: '/admin/config/media/transcode-jobs/{video_transcode_job}/delete'
   defaults:
     # Calls the form.delete controller, defined in the transcode job entity.
     _entity_form: video_transcode_job.delete
@@ -48,7 +48,7 @@ entity.video_transcode_job.delete_form:
     _entity_access: 'video_transcode_job.delete'
 
 video_transcode.video_transcode_job_settings:
-  path: 'admin/structure/transcode-jobs/settings'
+  path: '/admin/config/media/transcode-jobs/settings'
   defaults:
     _form: '\Drupal\video_transcode\Form\TranscodeJobSettingsForm'
     _title: 'Transcode Job Settings'
