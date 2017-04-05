@@ -14,6 +14,33 @@ video_transcode.video_transcode_preset.*:
     label:
       type: label
       label: 'Label'
-    langcode:
+    video_extension:
       type: string
-      label: 'Default language'
+      label: 'Video extension'
+    wxh:
+      type: string
+      label: 'Video size'
+    frame_rate:
+      type: string
+      label: 'Video frame rate'
+    video_bitrate:
+      type: string
+      label: 'Video bitrate'
+    audio_bitrate:
+      type: string
+      label: 'Audio bitrate'
+    video_codec:
+      type: string
+      label: 'Video codec'
+    audio_codec:
+      type: string
+      label: 'Audio codec'
+    h264_profile:
+      type: string
+      label: 'Video h264 profile'
+    reference_frames:
+      type: string
+      label: 'Video reference frames'
+    codec_level:
+      type: string
+      label: 'Video codec level'

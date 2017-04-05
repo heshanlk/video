@@ -84,7 +84,6 @@ class PresetFormBase extends EntityForm {
     // class of our entity. Drupal knows which class to call from the
     // annotation on our Preset class.
     $preset = $this->entity;
-    // dsm($preset);
     // Build the form.
     $form['label'] = array(
       '#type' => 'textfield',
@@ -116,8 +115,8 @@ class PresetFormBase extends EntityForm {
       '#type' => 'select',
       '#title' => $this->t('Video output extension'),
       '#description' => $this->t('Extension of the output video.'),
-      '#options' => ['test'],
-      '#default_value' => $preset->get('video_extension'),
+      '#options' => ['3gp' => '3GP', 'aac' => 'AAC', 'ac3' => 'AC3', 'ec3' => 'EC3', 'flv' => 'FLV', 'm4f' => 'M4F', 'mj2' => 'MJ2', 'mkv' => 'MKV', 'mp3' => 'MP3', 'mp4' => 'MP4', 'mxf' => 'MXF', 'ogg' => 'OGG', 'ts' => 'TS', 'webm' => 'WEBM', 'wmv' => 'WMV'],
+      '#default_value' => !empty($preset->video_extension) ? $preset->video_extension :  'mp4',
       '#required' => TRUE,
     );
 
@@ -125,9 +124,9 @@ class PresetFormBase extends EntityForm {
       '#type' => 'select',
       '#title' => $this->t('Video codec'),
       '#description' => $this->t('The video codec used in the video file can affect the ability to play the video on certain devices.'),
-      '#options' => ['test' => 'test'],
-      '#required' => $defaultvideocodec === NULL,
-      '#default_value' => !empty($settings['video_codec']) ? $settings['video_codec'] : $defaultvideocodec,
+      '#options' => ['h264' => 'H246', 'hevc' => 'HEVC', 'jp2' => 'JP2', 'mpeg4' => 'MPEG4', 'theora' => 'Theora', 'vp6' => 'VP6', 'vp8' => 'VP8', 'vp9' => 'VP9', 'wmv' => 'WMV'],
+      '#default_value' => !empty($preset->video_codec) ? $preset->video_codec :  'h264',
+      '#required' => TRUE,
     );
 
     $form['settings']['video']['video_quality'] = array(
@@ -142,7 +141,7 @@ class PresetFormBase extends EntityForm {
         4 => '4',
         5 => '5 - High quality (larger file)'
       ),
-      '#default_value' => (!empty($settings['video_quality'])) ? $settings['video_quality'] : 3,
+      '#default_value' => (!empty($preset->video_quality)) ? $preset->video_quality : 3,
     );
     
     $form['settings']['video']['video_speed'] = array(
@@ -157,15 +156,14 @@ class PresetFormBase extends EntityForm {
         4 => '4',
         5 => '5 - Fast (worse compression)'
       ),
-      '#default_value' => (!empty($settings['video_speed'])) ? $settings['video_speed'] : 3,
+      '#default_value' => (!empty($preset->video_speed)) ? $preset->video_speed : 3,
     );
     
     $form['settings']['video']['wxh'] = array(
-      '#type' => 'select',
+      '#type' => 'textfield',
       '#title' => $this->t('Dimensions'),
-      '#description' => $this->t('Select the desired widthxheight of the video player. You can add your own dimensions from @settings.', array('@settings' => \Drupal::l($this->t('Video module settings'), Url::fromUri('internal:/admin/config/media/video')))),
-      '#default_value' => !empty($settings['wxh']) ? $settings['wxh'] : '640x360',
-      '#options' => [],
+      '#description' => $this->t('The resolution of the output file, expressed as WxH, like 640×480 or 1280×720.'),
+      '#default_value' => !empty($preset->wxh) ? $preset->wxh : '640x360',
     );
     
     $form['settings']['video']['video_aspectmode'] = array(
@@ -178,14 +176,14 @@ class PresetFormBase extends EntityForm {
         'pad' => $this->t('Pad (letterbox) to fit output aspect ratio'),
         'stretch' => $this->t('Stretch (distort) to output aspect ratio'),
       ),
-      '#default_value' => (!empty($settings['video_aspectmode'])) ? $settings['video_aspectmode'] : 'preserve',
+      '#default_value' => (!empty($preset->video_aspectmode)) ? $preset->video_aspectmode : 'preserve',
     );
     
     $form['settings']['video']['video_upscale'] = array(
       '#type' => 'checkbox',
       '#title' => $this->t('Upscale'),
       '#description' => $this->t('If the input file is smaller than the target output, should the file be upscaled to the target size?'),
-      '#default_value' => !empty($settings['video_upscale']) ? $settings['video_upscale'] : ''
+      '#default_value' => !empty($preset->video_upscale) ? $preset->video_upscale : ''
     );
     
     // audio settings
@@ -200,9 +198,9 @@ class PresetFormBase extends EntityForm {
       '#type' => 'select',
       '#title' => $this->t('Audio codec'),
       '#description' => $this->t('The audio codec to be used.'),
-      '#options' => ['test'],
-      '#required' => $defaultaudiocodec === NULL,
-      '#default_value' => (!empty($settings['audio_codec'])) ? $settings['audio_codec'] : $defaultaudiocodec,
+      '#options' => ['aac'=>'AAC', 'ac3'=>'AC3', 'amr'=>'AMR', 'eac3'=>'EAC3', 'mp3'=>'MP3', 'pcm'=>'PCM', 'vorbis'=>'Vorbis', 'wma'=>'WMA'],
+      '#required' => TRUE,
+      '#default_value' => (!empty($preset->audio_codec)) ? $preset->audio_codec : 'mp3',
     );
     
     $form['settings']['audio']['audio_quality'] = array(
@@ -217,7 +215,7 @@ class PresetFormBase extends EntityForm {
         4 => '4',
         5 => '5 - High quality (larger file)'
       ),
-      '#default_value' => (!empty($settings['audio_quality'])) ? $settings['audio_quality'] : 3,
+      '#default_value' => (!empty($preset->audio_quality)) ? $preset->audio_quality : 3,
     );
     
     // advanced video settings
@@ -363,13 +361,8 @@ class PresetFormBase extends EntityForm {
       '#title' => $this->t('Enable watermark video'),
       '#default_value' => !empty($settings['video_watermark_enabled']) ? $settings['video_watermark_enabled'] : FALSE,
     );
-    $form['settings']['watermark']['video_watermark_fid'] = array(
-      '#type' => 'managed_file',
-      '#title' => $this->t('Upload watermark image'),
-      '#description' => $this->t('Watermark image should be a PNG or JPG image. The file will be uploaded to %destination.', array('%destination' => $destination)),
-      '#default_value' => !empty($settings['video_watermark_fid']) ? $settings['video_watermark_fid'] : 0,
-      '#upload_location' => $destination,
-      '#upload_validators' => array('file_validate_extensions' => array('jpg png'), 'file_validate_is_image' => array()),
+    $form['settings']['watermark']['file'] = [
+      '#type' => 'container',
       '#states' => array(
         'visible' => array(
           ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
@@ -378,6 +371,14 @@ class PresetFormBase extends EntityForm {
           ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
         ),
       ),
+    ];
+    $form['settings']['watermark']['file']['video_watermark_fid'] = array(
+      '#type' => 'managed_file',
+      '#title' => $this->t('Upload watermark image'),
+      '#description' => $this->t('Watermark image should be a PNG or JPG image. The file will be uploaded to %destination.', array('%destination' => $destination)),
+      '#default_value' => !empty($settings['video_watermark_fid']) ? $settings['video_watermark_fid'] : 0,
+      '#upload_location' => $destination,
+      '#upload_validators' => array('file_validate_extensions' => array('jpg png'), 'file_validate_is_image' => array()),
     );
     $form['settings']['watermark']['video_watermark_y'] = array(
       '#type' => 'textfield',
@@ -581,6 +582,7 @@ class PresetFormBase extends EntityForm {
   public function save(array $form, FormStateInterface $form_state) {
     // EntityForm provides us with the entity we're working on.
     $preset = $this->getEntity();
+    dsm($form_state->getValues());
     // Drupal already populated the form values in the entity object. Each
     // form field was saved as a public variable in the entity class. PHP
     // allows Drupal to do this even if the method is not defined ahead of

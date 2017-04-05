@@ -35,7 +35,7 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *
  * @ConfigEntityType(
  *   id = "video_transcode_preset",
- *   label = @Translation("Preset"),
+ *   label = @Translation("Video Preset"),
  *   admin_permission = "administer video transcode presets",
  *   handlers = {
  *     "access" = "Drupal\video_transcode\PresetAccessController",
@@ -92,7 +92,7 @@ class Preset extends ConfigEntityBase {
    *
    * @var string
    */
-  public $video_wxh;
+  public $wxh;
 
   /**
    * The output video frame rate.
@@ -141,13 +141,13 @@ class Preset extends ConfigEntityBase {
    *
    * @var string
    */
-  public $video_reference_frames;
+  public $reference_frames;
 
   /**
    * The output video codec level.
    *
    * @var string
    */
-  public $video_codec_level;
+  public $codec_level;
 
 }
