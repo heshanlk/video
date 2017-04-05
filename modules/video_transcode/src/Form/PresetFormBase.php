@@ -84,6 +84,7 @@ class PresetFormBase extends EntityForm {
     // class of our entity. Drupal knows which class to call from the
     // annotation on our Preset class.
     $preset = $this->entity;
+    // dsm($preset);
     // Build the form.
     $form['label'] = array(
       '#type' => 'textfield',
@@ -124,7 +125,7 @@ class PresetFormBase extends EntityForm {
       '#type' => 'select',
       '#title' => $this->t('Video codec'),
       '#description' => $this->t('The video codec used in the video file can affect the ability to play the video on certain devices.'),
-      '#options' => ['test'],
+      '#options' => ['test' => 'test'],
       '#required' => $defaultvideocodec === NULL,
       '#default_value' => !empty($settings['video_codec']) ? $settings['video_codec'] : $defaultvideocodec,
     );
