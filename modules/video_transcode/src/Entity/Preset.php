@@ -80,10 +80,74 @@ class Preset extends ConfigEntityBase {
   public $label;
 
   /**
-   * The preset floopy flag.
+   * The output video extension.
    *
    * @var string
    */
-  public $floopy;
+  public $video_extension;
+
+
+  /**
+   * The output video size.
+   *
+   * @var string
+   */
+  public $video_wxh;
+
+  /**
+   * The output video frame rate.
+   *
+   * @var string
+   */
+  public $frame_rate;
+
+  /**
+   * The output video bitrate.
+   *
+   * @var string
+   */
+  public $video_bitrate;
+
+  /**
+   * The output audio bitrate.
+   *
+   * @var string
+   */
+  public $audio_bitrate;
+
+  /**
+   * The output video codec.
+   *
+   * @var string
+   */
+  public $video_codec;
+
+  /**
+   * The output audio codec.
+   *
+   * @var string
+   */
+  public $audio_codec;
+
+  /**
+   * The output video h264 profile.
+   *
+   * @var string
+   */
+  public $h264_profile;
+
+  /**
+   * The output video reference frames.
+   *
+   * @var string
+   */
+  public $video_reference_frames;
+
+  /**
+   * The output video codec level.
+   *
+   * @var string
+   */
+  public $video_codec_level;
 
 }

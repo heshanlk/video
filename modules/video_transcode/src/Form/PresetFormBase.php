@@ -84,7 +84,6 @@ class PresetFormBase extends EntityForm {
     // class of our entity. Drupal knows which class to call from the
     // annotation on our Preset class.
     $preset = $this->entity;
-
     // Build the form.
     $form['label'] = array(
       '#type' => 'textfield',
@@ -111,12 +110,13 @@ class PresetFormBase extends EntityForm {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
+    
     $form['settings']['video']['video_extension'] = array(
       '#type' => 'select',
       '#title' => $this->t('Video output extension'),
       '#description' => $this->t('Extension of the output video.'),
-      '#options' => [],
-      '#default_value' => !empty($settings['video_extension']) ? $settings['video_extension'] : NULL,
+      '#options' => ['test'],
+      '#default_value' => $preset->get('video_extension'),
       '#required' => TRUE,
     );
 
@@ -124,46 +124,9 @@ class PresetFormBase extends EntityForm {
       '#type' => 'select',
       '#title' => $this->t('Video codec'),
       '#description' => $this->t('The video codec used in the video file can affect the ability to play the video on certain devices.'),
-      '#options' => [],
+      '#options' => ['test'],
       '#required' => $defaultvideocodec === NULL,
       '#default_value' => !empty($settings['video_codec']) ? $settings['video_codec'] : $defaultvideocodec,
-    );
-
-    $form['settings']['video']['video_preset'] = array(
-      '#type' => 'select',
-      '#title' => $this->t('FFmpeg video preset'),
-      '#description' => $this->t('A preset file contains a sequence of option=value pairs, one for each line, specifying a sequence of options which would be awkward to specify on the command line. Lines starting with the hash (\'#\') character are ignored and are used to provide comments. Check the &quot;presets&quot; directory in the FFmpeg source tree for examples. See the !doc. Newer FFmpeg installations do not supply libx264 presets anymore, so &quot;!optionnamenone&quot; should be selected. If FFmpeg fails with an error related to presets, please also select &quot;!optionnamenone&quot;. In other cases, an error message may suggest that you should select one of the available options. This setting requires some experimentation.', array('!doc' => \Drupal::l($this->t('FFmpeg documentation'), Url::fromUri('http://ffmpeg.org/ffmpeg.html#Preset-files')), '!optionnamenone' => $this->t('None'))),
-      '#options' => array(
-        '' => $this->t('None'),
-        'libx264-baseline' => 'libx264-baseline',
-        'libx264-default' => 'libx264-default',
-        'libx264-fast' => 'libx264-fast',
-        'libx264-faster' => 'libx264-faster',
-        'libx264-hq' => 'libx264-hq',
-        'libx264-ipod320' => 'libx264-ipod320',
-        'libx264-ipod640' => 'libx264-ipod640',
-        'libx264-main' => 'libx264-main',
-        'libx264-max' => 'libx264-max',
-        'libx264-medium' => 'libx264-medium',
-        'libx264-normal' => 'libx264-normal',
-        'libx264-slow' => 'libx264-slow',
-        'libx264-slower' => 'libx264-slower',
-        'libx264-superfast' => 'libx264-superfast',
-        'libx264-ultrafast' => 'libx264-ultrafast',
-        'libx264-veryfast' => 'libx264-veryfast',
-        'libvpx-1080p' => 'libvpx-1080p',
-        'libvpx-1080p50_60' => 'libvpx-1080p50_60',
-        'libvpx-360p' => 'libvpx-360p',
-        'libvpx-720p' => 'libvpx-720p',
-        'libvpx-720p50_60' => 'libvpx-720p50_60',
-        'libx264-lossless_fast' => 'libx264-lossless_fast',
-        'libx264-lossless_max' => 'libx264-lossless_max',
-        'libx264-lossless_medium' => 'libx264-lossless_medium',
-        'libx264-lossless_slow' => 'libx264-lossless_slow',
-        'libx264-lossless_slower' => 'libx264-lossless_slower',
-        'libx264-lossless_ultrafast' => 'libx264-lossless_ultrafast',
-      ),
-      '#default_value' => (!empty($settings['video_preset'])) ? $settings['video_preset'] : '',
     );
 
     $form['settings']['video']['video_quality'] = array(
@@ -180,6 +143,7 @@ class PresetFormBase extends EntityForm {
       ),
       '#default_value' => (!empty($settings['video_quality'])) ? $settings['video_quality'] : 3,
     );
+    
     $form['settings']['video']['video_speed'] = array(
       '#type' => 'select',
       '#title' => $this->t('Video speed'),
@@ -194,13 +158,15 @@ class PresetFormBase extends EntityForm {
       ),
       '#default_value' => (!empty($settings['video_speed'])) ? $settings['video_speed'] : 3,
     );
+    
     $form['settings']['video']['wxh'] = array(
       '#type' => 'select',
       '#title' => $this->t('Dimensions'),
-      '#description' => $this->t('Select the desired widthxheight of the video player. You can add your own dimensions from !settings.', array('!settings' => \Drupal::l($this->t('Video module settings'), Url::fromUri('internal:/admin/config/media/video')))),
+      '#description' => $this->t('Select the desired widthxheight of the video player. You can add your own dimensions from @settings.', array('@settings' => \Drupal::l($this->t('Video module settings'), Url::fromUri('internal:/admin/config/media/video')))),
       '#default_value' => !empty($settings['wxh']) ? $settings['wxh'] : '640x360',
       '#options' => [],
     );
+    
     $form['settings']['video']['video_aspectmode'] = array(
       '#type' => 'select',
       '#title' => $this->t('Aspect mode'),
@@ -213,6 +179,7 @@ class PresetFormBase extends EntityForm {
       ),
       '#default_value' => (!empty($settings['video_aspectmode'])) ? $settings['video_aspectmode'] : 'preserve',
     );
+    
     $form['settings']['video']['video_upscale'] = array(
       '#type' => 'checkbox',
       '#title' => $this->t('Upscale'),
@@ -232,10 +199,11 @@ class PresetFormBase extends EntityForm {
       '#type' => 'select',
       '#title' => $this->t('Audio codec'),
       '#description' => $this->t('The audio codec to be used.'),
-      '#options' => [],
+      '#options' => ['test'],
       '#required' => $defaultaudiocodec === NULL,
       '#default_value' => (!empty($settings['audio_codec'])) ? $settings['audio_codec'] : $defaultaudiocodec,
     );
+    
     $form['settings']['audio']['audio_quality'] = array(
       '#type' => 'select',
       '#title' => $this->t('Audio quality'),
@@ -317,23 +285,33 @@ class PresetFormBase extends EntityForm {
       '#default_value' => !empty($settings['skip_video']) ? $settings['skip_video'] : ''
     );
     
-    // Not all transcoders support setting the pixel format
-    $form['settings']['adv_video']['pixel_format'] = array(
+    $reference_frames = ['auto' => 'auto'] + range(0, 16);
+    $form['settings']['adv_video']['reference_frames'] = array(
       '#type' => 'select',
-      '#title' => $this->t('Pixel format'),
-      '#description' => $this->t('The pixel format of the output file. Yuv420p is a safe choice, yuvj420p is not supported by at least Google Chrome. If you select <em>!optionname</em> and the input video is yuvj420p, the output video will not be playable on Chrome.', array('!optionname' => $this->t('Same as input video'))),
-      '#options' => [],
-      '#default_value' => !empty($settings['pixel_format']) ? $settings['pixel_format'] : '',
+      '#title' => $this->t('Video reference frames'),
+      '#description' => $this->t('Number of reference frames to use. More reference frames result in slightly higher compression quality, but increased decoding complexity. In practice, going above 5 rarely has much benefit. Determined partly by speed as well as video_codec_profile. Set to "auto" to allow our speed setting to naturally choose this number. We default to 3 as a good compromise of compression and decoding complexity. Use 1 for video created for legacy iPod or first-generation iPhone video, or for other technically-limited decoders.'),
+      '#options' => $reference_frames,
+      '#default_value' => !empty($settings['reference_frames']) ? $settings['reference_frames'] : 3,
     );
-    
+
     $profiles = array('' => $this->t('None'), 'baseline' => 'Baseline', 'main' => 'Main', 'high' => 'High');
     $form['settings']['adv_video']['h264_profile'] = array(
       '#type' => 'select',
       '#title' => $this->t('H.264 profile'),
-      '#description' => $this->t('Use Baseline for maximum compatibility with players. Select !optionnamenone when this is not an H.264 preset or when setting the profile causes errors.', array('!optionnamenone' => $this->t('None'))),
+      '#description' => $this->t('Use Baseline for maximum compatibility with players. Select @optionnamenone when this is not an H.264 preset or when setting the profile causes errors.', array('@optionnamenone' => $this->t('None'))),
       '#options' => $profiles,
-      '#default_value' => !empty($settings['h264_profile']) ? $settings['h264_profile'] : '',
+      '#default_value' => !empty($settings['h264_profile']) ? $settings['h264_profile'] : '1',
     );
+    
+    $codec_levels = ['1'=>'1', '1b'=>'1b', '1.1'=>'1.1', '1.2'=>'1.2', '1.3'=>'1.3', '2'=>'2', '2.1'=>'2.1', '2.2'=>'2.2', '3'=>'3', '3.1'=>'3.1', '3.2'=>'3.2', '4'=>'4', '4.1'=>'4.1', '4.2'=>'4.2', '5'=>'5', '5.1'=>'5.1', '5.2'=>'5.2', '6'=>'6', '6.1'=>'6.1', '6.2'=>'6.2'];
+    $form['settings']['adv_video']['codec_level'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('Video codec level'),
+      '#description' => $this->t('Constrains bitrate, macroblocks (H.264) or bitrate, coding tree units (HEVC). Primarily used for device compatibility. For example, the iPhone supports H.264 Level 3, which means that a video’s decoder_bitrate_cap can’t exceed 10,000kbps. Typically, you should only change this setting if you’re targeting a specific device that requires it.'),
+      '#options' => $codec_levels,
+      '#default_value' => !empty($settings['codec_level']) ? $settings['codec_level'] : '4',
+    );
+    
     
     // advanced audio settings
     $form['settings']['adv_audio'] = array(
@@ -602,7 +580,6 @@ class PresetFormBase extends EntityForm {
   public function save(array $form, FormStateInterface $form_state) {
     // EntityForm provides us with the entity we're working on.
     $preset = $this->getEntity();
-
     // Drupal already populated the form values in the entity object. Each
     // form field was saved as a public variable in the entity class. PHP
     // allows Drupal to do this even if the method is not defined ahead of
