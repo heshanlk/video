@@ -234,54 +234,54 @@ class PresetFormBase extends EntityForm {
         'on' => 'On (reduces quality of non-interlaced content)',
         'off' => 'Off'
       ),
-      '#default_value' => (!empty($settings['deinterlace'])) ? $settings['deinterlace'] : 'detect'
+      '#default_value' => (!empty($preset->deinterlace)) ? $preset->deinterlace : 'detect'
     );
     $form['settings']['adv_video']['max_frame_rate'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Maximum frame rate'),
       '#description' => $this->t('A maximum frame rate cap (in frames per second).'),
-      '#default_value' => !empty($settings['max_frame_rate']) ? $settings['max_frame_rate'] : ''
+      '#default_value' => !empty($preset->max_frame_rate) ? $preset->max_frame_rate : ''
     );
     $form['settings']['adv_video']['frame_rate'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Frame rate'),
       '#description' => $this->t('Force a specific output frame rate (in frames per second). For best quality, do not use this setting.'),
-      '#default_value' => !empty($settings['frame_rate']) ? $settings['frame_rate'] : ''
+      '#default_value' => !empty($preset->frame_rate) ? $preset->frame_rate : ''
     );
     $form['settings']['adv_video']['keyframe_interval'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Key frame interval'),
       '#description' => $this->t('By default, a keyframe will be created at most every 250 frames. Specifying a different keyframe interval will allow you to create more or fewer keyframes in your video. A greater number of keyframes will increase the size of your output file, but will allow for more precise scrubbing in most players. Keyframe interval should be specified as a positive integer. For example, a value of 100 will create a keyframe every 100 frames.'),
-      '#default_value' => !empty($settings['keyframe_interval']) ? $settings['keyframe_interval'] : ''
+      '#default_value' => !empty($preset->keyframe_interval) ? $preset->keyframe_interval : ''
     );
     $form['settings']['adv_video']['video_bitrate'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Video bitrate'),
       '#description' => $this->t('A target bitrate in kbps. Not necessary if you select a Video Quality setting, unless you want to target a specific bitrate.'),
-      '#default_value' => !empty($settings['video_bitrate']) ? $settings['video_bitrate'] : '',
+      '#default_value' => !empty($preset->video_bitrate) ? $preset->video_bitrate : '',
     );
     $form['settings']['adv_video']['bitrate_cap'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Bitrate cap'),
       '#description' => $this->t('A bitrate cap in kbps, used for streaming servers.'),
-      '#default_value' => !empty($settings['bitrate_cap']) ? $settings['bitrate_cap'] : ''
+      '#default_value' => !empty($preset->bitrate_cap) ? $preset->bitrate_cap : ''
     );
     $form['settings']['adv_video']['buffer_size'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Buffer size'),
       '#description' => $this->t('The buffer size for the bitrate cap in kbps.'),
-      '#default_value' => !empty($settings['buffer_size']) ? $settings['buffer_size'] : ''
+      '#default_value' => !empty($preset->buffer_size) ? $preset->buffer_size : ''
     );
     $form['settings']['adv_video']['one_pass'] = array(
       '#type' => 'checkbox',
       '#title' => $this->t('Force one-pass encoding'),
-      '#default_value' => !empty($settings['one_pass']) ? $settings['one_pass'] : ''
+      '#default_value' => !empty($preset->one_pass) ? $preset->one_pass : ''
     );
     $form['settings']['adv_video']['skip_video'] = array(
       '#type' => 'checkbox',
       '#title' => $this->t('Skip video'),
       '#description' => $this->t('The video track will be omitted from the output. You can still specify a video format, however, no video track will be present in the resulting file.'),
-      '#default_value' => !empty($settings['skip_video']) ? $settings['skip_video'] : ''
+      '#default_value' => !empty($preset->skip_video) ? $preset->skip_video : ''
     );
     
     $reference_frames = ['auto' => 'auto'] + range(0, 16);
@@ -290,7 +290,7 @@ class PresetFormBase extends EntityForm {
       '#title' => $this->t('Video reference frames'),
       '#description' => $this->t('Number of reference frames to use. More reference frames result in slightly higher compression quality, but increased decoding complexity. In practice, going above 5 rarely has much benefit. Determined partly by speed as well as video_codec_profile. Set to "auto" to allow our speed setting to naturally choose this number. We default to 3 as a good compromise of compression and decoding complexity. Use 1 for video created for legacy iPod or first-generation iPhone video, or for other technically-limited decoders.'),
       '#options' => $reference_frames,
-      '#default_value' => !empty($settings['reference_frames']) ? $settings['reference_frames'] : 3,
+      '#default_value' => !empty($preset->reference_frames) ? $preset->reference_frames : 3,
     );
 
     $profiles = array('' => $this->t('None'), 'baseline' => 'Baseline', 'main' => 'Main', 'high' => 'High');
@@ -299,7 +299,7 @@ class PresetFormBase extends EntityForm {
       '#title' => $this->t('H.264 profile'),
       '#description' => $this->t('Use Baseline for maximum compatibility with players. Select @optionnamenone when this is not an H.264 preset or when setting the profile causes errors.', array('@optionnamenone' => $this->t('None'))),
       '#options' => $profiles,
-      '#default_value' => !empty($settings['h264_profile']) ? $settings['h264_profile'] : '1',
+      '#default_value' => !empty($preset->h264_profile) ? $preset->h264_profile : '1',
     );
     
     $codec_levels = ['1'=>'1', '1b'=>'1b', '1.1'=>'1.1', '1.2'=>'1.2', '1.3'=>'1.3', '2'=>'2', '2.1'=>'2.1', '2.2'=>'2.2', '3'=>'3', '3.1'=>'3.1', '3.2'=>'3.2', '4'=>'4', '4.1'=>'4.1', '4.2'=>'4.2', '5'=>'5', '5.1'=>'5.1', '5.2'=>'5.2', '6'=>'6', '6.1'=>'6.1', '6.2'=>'6.2'];
@@ -308,7 +308,7 @@ class PresetFormBase extends EntityForm {
       '#title' => $this->t('Video codec level'),
       '#description' => $this->t('Constrains bitrate, macroblocks (H.264) or bitrate, coding tree units (HEVC). Primarily used for device compatibility. For example, the iPhone supports H.264 Level 3, which means that a video’s decoder_bitrate_cap can’t exceed 10,000kbps. Typically, you should only change this setting if you’re targeting a specific device that requires it.'),
       '#options' => $codec_levels,
-      '#default_value' => !empty($settings['codec_level']) ? $settings['codec_level'] : '4',
+      '#default_value' => !empty($preset->codec_level) ? $preset->codec_level : '4',
     );
     
     
@@ -323,7 +323,7 @@ class PresetFormBase extends EntityForm {
       '#type' => 'textfield',
       '#title' => $this->t('Audio bitrate'),
       '#description' => $this->t('The overall audio bitrate specified as kilobits per second (kbps, e.g. 96 or 160). This value can\'t exceed 160 kbps per channel. 96-160 is usually a good range for stereo output.'),
-      '#default_value' => !empty($settings['audio_bitrate']) ? $settings['audio_bitrate'] : ''
+      '#default_value' => !empty($preset->audio_bitrate) ? $preset->audio_bitrate : ''
     );
     $form['settings']['adv_audio']['audio_channels'] = array(
       '#type' => 'select',
@@ -333,19 +333,19 @@ class PresetFormBase extends EntityForm {
         1 => '1 - Mono',
         2 => '2 - Stereo' . ' (' . $this->t('default') . ')'
       ),
-      '#default_value' => (!empty($settings['audio_channels'])) ? $settings['audio_channels'] : 2
+      '#default_value' => (!empty($preset->audio_channels)) ? $preset->audio_channels : 2
     );
     $form['settings']['adv_audio']['audio_sample_rate'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Audio sample rate'),
       '#description' => $this->t('The sample rate of the audio in hertz. Manually setting this may cause problems, depending on the selected bitrate and number of channels.'),
-      '#default_value' => !empty($settings['audio_sample_rate']) ? $settings['audio_sample_rate'] : ''
+      '#default_value' => !empty($preset->audio_sample_rate) ? $preset->audio_sample_rate : ''
     );
     $form['settings']['adv_audio']['skip_audio'] = array(
       '#type' => 'checkbox',
       '#title' => $this->t('Skip audio'),
       '#description' => $this->t('The audio track will be omitted from the output. You must specify a video format and no audio track will be present in the resulting file.'),
-      '#default_value' => !empty($settings['skip_audio']) ? $settings['skip_audio'] : ''
+      '#default_value' => !empty($preset->skip_audio) ? $preset->skip_audio : ''
     );
 
     // Watermark
@@ -359,7 +359,7 @@ class PresetFormBase extends EntityForm {
     $form['settings']['watermark']['video_watermark_enabled'] = array(
       '#type' => 'checkbox',
       '#title' => $this->t('Enable watermark video'),
-      '#default_value' => !empty($settings['video_watermark_enabled']) ? $settings['video_watermark_enabled'] : FALSE,
+      '#default_value' => !empty($preset->video_watermark_enabled) ? $preset->video_watermark_enabled : FALSE,
     );
     $form['settings']['watermark']['file'] = [
       '#type' => 'container',
@@ -376,7 +376,7 @@ class PresetFormBase extends EntityForm {
       '#type' => 'managed_file',
       '#title' => $this->t('Upload watermark image'),
       '#description' => $this->t('Watermark image should be a PNG or JPG image. The file will be uploaded to %destination.', array('%destination' => $destination)),
-      '#default_value' => !empty($settings['video_watermark_fid']) ? $settings['video_watermark_fid'] : 0,
+      '#default_value' => !empty($preset->video_watermark_fid) ? $preset->video_watermark_fid : 0,
       '#upload_location' => $destination,
       '#upload_validators' => array('file_validate_extensions' => array('jpg png'), 'file_validate_is_image' => array()),
     );
@@ -384,7 +384,7 @@ class PresetFormBase extends EntityForm {
       '#type' => 'textfield',
       '#title' => $this->t('Top position'),
       '#description' => $this->t('Where to place the watermark relative to the top of the video. Use a negative number to place the watermark relative to the bottom of the video.'),
-      '#default_value' => isset($settings['video_watermark_y']) ? $settings['video_watermark_y'] : 5,
+      '#default_value' => isset($preset->video_watermark_y) ? $preset->video_watermark_y : 5,
       '#size' => 10,
       '#maxlength' => 10,
       '#field_suffix' => 'px',
@@ -398,7 +398,7 @@ class PresetFormBase extends EntityForm {
       '#type' => 'textfield',
       '#title' => $this->t('Width'),
       '#description' => $this->t('The width of the watermark. Use pixels or append a % sign to indicate a percentage relative to the width of the video. If left empty, the width will be the original width maximized by the video width.'),
-      '#default_value' => isset($settings['video_watermark_width']) ? $settings['video_watermark_width'] : '',
+      '#default_value' => isset($preset->video_watermark_width) ? $preset->video_watermark_width : '',
       '#size' => 10,
       '#maxlength' => 10,
       '#states' => array(
@@ -411,7 +411,7 @@ class PresetFormBase extends EntityForm {
       '#type' => 'textfield',
       '#title' => $this->t('Height'),
       '#description' => $this->t('The height of the watermark. Use pixels or append a % sign to indicate a percentage relative to the height of the video. If left empty, the width will be the original height maximized by the video height.'),
-      '#default_value' => isset($settings['video_watermark_width']) ? $settings['video_watermark_width'] : '',
+      '#default_value' => isset($preset->video_watermark_width) ? $preset->video_watermark_width : '',
       '#size' => 10,
       '#maxlength' => 10,
       '#states' => array(
@@ -427,7 +427,7 @@ class PresetFormBase extends EntityForm {
         'content' => $this->t('content: visible video area') . ' (' . $this->t('default') . ')',
         'frame' => $this->t('frame: video area including padding'),
       ),
-      '#default_value' => isset($settings['video_watermark_origin']) ? $settings['video_watermark_origin'] : 'content',
+      '#default_value' => isset($preset->video_watermark_origin) ? $preset->video_watermark_origin : 'content',
       '#states' => array(
         'visible' => array(
           ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
@@ -440,7 +440,7 @@ class PresetFormBase extends EntityForm {
       '#type' => 'checkbox',
       '#title' => t('Only add watermark for audio files'),
       '#description' => t('Use this function to create video files using an audio input file and a static image.'),
-      '#default_value' => !empty($settings['video_watermark_onlyforaudio']) ? $settings['video_watermark_onlyforaudio'] : FALSE,
+      '#default_value' => !empty($preset->video_watermark_onlyforaudio) ? $preset->video_watermark_onlyforaudio : FALSE,
       '#states' => array(
         'visible' => array(
           ':input[id=edit-video-watermark-enabled]' => array('checked' => TRUE),
@@ -459,13 +459,13 @@ class PresetFormBase extends EntityForm {
       '#type' => 'checkbox',
       '#title' => $this->t('Autolevels'),
       '#description' => $this->t('Automatic brightness / contrast correction.'),
-      '#default_value' => !empty($settings['autolevels']) ? $settings['autolevels'] : ''
+      '#default_value' => !empty($preset->autolevels) ? $preset->autolevels : ''
     );
     $form['settings']['vid_optimization']['deblock'] = array(
       '#type' => 'checkbox',
       '#title' => $this->t('Deblock'),
       '#description' => $this->t('Apply deblocking filter. Useful for highly compressed or blocky input videos.'),
-      '#default_value' => !empty($settings['deblock']) ? $settings['deblock'] : ''
+      '#default_value' => !empty($preset->deblock) ? $preset->deblock : ''
     );
     $form['settings']['vid_optimization']['denoise'] = array(
       '#type' => 'select',
@@ -478,7 +478,7 @@ class PresetFormBase extends EntityForm {
         'strong' => 'Strong - beware',
         'strongest' => 'Strongest - beware, except for Anime'
       ),
-      '#default_value' => (!empty($settings['denoise'])) ? $settings['denoise'] : 2
+      '#default_value' => (!empty($preset->denoise)) ? $preset->denoise : 2
     );
     
     // Create clip
@@ -486,19 +486,19 @@ class PresetFormBase extends EntityForm {
       '#type' => 'fieldset',
       '#title' => $this->t('Create clip'),
       '#collapsible' => TRUE,
-      '#collapsed' => empty($settings['clip_start']) && empty($settings['clip_length']),
+      '#collapsed' => empty($preset->clip_start) && empty($preset->clip_length),
     );
     $form['settings']['create_clip']['clip_start'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Start clip'),
       '#description' => $this->t('The starting point of a subclip (in hh:mm:ss.s or number of seconds).'),
-      '#default_value' => !empty($settings['clip_start']) ? $settings['clip_start'] : '',
+      '#default_value' => !empty($preset->clip_start) ? $preset->clip_start : '',
     );
     $form['settings']['create_clip']['clip_length'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('Clip length'),
       '#description' => $this->t('The length of the subclip (in hh:mm:ss.s or number of seconds).'),
-      '#default_value' => !empty($settings['clip_length']) ? $settings['clip_length'] : '',
+      '#default_value' => !empty($preset->clip_length) ? $preset->clip_length : '',
     );
     return $form;
   }
@@ -582,7 +582,6 @@ class PresetFormBase extends EntityForm {
   public function save(array $form, FormStateInterface $form_state) {
     // EntityForm provides us with the entity we're working on.
     $preset = $this->getEntity();
-    dsm($form_state->getValues());
     // Drupal already populated the form values in the entity object. Each
     // form field was saved as a public variable in the entity class. PHP
     // allows Drupal to do this even if the method is not defined ahead of

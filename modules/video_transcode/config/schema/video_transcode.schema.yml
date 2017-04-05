@@ -93,7 +93,7 @@ video_transcode.video_transcode_preset.*:
       type: boolean
       label: 'Video watermark enabled'
     video_watermark_fid:
-      type: integer
+      type: sequence
       label: 'Video watermark fid'
     video_watermark_y:
       type: integer
