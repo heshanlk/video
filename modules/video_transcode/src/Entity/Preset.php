@@ -88,6 +88,27 @@ class Preset extends ConfigEntityBase {
 
 
   /**
+   * The output video codec.
+   *
+   * @var string
+   */
+  public $video_codec;
+
+  /**
+   * The output video quality.
+   *
+   * @var string
+   */
+  public $video_quality;
+
+  /**
+   * The output video speed.
+   *
+   * @var string
+   */
+  public $video_speed;
+
+  /**
    * The output video size.
    *
    * @var string
@@ -95,32 +116,18 @@ class Preset extends ConfigEntityBase {
   public $wxh;
 
   /**
-   * The output video frame rate.
+   * The output video aspectmode.
    *
    * @var string
    */
-  public $frame_rate;
+  public $video_aspectmode;
 
   /**
-   * The output video bitrate.
+   * The output video upscale.
    *
    * @var string
    */
-  public $video_bitrate;
-
-  /**
-   * The output audio bitrate.
-   *
-   * @var string
-   */
-  public $audio_bitrate;
-
-  /**
-   * The output video codec.
-   *
-   * @var string
-   */
-  public $video_codec;
+  public $video_upscale;
 
   /**
    * The output audio codec.
@@ -130,11 +137,74 @@ class Preset extends ConfigEntityBase {
   public $audio_codec;
 
   /**
-   * The output video h264 profile.
+   * The output audio quality.
    *
    * @var string
    */
-  public $h264_profile;
+  public $audio_quality;
+
+  /**
+   * The output video codec level.
+   *
+   * @var string
+   */
+  public $deinterlace;
+
+  /**
+   * The output video max frame rate.
+   *
+   * @var string
+   */
+  public $max_frame_rate;
+
+  /**
+   * The output video frame rate.
+   *
+   * @var string
+   */
+  public $frame_rate;
+
+  /**
+   * The output video keyframe interval.
+   *
+   * @var string
+   */
+  public $keyframe_interval;
+
+  /**
+   * The output video bitrate.
+   *
+   * @var string
+   */
+  public $video_bitrate;
+
+  /**
+   * The output video bitrate cap.
+   *
+   * @var string
+   */
+  public $bitrate_cap;
+
+  /**
+   * The output video buffer size.
+   *
+   * @var string
+   */
+  public $buffer_size;
+
+  /**
+   * The output video one pass.
+   *
+   * @var string
+   */
+  public $one_pass;
+
+  /**
+   * The output video skip video.
+   *
+   * @var string
+   */
+  public $skip_video;
 
   /**
    * The output video reference frames.
@@ -144,10 +214,123 @@ class Preset extends ConfigEntityBase {
   public $reference_frames;
 
   /**
+   * The output video h264 profile.
+   *
+   * @var string
+   */
+  public $h264_profile;
+
+  /**
    * The output video codec level.
    *
    * @var string
    */
   public $codec_level;
+
+  /**
+   * The output video audio bitrate.
+   *
+   * @var string
+   */
+  public $audio_bitrate;
+
+  /**
+   * The output video audio_channels.
+   *
+   * @var string
+   */
+  public $audio_channels;
+
+  /**
+   * The output video audio_sample_rate.
+   *
+   * @var string
+   */
+  public $audio_sample_rate;
+
+  /**
+   * The output video skip_audio.
+   *
+   * @var string
+   */
+  public $skip_audio;
+
+  /**
+   * The output video_watermark_enabled.
+   *
+   * @var string
+   */
+  public $video_watermark_enabled;
+
+  /**
+   * The output video_watermark_fid.
+   *
+   * @var string
+   */
+  public $video_watermark_fid;
+
+  /**
+   * The output video_watermark_y.
+   *
+   * @var string
+   */
+  public $video_watermark_y;
+
+  /**
+   * The output video_watermark_width.
+   *
+   * @var string
+   */
+  public $video_watermark_width;
+
+  /**
+   * The output video_watermark_height.
+   *
+   * @var string
+   */
+  public $video_watermark_height;
+
+  /**
+   * The output video_watermark_origin.
+   *
+   * @var string
+   */
+  public $video_watermark_origin;
+
+  /**
+   * The output video codec level.
+   *
+   * @var string
+   */
+  public $autolevels;
+
+  /**
+   * The output video codec level.
+   *
+   * @var string
+   */
+  public $deblock;
+
+  /**
+   * The output video codec level.
+   *
+   * @var string
+   */
+  public $denoise;
+
+  /**
+   * The output clip_start.
+   *
+   * @var string
+   */
+  public $clip_start;
+
+  /**
+   * The output clip_length.
+   *
+   * @var string
+   */
+  public $clip_length;
+
 
 }

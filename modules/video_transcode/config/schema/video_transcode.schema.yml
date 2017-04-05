@@ -3,7 +3,7 @@
 
 video_transcode.video_transcode_preset.*:
   type: mapping
-  label: 'Preset'
+  label: 'Video Preset'
   mapping:
     id:
       type: string
@@ -17,30 +17,108 @@ video_transcode.video_transcode_preset.*:
     video_extension:
       type: string
       label: 'Video extension'
-    wxh:
-      type: string
-      label: 'Video size'
-    frame_rate:
-      type: string
-      label: 'Video frame rate'
-    video_bitrate:
-      type: string
-      label: 'Video bitrate'
-    audio_bitrate:
-      type: string
-      label: 'Audio bitrate'
     video_codec:
       type: string
       label: 'Video codec'
+    video_quality:
+      type: integer
+      label: 'Video quality'
+    video_speed:
+      type: integer
+      label: 'Video speed'
+    wxh:
+      type: string
+      label: 'Audio size'
+    video_aspectmode:
+      type: string
+      label: 'Video aspectmode'
+    video_upscale:
+      type: boolean
+      label: 'Audio upscale'
     audio_codec:
       type: string
       label: 'Audio codec'
+    audio_quality:
+      type: integer
+      label: 'Audio quality'
+    deinterlace:
+      type: string
+      label: 'Video deinterlace'
+    max_frame_rate:
+      type: string
+      label: 'Video max frame rate'
+    frame_rate:
+      type: string
+      label: 'Video frame rate'
+    keyframe_interval:
+      type: string
+      label: 'Video keyframe interval'
+    video_bitrate:
+      type: string
+      label: 'Video bitrate'
+    bitrate_cap:
+      type: string
+      label: 'Video bitrate cap'
+    buffer_size:
+      type: string
+      label: 'Video buffer size'
+    one_pass:
+      type: boolean
+      label: 'One pass'
+    skip_video:
+      type: boolean
+      label: 'Skip video'
+    reference_frames:
+      type: integer
+      label: 'Video reference frames'
     h264_profile:
       type: string
       label: 'Video h264 profile'
-    reference_frames:
-      type: string
-      label: 'Video reference frames'
     codec_level:
-      type: string
+      type: integer
       label: 'Video codec level'
+    audio_bitrate:
+      type: string
+      label: 'Audio bitrate'
+    audio_channels:
+      type: string
+      label: 'Audio channels'
+    audio_sample_rate:
+      type: string
+      label: 'Audio sample rate'
+    skip_audio:
+      type: boolean
+      label: 'Skip audio'
+    video_watermark_enabled:
+      type: boolean
+      label: 'Video watermark enabled'
+    video_watermark_fid:
+      type: integer
+      label: 'Video watermark fid'
+    video_watermark_y:
+      type: integer
+      label: 'Video watermark y'
+    video_watermark_width:
+      type: string
+      label: 'Video watermark width'
+    video_watermark_height:
+      type: string
+      label: 'Video watermark height'
+    video_watermark_origin:
+      type: string
+      label: 'Video watermark origin'
+    autolevels:
+      type: boolean
+      label: 'Video autolevels'
+    deblock:
+      type: boolean
+      label: 'Video deblock'
+    denoise:
+      type: string
+      label: 'Video denoise'
+    clip_start:
+      type: string
+      label: 'Video clip start'
+    clip_length:
+      type: string
+      label: 'Video clip length'
