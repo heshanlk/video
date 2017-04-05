@@ -47,7 +47,7 @@ class PresetDeleteForm extends EntityConfirmFormBase {
    *   Translated string.
    */
   public function getConfirmText() {
-    return $this->t('Delete Preset');
+    return $this->t('Delete');
   }
 
   /**
