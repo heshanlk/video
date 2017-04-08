@@ -91,6 +91,7 @@ class PresetFormBase extends EntityForm {
       '#maxlength' => 255,
       '#default_value' => $preset->label(),
       '#required' => TRUE,
+      '#weight' => -10
     );
     $form['id'] = array(
       '#type' => 'machine_name',
@@ -102,22 +103,25 @@ class PresetFormBase extends EntityForm {
         'error' => 'The machine-readable name must be unique, and can only contain lowercase letters, numbers, and underscores. Additionally, it can not be the reserved word "custom".',
       ),
       '#disabled' => !$preset->isNew(),
+      '#weight' => -10
     );
+    // Container/File format
+    $form['video_extension'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('Output extension/Container'),
+      '#description' => $this->t('Extension of the output. Use mp4 for H.264 content. Use fmp4 for Smooth Streaming or MPEG-DASH content. Use ts for HLS content. Use webm for vp8/vp9 downloaded content. Use mp3 for mp3 audio. Use ogg for vorbis audio. Use oga for flac audio. Use flac for flac audio. Use mpg for mpeg2 content. Use flv for Flash content. Use gif for Animated Gif videos. Use mxf for XDCAM content. Use wav for pcm audio.'),
+      '#options' => ['3gp' => '3GP', 'aac' => 'AAC', 'ac3' => 'AC3', 'ec3' => 'EC3', 'flv' => 'FLV', 'm4f' => 'M4F', 'mj2' => 'MJ2', 'mkv' => 'MKV', 'mp3' => 'MP3', 'mp4' => 'MP4', 'mxf' => 'MXF', 'ogg' => 'OGG', 'oga' => 'OGA', 'ts' => 'TS', 'webm' => 'WEBM', 'wmv' => 'WMV', 'fmp4'=>'FMP4', 'flac'=> 'FLAC', 'mpg' => 'MPG', 'gif' => 'GIF'],
+      '#default_value' => !empty($preset->video_extension) ? $preset->video_extension :  'mp4',
+      '#required' => TRUE,
+      '#weight' => -9
+    );
+    
     // video settings
     $form['settings']['video'] = array(
       '#type' => 'fieldset',
       '#title' => $this->t('Video settings'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-    );
-    
-    $form['settings']['video']['video_extension'] = array(
-      '#type' => 'select',
-      '#title' => $this->t('Video output extension'),
-      '#description' => $this->t('Extension of the output video.'),
-      '#options' => ['3gp' => '3GP', 'aac' => 'AAC', 'ac3' => 'AC3', 'ec3' => 'EC3', 'flv' => 'FLV', 'm4f' => 'M4F', 'mj2' => 'MJ2', 'mkv' => 'MKV', 'mp3' => 'MP3', 'mp4' => 'MP4', 'mxf' => 'MXF', 'ogg' => 'OGG', 'ts' => 'TS', 'webm' => 'WEBM', 'wmv' => 'WMV'],
-      '#default_value' => !empty($preset->video_extension) ? $preset->video_extension :  'mp4',
-      '#required' => TRUE,
     );
 
     $form['settings']['video']['video_codec'] = array(

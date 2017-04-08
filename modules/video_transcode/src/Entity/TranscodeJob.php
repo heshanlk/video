@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\video_transcode\TranscodeJobInterface;
 use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityChangedTrait;
+use Drupal\Core\Url;
 
 /**
  * Defines the ContentEntityType entity.
@@ -177,14 +178,20 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
         ->setDisplayConfigurable('view', TRUE);
 
       // Transcoder field for the transcode job.
+      $preset_ids = \Drupal::entityQuery('video_transcode_preset')->execute();
+      $presets = \Drupal::entityTypeManager()->getStorage('video_transcode_preset')->loadMultiple($preset_ids);
+      $preset_options = array();
+      foreach($presets as $key => $preset){
+        $preset_options[$key] = $preset->label;
+      }
+      if(empty($preset_options)){
+        $preset_options['_none'] = t('None - Please create a Video Preset @here.', ['@here' => \Drupal::l(t('here'), Url::fromUri('internal:/admin/config/media/transcode-preset'))]);
+      }
       $fields['transcoder_preset'] = BaseFieldDefinition::create('list_string')
         ->setLabel(t('Transcoder preset'))
         ->setDescription(t('The transcoder presets to use for output.'))
         ->setSettings(array(
-          'allowed_values' => array(
-            'h246' => 'h246',
-            'mpeg4' => 'mpeg4',
-          ),
+          'allowed_values' => $preset_options,
         ))
         ->setDisplayOptions('view', array(
           'label' => 'above',
