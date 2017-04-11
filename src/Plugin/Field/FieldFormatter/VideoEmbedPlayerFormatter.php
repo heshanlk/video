@@ -42,7 +42,7 @@ class VideoEmbedPlayerFormatter extends FormatterBase implements ContainerFactor
       $file = File::load($item->target_id);
       if(!$file) continue;
       $metadata = isset($item->data) ? unserialize($item->data) : [];
-      $scheme = file_uri_scheme($file->getFileUri());
+      $scheme = \Drupal::service('file_system')->uriScheme($file->getFileUri());
       $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata);
       if($provider){
         $element[$delta] = $provider->renderEmbedCode($settings);
