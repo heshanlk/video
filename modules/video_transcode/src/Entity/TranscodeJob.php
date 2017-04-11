@@ -10,6 +10,7 @@ use Drupal\video_transcode\TranscodeJobInterface;
 use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Url;
+use Drupal\Core\Link;
 
 /**
  * Defines the ContentEntityType entity.
@@ -185,7 +186,7 @@ class TranscodeJob extends ContentEntityBase implements TranscodeJobInterface {
         $preset_options[$key] = $preset->label;
       }
       if(empty($preset_options)){
-        $preset_options['_none'] = t('None - Please create a Video Preset @here.', ['@here' => \Drupal::l(t('here'), Url::fromUri('internal:/admin/config/media/transcode-preset'))]);
+        $preset_options['_none'] = t('None - Please create a Video Preset @here.', ['@here' => Link::fromTextAndUrl(t('here'), Url::fromUri('internal:/admin/config/media/transcode-preset'))]);
       }
       $fields['transcoder_preset'] = BaseFieldDefinition::create('list_string')
         ->setLabel(t('Transcoder preset'))
