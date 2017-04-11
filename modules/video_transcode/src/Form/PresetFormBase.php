@@ -593,7 +593,7 @@ class PresetFormBase extends EntityForm {
     $status = $preset->save();
 
     // Grab the URL of the new entity. We'll use it in the message.
-    $url = $preset->urlInfo();
+    $url = $preset->toUrl();
 
     // Create an edit link.
     $edit_link = Link::fromTextAndUrl($this->t('Edit'), $url)->toString();

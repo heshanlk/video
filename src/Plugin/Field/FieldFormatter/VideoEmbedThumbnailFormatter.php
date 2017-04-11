@@ -60,7 +60,7 @@ class VideoEmbedThumbnailFormatter extends FormatterBase implements ContainerFac
       $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata, $widget_settings);
       $url = FALSE;
       if ($this->getSetting('link_image_to') == static::LINK_CONTENT) {
-        $url = $items->getEntity()->urlInfo();
+        $url = $items->getEntity()->toUrl();
       }
       elseif ($this->getSetting('link_image_to') == static::LINK_PROVIDER) {
         $url = Url::fromUri(file_create_url($file->getFileUri()));
