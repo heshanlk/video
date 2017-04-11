@@ -38,9 +38,9 @@ class VideoItem extends FileItem {
   /**
    * The entity manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * {@inheritdoc}
@@ -175,13 +175,13 @@ class VideoItem extends FileItem {
   /**
    * Gets the entity manager.
    *
-   * @return \Drupal\Core\Entity\EntityManagerInterface.
+   * @return \Drupal\Core\Entity\EntityTypeManagerInterface.
    */
-  protected function getEntityManager() {
-    if (!isset($this->entityManager)) {
-      $this->entityManager = \Drupal::entityManager();
+  protected function getEntityTypeManager() {
+    if (!isset($this->entityTypeManager)) {
+      $this->entityTypeManager = \Drupal::entityTypeManager();
     }
-    return $this->entityManager;
+    return $this->entityTypeManager;
   }
 
 }
