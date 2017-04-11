@@ -146,8 +146,21 @@ class VideoEmbedPlayerFormatter extends FormatterBase implements ContainerFactor
     if(empty($field_definition->getTargetBundle())){
       return TRUE;
     }
-    else{
-      $entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+    else {
+      $form_mode = 'default';
+      $entity_form_display = \Drupal::entityTypeManager()
+        ->getStorage('entity_form_display')
+        ->load($field_definition->getTargetEntityTypeId() . '.' . $field_definition->getTargetBundle() . '.' . $form_mode);
+      if (!$entity_form_display) {
+        $entity_form_display = \Drupal::entityTypeManager()
+          ->getStorage('entity_form_display')
+          ->create([
+            'targetEntityType' => $field_definition->getTargetEntityTypeId(),
+            'bundle' => $field_definition->getTargetBundle(),
+            'mode' => $form_mode,
+            'status' => TRUE,
+          ]);
+      }
       $widget = $entity_form_display->getRenderer($field_definition->getName());
       $widget_id = $widget->getBaseId();
       if($widget_id == 'video_embed'){
