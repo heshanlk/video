@@ -169,15 +169,16 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
     // Collect cache tags to be added for each item in the field.
     foreach ($files as $delta => $file) {
       $video_uri = $file->getFileUri();
+      $relative_url = file_url_transform_relative(file_create_url($video_uri));
       $elements[$delta] = [
         '#theme' => 'video_player_formatter',
-        '#items' => [Url::fromUri(file_create_url($video_uri))],
+        '#items' => [Url::fromUserInput($relative_url)],
         '#player_attributes' => $this->getSettings(),
       ];
     }
     return $elements;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -186,20 +187,8 @@ class VideoPlayerFormatter extends VideoPlayerFormatterBase implements Container
       return TRUE;
     }
     else{
-      $form_mode = 'default';
-      $entity_form_display = \Drupal::entityTypeManager()
-        ->getStorage('entity_form_display')
-        ->load($field_definition->getTargetEntityTypeId() . '.' . $field_definition->getTargetBundle() . '.' . $form_mode);
-      if (!$entity_form_display) {
-        $entity_form_display = \Drupal::entityTypeManager()
-          ->getStorage('entity_form_display')
-          ->create([
-            'targetEntityType' => $field_definition->getTargetEntityTypeId(),
-            'bundle' => $field_definition->getTargetBundle(),
-            'mode' => $form_mode,
-            'status' => TRUE,
-          ]);
-      }
+      #$entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+	  $entity_form_display = \Drupal::service('entity_display.repository')->getFormDisplay($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
       $widget = $entity_form_display->getRenderer($field_definition->getName());
       $widget_id = $widget->getBaseId();
       if($widget_id == 'video_upload'){

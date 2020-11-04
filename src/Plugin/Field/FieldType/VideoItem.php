@@ -30,7 +30,10 @@ use Drupal\Component\Utility\Random;
  *     },
  *   },
  *   list_class = "\Drupal\file\Plugin\Field\FieldType\FileFieldItemList",
- *   constraints = {"ReferenceAccess" = {}, "FileValidation" = {}}
+ *   constraints = {"ReferenceAccess" = {}, "FileValidation" = {}},
+ *   serialized_property_names = {
+ *     "data"
+ *   }
  * )
  */
 class VideoItem extends FileItem {
@@ -38,9 +41,9 @@ class VideoItem extends FileItem {
   /**
    * The entity manager.
    *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   * @var \Drupal\Core\Entity\EntityManagerInterface
    */
-  protected $entityTypeManager;
+  protected $entityManager;
 
   /**
    * {@inheritdoc}
@@ -175,13 +178,13 @@ class VideoItem extends FileItem {
   /**
    * Gets the entity manager.
    *
-   * @return \Drupal\Core\Entity\EntityTypeManagerInterface.
+   * @return \Drupal\Core\Entity\EntityManagerInterface.
    */
-  protected function getEntityTypeManager() {
-    if (!isset($this->entityTypeManager)) {
-      $this->entityTypeManager = \Drupal::entityTypeManager();
+  protected function getEntityManager() {
+    if (!isset($this->entityManager)) {
+      $this->entityManager = \Drupal::entityManager();
     }
-    return $this->entityTypeManager;
+    return $this->entityManager;
   }
 
 }

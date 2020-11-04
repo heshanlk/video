@@ -3,7 +3,7 @@
 namespace Drupal\video_transcode\Form;
 
 use Drupal\Core\Entity\EntityForm;
-use Drupal\Core\Entity\Query\QueryFactory;
+use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -24,9 +24,9 @@ use Drupal\Core\Url;
 class PresetFormBase extends EntityForm {
 
   /**
-   * @var \Drupal\Core\Entity\Query\QueryFactory
+   * @var \Drupal\Core\Entity\EntityTypeManager
    */
-  protected $entityQueryFactory;
+  protected $entityTypeManager;
 
   /**
    * Construct the PresetFormBase.
@@ -36,11 +36,11 @@ class PresetFormBase extends EntityForm {
    * from the container. We later use this query factory to build an entity
    * query for the exists() method.
    *
-   * @param \Drupal\Core\Entity\Query\QueryFactory $query_factory
+   * @param \Drupal\Core\Entity\EntityTypeManager $entity_type_manager
    *   An entity query factory for the preset entity type.
    */
-  public function __construct(QueryFactory $query_factory) {
-    $this->entityQueryFactory = $query_factory;
+  public function __construct(EntityTypeManager $entity_type_manager) {
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -58,7 +58,7 @@ class PresetFormBase extends EntityForm {
    * pass the factory to our class as a constructor parameter.
    */
   public static function create(ContainerInterface $container) {
-    return new static($container->get('entity.query'));
+    return new static($container->get('entity_type.manager'));
   }
 
   /**
@@ -521,8 +521,8 @@ class PresetFormBase extends EntityForm {
    *   TRUE if this format already exists, FALSE otherwise.
    */
   public function exists($entity_id, array $element, FormStateInterface $form_state) {
-    // Use the query factory to build a new preset entity query.
-    $query = $this->entityQueryFactory->get('video_transcode_preset');
+    // Use the entity type manager to build a new preset entity query.
+    $query = $this->entityTypeManager->getStorage('video_transcode_preset')->getQuery();
 
     // Query the entity ID to see if its in use.
     $result = $query->condition('id', $element['#field_prefix'] . $entity_id)
