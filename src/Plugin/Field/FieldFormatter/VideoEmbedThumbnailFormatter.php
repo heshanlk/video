@@ -49,31 +49,20 @@ class VideoEmbedThumbnailFormatter extends FormatterBase implements ContainerFac
   public function viewElements(FieldItemListInterface $items, $langcode) {
     // load widget settings
     $field_definition = $this->fieldDefinition;
-    $form_mode = 'default';
-    $entity_form_display = \Drupal::entityTypeManager()
-      ->getStorage('entity_form_display')
-      ->load($field_definition->getTargetEntityTypeId() . '.' . $field_definition->getTargetBundle() . '.' . $form_mode);
-    if (!$entity_form_display) {
-      $entity_form_display = \Drupal::entityTypeManager()
-        ->getStorage('entity_form_display')
-        ->create([
-          'targetEntityType' => $field_definition->getTargetEntityTypeId(),
-          'bundle' => $field_definition->getTargetBundle(),
-          'mode' => $form_mode,
-          'status' => TRUE,
-        ]);
-    }
+    #$entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+	$entity_form_display= \Drupal::service('entity_display.repository')->getFormDisplay($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
     $widget = $entity_form_display->getRenderer($field_definition->getName());
     $widget_settings = $widget->getSettings();
     $element = [];
     foreach ($items as $delta => $item) {
       $file = File::load($item->target_id);
       $metadata = isset($item->data) ? unserialize($item->data) : [];
-      $scheme = file_uri_scheme($file->getFileUri());
-      $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata, $widget_settings);
+      #$scheme = file_uri_scheme($file->getFileUri());
+      $scheme = \Drupal\Core\StreamWrapper\StreamWrapperManager::getScheme($file->getFileUri());
+	  $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata, $widget_settings);
       $url = FALSE;
       if ($this->getSetting('link_image_to') == static::LINK_CONTENT) {
-        $url = $items->getEntity()->toUrl();
+        $url = $items->getEntity()->urlInfo();
       }
       elseif ($this->getSetting('link_image_to') == static::LINK_PROVIDER) {
         $url = Url::fromUri(file_create_url($file->getFileUri()));
@@ -174,21 +163,9 @@ class VideoEmbedThumbnailFormatter extends FormatterBase implements ContainerFac
       return TRUE;
     }
     else{
-      $form_mode = 'default';
-      $entity_form_display = \Drupal::entityTypeManager()
-        ->getStorage('entity_form_display')
-        ->load($field_definition->getTargetEntityTypeId() . '.' . $field_definition->getTargetBundle() . '.' . $form_mode);
-      if (!$entity_form_display) {
-        $entity_form_display = \Drupal::entityTypeManager()
-          ->getStorage('entity_form_display')
-          ->create([
-            'targetEntityType' => $field_definition->getTargetEntityTypeId(),
-            'bundle' => $field_definition->getTargetBundle(),
-            'mode' => $form_mode,
-            'status' => TRUE,
-          ]);
-      }
-      $widget = $entity_form_display->getRenderer($field_definition->getName());
+      #$entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+      $entity_form_display= \Drupal::service('entity_display.repository')->getFormDisplay($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+	  $widget = $entity_form_display->getRenderer($field_definition->getName());
       $widget_id = $widget->getBaseId();
       if($widget_id == 'video_embed'){
         return TRUE;

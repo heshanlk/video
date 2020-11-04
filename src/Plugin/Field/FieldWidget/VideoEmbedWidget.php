@@ -390,7 +390,7 @@ class VideoEmbedWidget extends FileWidget {
             $matches = $provider_matches['matches'];
             $uri = $definition['stream_wrapper'] . '://' . $matches['id'];
             
-            $storage = \Drupal::entityTypeManager()->getStorage('file');
+            $storage = \Drupal::entityManager()->getStorage('file');
             $results = $storage->getQuery()
                     ->condition('uri', $uri)
                     ->execute();

@@ -3,33 +3,11 @@
   "description": "Video module allows you to embedded videos from YouTube, Vimeo, Facebook, Vine etc (Drupal 8 only) and upload videos and play using HTML5 video player.",
   "type": "drupal-module",
   "homepage": "https://www.drupal.org/project/video",
-  "keywords": ["Drupal", "media", "video", "transcode", "embed"],
   "license": "GPL-2.0+",
-  "authors": [
-    {
-      "name": "Heshan Wanigasooriya",
-      "homepage": "https://www.drupal.org/u/heshanlk",
-      "role": "Maintainer"
-    }
-  ],
-  "minimum-stability": "8.x-2.x",
   "extra": {
     "drupal": {
       "package": "Field types",
-      "version": "8.x-2.x"
+      "version": "8.x-1.x"
     }
-  },
-  "support": {
-    "issues": "https://www.drupal.org/project/issues/video",
-    "source": "https://www.drupal.org/project/video"
-  },
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "https://packages.drupal.org/8"
-    }
-  ],
-  "require": {
-    "drupal/core": "~8.1",
   }
 }

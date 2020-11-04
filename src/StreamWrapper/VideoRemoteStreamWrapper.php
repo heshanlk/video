@@ -45,7 +45,7 @@ abstract class VideoRemoteStreamWrapper extends ReadOnlyStream {
    */
   public function getExternalUrl() {
     $path = str_replace('\\', '/', $this->getTarget());
-    return static::baseUrl() . '/' . UrlHelper::encodePath($path);
+    return static::baseUrl() . '/' . $path;
   }
   
   /**

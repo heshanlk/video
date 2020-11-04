@@ -42,7 +42,8 @@ class VideoEmbedPlayerFormatter extends FormatterBase implements ContainerFactor
       $file = File::load($item->target_id);
       if(!$file) continue;
       $metadata = isset($item->data) ? unserialize($item->data) : [];
-      $scheme = \Drupal::service('file_system')->uriScheme($file->getFileUri());
+      #$scheme = file_uri_scheme($file->getFileUri());
+      $scheme = \Drupal\Core\StreamWrapper\StreamWrapperManager::getScheme($file->getFileUri());
       $provider = $this->providerManager->loadProviderFromStream($scheme, $file, $metadata);
       if($provider){
         $element[$delta] = $provider->renderEmbedCode($settings);
@@ -146,21 +147,9 @@ class VideoEmbedPlayerFormatter extends FormatterBase implements ContainerFactor
     if(empty($field_definition->getTargetBundle())){
       return TRUE;
     }
-    else {
-      $form_mode = 'default';
-      $entity_form_display = \Drupal::entityTypeManager()
-        ->getStorage('entity_form_display')
-        ->load($field_definition->getTargetEntityTypeId() . '.' . $field_definition->getTargetBundle() . '.' . $form_mode);
-      if (!$entity_form_display) {
-        $entity_form_display = \Drupal::entityTypeManager()
-          ->getStorage('entity_form_display')
-          ->create([
-            'targetEntityType' => $field_definition->getTargetEntityTypeId(),
-            'bundle' => $field_definition->getTargetBundle(),
-            'mode' => $form_mode,
-            'status' => TRUE,
-          ]);
-      }
+    else{
+      #$entity_form_display = entity_get_form_display($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
+	  $entity_form_display= \Drupal::service('entity_display.repository')->getFormDisplay($field_definition->getTargetEntityTypeId(), $field_definition->getTargetBundle(), 'default');
       $widget = $entity_form_display->getRenderer($field_definition->getName());
       $widget_id = $widget->getBaseId();
       if($widget_id == 'video_embed'){
